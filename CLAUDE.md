@@ -162,8 +162,13 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   spot's status; `RiverOverviewService` wraps it for listings. Add new facts to the DTO first, then to both outputs.
 - Data is ingested in the background by scheduled artisan commands (see `routes/console.php`) and served from MySQL.
   Pages never call third-party APIs at request time.
-- "Upstream" means monitors on the same river with a smaller `river_metres` than the spot. Positions come from
-  projecting lat/lng onto the river centreline (`rivers:centrelines` then `rivers:positions`).
+- "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
+  the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
+  recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
+  (`rivers:centrelines` then `rivers:positions`, which also sets each tributary's `joins_at_metres`).
+- Tributaries have no pages. Use the `main()` scope wherever rivers are listed.
+- Spill history (`SpillHistoryService`) is derived from `spill_events`, which only exist from the first ingest run
+  onwards. Don't backfill from the feed; it has no history.
 
 ## Data sources
 

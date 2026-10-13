@@ -4,6 +4,7 @@ namespace App\Services\Conditions;
 
 use App\Data\RiverOverview;
 use App\Enums\OverflowStatus;
+use App\Models\OverflowMonitor;
 use App\Models\River;
 use App\Models\Spot;
 use Illuminate\Support\Collection;
@@ -20,7 +21,23 @@ class RiverOverviewService
      */
     public function all(): Collection
     {
-        return River::query()->orderBy('name')->get()->map(fn (River $river) => $this->for($river));
+        return River::query()->main()->orderBy('name')->get()->map(fn (River $river) => $this->for($river));
+    }
+
+    /**
+     * The river plus all its tributaries, recursively.
+     *
+     * @return array<int, int>
+     */
+    private function riverFamilyIds(River $river): array
+    {
+        $ids = [$river->id];
+
+        foreach ($river->tributaries as $tributary) {
+            $ids = [...$ids, ...$this->riverFamilyIds($tributary)];
+        }
+
+        return $ids;
     }
 
     public function for(River $river): RiverOverview
@@ -34,8 +51,8 @@ class RiverOverviewService
         return new RiverOverview(
             river: $river,
             spots: $spots,
-            monitorCount: $river->overflowMonitors()->count(),
-            dischargingNowCount: $river->overflowMonitors()->where('status', OverflowStatus::Discharging)->count(),
+            monitorCount: OverflowMonitor::query()->whereIn('river_id', $riverIds = $this->riverFamilyIds($river))->count(),
+            dischargingNowCount: OverflowMonitor::query()->whereIn('river_id', $riverIds)->where('status', OverflowStatus::Discharging)->count(),
         );
     }
 }

@@ -14,10 +14,13 @@ keep that distinction.
 - Polls Environment Agency river level gauges every 15 minutes.
 - Positions every monitor, gauge and spot along the river centreline (from OS Open Rivers), so "upstream" means
   further up the same river rather than just nearby.
+- Shows a 30-day history per spot: minutes of upstream spilling per day and the individual events.
 - Serves a page per river and per spot, plus a read-only JSON API at `/api/v1` built from the same services.
 
 Covered rivers are seeded in `database/seeders/RiverSeeder.php` and spots in `SpotSeeder.php`. Currently the Wharfe
-and the Aire.
+and the Aire, plus the Aire's main monitored tributaries (Worth, Bradford Beck, Meanwood Beck, Adel Beck, Wyke Beck).
+Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances follow
+the water down the tributary and then the main river.
 
 ## Data sources
 
@@ -94,11 +97,14 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 
 `rivers:centrelines` only needs running when a river is added or the OS data is updated.
 
-## Adding a river or spot
+## Adding a river, tributary or spot
 
-1. Add the river to `RiverSeeder` with the receiving watercourse names the overflow feed uses as `aliases`.
-2. Add spots to `SpotSeeder`, source to mouth, with the lat/lng of the bank access point.
-3. Run `php artisan db:seed`, then `rivers:centrelines`, `ingest:gauges --stations` and `rivers:positions`.
+1. Add the river to `RiverSeeder` with the receiving watercourse names the overflow feed uses as `aliases`. Names are
+   matched after stripping qualifiers like "(Culverted)", and "Trib Of River Aire" counts as the Aire.
+2. For a tributary, set `parent` to the parent river's slug. Only name it as the OS Open Rivers data does.
+3. Add spots to `SpotSeeder`, source to mouth, with the lat/lng of the bank access point.
+4. Run `php artisan db:seed`, then `rivers:centrelines`, `ingest:gauges --stations` and `rivers:positions`. The
+   positions step also records where each tributary joins its parent.
 
 ## API
 

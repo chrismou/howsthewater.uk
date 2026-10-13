@@ -25,6 +25,14 @@ class RiverFactory extends Factory
         ];
     }
 
+    public function tributaryOf(River $parent, int $joinsAtMetres): static
+    {
+        return $this->state(fn () => [
+            'parent_river_id' => $parent->id,
+            'joins_at_metres' => $joinsAtMetres,
+        ]);
+    }
+
     /**
      * A straight south-east running centreline roughly 20km long, so river
      * positions can be computed in tests.

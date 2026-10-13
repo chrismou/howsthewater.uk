@@ -19,6 +19,7 @@ class OverflowMonitorResource extends JsonResource
         return [
             'id' => $this->monitor->external_id,
             'receiving_watercourse' => $this->monitor->receiving_watercourse,
+            'river' => ['slug' => $this->river->slug, 'name' => $this->river->name],
             'latitude' => $this->monitor->latitude,
             'longitude' => $this->monitor->longitude,
             'distance_upstream_metres' => $this->distanceUpstreamMetres,

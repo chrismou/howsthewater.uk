@@ -5,6 +5,7 @@ use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
 use App\Models\River;
 use App\Models\Spot;
+use App\Services\Conditions\UpstreamMonitorFinder;
 
 it('positions matching monitors, gauges and spots along the centreline and links the nearest gauge', function () {
     $river = River::factory()->withCentreline()->create(['name' => 'River Test', 'aliases' => ['River Test']]);
@@ -33,7 +34,33 @@ it('positions matching monitors, gauges and spots along the centreline and links
         ->and($spot->river_metres)->toBeLessThan($downstreamMonitor->fresh()->river_metres)
         ->and($spot->gaugeStation->is($downstreamGauge))->toBeTrue();
 
-    expect($spot->upstreamMonitors()->pluck('id')->all())->toBe([$upstreamMonitor->id]);
+    expect(app(UpstreamMonitorFinder::class)->for($spot)->map(fn ($summary) => $summary->monitor->id)->all())->toBe([$upstreamMonitor->id]);
+});
+
+it('records where a tributary joins its parent river', function () {
+    $parent = River::factory()->withCentreline()->create();
+    $tributary = River::factory()->create([
+        'parent_river_id' => $parent->id,
+        'centreline' => [[53.950, -1.750], [53.900, -1.750], [53.851, -1.701]],
+        'length_metres' => 9000,
+    ]);
+
+    app(AssignRiverPositions::class)->handle($tributary);
+
+    // The tributary's mouth sits roughly at the parent's midpoint.
+    expect($tributary->fresh()->joins_at_metres)->toBeBetween(15000, 19000);
+});
+
+it('positions monitors on unnamed tributaries of the river with extra slack', function () {
+    $river = River::factory()->withCentreline()->create(['name' => 'River Test', 'aliases' => ['River Test']]);
+
+    $tributaryMonitor = OverflowMonitor::factory()->create(['receiving_watercourse' => 'Trib Of River Test', 'latitude' => 53.88, 'longitude' => -1.70]);
+    $tooFarMonitor = OverflowMonitor::factory()->create(['receiving_watercourse' => 'Trib Of River Test', 'latitude' => 54.00, 'longitude' => -1.60]);
+
+    app(AssignRiverPositions::class)->handle($river);
+
+    expect($tributaryMonitor->fresh()->river_id)->toBe($river->id)
+        ->and($tooFarMonitor->fresh()->river_id)->toBeNull();
 });
 
 it('does nothing for a river without a centreline', function () {

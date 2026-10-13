@@ -11,7 +11,7 @@
     ]])->concat($conditions->upstreamMonitors->map(fn ($summary) => [
         'lat' => $summary->monitor->latitude,
         'lng' => $summary->monitor->longitude,
-        'label' => $summary->monitor->external_id.' ('.$summary->status->label().')',
+        'label' => $summary->monitor->external_id.', '.$summary->river->name.' ('.$summary->status->label().')',
         'kind' => 'monitor',
         'status' => $summary->status->value,
     ]))->values();
@@ -76,6 +76,9 @@
                 data-map-markers="{{ json_encode($mapMarkers) }}"
             ></div>
 
+            <h2 class="mt-8 mb-3 text-lg font-semibold">Last 30 days</h2>
+            <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" />
+
             <h2 class="mt-8 mb-3 text-lg font-semibold">Upstream storm overflows</h2>
             @if ($conditions->upstreamMonitors->isEmpty())
                 <p class="text-sm text-stone-600">No monitors have been matched upstream of this spot yet.</p>
@@ -85,6 +88,7 @@
                         <thead class="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
                             <tr>
                                 <th class="px-4 py-2 font-medium">Monitor</th>
+                                <th class="px-4 py-2 font-medium">Watercourse</th>
                                 <th class="px-4 py-2 font-medium">Upstream</th>
                                 <th class="px-4 py-2 font-medium">Status</th>
                                 <th class="px-4 py-2 font-medium">Last spill</th>
@@ -94,8 +98,9 @@
                             @foreach ($conditions->upstreamMonitors as $summary)
                                 <tr>
                                     <td class="px-4 py-2 font-mono text-xs">{{ $summary->monitor->external_id }}</td>
+                                    <td class="px-4 py-2 text-stone-600">{{ $summary->river->name }}</td>
                                     <td class="px-4 py-2">{{ number_format($summary->distanceUpstreamMetres / 1000, 1) }} km</td>
-                                    <td class="px-4 py-2">
+                                    <td class="px-4 py-2 whitespace-nowrap">
                                         @if ($summary->status === \App\Enums\OverflowStatus::Discharging)
                                             <span class="font-medium text-red-700">{{ $summary->status->label() }}</span>
                                         @else

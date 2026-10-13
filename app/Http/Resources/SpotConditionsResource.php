@@ -46,6 +46,21 @@ class SpotConditionsResource extends JsonResource
                 'relative_to_typical' => $this->level->relativeToTypical,
             ],
             'upstream_monitors' => OverflowMonitorResource::collection($this->upstreamMonitors),
+            'history' => [
+                'days' => $this->dailyHistory->map(fn ($day) => [
+                    'date' => $day->date->toDateString(),
+                    'spills' => $day->spillCount,
+                    'minutes' => $day->spillMinutes,
+                ]),
+                'events' => $this->recentSpillEvents->map(fn ($event) => [
+                    'monitor' => $event->overflowMonitor->external_id,
+                    'river' => $event->overflowMonitor->river?->name,
+                    'started_at' => $event->started_at->toIso8601String(),
+                    'ended_at' => $event->ended_at?->toIso8601String(),
+                    'ongoing' => $event->isOngoing(),
+                    'duration_minutes' => $event->durationMinutes(),
+                ]),
+            ],
             'data_updated_at' => $this->dataUpdatedAt?->toIso8601String(),
         ];
     }

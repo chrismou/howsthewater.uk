@@ -17,6 +17,8 @@ class RiverController extends Controller
 
     public function show(River $river, RiverOverviewService $overview): RiverResource
     {
+        abort_if($river->isTributary(), 404);
+
         return new RiverResource($overview->for($river));
     }
 }

@@ -7,6 +7,7 @@ use App\Models\OverflowMonitor;
 use App\Models\River;
 use App\Models\Spot;
 use App\Services\Geo\PolylineProjector;
+use App\Services\Geo\WatercourseName;
 
 /**
  * Attaches overflow monitors and gauges to a river by watercourse name and
@@ -22,6 +23,13 @@ class AssignRiverPositions
     private const MAX_OFFSET_METRES = 1500;
 
     /**
+     * Monitors on unnamed tributaries ("Trib Of River Aire") sit away from
+     * the main channel, so they get more slack. Their position is where the
+     * tributary roughly meets the river.
+     */
+    private const MAX_TRIBUTARY_OFFSET_METRES = 6000;
+
+    /**
      * @return array{monitors: int, gauges: int, spots: int}
      */
     public function handle(River $river): array
@@ -31,6 +39,8 @@ class AssignRiverPositions
         }
 
         $projector = new PolylineProjector($river->centreline);
+
+        $this->assignJoinPoint($river);
 
         $monitors = $this->assignMonitors($river, $projector);
         $gauges = $this->assignGauges($river, $projector);
@@ -51,8 +61,10 @@ class AssignRiverPositions
                 }
 
                 $projection = $projector->project($monitor->latitude, $monitor->longitude);
+                $isUnnamedTributary = WatercourseName::parse($monitor->receiving_watercourse)?->isUnnamedTributary === true;
+                $maxOffset = $isUnnamedTributary ? self::MAX_TRIBUTARY_OFFSET_METRES : self::MAX_OFFSET_METRES;
 
-                if ($projection->offsetMetres > self::MAX_OFFSET_METRES) {
+                if ($projection->offsetMetres > $maxOffset) {
                     return;
                 }
 
@@ -61,6 +73,23 @@ class AssignRiverPositions
             });
 
         return $count;
+    }
+
+    /**
+     * Records where a tributary's mouth meets its parent river.
+     */
+    private function assignJoinPoint(River $river): void
+    {
+        $parent = $river->parent;
+        $mouth = $river->mouth();
+
+        if ($parent === null || $mouth === null || ! $parent->hasCentreline()) {
+            return;
+        }
+
+        $projection = (new PolylineProjector($parent->centreline))->project($mouth[0], $mouth[1]);
+
+        $river->update(['joins_at_metres' => $projection->distanceAlongMetres]);
     }
 
     private function assignGauges(River $river, PolylineProjector $projector): int

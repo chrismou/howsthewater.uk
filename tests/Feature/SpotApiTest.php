@@ -30,6 +30,10 @@ it('returns full conditions for a spot', function () {
         ->assertJsonPath('data.spills.last_48_hours', 1)
         ->assertJsonPath('data.level', null)
         ->assertJsonPath('data.upstream_monitors.0.id', $monitor->external_id)
+        ->assertJsonPath('data.upstream_monitors.0.river.slug', $river->slug)
+        ->assertJsonCount(30, 'data.history.days')
+        ->assertJsonPath('data.history.events.0.monitor', $monitor->external_id)
+        ->assertJsonPath('data.history.events.0.duration_minutes', 60)
         ->assertJsonPath('data.upstream_monitors.0.distance_upstream_metres', 2000)
         ->assertJsonPath('data.upstream_monitors.0.latest_event.duration_minutes', 60);
 });

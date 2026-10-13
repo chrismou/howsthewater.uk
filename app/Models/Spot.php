@@ -76,18 +76,4 @@ class Spot extends Model
     {
         return $query->where('is_published', true);
     }
-
-    /**
-     * Overflow monitors on the same river at or above this spot.
-     *
-     * @return Builder<OverflowMonitor>
-     */
-    public function upstreamMonitors(): Builder
-    {
-        return OverflowMonitor::query()
-            ->where('river_id', $this->river_id)
-            ->whereNotNull('river_metres')
-            ->where('river_metres', '<=', $this->river_metres ?? 0)
-            ->orderByDesc('river_metres');
-    }
 }

@@ -18,7 +18,7 @@
                 How's the Water<span class="text-sky-600">?</span>
             </a>
             <nav class="flex gap-5 text-sm text-stone-600">
-                @foreach (\App\Models\River::query()->orderBy('name')->get() as $navRiver)
+                @foreach (\App\Models\River::query()->main()->orderBy('name')->get() as $navRiver)
                     <a href="{{ route('rivers.show', $navRiver) }}" class="hover:text-stone-900">{{ $navRiver->name }}</a>
                 @endforeach
             </nav>
