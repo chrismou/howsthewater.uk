@@ -208,3 +208,15 @@ php artisan rivers:positions
 
 - Run `vendor/bin/pint --dirty --format agent`, `php artisan test --compact` and `vendor/bin/phpstan analyse` before
   finishing a change.
+
+## Deployment
+
+- `.github/workflows/tests.yml` runs `composer ci:check` (pint, phpstan, tests) on every push and PR. A push to `main`
+  that passes then runs `dep deploy` from CI via `deployphp/action`, using the GitHub `production` environment
+  (secrets `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; variables `DEPLOY_IP`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`).
+- `deploy.php` uses the Laravel recipe plus an npm build. The server clones the repo through the deploy user's
+  `github-howsthewater` SSH alias. Permissions follow the shared `www-data` group model: `writable_mode` is `chmod`,
+  `writable_recursive` is off, the release is made read-only after the build, and file log channels set
+  `'permission' => 0660` so web requests and deploy-time artisan can share a log file.
+- Server provisioning (users, PHP-FPM, nginx, deploy keys, GitHub environment) lives in the `opendata-ansible` repo.
+  Nothing is deployed by hand; never run `composer update` or merge on the server.
