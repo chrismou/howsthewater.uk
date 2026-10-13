@@ -32,5 +32,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="STREAM_YORKSHIRE_WATER_URL" value="https://services-eu1.arcgis.com/1WqkK5cDKUbF0CkH/arcgis/rest/services/Yorkshire_Water_Storm_Overflow_Activity/FeatureServer/0"/>
+        <env name="EA_FLOOD_MONITORING_URL" value="https://environment.data.gov.uk/flood-monitoring"/>
     </php>
 </phpunit>
