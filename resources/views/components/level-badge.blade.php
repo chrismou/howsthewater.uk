@@ -11,7 +11,7 @@
         };
     @endphp
     <span {{ $attributes->merge(['class' => 'inline-flex items-center gap-1 text-xs text-stone-600']) }}>
-        <span class="font-medium text-stone-900">{{ number_format($level->latestValue, 2) }} m</span>
+        <span class="font-medium text-stone-900">{{ number_format($level->latestValue, 2) }} {{ $level->station->unitLabel() }}</span>
         <span aria-hidden="true">{!! $arrow !!}</span>
         <span>{{ strtolower($level->trend->label()) }}</span>
         @if ($level->relativeToTypical)

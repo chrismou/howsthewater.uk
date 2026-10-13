@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Actions\Ingest\SyncOverflowMonitors;
+use App\Services\Conditions\ConditionsCache;
+use App\Services\Conditions\RiverOverviewService;
 use Illuminate\Console\Command;
 
 class IngestOverflows extends Command
@@ -11,9 +13,11 @@ class IngestOverflows extends Command
 
     protected $description = 'Fetch current storm overflow status and record spill events';
 
-    public function handle(SyncOverflowMonitors $sync): int
+    public function handle(SyncOverflowMonitors $sync, ConditionsCache $cache, RiverOverviewService $overview): int
     {
         $result = $sync->handle();
+        $cache->flush();
+        $overview->all();
 
         $this->info(sprintf(
             'Synced %d monitors (%d events opened, %d closed).',

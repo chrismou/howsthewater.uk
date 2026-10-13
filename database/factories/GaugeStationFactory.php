@@ -10,6 +10,19 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class GaugeStationFactory extends Factory
 {
+    /**
+     * A gauge reporting metres above sea level rather than above its datum.
+     */
+    public function aboveOrdnanceDatum(): static
+    {
+        return $this->state(fn () => [
+            'measure_id' => fake()->unique()->bothify('L####-level-stage-i-15_min-mAOD'),
+            'unit' => 'mAOD',
+            'typical_range_low' => 23.6,
+            'typical_range_high' => 24.1,
+        ]);
+    }
+
     public function definition(): array
     {
         return [
@@ -21,7 +34,8 @@ class GaugeStationFactory extends Factory
             'latitude' => fake()->latitude(53.7, 54.1),
             'longitude' => fake()->longitude(-2.0, -1.2),
             'river_metres' => null,
-            'measure_id' => fake()->unique()->bothify('L####-level-stage-i-15_min-mASD'),
+            'measure_id' => fake()->unique()->bothify('L####-level-stage-i-15_min-m'),
+            'unit' => 'm',
             'typical_range_low' => 0.2,
             'typical_range_high' => 1.5,
             'is_active' => true,

@@ -25,6 +25,7 @@ it('returns full conditions for a spot', function () {
 
     $this->getJson(route('api.v1.spots.show', $spot))
         ->assertOk()
+        ->assertHeader('Cache-Control', 'max-age=300, public')
         ->assertJsonPath('data.spot.slug', 'ilkley')
         ->assertJsonPath('data.spills.recency', 'within_24_hours')
         ->assertJsonPath('data.spills.last_48_hours', 1)

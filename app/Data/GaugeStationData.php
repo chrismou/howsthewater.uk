@@ -12,6 +12,7 @@ final readonly class GaugeStationData
         public float $latitude,
         public float $longitude,
         public ?string $measureId,
+        public ?string $unit,
         public ?float $typicalRangeLow,
         public ?float $typicalRangeHigh,
         public bool $isActive,
@@ -22,6 +23,8 @@ final readonly class GaugeStationData
      */
     public static function fromEnvironmentAgency(array $item): self
     {
+        $measure = self::levelMeasure($item['measures'] ?? []);
+
         return new self(
             externalId: (string) ($item['stationReference'] ?? $item['notation']),
             label: self::firstString($item['label'] ?? 'Unknown'),
@@ -29,7 +32,8 @@ final readonly class GaugeStationData
             town: self::firstStringOrNull($item['town'] ?? null),
             latitude: (float) self::firstScalar($item['lat']),
             longitude: (float) self::firstScalar($item['long']),
-            measureId: self::levelMeasureId($item['measures'] ?? []),
+            measureId: $measure['id'] ?? null,
+            unit: $measure['unit'] ?? null,
             typicalRangeLow: isset($item['stageScale']['typicalRangeLow']) ? (float) $item['stageScale']['typicalRangeLow'] : null,
             typicalRangeHigh: isset($item['stageScale']['typicalRangeHigh']) ? (float) $item['stageScale']['typicalRangeHigh'] : null,
             isActive: str_ends_with((string) ($item['status'] ?? ''), 'statusActive'),
@@ -39,11 +43,13 @@ final readonly class GaugeStationData
     /**
      * Picks the 15-minute stage level measure for the station. Some stations
      * list a duplicate measure with no unit that never carries readings, so
-     * a measure with a real unit wins.
+     * a measure with a real unit wins, and a stage in metres above the gauge
+     * datum beats one in metres above sea level (mAOD).
      *
      * @param  array<int, array<string, mixed>>|array<string, mixed>|string  $measures
+     * @return array{id: string, unit: string|null}|null
      */
-    private static function levelMeasureId(array|string $measures): ?string
+    private static function levelMeasure(array|string $measures): ?array
     {
         if (is_string($measures)) {
             return null;
@@ -64,14 +70,19 @@ final readonly class GaugeStationData
             $isStage = strcasecmp((string) ($measure['qualifier'] ?? ''), 'Stage') === 0;
 
             if ($isLevel && $isStage) {
-                $hasUnit = ! in_array($measure['unitName'] ?? '---', ['---', ''], true);
-                $candidates[] = ['id' => basename((string) $measure['@id']), 'hasUnit' => $hasUnit];
+                $unit = (string) ($measure['unitName'] ?? '');
+                $hasUnit = ! in_array($unit, ['---', ''], true);
+                $candidates[] = [
+                    'id' => basename((string) $measure['@id']),
+                    'unit' => $hasUnit ? $unit : null,
+                    'rank' => [$hasUnit, strcasecmp($unit, 'mAOD') !== 0],
+                ];
             }
         }
 
-        usort($candidates, fn (array $a, array $b) => $b['hasUnit'] <=> $a['hasUnit']);
+        usort($candidates, fn (array $a, array $b) => $b['rank'] <=> $a['rank']);
 
-        return $candidates[0]['id'] ?? null;
+        return isset($candidates[0]) ? ['id' => $candidates[0]['id'], 'unit' => $candidates[0]['unit']] : null;
     }
 
     private static function firstScalar(mixed $value): mixed

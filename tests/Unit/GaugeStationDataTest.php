@@ -44,3 +44,22 @@ it('accepts a single measure object', function () {
 
     expect($station->measureId)->toBe('L1708-level-stage-i-15_min-m');
 });
+
+it('prefers a stage in metres over one in mAOD and records the unit', function () {
+    $station = GaugeStationData::fromEnvironmentAgency(environmentAgencyStation([
+        ['@id' => 'http://example/id/measures/L1708-level-stage-i-15_min-mAOD', 'parameter' => 'level', 'qualifier' => 'Stage', 'unitName' => 'mAOD'],
+        ['@id' => 'http://example/id/measures/L1708-level-stage-i-15_min-m', 'parameter' => 'level', 'qualifier' => 'Stage', 'unitName' => 'm'],
+    ]));
+
+    expect($station->measureId)->toBe('L1708-level-stage-i-15_min-m')
+        ->and($station->unit)->toBe('m');
+});
+
+it('falls back to an mAOD stage when that is all the station has', function () {
+    $station = GaugeStationData::fromEnvironmentAgency(environmentAgencyStation([
+        ['@id' => 'http://example/id/measures/L1707A-level-stage-i-15_min-mAOD', 'parameter' => 'level', 'qualifier' => 'Stage', 'unitName' => 'mAOD'],
+    ]));
+
+    expect($station->measureId)->toBe('L1707A-level-stage-i-15_min-mAOD')
+        ->and($station->unit)->toBe('mAOD');
+});

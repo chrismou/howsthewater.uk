@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Actions\Ingest\SyncGaugeReadings;
 use App\Actions\Ingest\SyncGaugeStations;
 use App\Models\River;
+use App\Services\Conditions\ConditionsCache;
+use App\Services\Conditions\RiverOverviewService;
 use Illuminate\Console\Command;
 
 class IngestGauges extends Command
@@ -13,7 +15,7 @@ class IngestGauges extends Command
 
     protected $description = 'Fetch new river level readings from the Environment Agency';
 
-    public function handle(SyncGaugeStations $syncStations, SyncGaugeReadings $syncReadings): int
+    public function handle(SyncGaugeStations $syncStations, SyncGaugeReadings $syncReadings, ConditionsCache $cache, RiverOverviewService $overview): int
     {
         if ($this->option('stations')) {
             River::query()->each(function (River $river) use ($syncStations) {
@@ -23,6 +25,8 @@ class IngestGauges extends Command
         }
 
         $result = $syncReadings->handle();
+        $cache->flush();
+        $overview->all();
 
         $this->info(sprintf('Stored %d readings across %d stations.', $result['readings'], $result['stations']));
 

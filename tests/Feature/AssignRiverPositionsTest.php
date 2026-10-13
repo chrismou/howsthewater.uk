@@ -68,3 +68,17 @@ it('does nothing for a river without a centreline', function () {
 
     expect(app(AssignRiverPositions::class)->handle($river))->toBe(['monitors' => 0, 'gauges' => 0, 'spots' => 0]);
 });
+
+it('prefers a stage gauge over a nearer mAOD gauge when linking a spot', function () {
+    $river = River::factory()->withCentreline()->create();
+
+    $nearAodGauge = GaugeStation::factory()->aboveOrdnanceDatum()->create(['river_id' => $river->id, 'latitude' => 53.85, 'longitude' => -1.70]);
+    $farStageGauge = GaugeStation::factory()->create(['river_id' => $river->id, 'latitude' => 53.90, 'longitude' => -1.80]);
+
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'latitude' => 53.85, 'longitude' => -1.70, 'river_metres' => null]);
+
+    app(AssignRiverPositions::class)->handle($river);
+
+    expect($spot->fresh()->gaugeStation->is($farStageGauge))->toBeTrue()
+        ->and($nearAodGauge->fresh()->river_metres)->not->toBeNull();
+});

@@ -21,6 +21,8 @@ class FetchRiverCentrelines extends Command
     {
         $rivers = River::query()
             ->when($this->argument('river'), fn ($query, $slug) => $query->where('slug', $slug))
+            ->orderBy('parent_river_id')
+            ->orderBy('id')
             ->get();
 
         $source = $this->option('source');

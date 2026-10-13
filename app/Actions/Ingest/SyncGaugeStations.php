@@ -33,6 +33,7 @@ class SyncGaugeStations
                         'latitude' => $data->latitude,
                         'longitude' => $data->longitude,
                         'measure_id' => $data->measureId,
+                        'unit' => $data->unit,
                         'typical_range_low' => $data->typicalRangeLow,
                         'typical_range_high' => $data->typicalRangeHigh,
                         'is_active' => $data->isActive,

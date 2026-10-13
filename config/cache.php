@@ -1,5 +1,20 @@
 <?php
 
+use App\Data\LevelSummary;
+use App\Data\SpillHistoryDay;
+use App\Data\SpotConditions;
+use App\Data\UpstreamMonitorSummary;
+use App\Enums\LevelTrend;
+use App\Enums\OverflowStatus;
+use App\Enums\SpillRecency;
+use App\Models\GaugeReading;
+use App\Models\GaugeStation;
+use App\Models\OverflowMonitor;
+use App\Models\River;
+use App\Models\SpillEvent;
+use App\Models\Spot;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 return [
@@ -129,8 +144,28 @@ return [
     | storage. By default, no PHP classes will be unserialized from your
     | cache to prevent gadget chain attacks if your APP_KEY is leaked.
     |
+    | Spot conditions are cached as objects, so every class that appears in
+    | App\Data\SpotConditions (and anything it carries) must be listed here.
+    |
     */
 
-    'serializable_classes' => false,
+    'serializable_classes' => [
+        LevelSummary::class,
+        SpillHistoryDay::class,
+        SpotConditions::class,
+        UpstreamMonitorSummary::class,
+        LevelTrend::class,
+        OverflowStatus::class,
+        SpillRecency::class,
+        GaugeReading::class,
+        GaugeStation::class,
+        OverflowMonitor::class,
+        River::class,
+        SpillEvent::class,
+        Spot::class,
+        Illuminate\Database\Eloquent\Collection::class,
+        Carbon::class,
+        Collection::class,
+    ],
 
 ];

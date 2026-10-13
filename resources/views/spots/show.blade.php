@@ -131,13 +131,16 @@
                 @elseif ($level->latestValue === null)
                     <p class="text-sm text-stone-600">No recent readings from the {{ $level->station->label }} gauge.</p>
                 @else
-                    <p class="text-3xl font-semibold">{{ number_format($level->latestValue, 2) }} m</p>
+                    <p class="text-3xl font-semibold">{{ number_format($level->latestValue, 2) }} {{ $level->station->unitLabel() }}</p>
                     <p class="mt-1 text-sm text-stone-600">{{ $trendText }}</p>
                     @if ($level->relativeToTypical)
                         <p class="mt-1 text-sm text-stone-600">
                             {{ ucfirst($level->relativeToTypical) }}
-                            ({{ number_format($level->station->typical_range_low, 2) }} to {{ number_format($level->station->typical_range_high, 2) }} m)
+                            ({{ number_format($level->station->typical_range_low, 2) }} to {{ number_format($level->station->typical_range_high, 2) }} {{ $level->station->unitLabel() }})
                         </p>
+                    @endif
+                    @if ($level->station->isAboveOrdnanceDatum())
+                        <p class="mt-1 text-xs text-stone-500">This gauge reports height above sea level, not depth above the river bed.</p>
                     @endif
                     <p class="mt-3 text-xs text-stone-500">
                         {{ $level->station->label }} gauge, read {{ $level->latestAt->diffForHumans() }}

@@ -167,6 +167,12 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
   (`rivers:centrelines` then `rivers:positions`, which also sets each tributary's `joins_at_metres`).
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed.
+- `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL). Ingest and
+  positioning commands call `flush()`. The cache stores objects, so any new class reachable from `SpotConditions`
+  must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Use
+  `build()` in tests that change data between calls.
+- Gauges carry a `unit` (`m` for stage above the gauge datum, `mAOD` for height above sea level). Spots prefer `m`
+  gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
 - Spill history (`SpillHistoryService`) is derived from `spill_events`, which only exist from the first ingest run
   onwards. Don't backfill from the feed; it has no history.
 
@@ -177,6 +183,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
 - River centrelines: OS Open Rivers GeoPackage at `OS_OPEN_RIVERS_PATH` (default `storage/app/private/oprvrs_gb.gpkg`,
   gitignored, download from the OS Data Hub). OpenStreetMap via Overpass is a fallback (`--source=osm`) but is unreliable.
+  Beck names repeat across Yorkshire, so `OpenRiversReader` takes the parent centreline and keeps only the connected
+  set of links whose mouth is nearest it. Seed parents before tributaries; `rivers:centrelines` orders them that way.
 - No API keys are needed. Map tiles are OpenStreetMap.
 
 ## Local setup

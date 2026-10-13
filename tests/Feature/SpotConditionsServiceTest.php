@@ -8,7 +8,10 @@ use App\Models\OverflowMonitor;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
+use App\Services\Conditions\ConditionsCache;
 use App\Services\Conditions\SpotConditionsService;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 function spotWithUpstream(): array
 {
@@ -62,15 +65,15 @@ it('distinguishes spills in the last 24 and 48 hours from none', function () {
         'ended_at' => now()->subHours(36),
     ]);
 
-    expect(app(SpotConditionsService::class)->for($spot)->spillRecency)->toBe(SpillRecency::Within48Hours);
+    expect(app(SpotConditionsService::class)->build($spot)->spillRecency)->toBe(SpillRecency::Within48Hours);
 
     $event->update(['started_at' => now()->subHours(10), 'ended_at' => now()->subHours(8)]);
 
-    expect(app(SpotConditionsService::class)->for($spot)->spillRecency)->toBe(SpillRecency::Within24Hours);
+    expect(app(SpotConditionsService::class)->build($spot)->spillRecency)->toBe(SpillRecency::Within24Hours);
 
     $event->update(['started_at' => now()->subDays(5), 'ended_at' => now()->subDays(5)->addHour()]);
 
-    $conditions = app(SpotConditionsService::class)->for($spot);
+    $conditions = app(SpotConditionsService::class)->build($spot);
 
     expect($conditions->spillRecency)->toBe(SpillRecency::None)
         ->and($conditions->spillsLast48HoursCount)->toBe(0)
@@ -100,4 +103,48 @@ it('reports an unknown trend when readings are stale', function () {
     GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(12), 'value' => 0.40]);
 
     expect(app(SpotConditionsService::class)->for($spot)->level->trend)->toBe(LevelTrend::Unknown);
+});
+
+it('caches conditions until the cache is flushed', function () {
+    [$spot, $upstream] = spotWithUpstream();
+
+    $service = app(SpotConditionsService::class);
+
+    expect($service->for($spot)->dischargingNowCount)->toBe(0);
+
+    $upstream->update(['status' => 1]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $upstream->id]);
+
+    expect($service->for($spot)->dischargingNowCount)->toBe(0);
+
+    app(ConditionsCache::class)->flush();
+
+    expect($service->for($spot)->dischargingNowCount)->toBe(1);
+});
+
+it('survives a round trip through a serialising cache store', function () {
+    config(['cache.default' => 'file']);
+    Cache::store('file')->flush();
+
+    [$spot, $upstream] = spotWithUpstream();
+    $upstream->update(['status' => 1]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $upstream->id]);
+    $station = GaugeStation::factory()->create(['river_id' => $spot->river_id]);
+    $spot->update(['gauge_station_id' => $station->id]);
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subMinutes(15), 'value' => 0.55]);
+
+    $service = app(SpotConditionsService::class);
+    $service->for($spot);
+
+    $cached = $service->for($spot);
+
+    expect($cached->spillRecency)->toBe(SpillRecency::DischargingNow)
+        ->and($cached->upstreamMonitors->first()->monitor->is($upstream))->toBeTrue()
+        ->and($cached->upstreamMonitors->first()->monitor->river->is($spot->river))->toBeTrue()
+        ->and($cached->recentSpillEvents->first()->started_at)->toBeInstanceOf(Carbon::class)
+        ->and($cached->level->latestValue)->toBe(0.55)
+        ->and($cached->level->latestAt)->toBeInstanceOf(Carbon::class)
+        ->and($cached->dailyHistory)->toHaveCount(30);
+
+    Cache::store('file')->flush();
 });

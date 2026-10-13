@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property float $longitude
  * @property int|null $river_metres
  * @property string|null $measure_id
+ * @property string|null $unit
  * @property float|null $typical_range_low
  * @property float|null $typical_range_high
  * @property bool $is_active
@@ -42,6 +43,7 @@ class GaugeStation extends Model
         'longitude',
         'river_metres',
         'measure_id',
+        'unit',
         'typical_range_low',
         'typical_range_high',
         'is_active',
@@ -56,6 +58,20 @@ class GaugeStation extends Model
             'typical_range_high' => 'float',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Readings in mAOD are heights above sea level rather than above the
+     * gauge datum, so the number means little without that context.
+     */
+    public function isAboveOrdnanceDatum(): bool
+    {
+        return strcasecmp((string) $this->unit, 'mAOD') === 0;
+    }
+
+    public function unitLabel(): string
+    {
+        return $this->unit ?? 'm';
     }
 
     /** @return BelongsTo<River, $this> */

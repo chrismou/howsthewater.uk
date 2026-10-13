@@ -3,6 +3,7 @@
 namespace App\Services\OrdnanceSurvey;
 
 use App\Services\Geo\BritishNationalGrid;
+use App\Services\Geo\PolylineProjector;
 use App\Services\Osm\WayChainer;
 use PDO;
 use RuntimeException;
@@ -21,9 +22,14 @@ class OpenRiversReader
     }
 
     /**
+     * Several unrelated becks can share a name, so when the watercourse is a
+     * tributary the caller passes the parent's centreline and only the
+     * connected set of links whose mouth lies nearest the parent is used.
+     *
+     * @param  array<int, array{0: float, 1: float}>|null  $flowsInto  The parent river's centreline, if any
      * @return array<int, array{0: float, 1: float}> Ordered [lat, lng] pairs from source to mouth
      */
-    public function riverCentreline(string $watercourseName): array
+    public function riverCentreline(string $watercourseName, ?array $flowsInto = null): array
     {
         $pdo = new PDO('sqlite:'.$this->geoPackagePath, options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 
@@ -49,7 +55,90 @@ class OpenRiversReader
             throw new RuntimeException("No OS Open Rivers links named {$watercourseName}.");
         }
 
+        if ($flowsInto !== null) {
+            $links = $this->componentNearest($links, $flowsInto);
+        }
+
         return WayChainer::chain($this->chainByTopology($links));
+    }
+
+    /**
+     * Splits the links into groups that share nodes and returns the group
+     * whose downstream end sits closest to the given centreline.
+     *
+     * @param  array<string, array{start: string, end: string, points: array<int, array{0: float, 1: float}>}>  $links
+     * @param  array<int, array{0: float, 1: float}>  $centreline
+     * @return array<string, array{start: string, end: string, points: array<int, array{0: float, 1: float}>}>
+     */
+    private function componentNearest(array $links, array $centreline): array
+    {
+        $projector = new PolylineProjector($centreline);
+        $best = null;
+        $bestOffset = INF;
+
+        foreach ($this->connectedComponents($links) as $component) {
+            $chain = WayChainer::chain($this->chainByTopology($component));
+            $mouth = end($chain);
+            $offset = $projector->project($mouth[0], $mouth[1])->offsetMetres;
+
+            if ($offset < $bestOffset) {
+                $best = $component;
+                $bestOffset = $offset;
+            }
+        }
+
+        return $best ?? $links;
+    }
+
+    /**
+     * Groups links by shared start/end node ids.
+     *
+     * @param  array<string, array{start: string, end: string, points: array<int, array{0: float, 1: float}>}>  $links
+     * @return array<int, array<string, array{start: string, end: string, points: array<int, array{0: float, 1: float}>}>>
+     */
+    private function connectedComponents(array $links): array
+    {
+        $byNode = [];
+
+        foreach ($links as $id => $link) {
+            $byNode[$link['start']][] = $id;
+            $byNode[$link['end']][] = $id;
+        }
+
+        $visited = [];
+        $components = [];
+
+        foreach (array_keys($links) as $seedId) {
+            if (isset($visited[$seedId])) {
+                continue;
+            }
+
+            $component = [];
+            $queue = [$seedId];
+
+            while ($queue !== []) {
+                $id = array_pop($queue);
+
+                if (isset($visited[$id])) {
+                    continue;
+                }
+
+                $visited[$id] = true;
+                $component[$id] = $links[$id];
+
+                foreach ([$links[$id]['start'], $links[$id]['end']] as $node) {
+                    foreach ($byNode[$node] as $neighbourId) {
+                        if (! isset($visited[$neighbourId])) {
+                            $queue[] = $neighbourId;
+                        }
+                    }
+                }
+            }
+
+            $components[] = $component;
+        }
+
+        return $components;
     }
 
     /**

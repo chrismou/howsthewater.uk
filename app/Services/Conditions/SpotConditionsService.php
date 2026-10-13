@@ -21,9 +21,18 @@ class SpotConditionsService
         private UpstreamMonitorFinder $upstreamMonitors,
         private SpillHistoryService $spillHistory,
         private LevelSummariser $levelSummariser,
+        private ConditionsCache $cache,
     ) {}
 
     public function for(Spot $spot): SpotConditions
+    {
+        return $this->cache->rememberSpot($spot, fn () => $this->build($spot));
+    }
+
+    /**
+     * Computes conditions from the database, bypassing the cache.
+     */
+    public function build(Spot $spot): SpotConditions
     {
         $spot->loadMissing(['river', 'gaugeStation']);
 

@@ -18,9 +18,13 @@ keep that distinction.
 - Serves a page per river and per spot, plus a read-only JSON API at `/api/v1` built from the same services.
 
 Covered rivers are seeded in `database/seeders/RiverSeeder.php` and spots in `SpotSeeder.php`. Currently the Wharfe
-and the Aire, plus the Aire's main monitored tributaries (Worth, Bradford Beck, Meanwood Beck, Adel Beck, Wyke Beck).
-Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances follow
-the water down the tributary and then the main river.
+(with the Washburn, Kex Beck, Weeton Beck, Keswick Beck, Bardsey Beck, Collingham Beck and Cock Beck) and the Aire
+(with the Worth, Bradford Beck, Meanwood Beck, Adel Beck and Wyke Beck). Tributaries don't get pages; their monitors
+count as upstream of any spot below the confluence, and distances follow the water down the tributary and then the
+main river.
+
+Spot conditions are cached for up to 30 minutes and flushed by every ingest and positioning run, so pages and the API
+are cheap to serve. Set `CACHE_STORE=redis` in production if Redis is available; the database store works fine too.
 
 ## Data sources
 
@@ -101,15 +105,19 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 
 1. Add the river to `RiverSeeder` with the receiving watercourse names the overflow feed uses as `aliases`. Names are
    matched after stripping qualifiers like "(Culverted)", and "Trib Of River Aire" counts as the Aire.
-2. For a tributary, set `parent` to the parent river's slug. Only name it as the OS Open Rivers data does.
+2. For a tributary, set `parent` to the parent river's slug. Only name it as the OS Open Rivers data does. Several
+   becks can share a name; the centreline import picks the one whose mouth is nearest the parent river.
 3. Add spots to `SpotSeeder`, source to mouth, with the lat/lng of the bank access point.
 4. Run `php artisan db:seed`, then `rivers:centrelines`, `ingest:gauges --stations` and `rivers:positions`. The
-   positions step also records where each tributary joins its parent.
+   positions step also records where each tributary joins its parent and links each spot to its nearest gauge,
+   preferring gauges that report stage in metres over ones reporting height above sea level (mAOD).
 
 ## API
 
 - `GET /api/v1/rivers` and `GET /api/v1/rivers/{slug}`: river overview with every spot's conditions.
 - `GET /api/v1/spots` and `GET /api/v1/spots/{slug}`: a spot's spill summary, upstream monitors and gauge level.
+
+Responses carry `Cache-Control: public, max-age=300` and an ETag, so a CDN in front of the site can cache them.
 
 ## Development
 
