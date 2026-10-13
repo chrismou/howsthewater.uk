@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Resources;
+
+use App\Data\SpotConditions;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin SpotConditions
+ */
+class SpotConditionsResource extends JsonResource
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'spot' => [
+                'slug' => $this->spot->slug,
+                'name' => $this->spot->name,
+                'river' => ['slug' => $this->spot->river->slug, 'name' => $this->spot->river->name],
+                'latitude' => $this->spot->latitude,
+                'longitude' => $this->spot->longitude,
+                'river_metres' => $this->spot->river_metres,
+            ],
+            'spills' => [
+                'recency' => $this->spillRecency->value,
+                'summary' => $this->spillRecency->label(),
+                'discharging_now' => $this->dischargingNowCount,
+                'last_48_hours' => $this->spillsLast48HoursCount,
+                'last_30_days' => $this->spillsLast30DaysCount,
+            ],
+            'level' => $this->level === null ? null : [
+                'station' => [
+                    'id' => $this->level->station->external_id,
+                    'label' => $this->level->station->label,
+                    'typical_range_low' => $this->level->station->typical_range_low,
+                    'typical_range_high' => $this->level->station->typical_range_high,
+                ],
+                'value' => $this->level->latestValue,
+                'measured_at' => $this->level->latestAt?->toIso8601String(),
+                'trend' => $this->level->trend->value,
+                'change_last_3_hours' => $this->level->changeLast3Hours,
+                'relative_to_typical' => $this->level->relativeToTypical,
+            ],
+            'upstream_monitors' => OverflowMonitorResource::collection($this->upstreamMonitors),
+            'data_updated_at' => $this->dataUpdatedAt?->toIso8601String(),
+        ];
+    }
+}
