@@ -6,7 +6,7 @@ use App\Actions\Ingest\SyncRainfallReadings;
 use App\Actions\Ingest\SyncRainfallStations;
 use App\Actions\Rivers\LinkNearestRainfallStations;
 use App\Services\Conditions\ConditionsCache;
-use App\Services\Conditions\RiverOverviewService;
+use App\Services\Conditions\RegionSummaries;
 use Illuminate\Console\Command;
 
 class IngestRainfall extends Command
@@ -27,7 +27,7 @@ class IngestRainfall extends Command
         LinkNearestRainfallStations $link,
         SyncRainfallReadings $syncReadings,
         ConditionsCache $cache,
-        RiverOverviewService $overview,
+        RegionSummaries $summaries,
     ): int {
         if ($this->option('stations')) {
             $stations = $syncStations->handle();
@@ -50,7 +50,7 @@ class IngestRainfall extends Command
         }
 
         $cache->flush();
-        $overview->all();
+        $summaries->refreshAll();
 
         $this->info(sprintf('Stored %d rainfall readings across %d stations.', $readings, $result['stations']));
 

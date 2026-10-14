@@ -176,6 +176,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Build links with `route('spots.show', [$region, $river, $spot])` and eager-load `river.region` wherever spots are
   listed. The header menu lists each region's main rivers grouped by `catchment` (`Region::riversByCatchment()`)
   and the search box queries `/search`.
+- Listings read `RegionSummary` (plain-value `RiverSummary` and `SpotSummary` objects) from `RegionSummaries`, which
+  ingest and positioning commands refresh after every run; the region page, live bar and API region endpoint never
+  unserialise full conditions. Add listing facts to `SpotSummary::fromConditions()`.
 - `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL). Ingest and
   positioning commands call `flush()`. The cache stores objects, so any new class reachable from `SpotConditions`
   must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Keys also

@@ -1,12 +1,19 @@
+@props(['title' => null, 'description' => null, 'region' => null])
+
+@php
+    // The live bar shows the page's region, or the first region on pages that have none.
+    $liveRegion = $region ?? \App\Models\Region::query()->orderBy('name')->first();
+    $liveSummary = $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
+@endphp
 <!DOCTYPE html>
 <html lang="en-GB" class="h-full">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ isset($title) ? $title.' - ' : '' }}{{ config('app.name') }}</title>
-    @isset($description)
+    <title>{{ $title ? $title.' - ' : '' }}{{ config('app.name') }}</title>
+    @if ($description)
         <meta name="description" content="{{ $description }}">
-    @endisset
+    @endif
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,600,700|ibm-plex-mono:500|instrument-sans:400,500,600,700" rel="stylesheet">
     {{-- Apply the remembered theme before first paint so dark mode never flashes light. Light is the default. --}}
@@ -32,6 +39,10 @@
                         {{-- The panel starts flush with the button and carries its own top padding, so moving the mouse into it never leaves the menu. --}}
                         <div class="absolute left-0 top-full z-20 w-max max-w-[calc(100vw-2rem)] pt-2">
                             <div class="flex flex-wrap gap-x-8 gap-y-4 rounded-lg border border-line bg-surface p-4 shadow-lg">
+                                <div class="basis-full border-b border-line-2 pb-3">
+                                    <a href="{{ route('regions.show', $navRegion) }}" class="font-semibold text-ink hover:underline">{{ $navRegion->name }} overview</a>
+                                    <span class="text-xs text-muted"> map, river strips and every spot</span>
+                                </div>
                                 @foreach ($navRegion->riversByCatchment() as $catchment => $rivers)
                                     <div>
                                         <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-faint">{{ $catchment }}</p>
@@ -63,6 +74,9 @@
                 </button>
             </div>
         </div>
+        @if ($liveSummary)
+            <x-live-bar :summary="$liveSummary" />
+        @endif
     </header>
 
     <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8">

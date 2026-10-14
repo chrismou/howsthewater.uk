@@ -184,3 +184,32 @@ it('lists active upstream monitors with duration and spill counts, and tucks qui
         ->assertSee('Copy link')
         ->assertSee('openstreetmap.org/?mlat=');
 });
+
+it('shows the region page with river strips, catchment tables and the right now panel', function () {
+    [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley', 'river_metres' => 50000], ['name' => 'River Wharfe', 'slug' => 'wharfe', 'catchment' => 'Yorkshire Ouse', 'length_metres' => 100000]);
+    $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $monitor->id]);
+
+    $this->get(route('regions.show', $region))
+        ->assertOk()
+        ->assertSee('Every river, source to mouth')
+        ->assertSee('Yorkshire Ouse')
+        ->assertSee('Right now')
+        ->assertSeeInOrder(['Discharging now', 'Otley'])
+        ->assertSee('/yorkshire/wharfe/otley')
+        ->assertSee('data-map-centrelines', false);
+});
+
+it('shows the live bar for the region on every page', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $monitor->id]);
+
+    $this->get(route('home'))->assertOk()->assertSee('data-live-bar', false)->assertSee('>1</span> overflow discharging now', false);
+    $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertSee('data-live-bar', false);
+    $this->get(route('search', ['q' => 'x']))->assertOk()->assertSee('data-live-bar', false);
+});
+
+it('404s an unknown region', function () {
+    $this->get('/narnia')->assertNotFound();
+});

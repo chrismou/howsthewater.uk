@@ -31,6 +31,7 @@ function markerFor(marker) {
 export function initMaps() {
     document.querySelectorAll('[data-map]').forEach((element) => {
         const centreline = JSON.parse(element.dataset.mapCentreline || '[]');
+        const centrelines = JSON.parse(element.dataset.mapCentrelines || '[]');
         const markers = JSON.parse(element.dataset.mapMarkers || '[]');
 
         const map = L.map(element, { scrollWheelZoom: false });
@@ -42,9 +43,11 @@ export function initMaps() {
 
         const layers = [];
 
-        if (centreline.length > 1) {
-            layers.push(L.polyline(centreline, { color: '#1f5f8b', weight: 2, opacity: 0.7 }).addTo(map));
-        }
+        [centreline, ...centrelines].forEach((line) => {
+            if (line.length > 1) {
+                layers.push(L.polyline(line, { color: '#1f5f8b', weight: 2, opacity: 0.7 }).addTo(map));
+            }
+        });
 
         markers.forEach((marker) => {
             const layer = markerFor(marker).addTo(map);

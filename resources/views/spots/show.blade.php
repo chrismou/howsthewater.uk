@@ -42,14 +42,14 @@
     $osmUrl = sprintf('https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=15/%s/%s', $spot->latitude, $spot->longitude, $spot->latitude, $spot->longitude);
 @endphp
 
-<x-layouts.app :title="$spot->name.', '.$spot->river->name.': spills and river level'"
+<x-layouts.app :region="$spot->river->region" :title="$spot->name.', '.$spot->river->name.': spills and river level'"
                :description="'Storm overflow spills upstream of '.$spot->name.' on the '.$spot->river->name.', plus the current river level and trend.'">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm text-muted">
                 <a href="{{ route('home') }}" class="hover:underline">All regions</a>
                 <span class="mx-1">/</span>
-                <a href="{{ route('home') }}" class="hover:underline">{{ $spot->river->region->name }}</a>
+                <a href="{{ route('regions.show', $spot->river->region) }}" class="hover:underline">{{ $spot->river->region->name }}</a>
                 <span class="mx-1">/</span>
                 <a href="{{ route('rivers.show', [$spot->river->region, $spot->river]) }}" class="hover:underline">{{ $spot->river->name }}</a>
             </p>

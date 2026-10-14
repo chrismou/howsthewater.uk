@@ -125,6 +125,8 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 ## API
 
 - `GET /api/v1/regions`: regions with their rivers and links.
+- `GET /api/v1/regions/{region}`: the region summary: headline numbers plus every river and spot with its spill status,
+  level and rainfall, refreshed after each ingest run.
 - `GET /api/v1/regions/{region}/rivers` and `GET /api/v1/regions/{region}/rivers/{river}`: river overview with every
   spot's conditions.
 - `GET /api/v1/regions/{region}/spots` and `GET /api/v1/regions/{region}/rivers/{river}/spots/{spot}`: a spot's spill

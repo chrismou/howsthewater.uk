@@ -122,3 +122,17 @@ it('includes rainfall at the nearest rain gauge', function () {
         ->assertJsonPath('data.rainfall.last_24_hours_mm', 3.2)
         ->assertJsonPath('data.rainfall.stale', false);
 });
+
+it('returns a region summary', function () {
+    [$region, $river, $spot] = apiSpot(['slug' => 'otley', 'river_metres' => 50000], ['slug' => 'wharfe']);
+    OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+
+    $this->getJson(route('api.v1.regions.show', $region))
+        ->assertOk()
+        ->assertJsonPath('data.slug', 'yorkshire')
+        ->assertJsonPath('data.discharging_now', 1)
+        ->assertJsonPath('data.rivers.0.slug', 'wharfe')
+        ->assertJsonPath('data.rivers.0.spots.0.slug', 'otley')
+        ->assertJsonPath('data.rivers.0.spots.0.spills.recency', 'discharging_now')
+        ->assertJsonPath('data.rivers.0.spots.0.url', route('api.v1.spots.show', [$region, $river, $spot]));
+});

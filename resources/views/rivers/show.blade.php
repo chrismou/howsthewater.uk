@@ -9,10 +9,10 @@
     ])->values();
 @endphp
 
-<x-layouts.app :title="$overview->river->name.' spills and levels'"
+<x-layouts.app :region="$overview->river->region" :title="$overview->river->name.' spills and levels'"
                :description="'Upstream storm overflow spills and river levels for spots along the '.$overview->river->name.', source to mouth.'">
     <div class="mb-6">
-        <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">All rivers</a></p>
+        <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">All regions</a> <span class="mx-1">/</span> <a href="{{ route('regions.show', $overview->river->region) }}" class="hover:underline">{{ $overview->river->region->name }}</a></p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">{{ $overview->river->name }}</h1>
         <p class="mt-2 text-ink-2">
             {{ $overview->monitorCount }} storm overflow monitors discharge into the {{ $overview->river->name }},
