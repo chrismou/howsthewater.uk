@@ -224,5 +224,7 @@ php artisan rivers:positions
   `github-howsthewater` SSH alias. Permissions follow the shared `www-data` group model: `writable_mode` is `chmod`,
   `writable_recursive` is off, the release is made read-only after the build, and file log channels set
   `'permission' => 0660` so web requests and deploy-time artisan can share a log file.
+- Every deploy runs `db:seed`, `rivers:centrelines` and `rivers:positions` after `migrate`, so a seeded river goes
+  live on push as long as the GeoPackage is on the server. Gauge discovery is left to the weekly schedule.
 - Server provisioning (users, PHP-FPM, nginx, deploy keys, GitHub environment) lives in the `opendata-ansible` repo.
   Nothing is deployed by hand; never run `composer update` or merge on the server.

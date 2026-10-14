@@ -114,6 +114,9 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 4. Run `php artisan db:seed`, then `rivers:centrelines`, `ingest:gauges --stations` and `rivers:positions`. The
    positions step also records where each tributary joins its parent and links each spot to its nearest gauge,
    preferring gauges that report stage in metres over ones reporting height above sea level (mAOD).
+5. Push. The deploy runs the seeders, centrelines and positions itself (the GeoPackage must already be on the
+   server). Gauges for the new river are picked up by the weekly `ingest:gauges --stations` run, or sooner if you
+   run it by hand.
 
 ## API
 

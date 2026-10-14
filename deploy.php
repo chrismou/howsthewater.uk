@@ -58,5 +58,16 @@ after('npm:install', 'npm:build');
 after('npm:build', 'deploy:harden_release');
 after('deploy:failed', 'deploy:unlock');
 
+// Seed rivers and spots, import missing centrelines and position everything on each deploy, so adding a seeded
+// river needs no manual step. All three are idempotent: the seeders upsert by slug and centrelines are only
+// fetched for rivers that lack one. Gauge discovery stays on its weekly schedule as it backfills readings.
+task('artisan:rivers:centrelines', artisan('rivers:centrelines', ['skipIfNoEnv', 'showOutput']))
+    ->desc('Import centrelines for rivers that do not have one yet');
+task('artisan:rivers:positions', artisan('rivers:positions', ['skipIfNoEnv']))
+    ->desc('Position monitors, gauges and spots along each river');
+
 // Run migrate before cache clear to prevent errors on first run where DB cache clears before DB exists
-after('artisan:migrate', 'artisan:cache:clear');
+after('artisan:migrate', 'artisan:db:seed');
+after('artisan:db:seed', 'artisan:rivers:centrelines');
+after('artisan:rivers:centrelines', 'artisan:rivers:positions');
+after('artisan:rivers:positions', 'artisan:cache:clear');

@@ -30,7 +30,7 @@ class FetchRiverCentrelines extends Command
 
         foreach ($rivers as $river) {
             if ($river->hasCentreline() && ! $this->option('force')) {
-                $this->line("{$river->name}: already has a centreline, skipping.");
+                $this->line("{$river->name}: already has a centreline, skipping.", verbosity: 'v');
 
                 continue;
             }
