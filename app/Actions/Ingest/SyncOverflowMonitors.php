@@ -7,6 +7,7 @@ use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
 use App\Models\SpillEvent;
 use App\Services\Stream\StormOverflowClient;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -33,7 +34,7 @@ class SyncOverflowMonitors
     public function sync(Collection $monitors): array
     {
         $existing = OverflowMonitor::query()
-            ->with('openSpillEvent')
+            ->with('openSpillEvents')
             ->get()
             ->keyBy('external_id');
 
@@ -46,6 +47,7 @@ class SyncOverflowMonitors
 
             if ($monitor === null) {
                 $monitor = new OverflowMonitor(['external_id' => $data->externalId]);
+                $monitor->setRelation('openSpillEvents', new EloquentCollection);
             }
 
             $monitor->fill([
@@ -71,8 +73,10 @@ class SyncOverflowMonitors
 
     /**
      * The feed only exposes the latest event per monitor, so each sync
-     * records that event if unseen and closes any open event once the
-     * feed reports an end time.
+     * records that event if unseen, closes it once the monitor stops
+     * discharging, and closes any older event still open. An event is never
+     * left open on a monitor that is not discharging, even when the feed
+     * gives no end time, or it would count as an ongoing spill forever.
      *
      * @return array{0: int, 1: int}
      */
@@ -80,32 +84,35 @@ class SyncOverflowMonitors
     {
         $opened = 0;
         $closed = 0;
+        $latest = null;
 
         if ($data->latestEventStartedAt !== null) {
-            $event = SpillEvent::query()->firstOrNew([
+            $latest = SpillEvent::query()->firstOrNew([
                 'overflow_monitor_id' => $monitor->id,
                 'started_at' => $data->latestEventStartedAt,
             ]);
 
-            if (! $event->exists) {
+            $wasOpen = ! $latest->exists || $latest->ended_at === null;
+
+            if (! $latest->exists) {
                 $opened++;
             }
 
-            $endedAt = $this->resolveEndedAt($data);
+            $latest->ended_at = $this->resolveEndedAt($data);
 
-            if ($event->exists && $event->ended_at === null && $endedAt !== null) {
+            if ($latest->exists && $wasOpen && $latest->ended_at !== null) {
                 $closed++;
             }
 
-            $event->ended_at = $endedAt;
-            $event->save();
+            $latest->save();
         }
 
-        /** @var SpillEvent|null $open */
-        $open = $monitor->openSpillEvent;
+        foreach ($monitor->openSpillEvents as $open) {
+            if ($latest !== null && $open->is($latest)) {
+                continue;
+            }
 
-        if ($open !== null && $data->status !== OverflowStatus::Discharging && ! $open->started_at->equalTo($data->latestEventStartedAt)) {
-            $open->update(['ended_at' => $data->statusStartedAt ?? now()]);
+            $open->update(['ended_at' => $this->fallbackEndedAt($data)->max($open->started_at)]);
             $closed++;
         }
 
@@ -123,6 +130,20 @@ class SyncOverflowMonitors
             return $data->latestEventEndedAt;
         }
 
-        return null;
+        return $this->fallbackEndedAt($data)->max($data->latestEventStartedAt);
+    }
+
+    /**
+     * The best estimate of when an event ended when the feed does not say:
+     * the start of the next event while discharging, otherwise when the
+     * monitor's status last changed.
+     */
+    private function fallbackEndedAt(OverflowMonitorData $data): Carbon
+    {
+        if ($data->status === OverflowStatus::Discharging) {
+            return $data->latestEventStartedAt ?? now();
+        }
+
+        return $data->statusStartedAt ?? $data->sourceUpdatedAt ?? now();
     }
 }

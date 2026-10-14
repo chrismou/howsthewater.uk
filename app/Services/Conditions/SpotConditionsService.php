@@ -6,6 +6,7 @@ use App\Data\SpotConditions;
 use App\Data\UpstreamMonitorSummary;
 use App\Enums\OverflowStatus;
 use App\Enums\SpillRecency;
+use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
 use Illuminate\Support\Carbon;
@@ -31,22 +32,37 @@ class SpotConditionsService
     }
 
     /**
+     * Conditions for several spots, read from the cache in one round trip.
+     *
+     * @param  Collection<int, Spot>  $spots
+     * @return Collection<int, SpotConditions>
+     */
+    public function forMany(Collection $spots): Collection
+    {
+        return $this->cache->rememberSpots($spots, fn (Spot $spot) => $this->build($spot));
+    }
+
+    /**
      * Computes conditions from the database, bypassing the cache.
      */
     public function build(Spot $spot): SpotConditions
     {
         $spot->loadMissing(['river.region', 'gaugeStation', 'rainfallStation']);
+        $spot->setRelation('river', $this->withoutCentreline($spot->river));
 
         $monitors = $this->upstreamMonitors->for($spot);
         $recentEvents = $this->spillHistory->recentEvents($monitors);
 
-        $dischargingNow = $monitors->filter(fn (UpstreamMonitorSummary $summary) => $summary->status === OverflowStatus::Discharging)->count();
+        $byStatus = fn (OverflowStatus $status) => $monitors->filter(fn (UpstreamMonitorSummary $summary) => $summary->status === $status)->count();
+        $dischargingNow = $byStatus(OverflowStatus::Discharging);
+        $offline = $byStatus(OverflowStatus::Offline);
 
         return new SpotConditions(
             spot: $spot,
-            spillRecency: $this->spillRecency($monitors, $dischargingNow),
+            spillRecency: $this->spillRecency($monitors, $dischargingNow, $offline),
             upstreamMonitors: $monitors,
             dischargingNowCount: $dischargingNow,
+            offlineCount: $offline,
             spillsLast48HoursCount: $this->countEventsSince($recentEvents, now()->subHours(48)),
             spillsLast30DaysCount: $recentEvents->count(),
             recentSpillEvents: $recentEvents,
@@ -55,6 +71,20 @@ class SpotConditionsService
             rainfall: $spot->rainfallStation !== null ? $this->rainfallSummariser->summarise($spot, $spot->rainfallStation) : null,
             dataUpdatedAt: $monitors->max(fn (UpstreamMonitorSummary $summary) => $summary->monitor->source_updated_at),
         );
+    }
+
+    /**
+     * A copy of the river without its centreline, so the result stays small
+     * enough to cache. The caller's own river instance is left intact, as
+     * pages still need the centreline for their map.
+     */
+    private function withoutCentreline(River $river): River
+    {
+        $attributes = $river->getAttributes();
+        unset($attributes['centreline']);
+
+        // Sync the originals too, or the model keeps a second copy of the centreline there.
+        return (clone $river)->setRawAttributes($attributes, sync: true);
     }
 
     /**
@@ -70,7 +100,7 @@ class SpotConditionsService
     /**
      * @param  Collection<int, UpstreamMonitorSummary>  $monitors
      */
-    private function spillRecency(Collection $monitors, int $dischargingNow): SpillRecency
+    private function spillRecency(Collection $monitors, int $dischargingNow, int $offline): SpillRecency
     {
         if ($monitors->isEmpty()) {
             return SpillRecency::NoData;
@@ -86,6 +116,11 @@ class SpotConditionsService
 
         if ($monitors->contains(fn (UpstreamMonitorSummary $summary) => $summary->spilledSince(now()->subHours(48)))) {
             return SpillRecency::Within48Hours;
+        }
+
+        // Every monitor being offline is an absence of data, not a clean bill, so it must not read as one.
+        if ($offline === $monitors->count()) {
+            return SpillRecency::Offline;
         }
 
         return SpillRecency::None;

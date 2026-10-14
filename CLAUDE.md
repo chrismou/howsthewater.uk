@@ -168,6 +168,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
   recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
   (`rivers:centrelines` then `rivers:positions`, which also sets each tributary's `joins_at_metres`).
+- `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
+  green "no spills". Keep that distinction for any new status.
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed.
 - Rivers belong to a `Region` and URLs are region-scoped (`/{region}/{river}/{spot}`, API `/api/v1/regions/...`) with
   `scopeBindings()`, because river and spot names repeat across Britain; slugs are unique per region and per river.
@@ -178,7 +180,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   positioning commands call `flush()`. The cache stores objects, so any new class reachable from `SpotConditions`
   must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Keys also
   carry a hash of those classes' source, so a deploy that changes their shape never reads the old release's entries.
-  Use `build()` in tests that change data between calls.
+  Use `build()` in tests that change data between calls. Rivers inside cached conditions are loaded with
+  `withoutCentreline()` (or a slim clone of the bound river), so pages take the centreline for their map from the
+  route-bound river, never from `$conditions->spot->river`.
 - Gauges carry a `unit` (`m` for stage above the gauge datum, `mAOD` for height above sea level). Spots prefer `m`
   gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
 - Stale data: `SpotConditions::overflowDataIsStale()` and `LevelSummary::isStale()` compare the feed timestamp or latest

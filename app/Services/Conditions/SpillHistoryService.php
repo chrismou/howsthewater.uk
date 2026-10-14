@@ -36,7 +36,7 @@ class SpillHistoryService
         return SpillEvent::query()
             ->whereIn('overflow_monitor_id', $monitorIds)
             ->where(fn ($query) => $query->whereNull('ended_at')->orWhere('ended_at', '>=', $since))
-            ->with('overflowMonitor.river')
+            ->with(['overflowMonitor.river' => fn ($query) => $query->withoutCentreline()])
             ->orderByDesc('started_at')
             ->get();
     }

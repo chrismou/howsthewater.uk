@@ -29,6 +29,7 @@ class SpotConditionsResource extends JsonResource
                 'recency' => $this->spillRecency->value,
                 'summary' => $this->spillRecency->label(),
                 'discharging_now' => $this->dischargingNowCount,
+                'offline' => $this->offlineCount,
                 'last_48_hours' => $this->spillsLast48HoursCount,
                 'last_30_days' => $this->spillsLast30DaysCount,
             ],

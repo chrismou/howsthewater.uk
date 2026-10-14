@@ -16,6 +16,6 @@ class SpotController extends Controller
 
         $spot->setRelation('river', $river->setRelation('region', $region));
 
-        return view('spots.show', ['conditions' => $conditions->for($spot)]);
+        return view('spots.show', ['conditions' => $conditions->for($spot), 'river' => $river]);
     }
 }

@@ -105,3 +105,38 @@ it('follows pagination when the feed exceeds the transfer limit', function () {
     expect($result['monitors'])->toBe(2)
         ->and(OverflowMonitor::query()->count())->toBe(2);
 });
+
+it('closes an event when the monitor stops discharging without the feed giving an end time', function () {
+    Http::fake([
+        'services-eu1.arcgis.com/*' => Http::sequence()
+            ->push(['features' => [arcGisFeature(['Status' => 1, 'StatusStart' => 1760100000000, 'LatestEventStart' => 1760100000000, 'LatestEventEnd' => null])]])
+            ->push(['features' => [arcGisFeature(['Status' => 0, 'StatusStart' => 1760107200000, 'LatestEventStart' => 1760100000000, 'LatestEventEnd' => null])]]),
+    ]);
+
+    app(SyncOverflowMonitors::class)->handle();
+    $result = app(SyncOverflowMonitors::class)->handle();
+
+    $event = SpillEvent::query()->firstOrFail();
+
+    expect($result['events_closed'])->toBe(1)
+        ->and($event->ended_at->timestamp)->toBe(1760107200)
+        ->and(OverflowMonitor::query()->firstOrFail()->openSpillEvents)->toBeEmpty();
+});
+
+it('closes an older open event when a new one starts while still discharging', function () {
+    Http::fake([
+        'services-eu1.arcgis.com/*' => Http::sequence()
+            ->push(['features' => [arcGisFeature(['Status' => 1, 'StatusStart' => 1760100000000, 'LatestEventStart' => 1760100000000, 'LatestEventEnd' => null])]])
+            ->push(['features' => [arcGisFeature(['Status' => 1, 'StatusStart' => 1760110000000, 'LatestEventStart' => 1760110000000, 'LatestEventEnd' => null])]]),
+    ]);
+
+    app(SyncOverflowMonitors::class)->handle();
+    $result = app(SyncOverflowMonitors::class)->handle();
+
+    $events = SpillEvent::query()->orderBy('started_at')->get();
+
+    expect($result)->toMatchArray(['events_opened' => 1, 'events_closed' => 1])
+        ->and($events)->toHaveCount(2)
+        ->and($events[0]->ended_at->timestamp)->toBe(1760110000)
+        ->and($events[1]->ended_at)->toBeNull();
+});

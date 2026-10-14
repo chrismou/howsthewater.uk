@@ -224,3 +224,35 @@ it('keys cached conditions by the code that wrote them', function () {
         ->and(Cache::has("conditions:v1:{$codeVersion}:spot:{$spot->id}"))->toBeTrue()
         ->and(Cache::has("conditions:v1:spot:{$spot->id}"))->toBeFalse();
 });
+
+it('reports offline rather than no spills when every upstream monitor is offline', function () {
+    [$spot, $upstream] = spotWithUpstream();
+    $upstream->update(['status' => -1]);
+
+    $conditions = app(SpotConditionsService::class)->build($spot);
+
+    expect($conditions->spillRecency)->toBe(SpillRecency::Offline)
+        ->and($conditions->offlineCount)->toBe(1);
+
+    OverflowMonitor::factory()->create(['river_id' => $spot->river_id, 'river_metres' => 30000]);
+
+    $conditions = app(SpotConditionsService::class)->build($spot);
+
+    expect($conditions->spillRecency)->toBe(SpillRecency::None)
+        ->and($conditions->offlineCount)->toBe(1);
+});
+
+it('caches conditions without river centrelines', function () {
+    $river = River::factory()->withCentreline()->create();
+    $tributary = River::factory()->withCentreline()->tributaryOf($river, 40000)->create(['length_metres' => 8000]);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'river_metres' => 50000]);
+    OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'river_metres' => 1000]);
+
+    $conditions = app(SpotConditionsService::class)->build($spot);
+
+    expect($conditions->spot->river->getAttributes())->not->toHaveKey('centreline')
+        ->and($conditions->spot->river->getRawOriginal())->not->toHaveKey('centreline')
+        ->and($conditions->upstreamMonitors->first()->river->getAttributes())->not->toHaveKey('centreline')
+        ->and($spot->river->centreline)->toBeNull()
+        ->and($river->centreline)->not->toBeNull();
+});

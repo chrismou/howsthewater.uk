@@ -5,35 +5,42 @@ namespace App\Http\Controllers;
 use App\Models\River;
 use App\Models\Spot;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
  * Finds spots and rivers by name, so a town name gets someone to the right
- * page without knowing which river runs through it.
+ * page without knowing which river runs through it. There are only a few
+ * hundred names, so matching happens in PHP: it is case-insensitive on
+ * every database and treats wildcard characters literally.
  */
 class SearchController extends Controller
 {
     private const MAX_RESULTS = 25;
 
+    private const MAX_QUERY_LENGTH = 100;
+
     public function __invoke(Request $request): View
     {
-        $query = trim((string) $request->query('q', ''));
+        $query = Str::limit(trim((string) $request->query('q', '')), self::MAX_QUERY_LENGTH, '');
+        $matches = fn (string $name) => $query !== '' && Str::contains($name, $query, ignoreCase: true);
 
-        $spots = $query === '' ? collect() : Spot::query()
+        $spots = Spot::query()
             ->published()
-            ->whereLike('name', "%{$query}%")
             ->with('river.region')
             ->orderBy('name')
-            ->limit(self::MAX_RESULTS)
-            ->get();
+            ->get()
+            ->filter(fn (Spot $spot) => $matches($spot->name))
+            ->take(self::MAX_RESULTS);
 
-        $rivers = $query === '' ? collect() : River::query()
+        $rivers = River::query()
             ->main()
-            ->whereLike('name', "%{$query}%")
+            ->withoutCentreline()
             ->with('region')
             ->orderBy('name')
-            ->limit(self::MAX_RESULTS)
-            ->get();
+            ->get()
+            ->filter(fn (River $river) => $matches($river->name))
+            ->take(self::MAX_RESULTS);
 
         return view('search', ['query' => $query, 'spots' => $spots, 'rivers' => $rivers]);
     }

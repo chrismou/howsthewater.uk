@@ -48,7 +48,14 @@ export function initMaps() {
 
         markers.forEach((marker) => {
             const layer = markerFor(marker).addTo(map);
-            const label = marker.url ? `<a href="${marker.url}">${marker.label}</a>` : marker.label;
+            // Labels carry feed-supplied text, so build the popup from DOM nodes rather than an HTML string.
+            const label = document.createElement(marker.url ? 'a' : 'span');
+            label.textContent = marker.label;
+
+            if (marker.url) {
+                label.href = marker.url;
+            }
+
             layer.bindPopup(label);
             layers.push(layer);
         });

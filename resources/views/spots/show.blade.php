@@ -78,7 +78,12 @@
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-stone-500">Upstream monitors</dt>
-                <dd class="mt-1 text-2xl font-semibold">{{ $conditions->upstreamMonitors->count() }}</dd>
+                <dd class="mt-1 text-2xl font-semibold">
+                    {{ $conditions->upstreamMonitors->count() }}
+                    @if ($conditions->offlineCount > 0)
+                        <span class="text-sm font-normal text-stone-500">{{ $conditions->offlineCount }} offline</span>
+                    @endif
+                </dd>
             </div>
         </dl>
     </section>
@@ -88,7 +93,7 @@
             <div
                 class="h-80 w-full rounded-lg border border-stone-200"
                 data-map
-                data-map-centreline="{{ json_encode($spot->river->centreline ?? []) }}"
+                data-map-centreline="{{ json_encode($river->centreline ?? []) }}"
                 data-map-markers="{{ json_encode($mapMarkers) }}"
             ></div>
 

@@ -15,6 +15,9 @@ use Illuminate\Support\Collection;
  */
 class RiverOverviewService
 {
+    /** @var array<int, array<int, int>>|null Tributary ids keyed by parent river id */
+    private ?array $childrenByParent = null;
+
     public function __construct(private SpotConditionsService $spotConditions) {}
 
     /**
@@ -37,16 +40,33 @@ class RiverOverviewService
     }
 
     /**
-     * The river plus all its tributaries, recursively.
+     * The river plus all its tributaries, recursively, from a single query
+     * over every river's parent. Each id is visited once, so a bad parent
+     * loop cannot recurse forever.
      *
      * @return array<int, int>
      */
     private function riverFamilyIds(River $river): array
     {
-        $ids = [$river->id];
+        $this->childrenByParent ??= River::query()
+            ->whereNotNull('parent_river_id')
+            ->get(['id', 'parent_river_id'])
+            ->groupBy('parent_river_id')
+            ->map(fn (Collection $children) => $children->pluck('id')->all())
+            ->all();
 
-        foreach ($river->tributaries as $tributary) {
-            $ids = [...$ids, ...$this->riverFamilyIds($tributary)];
+        $ids = [];
+        $queue = [$river->id];
+
+        while ($queue !== []) {
+            $id = array_shift($queue);
+
+            if (in_array($id, $ids, true)) {
+                continue;
+            }
+
+            $ids[] = $id;
+            $queue = [...$queue, ...($this->childrenByParent[$id] ?? [])];
         }
 
         return $ids;
@@ -60,7 +80,9 @@ class RiverOverviewService
             ->published()
             ->with(['gaugeStation', 'rainfallStation'])
             ->get()
-            ->map(fn (Spot $spot) => $this->spotConditions->for($spot->setRelation('river', $river)));
+            ->each(fn (Spot $spot) => $spot->setRelation('river', $river));
+
+        $spots = $this->spotConditions->forMany($spots);
 
         return new RiverOverview(
             river: $river,

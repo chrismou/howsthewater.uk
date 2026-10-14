@@ -61,6 +61,7 @@ it('returns full conditions for a spot', function () {
         ->assertJsonPath('data.spot.slug', 'ilkley')
         ->assertJsonPath('data.spills.recency', 'within_24_hours')
         ->assertJsonPath('data.spills.last_48_hours', 1)
+        ->assertJsonPath('data.spills.offline', 0)
         ->assertJsonPath('data.level', null)
         ->assertJsonPath('data.upstream_monitors.0.id', $monitor->external_id)
         ->assertJsonPath('data.upstream_monitors.0.river.slug', $river->slug)

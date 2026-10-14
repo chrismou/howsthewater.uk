@@ -135,6 +135,7 @@ River and spot slugs are only unique within their region and river, since names 
 
 Responses carry `Cache-Control: public, max-age=300` and an ETag, so a CDN in front of the site can cache them.
 
+`spills.offline` counts upstream monitors reporting offline; when all of them are, `spills.recency` is `offline`.
 `data_stale` is true when the overflow feed behind a spot's upstream monitors has not updated for 6 hours, and
 `level.stale` when the gauge's latest reading is that old. The site shows a warning in the same cases; treat the
 spill status and level as a snapshot from `data_updated_at` or `level.measured_at` rather than current.

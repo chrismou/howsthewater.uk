@@ -95,6 +95,19 @@ class River extends Model
         return $query->whereNull('parent_river_id');
     }
 
+    /**
+     * Every column except the centreline, which can run to thousands of
+     * points and is only needed for maps and positioning. Use this wherever
+     * rivers end up inside cached spot conditions.
+     *
+     * @param  Builder<River>  $query
+     * @return Builder<River>
+     */
+    public function scopeWithoutCentreline(Builder $query): Builder
+    {
+        return $query->select(['id', 'region_id', 'parent_river_id', 'name', 'slug', 'catchment', 'aliases', 'mouth_latitude', 'mouth_longitude', 'length_metres', 'joins_at_metres', 'created_at', 'updated_at']);
+    }
+
     public function isTributary(): bool
     {
         return $this->parent_river_id !== null;

@@ -136,3 +136,12 @@ it('shows rainfall at the nearest rain gauge', function () {
 
     $this->get(route('home'))->assertSee('3.3 mm rain in 24h');
 });
+
+it('treats search wildcards literally and caps the query length', function () {
+    [$region, $river] = spotWithUrl(['name' => 'Otley']);
+    Spot::factory()->create(['river_id' => $river->id, 'name' => 'Ilkley']);
+
+    $this->get(route('search', ['q' => '%']))->assertOk()->assertSee('Nothing matched');
+    $this->get(route('search', ['q' => '_tley']))->assertOk()->assertSee('Nothing matched');
+    $this->get(route('search', ['q' => str_repeat('a', 500)]))->assertOk()->assertSee('Nothing matched');
+});

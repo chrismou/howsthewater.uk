@@ -27,6 +27,7 @@ final readonly class SpotConditions
         public SpillRecency $spillRecency,
         public Collection $upstreamMonitors,
         public int $dischargingNowCount,
+        public int $offlineCount,
         public int $spillsLast48HoursCount,
         public int $spillsLast30DaysCount,
         public Collection $recentSpillEvents,

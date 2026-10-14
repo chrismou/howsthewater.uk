@@ -53,6 +53,7 @@ class UpstreamMonitorFinder
             ));
 
         $tributaries = $river->tributaries()
+            ->withoutCentreline()
             ->whereNotNull('joins_at_metres')
             ->whereNotNull('length_metres')
             ->where('joins_at_metres', '<=', $belowMetres)

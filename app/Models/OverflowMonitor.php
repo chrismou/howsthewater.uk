@@ -4,11 +4,11 @@ namespace App\Models;
 
 use App\Enums\OverflowStatus;
 use Database\Factories\OverflowMonitorFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read River|null $river
- * @property-read SpillEvent|null $openSpillEvent
+ * @property-read Collection<int, SpillEvent> $openSpillEvents
  */
 class OverflowMonitor extends Model
 {
@@ -75,10 +75,14 @@ class OverflowMonitor extends Model
         return $this->hasMany(SpillEvent::class)->orderByDesc('started_at');
     }
 
-    /** @return HasOne<SpillEvent, $this> */
-    public function openSpillEvent(): HasOne
+    /**
+     * Events the feed has not reported an end for. Normally at most one.
+     *
+     * @return HasMany<SpillEvent, $this>
+     */
+    public function openSpillEvents(): HasMany
     {
-        return $this->hasOne(SpillEvent::class)->whereNull('ended_at');
+        return $this->hasMany(SpillEvent::class)->whereNull('ended_at');
     }
 
     public function isDischarging(): bool

@@ -52,6 +52,7 @@ class Region extends Model
     {
         return $this->rivers()
             ->main()
+            ->withoutCentreline()
             ->get()
             ->toBase()
             ->groupBy(fn (River $river) => $river->catchment ?? $this->name)
