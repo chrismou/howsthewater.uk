@@ -42,6 +42,23 @@ class FloodMonitoringClient
     }
 
     /**
+     * One station by its reference, or null when the EA no longer lists it.
+     */
+    public function station(string $reference): ?GaugeStationData
+    {
+        $response = $this->request()->get($this->url('id/stations/'.rawurlencode($reference)));
+
+        if ($response->notFound()) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $item */
+        $item = $response->throw()->json('items', []);
+
+        return isset($item['lat'], $item['long']) ? GaugeStationData::fromEnvironmentAgency($item) : null;
+    }
+
+    /**
      * Rain gauges within a radius of a point.
      *
      * @return Collection<int, RainfallStationData>

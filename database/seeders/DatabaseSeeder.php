@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             RegionSeeder::class,
             RiverSeeder::class,
             SpotSeeder::class,
+            LakeSeeder::class,
         ]);
     }
 }

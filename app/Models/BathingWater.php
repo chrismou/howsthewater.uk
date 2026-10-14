@@ -1,0 +1,154 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\BathingWaterClassification;
+use App\Enums\BathingWaterKind;
+use App\Enums\PollutionRisk;
+use Database\Factories\BathingWaterFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+
+/**
+ * An Environment Agency designated bathing water. Beaches have their own
+ * pages; lake and river sites show on their lake or spot.
+ *
+ * @property int $id
+ * @property string $eubwid
+ * @property string $sampling_point
+ * @property int|null $region_id
+ * @property int|null $lake_id
+ * @property int|null $spot_id
+ * @property BathingWaterKind $kind
+ * @property string $name
+ * @property string $slug
+ * @property string|null $district
+ * @property string|null $sewerage_undertaker
+ * @property float $latitude
+ * @property float $longitude
+ * @property string|null $description
+ * @property BathingWaterClassification|null $classification
+ * @property int|null $classification_year
+ * @property PollutionRisk|null $risk_level
+ * @property Carbon|null $risk_expires_at
+ * @property bool $affected_by_heavy_rain
+ * @property Carbon|null $season_starts_on
+ * @property Carbon|null $season_ends_on
+ * @property Carbon|null $history_fetched_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Region|null $region
+ * @property-read Lake|null $lake
+ * @property-read Spot|null $spot
+ * @property-read Collection<int, BathingWaterSample> $samples
+ * @property-read Collection<int, BathingWaterClassificationRecord> $classifications
+ */
+class BathingWater extends Model
+{
+    /** @use HasFactory<BathingWaterFactory> */
+    use HasFactory;
+
+    protected $fillable = [
+        'eubwid',
+        'sampling_point',
+        'region_id',
+        'lake_id',
+        'spot_id',
+        'kind',
+        'name',
+        'slug',
+        'district',
+        'sewerage_undertaker',
+        'latitude',
+        'longitude',
+        'description',
+        'classification',
+        'classification_year',
+        'risk_level',
+        'risk_expires_at',
+        'affected_by_heavy_rain',
+        'season_starts_on',
+        'season_ends_on',
+        'history_fetched_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'kind' => BathingWaterKind::class,
+            'classification' => BathingWaterClassification::class,
+            'risk_level' => PollutionRisk::class,
+            'latitude' => 'float',
+            'longitude' => 'float',
+            'risk_expires_at' => 'datetime',
+            'affected_by_heavy_rain' => 'boolean',
+            'season_starts_on' => 'date',
+            'season_ends_on' => 'date',
+            'history_fetched_at' => 'datetime',
+        ];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /** @return BelongsTo<Region, $this> */
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class);
+    }
+
+    /** @return BelongsTo<Lake, $this> */
+    public function lake(): BelongsTo
+    {
+        return $this->belongsTo(Lake::class);
+    }
+
+    /** @return BelongsTo<Spot, $this> */
+    public function spot(): BelongsTo
+    {
+        return $this->belongsTo(Spot::class);
+    }
+
+    /** @return HasMany<BathingWaterSample, $this> */
+    public function samples(): HasMany
+    {
+        return $this->hasMany(BathingWaterSample::class)->orderByDesc('sampled_at');
+    }
+
+    /** @return HasMany<BathingWaterClassificationRecord, $this> */
+    public function classifications(): HasMany
+    {
+        return $this->hasMany(BathingWaterClassificationRecord::class)->orderByDesc('year');
+    }
+
+    /**
+     * Coastal and estuary bathing waters, which get their own pages.
+     *
+     * @param  Builder<BathingWater>  $query
+     * @return Builder<BathingWater>
+     */
+    public function scopeBeaches(Builder $query): Builder
+    {
+        return $query->whereIn('kind', [BathingWaterKind::Coastal->value, BathingWaterKind::Estuary->value]);
+    }
+
+    /**
+     * Whether today falls in the bathing season, when the EA samples weekly
+     * and publishes daily pollution risk forecasts.
+     */
+    public function isInSeason(?Carbon $on = null): bool
+    {
+        $on ??= now();
+
+        return $this->season_starts_on !== null
+            && $this->season_ends_on !== null
+            && $on->between($this->season_starts_on->copy()->startOfDay(), $this->season_ends_on->copy()->endOfDay());
+    }
+}

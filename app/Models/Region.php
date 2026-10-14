@@ -19,9 +19,12 @@ use Illuminate\Support\Collection as SupportCollection;
  * @property string $name
  * @property string $slug
  * @property array<int, string>|null $overflow_feeds Keys of services.stream.feeds
+ * @property array<int, string>|null $bathing_water_districts Districts whose coastal bathing waters belong here
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, River> $rivers
+ * @property-read Collection<int, Lake> $lakes
+ * @property-read Collection<int, BathingWater> $bathingWaters
  */
 class Region extends Model
 {
@@ -32,12 +35,14 @@ class Region extends Model
         'name',
         'slug',
         'overflow_feeds',
+        'bathing_water_districts',
     ];
 
     protected function casts(): array
     {
         return [
             'overflow_feeds' => 'array',
+            'bathing_water_districts' => 'array',
         ];
     }
 
@@ -85,6 +90,18 @@ class Region extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /** @return HasMany<Lake, $this> */
+    public function lakes(): HasMany
+    {
+        return $this->hasMany(Lake::class)->orderBy('name');
+    }
+
+    /** @return HasMany<BathingWater, $this> */
+    public function bathingWaters(): HasMany
+    {
+        return $this->hasMany(BathingWater::class)->orderBy('name');
     }
 
     /** @return HasMany<River, $this> */

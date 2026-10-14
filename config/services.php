@@ -74,6 +74,7 @@ return [
 
     'environment_agency' => [
         'flood_monitoring_url' => env('EA_FLOOD_MONITORING_URL', 'https://environment.data.gov.uk/flood-monitoring'),
+        'bathing_water_url' => env('EA_BATHING_WATER_URL', 'https://environment.data.gov.uk'),
     ],
 
     'ordnance_survey' => [
