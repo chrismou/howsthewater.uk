@@ -326,7 +326,8 @@ it('shows flood warnings on the spot, region and home pages and in the live bar'
         ->assertOk()
         ->assertSee('id="flood-warnings"', false)
         ->assertSeeInOrder(['Flood warning', 'Lower River Wharfe', 'Covers', 'Otley'])
-        ->assertSee('1 flood warning in force"', false);
+        ->assertSee('1 flood warning in force"', false)
+        ->assertSee('<span class="hidden sm:inline"><span class="font-mono font-semibold">0</span>', false);
 
     $this->get(route('home'))
         ->assertOk()
@@ -337,7 +338,8 @@ it('shows no flood warning blocks when none are in force', function () {
     [$region, $river, $spot] = spotWithUrl();
     FloodArea::factory()->hasAttached($spot)->create();
 
-    $this->get(route('regions.show', $region))->assertOk()->assertDontSee('id="flood-warnings"', false)->assertDontSee('in force');
+    $this->get(route('regions.show', $region))->assertOk()->assertDontSee('id="flood-warnings"', false)->assertDontSee('in force')
+        ->assertDontSee('<span class="hidden sm:inline"><span class="font-mono font-semibold">', false);
     $this->get(route('home'))->assertOk()->assertSee('recent rainfall and flood warnings for')->assertDontSee('role="alert"', false);
     $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertDontSee('aria-label="Flood warnings"', false);
 });
