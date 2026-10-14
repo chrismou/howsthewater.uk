@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 // Weekly re-checks sit off the minutes their frequent runs use, since the overlap lock is per command string.
@@ -14,8 +13,3 @@ Schedule::command('ingest:floods')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('ingest:floods --areas')->weeklyOn(1, '03:50');
 Schedule::command('ingest:bathing-waters')->hourly()->withoutOverlapping();
 Schedule::command('ingest:bathing-waters --history')->weeklyOn(1, '04:20');
-
-// Any scheduled run that exits with a failure is logged as an error, which reaches Rollbar in production.
-foreach (Schedule::events() as $event) {
-    $event->onFailure(fn () => Log::error("Scheduled command failed: {$event->getSummaryForDisplay()}"));
-}

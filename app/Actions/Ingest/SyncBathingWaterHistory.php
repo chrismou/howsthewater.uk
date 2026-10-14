@@ -7,6 +7,7 @@ use App\Services\EnvironmentAgency\BathingWaterClient;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Sleep;
 
 /**
  * Backfills each site's recent samples and its yearly classifications.
@@ -15,6 +16,12 @@ use Illuminate\Support\Facades\Log;
  */
 class SyncBathingWaterHistory
 {
+    /**
+     * Each site takes two requests, so a first run over every site would
+     * otherwise hit the EA in a burst its firewall may refuse.
+     */
+    private const PAUSE_BETWEEN_SITES_MILLISECONDS = 500;
+
     public function __construct(private BathingWaterClient $client, private SyncBathingWaters $sync)
     {
     }
@@ -31,7 +38,11 @@ class SyncBathingWaterHistory
         $samples = 0;
         $failed = [];
 
-        foreach ($bathingWaters as $bathingWater) {
+        foreach ($bathingWaters as $index => $bathingWater) {
+            if ($index > 0) {
+                Sleep::for(self::PAUSE_BETWEEN_SITES_MILLISECONDS)->milliseconds();
+            }
+
             // One site's request failing must not stop the rest.
             try {
                 $samples += $this->sync->storeSamples($bathingWater, $this->client->samples($bathingWater->eubwid));

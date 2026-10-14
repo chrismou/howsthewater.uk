@@ -254,9 +254,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   keeps it current. Forecasts only run 15 May to 30 Sep; `BathingWaterSummary::currentRisk()` returns null outside the
   season or once the forecast expires. Copy reports classifications, counts and forecasts, never that water is safe.
 - Ingest failures are logged at `error` level, which the `rollbar` log channel forwards in production (it ignores
-  anything below `error`). A failing feed, river or flood area search logs its own error, and `routes/console.php`
-  adds an `onFailure()` hook to every scheduled command so any non-zero exit is reported too. Keep new ingest
-  failures at `error` or they will not be seen.
+  anything below `error`). A failing feed, river, flood area search or bathing water request logs its own error, and
+  Laravel's scheduler itself reports any scheduled command that exits non-zero, so don't add `onFailure()` hooks for
+  that (they duplicate it). Keep new ingest failures at `error` or they will not be seen.
 
 ## Local setup
 

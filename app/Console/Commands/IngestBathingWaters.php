@@ -35,8 +35,16 @@ class IngestBathingWaters extends Command
             Log::error("Lake gauge lookup failed: {$exception->getMessage()}");
         }
 
-        $result = $sync->handle();
-        $this->info(sprintf('%d bathing waters updated, %d new samples.', $result['sites'], $result['samples']));
+        // The register sits behind the EA's firewall, which occasionally refuses a request; log it once and carry on.
+        try {
+            $result = $sync->handle();
+            $this->info(sprintf('%d bathing waters updated, %d new samples.', $result['sites'], $result['samples']));
+        } catch (ConnectionException|RequestException $exception) {
+            $failed = true;
+            $reason = $exception instanceof RequestException ? "HTTP {$exception->response->status()}" : $exception->getMessage();
+            $this->error("Bathing water register request failed, {$reason}");
+            Log::error("Bathing water register request failed: {$reason}");
+        }
 
         $backfill = $history->handle(onlyNeverFetched: ! $this->option('history'));
 

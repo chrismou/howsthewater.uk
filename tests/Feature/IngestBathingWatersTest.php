@@ -11,6 +11,7 @@ use App\Models\River;
 use App\Models\Spot;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Sleep;
 
 function bathingWaterItem(string $id, string $name, string $type, array $districts, float $lat, float $lng): array
 {
@@ -131,4 +132,33 @@ it('gives a second site with the same name in a region its own slug', function (
     $this->artisan('ingest:bathing-waters')->assertSuccessful();
 
     expect(BathingWater::query()->orderBy('eubwid')->pluck('slug')->all())->toBe(['filey', 'filey-02000']);
+});
+
+it('logs one clear error when the register request is refused, and still backfills history', function () {
+    Sleep::fake();
+    Log::spy();
+    $site = BathingWater::factory()->create(['history_fetched_at' => null]);
+
+    Http::fake([
+        'environment.data.gov.uk/doc/bathing-water.json*' => Http::response('<html>403 Forbidden</html>', 403),
+        'environment.data.gov.uk/doc/bathing-water-quality/*' => Http::response(['result' => ['items' => []]]),
+        'environment.data.gov.uk/data/bathing-water-quality/*' => Http::response(['result' => ['items' => []]]),
+    ]);
+
+    $this->artisan('ingest:bathing-waters')
+        ->expectsOutputToContain('Bathing water register request failed, HTTP 403')
+        ->assertFailed();
+
+    Log::shouldHaveReceived('error')->once()->with('Bathing water register request failed: HTTP 403');
+    expect($site->fresh()->history_fetched_at)->not->toBeNull();
+});
+
+it('paces history requests between sites', function () {
+    Sleep::fake();
+    BathingWater::factory()->count(3)->create(['history_fetched_at' => null]);
+    fakeBathingWaterApi([]);
+
+    $this->artisan('ingest:bathing-waters')->assertSuccessful();
+
+    Sleep::assertSleptTimes(2);
 });
