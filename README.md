@@ -1,7 +1,7 @@
 # How's the Water?
 
 [howsthewater.uk](https://howsthewater.uk) shows upstream storm overflow spills and river levels for popular swimming,
-paddling and fishing spots on Yorkshire's rivers. Pick a spot and it tells you which sewage overflows upstream have
+paddling and fishing spots on rivers in Yorkshire, the Thames Valley and the North West. Pick a spot and it tells you which sewage overflows upstream have
 discharged recently, whether any are discharging now, and what the nearest river gauge is reading.
 
 It reports what the monitors say. It does not say whether the water is safe or clean, and all copy on the site should
@@ -9,7 +9,8 @@ keep that distinction.
 
 ## What it does
 
-- Polls Yorkshire Water's near real-time storm overflow feed (via the Stream open data hub) every 15 minutes and builds
+- Polls the water companies' near real-time storm overflow feeds (Yorkshire Water, Thames Water and United Utilities, via
+  the Stream open data hub) every 15 minutes and builds
   a spill history, since the feed only exposes each monitor's latest event.
 - Polls Environment Agency river level gauges every 15 minutes.
 - Polls the Environment Agency's flood alerts and warnings every 15 minutes and shows any in force for a flood area
@@ -24,7 +25,9 @@ Covered rivers are seeded by region in `database/seeders/RiverSeeder.php` and sp
 main rivers are the Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk and Hull. The Thames Valley has the
 Thames from its source to the tidal limit at Teddington, with the twenty-four tributaries that join above it (Churn, Coln,
 Windrush, Evenlode, Cherwell, Thame, Kennet and Lambourn, Loddon, the Colne with the Ver, Gade and Chess, Wey and Cranleigh
-Waters, Mole and others). Each main river carries the named
+Waters, Mole and others). The North West has the Ribble, Lune, Kent, Eden and Cumbrian Derwent, with the tributaries that
+hold United Utilities monitors (the Lancashire Calder with Pendle Water, the Darwen and Blakewater, the Wenning, two
+Gretas, the Eamont, Irthing, Petteril and Caldew and others). Each main river carries the named
 tributaries that hold water company monitors (the Colne, Holme, Rother, Dearne, Sheaf, Loxley, Rye, Foss, Skell and around fifty becks and
 brooks). Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances
 follow the water down the tributary and then the main river.
@@ -164,3 +167,10 @@ vendor/bin/phpstan analyse
 ```
 
 Architecture notes for contributors (and AI agents) are in `CLAUDE.md`.
+
+## Changing production settings
+
+The deploy makes each release read-only to the web server, including `bootstrap/cache`, after writing every cache file
+Laravel needs. After editing the server's `.env`, run `php artisan optimize` as the deploy user in the current release.
+Do not run `php artisan optimize:clear` there: it deletes cache files the web server cannot recreate, and the site
+returns a 500 until `php artisan optimize` is run or the next deploy.

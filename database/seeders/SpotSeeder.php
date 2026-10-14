@@ -13,7 +13,7 @@ class SpotSeeder extends Seeder
      *
      * @var array<int, string>
      */
-    private const FEATURED = ['ilkley', 'bolton-abbey', 'burnsall', 'otley', 'knaresborough'];
+    private const FEATURED = ['ilkley', 'bolton-abbey', 'burnsall', 'otley', 'knaresborough', 'kirkby-lonsdale'];
 
     /**
      * Spots by region slug, then river slug, listed source to mouth.
@@ -26,6 +26,58 @@ class SpotSeeder extends Seeder
         return [
             'yorkshire' => self::yorkshire(),
             'thames-valley' => self::thamesValley(),
+            'north-west' => self::northWest(),
+        ];
+    }
+
+    /**
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function northWest(): array
+    {
+        return [
+            'ribble' => [
+                ['name' => 'Horton in Ribblesdale', 'latitude' => 54.1495, 'longitude' => -2.2964, 'description' => 'The upper Ribble by the village, below Pen-y-ghent.'],
+                ['name' => 'Stainforth Force', 'latitude' => 54.0980, 'longitude' => -2.2804, 'description' => 'Waterfall and plunge pool below the packhorse bridge.'],
+                ['name' => 'Settle', 'latitude' => 54.0688, 'longitude' => -2.2857, 'description' => 'Settle Bridge and the riverside path to Langcliffe.'],
+                ['name' => 'Sawley', 'latitude' => 53.9149, 'longitude' => -2.3449, 'description' => 'Below the abbey ruins.'],
+                ['name' => 'Edisford Bridge', 'latitude' => 53.8697, 'longitude' => -2.4159, 'description' => 'Riverside picnic area west of Clitheroe.'],
+                ['name' => 'Ribchester', 'latitude' => 53.8108, 'longitude' => -2.5311, 'description' => 'Roman fort village and riverside meadows.'],
+                ['name' => 'Avenham Park, Preston', 'latitude' => 53.7520, 'longitude' => -2.6965, 'description' => 'Park reach by the Old Tram Bridge, near the tidal limit.'],
+            ],
+            'lune' => [
+                ['name' => 'Tebay', 'latitude' => 54.4293, 'longitude' => -2.5976, 'description' => 'Where the Lune turns south into the Lune Gorge.'],
+                ['name' => 'Lincoln\'s Inn Bridge', 'latitude' => 54.3259, 'longitude' => -2.5677, 'description' => 'Rocky pools west of Sedbergh.'],
+                ['name' => 'Kirkby Lonsdale', 'latitude' => 54.2003, 'longitude' => -2.5892, 'description' => 'Devil\'s Bridge and its deep pools.'],
+                ['name' => 'Loyn Bridge', 'latitude' => 54.1185, 'longitude' => -2.6448, 'description' => 'Below Hornby, near where the Wenning joins.'],
+                ['name' => 'Crook o\' Lune', 'latitude' => 54.0843, 'longitude' => -2.7157, 'description' => 'Wooded loop and picnic area east of Lancaster.'],
+                ['name' => 'Halton', 'latitude' => 54.0750, 'longitude' => -2.7644, 'description' => 'Weir and riverside path at Halton.'],
+                ['name' => 'Lancaster', 'latitude' => 54.0547, 'longitude' => -2.8067, 'description' => 'Skerton weir, the tidal limit.'],
+            ],
+            'kent' => [
+                ['name' => 'Kentmere', 'latitude' => 54.4281, 'longitude' => -2.8394, 'description' => 'Upper valley below the reservoir.'],
+                ['name' => 'Staveley', 'latitude' => 54.3753, 'longitude' => -2.8137, 'description' => 'Village weir and riverside path.'],
+                ['name' => 'Burneside', 'latitude' => 54.3553, 'longitude' => -2.7651, 'description' => 'Below the paper mill village.'],
+                ['name' => 'Kendal', 'latitude' => 54.3274, 'longitude' => -2.7434, 'description' => 'Gooseholme and the town riverside.'],
+                ['name' => 'Sedgwick', 'latitude' => 54.2810, 'longitude' => -2.7559, 'description' => 'Force Falls and the old gunpowder works.'],
+                ['name' => 'Levens Bridge', 'latitude' => 54.2680, 'longitude' => -2.7646, 'description' => 'Below Levens Hall, near the head of the estuary.'],
+            ],
+            'eden' => [
+                ['name' => 'Stenkrith Park', 'latitude' => 54.4622, 'longitude' => -2.3483, 'description' => 'Rock gorge and pools south of Kirkby Stephen.'],
+                ['name' => 'Appleby', 'latitude' => 54.5788, 'longitude' => -2.4902, 'description' => 'Town riverside and the horse fair ford.'],
+                ['name' => 'Langwathby', 'latitude' => 54.6936, 'longitude' => -2.6682, 'description' => 'Village bridge and shingle banks.'],
+                ['name' => 'Lazonby', 'latitude' => 54.7527, 'longitude' => -2.6970, 'description' => 'Pools below the bridge by the riverside campsite.'],
+                ['name' => 'Armathwaite', 'latitude' => 54.8071, 'longitude' => -2.7675, 'description' => 'Weir and sandstone gorge below the castle.'],
+                ['name' => 'Wetheral', 'latitude' => 54.8837, 'longitude' => -2.8294, 'description' => 'Below the viaduct and Corby Castle.'],
+                ['name' => 'Rickerby Park, Carlisle', 'latitude' => 54.8994, 'longitude' => -2.9205, 'description' => 'City park on the Eden.'],
+            ],
+            'derwent' => [
+                ['name' => 'Grange in Borrowdale', 'latitude' => 54.5530, 'longitude' => -3.1490, 'description' => 'Clear pools by the double-arched bridge.'],
+                ['name' => 'Portinscale', 'latitude' => 54.6016, 'longitude' => -3.1529, 'description' => 'Where the Derwent leaves Derwentwater.'],
+                ['name' => 'Isel Bridge', 'latitude' => 54.6907, 'longitude' => -3.3099, 'description' => 'Quiet reach by Isel church.'],
+                ['name' => 'Cockermouth', 'latitude' => 54.6651, 'longitude' => -3.3650, 'description' => 'Where the Cocker joins, below the castle.'],
+                ['name' => 'Workington Bridge', 'latitude' => 54.6490, 'longitude' => -3.5327, 'description' => 'The last reach above the harbour.'],
+            ],
         ];
     }
 

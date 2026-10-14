@@ -24,6 +24,7 @@ class RiverSeeder extends Seeder
         return [
             'yorkshire' => self::yorkshire(),
             'thames-valley' => self::thamesValley(),
+            'north-west' => self::northWest(),
         ];
     }
 
@@ -173,6 +174,53 @@ class RiverSeeder extends Seeder
             self::tributary('Cranleigh Waters', 'wey', ['Cranleigh Waters/Littlemead Brook'], slug: 'cranleigh-waters'),
             self::tributary('River Mole', 'thames'),
             self::tributary('Hogsmill River', 'thames', ['River Hogsmill'], slug: 'hogsmill'),
+        ];
+    }
+
+    /**
+     * The main rivers of Lancashire and Cumbria that United Utilities
+     * monitors, each with its tributaries. Mouths are at the head of each
+     * estuary, as the tidal reaches are not walkable river.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>
+     */
+    private static function northWest(): array
+    {
+        return [
+            // Ribble
+            self::main('River Ribble', 'Ribble', [53.7470, -2.7390]),
+            self::tributary('River Calder', 'ribble'),
+            self::tributary('Pendle Water', 'calder'),
+            self::tributary('Colne Water', 'pendle-water'),
+            self::tributary('Walverden Water', 'pendle-water'),
+            self::tributary('Hyndburn Brook', 'calder'),
+            self::tributary('Woodnook Water', 'hyndburn-brook'),
+            self::tributary('River Darwen', 'ribble'),
+            self::tributary('River Blakewater', 'darwen'),
+            // Eaves Brook barely exists in OS Open Rivers, so its monitors count towards Savick Brook, which it joins in Preston.
+            self::tributary('Savick Brook', 'ribble', ['Eaves Brook', 'Eaves Brook, a tributary of Savick Brook, a tributary of the River Ribble']),
+
+            // Lune
+            self::main('River Lune', 'Lune', [54.0480, -2.8150]),
+            self::tributary('River Wenning', 'lune'),
+            self::tributary('River Greta', 'lune'),
+            self::tributary('Artle Beck', 'lune', ['Artle Beck a tributary of the River Lune']),
+
+            // Kent
+            self::main('River Kent', 'Kent', [54.2380, -2.7930]),
+
+            // Eden
+            self::main('River Eden', 'Eden', [54.9300, -3.0400]),
+            self::tributary('River Eamont', 'eden'),
+            self::tributary('River Irthing', 'eden'),
+            self::tributary('Brampton Beck', 'irthing'),
+            self::tributary('Milton Beck', 'irthing'),
+            self::tributary('River Petteril', 'eden'),
+            self::tributary('River Caldew', 'eden'),
+
+            // Derwent: a second River Greta, which joins at Keswick, so it needs its own slug.
+            self::main('River Derwent', 'Derwent', [54.6460, -3.5500]),
+            self::tributary('River Greta', 'derwent', slug: 'greta-keswick'),
         ];
     }
 

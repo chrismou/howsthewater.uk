@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley). The site
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West). The site
 reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -164,7 +164,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Pages never call third-party APIs at request time.
 - Rivers are seeded per region: Yorkshire's main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse,
   Esk, Hull) and the Thames (source to Teddington, mouth hint in central London because the tidal Thames is split into
-  pieces too far apart to join). Main rivers and their tributaries are seeded
+  pieces too far apart to join), and the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
+  Utilities, mouths at the head of each estuary). Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
@@ -217,7 +218,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   seconds per spot), so it only runs for spots with a null `flood_areas_searched_at`, or all spots with `--areas`.
 - River centrelines: OS Open Rivers GeoPackage at `OS_OPEN_RIVERS_PATH` (default `storage/app/private/oprvrs_gb.gpkg`,
   gitignored, download from the OS Data Hub). OpenStreetMap via Overpass is a fallback (`--source=osm`) but is unreliable.
-  Names repeat (becks across Yorkshire, and Calder, Don, Derwent, Ouse and Esk across Britain), so `OpenRiversReader`
+  Names repeat (becks across Yorkshire; Calder, Don, Derwent, Ouse and Esk across Britain; two River Gretas in the North
+  West, the Keswick one seeded as `greta-keswick`), so `OpenRiversReader`
   seeds from the set of links whose mouth is nearest the parent centreline (tributaries) or the seeded `mouth_latitude`
   and `mouth_longitude` (main rivers), then joins other fragments within 4 km to bridge reservoirs. Within each set of
   connected links the main stem runs from the flow sink nearest the parent or hint to the node furthest from it along
@@ -279,3 +281,7 @@ php artisan rivers:positions
   live on push as long as the GeoPackage is on the server. Gauge discovery is left to the weekly schedule.
 - Server provisioning (users, PHP-FPM, nginx, deploy keys, GitHub environment) lives in the `opendata-ansible` repo.
   Nothing is deployed by hand; never run `composer update` or merge on the server.
+- `bootstrap/cache` is read-only to www-data once a release is hardened; the deploy writes every cache file there as
+  the deploy user. Never run `optimize:clear` or `clear-compiled` on the server: they delete `packages.php` and
+  `services.php`, www-data cannot rebuild them, and every request returns a 500. After editing the server's `.env`,
+  run `php artisan optimize` as deploy in the current release, which rebuilds the caches with the new values.
