@@ -103,7 +103,7 @@
             </div>
         @endif
 
-        <dl class="mt-5 grid gap-4 sm:grid-cols-4">
+        <dl class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Discharging now <x-help term="discharging_now" /></dt>
                 <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $conditions->dischargingNowCount > 0 ? 'text-alert' : '' }}">{{ $conditions->dischargingNowCount }}</dd>
@@ -160,10 +160,10 @@
                         <p class="text-sm text-ink-2">{{ $trendText }} <x-help term="trend" /></p>
                     </div>
                     @if ($level->relativeToTypical)
-                        <div class="mt-3 flex items-center gap-3 text-sm text-ink-2">
+                        <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-2">
                             <span class="shrink-0">{{ ucfirst($level->relativeToTypical) }} <x-help term="typical_range" /></span>
                             @if ($rangePosition !== null)
-                                <div class="relative h-2 flex-1 rounded-full bg-line-2" aria-hidden="true">
+                                <div class="relative order-last h-2 basis-full rounded-full bg-line-2 sm:order-none sm:flex-1 sm:basis-auto" aria-hidden="true">
                                     <div class="absolute inset-y-0 rounded-full bg-water" style="left:22%;right:30%;background:var(--color-line)"></div>
                                     <span class="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-surface bg-accent" style="left:{{ $rangePosition }}%"></span>
                                 </div>
@@ -236,12 +236,12 @@
                     <thead class="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted">
                         <tr>
                             <th class="px-4 py-2.5 font-medium">Monitor</th>
-                            <th class="px-4 py-2.5 font-medium">Watercourse</th>
-                            <th class="px-4 py-2.5 font-medium">Upstream</th>
+                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Watercourse</th>
+                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Upstream</th>
                             <th class="px-4 py-2.5 font-medium">Status</th>
-                            <th class="px-4 py-2.5 font-medium">Last spill</th>
-                            <th class="px-4 py-2.5 font-medium">Duration</th>
-                            <th class="px-4 py-2.5 font-medium">Spills, 30 days</th>
+                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Last spill</th>
+                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Duration</th>
+                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Spills, 30 days</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line-2">

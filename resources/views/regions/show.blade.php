@@ -72,7 +72,7 @@
 
     <div class="relative mb-10">
         <div
-            class="h-[420px] w-full rounded-lg border border-line"
+            class="h-72 w-full rounded-lg border border-line sm:h-[420px]"
             data-map
             data-map-centrelines="{{ json_encode($centrelines) }}"
             data-map-markers="{{ json_encode($mapMarkers) }}"
@@ -88,7 +88,7 @@
     <div class="mb-12 grid gap-6 lg:grid-cols-3">
         <section class="lg:col-span-2">
             <h2 class="font-display text-2xl font-semibold tracking-tight">Every river, source to mouth</h2>
-            <p class="mt-1 text-sm text-muted">Each dot is a spot. Hover for its name, click to open it.</p>
+            <p class="mt-1 text-sm text-muted">Each dot is a spot. Hover or tap for its name, click to open it.</p>
             <div class="mt-4 rounded-lg border border-line bg-surface px-5 py-2">
                 @foreach ($summary->rivers as $river)
                     <div class="flex items-center gap-4 py-2.5 {{ $loop->first ? '' : 'border-t border-line-2' }}">
@@ -183,20 +183,28 @@
                                 <thead class="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted">
                                     <tr>
                                         <th class="px-4 py-2 font-medium">Spot</th>
-                                        <th class="px-4 py-2 font-medium">Upstream spills</th>
-                                        <th class="px-4 py-2 font-medium">Level</th>
-                                        <th class="px-4 py-2 font-medium">Rain 24h</th>
-                                        <th class="px-4 py-2 font-medium">Monitors</th>
+                                        <th class="hidden px-4 py-2 font-medium sm:table-cell">Upstream spills</th>
+                                        <th class="hidden px-4 py-2 font-medium sm:table-cell">Level</th>
+                                        <th class="hidden px-4 py-2 font-medium sm:table-cell">Rain 24h</th>
+                                        <th class="hidden px-4 py-2 font-medium sm:table-cell">Monitors</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-line-2">
                                     @foreach ($river->spots->take(6) as $spot)
                                         <tr class="hover:bg-surface-2">
-                                            <td class="whitespace-nowrap px-4 py-2">
+                                            {{-- On phones the other columns fold into this one, under the spot name. --}}
+                                            <td class="px-4 py-2 sm:whitespace-nowrap">
                                                 <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" class="font-semibold hover:underline">{{ $spot->name }}</a>
+                                                <div class="mt-1 flex flex-col items-start gap-1 sm:hidden">
+                                                    <x-spill-badge :recency="$spot->spillRecency" :stale="$spot->overflowDataIsStale()" />
+                                                    <span class="text-xs text-muted">
+                                                        {{ $spot->levelValue === null ? 'No gauge' : number_format($spot->levelValue, 2).' '.$spot->levelUnit.' '.strtolower($spot->levelTrend->label()) }}
+                                                        · {{ $spot->rainfallLast24HoursMillimetres === null ? 'no rain gauge' : number_format($spot->rainfallLast24HoursMillimetres, 1).' mm rain' }}
+                                                    </span>
+                                                </div>
                                             </td>
-                                            <td class="whitespace-nowrap px-4 py-2"><x-spill-badge :recency="$spot->spillRecency" :stale="$spot->overflowDataIsStale()" /></td>
-                                            <td class="whitespace-nowrap px-4 py-2">
+                                            <td class="hidden whitespace-nowrap px-4 py-2 sm:table-cell"><x-spill-badge :recency="$spot->spillRecency" :stale="$spot->overflowDataIsStale()" /></td>
+                                            <td class="hidden whitespace-nowrap px-4 py-2 sm:table-cell">
                                                 @if ($spot->levelValue === null)
                                                     <span class="text-muted">No gauge</span>
                                                 @else
@@ -204,8 +212,8 @@
                                                     <span class="text-muted">{{ strtolower($spot->levelTrend->label()) }}{{ $spot->levelRelativeToTypical ? ' · '.\Illuminate\Support\Str::before($spot->levelRelativeToTypical, ' typical').' typical' : '' }}</span>
                                                 @endif
                                             </td>
-                                            <td class="whitespace-nowrap px-4 py-2 font-mono tabular-nums">{{ $spot->rainfallLast24HoursMillimetres === null ? '-' : number_format($spot->rainfallLast24HoursMillimetres, 1).' mm' }}</td>
-                                            <td class="whitespace-nowrap px-4 py-2 font-mono tabular-nums text-muted">{{ $spot->monitorCount }}</td>
+                                            <td class="hidden whitespace-nowrap px-4 py-2 font-mono tabular-nums sm:table-cell">{{ $spot->rainfallLast24HoursMillimetres === null ? '-' : number_format($spot->rainfallLast24HoursMillimetres, 1).' mm' }}</td>
+                                            <td class="hidden whitespace-nowrap px-4 py-2 font-mono tabular-nums text-muted sm:table-cell">{{ $spot->monitorCount }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

@@ -23,7 +23,7 @@
                 <path d="M-20 420 C 320 360, 500 500, 740 440 S 1120 340, 1300 420"/>
                 <path d="M-20 470 C 340 410, 520 550, 760 490 S 1140 390, 1300 470"/>
             </svg>
-            <div class="relative mx-auto grid max-w-5xl gap-8 px-4 py-14 lg:grid-cols-12 lg:py-16">
+            <div class="relative mx-auto grid max-w-5xl gap-8 px-4 pt-8 pb-12 sm:py-14 lg:grid-cols-12 lg:py-16">
                 <div class="flex flex-col gap-5 lg:col-span-7">
                     <p class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $regionNames ?: 'Rivers' }}, updated every 15 minutes</p>
                     <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">What's the river doing right now?</h1>
@@ -95,24 +95,15 @@
         @endforeach
     </div>
 
-    <section id="how" class="grid gap-8 py-12 lg:grid-cols-12 lg:gap-12">
-        <div class="flex flex-col gap-3 lg:col-span-4">
+    <section id="how" class="grid gap-8 py-12 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:gap-x-12 lg:gap-y-7">
+        <div class="flex flex-col gap-3 lg:col-span-4 lg:row-start-1">
             <div class="h-[3px] w-14 rounded bg-accent"></div>
             <h2 class="font-display text-3xl font-semibold tracking-tight">How to read it</h2>
             <p class="text-ink-2">Every spot page shows the same three readings, plus any flood warning in force. Together they tell you whether the river is likely to be carrying sewage, running high, or about to.</p>
-            <div class="mt-4 flex flex-col gap-3 rounded-lg border border-line bg-surface p-5">
-                <h3 class="font-display text-lg font-semibold">Flood alerts and warnings <x-help term="flood_warning" /></h3>
-                <p class="text-sm text-ink-2">When the Environment Agency has a flood alert or warning in force for a spot's stretch of river, the spot page shows it in their own words, with a link to the latest on GOV.UK.</p>
-                <div class="flex flex-wrap gap-1.5">
-                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::SevereFloodWarning" class="py-0.5" />
-                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodWarning" class="py-0.5" />
-                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodAlert" class="py-0.5" />
-                </div>
-            </div>
         </div>
-        <ol class="divide-y divide-line border-y border-line lg:col-span-8">
-            <li class="grid gap-4 py-6 sm:grid-cols-[4.5rem_1fr]">
-                <span class="font-mono text-3xl text-accent">01</span>
+        <ol class="divide-y divide-line border-y border-line lg:col-span-8 lg:col-start-5 lg:row-span-2 lg:row-start-1">
+            <li class="grid grid-cols-[2.75rem_1fr] gap-3 py-6 sm:grid-cols-[4.5rem_1fr] sm:gap-4">
+                <span class="font-mono text-2xl text-accent sm:text-3xl">01</span>
                 <div class="flex flex-col gap-2">
                     <h3 class="font-display text-xl font-semibold">Storm overflows upstream <x-help term="spill" /></h3>
                     <p class="text-ink-2">{{ $companyNames }} monitors report every overflow that is discharging. We trace every monitor upstream of a spot, tributaries included, and summarise the last 48 hours and 30 days.</p>
@@ -124,16 +115,16 @@
                     </div>
                 </div>
             </li>
-            <li class="grid gap-4 py-6 sm:grid-cols-[4.5rem_1fr]">
-                <span class="font-mono text-3xl text-accent">02</span>
+            <li class="grid grid-cols-[2.75rem_1fr] gap-3 py-6 sm:grid-cols-[4.5rem_1fr] sm:gap-4">
+                <span class="font-mono text-2xl text-accent sm:text-3xl">02</span>
                 <div class="flex flex-col gap-2">
                     <h3 class="font-display text-xl font-semibold">River level and trend <x-help term="level" /></h3>
                     <p class="text-ink-2">Environment Agency gauges read the river every 15 minutes. The latest reading, the change over 3 hours and where it sits in the gauge's typical range. High and rising means fast, cold water.</p>
                     <p class="flex items-baseline gap-3"><span class="font-mono text-2xl font-semibold tabular-nums">0.43 m</span><span class="text-sm text-muted">↑ rising · within typical range <x-help term="typical_range" /></span></p>
                 </div>
             </li>
-            <li class="grid gap-4 py-6 sm:grid-cols-[4.5rem_1fr]">
-                <span class="font-mono text-3xl text-accent">03</span>
+            <li class="grid grid-cols-[2.75rem_1fr] gap-3 py-6 sm:grid-cols-[4.5rem_1fr] sm:gap-4">
+                <span class="font-mono text-2xl text-accent sm:text-3xl">03</span>
                 <div class="flex flex-col gap-2">
                     <h3 class="font-display text-xl font-semibold">Rainfall nearby <x-help term="rainfall" /></h3>
                     <p class="text-ink-2">Totals from the nearest rain gauge over 6 hours, 24 hours and 3 days. Rain is what triggers overflows and lifts levels, so it is the earliest signal you get.</p>
@@ -141,6 +132,16 @@
                 </div>
             </li>
         </ol>
+        {{-- After the readings on phones; under the intro in the left column on wide screens. --}}
+        <div class="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5 lg:col-span-4 lg:row-start-2 lg:self-start">
+            <h3 class="font-display text-lg font-semibold">Flood alerts and warnings <x-help term="flood_warning" /></h3>
+            <p class="text-sm text-ink-2">When the Environment Agency has a flood alert or warning in force for a spot's stretch of river, the spot page shows it in their own words, with a link to the latest on GOV.UK.</p>
+            <div class="flex flex-wrap gap-1.5">
+                <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::SevereFloodWarning" class="py-0.5" />
+                <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodWarning" class="py-0.5" />
+                <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodAlert" class="py-0.5" />
+            </div>
+        </div>
     </section>
 
     <section class="py-12">
@@ -151,7 +152,7 @@
             </div>
             <p class="max-w-md text-sm text-muted">
                 {{ $regions->count() === 1 ? 'One so far' : $regions->count().' so far' }}, with more on the way.
-                <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="font-semibold text-accent hover:underline">Suggest a region/river →</a>
+                <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="whitespace-nowrap font-semibold text-accent hover:underline">Suggest a region/river →</a>
             </p>
         </div>
         <div class="grid gap-5 lg:grid-cols-2">

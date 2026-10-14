@@ -213,7 +213,7 @@ it('shows the live bar for the region on every page', function () {
     $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 45000]);
     SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $monitor->id]);
 
-    $this->get(route('home'))->assertOk()->assertSee('data-live-bar', false)->assertSee('>1</span> overflow discharging now', false);
+    $this->get(route('home'))->assertOk()->assertSee('data-live-bar', false)->assertSee('>1</span> <span class="hidden sm:inline">overflow</span> discharging', false);
     $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertSee('data-live-bar', false);
     $this->get(route('search', ['q' => 'x']))->assertOk()->assertSee('data-live-bar', false);
 });
@@ -300,13 +300,13 @@ it('totals every region on the home page and keeps the first region added as the
         ->assertOk()
         ->assertSee('Across all rivers now')
         ->assertDontSee('Browse Yorkshire')
-        ->assertSeeInOrder(['data-live-bar', 'All regions', '>2</span> overflows discharging now'], false)
+        ->assertSeeInOrder(['data-live-bar', 'All regions', '>2</span> <span class="hidden sm:inline">overflows</span> discharging'], false)
         ->assertSeeInOrder(['Yorkshire', '/avon"'], false)
         ->assertSee('View Avon');
 
     $this->get(route('search', ['q' => 'x']))
         ->assertOk()
-        ->assertSeeInOrder(['data-live-bar', 'Yorkshire', '>1</span> overflow discharging now'], false);
+        ->assertSeeInOrder(['data-live-bar', 'Yorkshire', '>1</span> <span class="hidden sm:inline">overflow</span> discharging'], false);
 
     $this->get(route('regions.show', $later))->assertOk()->assertSee('1 river and 1 spots', false);
 });
@@ -338,7 +338,7 @@ it('shows no flood warning blocks when none are in force', function () {
     FloodArea::factory()->hasAttached($spot)->create();
 
     $this->get(route('regions.show', $region))->assertOk()->assertDontSee('id="flood-warnings"', false)->assertDontSee('in force');
-    $this->get(route('home'))->assertOk()->assertSee('Environment Agency flood warnings for')->assertDontSee('role="alert"', false);
+    $this->get(route('home'))->assertOk()->assertSee('recent rainfall and flood warnings for')->assertDontSee('role="alert"', false);
     $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertDontSee('aria-label="Flood warnings"', false);
 });
 
@@ -362,5 +362,6 @@ it('credits the author and links to GitHub issues in the footer', function () {
         ->assertSee('aria-label="love"', false)
         ->assertSee('href="https://mou.me"', false)
         ->assertSee('Seen a mistake?')
+        ->assertSee('Let us know<span class="hidden sm:inline"> on GitHub</span>', false)
         ->assertSee('https://github.com/chrismou/howsthewater.uk/issues');
 });
