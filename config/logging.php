@@ -89,7 +89,8 @@ return [
             'handler' => \Rollbar\Laravel\MonologHandler::class,
             'access_token' => env('ROLLBAR_TOKEN'),
             'environment' => env('ROLLBAR_ENVIRONMENT', env('APP_ENV')),
-            'level' => 'debug',
+            // Only real problems go to Rollbar; debug and info lines stay in the local log.
+            'level' => env('ROLLBAR_LEVEL', 'error'),
         ],
 
         'slack' => [
