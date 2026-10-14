@@ -16,7 +16,8 @@ final readonly class UpstreamMonitorSummary
         public int $distanceUpstreamMetres,
         public OverflowStatus $status,
         public ?SpillEvent $latestEvent,
-    ) {}
+    ) {
+    }
 
     public function spilledSince(Carbon $threshold): bool
     {

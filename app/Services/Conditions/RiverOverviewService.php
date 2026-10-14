@@ -18,7 +18,9 @@ class RiverOverviewService
     /** @var array<int, array<int, int>>|null Tributary ids keyed by parent river id */
     private ?array $childrenByParent = null;
 
-    public function __construct(private SpotConditionsService $spotConditions) {}
+    public function __construct(private SpotConditionsService $spotConditions)
+    {
+    }
 
     /**
      * Every river with a page, across all regions.

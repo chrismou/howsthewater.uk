@@ -20,7 +20,9 @@ class RegionSummaries
 {
     private const KEY_PREFIX = 'region-summary';
 
-    public function __construct(private RiverOverviewService $overviews) {}
+    public function __construct(private RiverOverviewService $overviews)
+    {
+    }
 
     public function for(Region $region): RegionSummary
     {

@@ -24,7 +24,8 @@ final readonly class RainfallSummary
         public float $last6HoursMillimetres,
         public float $last24HoursMillimetres,
         public float $last72HoursMillimetres,
-    ) {}
+    ) {
+    }
 
     public function hasReadings(): bool
     {

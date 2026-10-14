@@ -24,7 +24,8 @@ class SpotConditionsService
         private LevelSummariser $levelSummariser,
         private RainfallSummariser $rainfallSummariser,
         private ConditionsCache $cache,
-    ) {}
+    ) {
+    }
 
     public function for(Spot $spot): SpotConditions
     {

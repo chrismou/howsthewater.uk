@@ -17,7 +17,9 @@ class SyncRainfallReadings
 {
     private const BACKFILL_DAYS = 7;
 
-    public function __construct(private FloodMonitoringClient $client) {}
+    public function __construct(private FloodMonitoringClient $client)
+    {
+    }
 
     /**
      * @return array{stations: int, readings: int, retired: int}

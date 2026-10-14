@@ -26,7 +26,8 @@ final readonly class RegionSummary
         public int $rainGaugeCount,
         public ?Carbon $dataUpdatedAt,
         public Carbon $generatedAt,
-    ) {}
+    ) {
+    }
 
     /**
      * @return Collection<int, SpotSummary>

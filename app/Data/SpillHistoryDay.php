@@ -10,5 +10,6 @@ final readonly class SpillHistoryDay
         public Carbon $date,
         public int $spillCount,
         public int $spillMinutes,
-    ) {}
+    ) {
+    }
 }

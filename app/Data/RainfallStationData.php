@@ -12,7 +12,8 @@ final readonly class RainfallStationData
         public float $longitude,
         public ?string $measureId,
         public bool $isActive,
-    ) {}
+    ) {
+    }
 
     /**
      * @param  array<string, mixed>  $item  A station item from the EA flood monitoring API

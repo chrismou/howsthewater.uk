@@ -221,7 +221,7 @@ class RiverSeeder extends Seeder
                 ->where(fn ($query) => $query->whereNull('region_id')->orWhere('region_id', $region->id))
                 ->first();
 
-            ($existing ?? new River)->fill([
+            ($existing ?? new River())->fill([
                 ...$river,
                 'region_id' => $region->id,
                 'catchment' => $river['catchment'] ?: $parent?->catchment,

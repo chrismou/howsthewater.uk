@@ -15,5 +15,6 @@ final readonly class RiverOverview
         public Collection $spots,
         public int $monitorCount,
         public int $dischargingNowCount,
-    ) {}
+    ) {
+    }
 }

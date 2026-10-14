@@ -11,7 +11,8 @@ final readonly class WatercourseName
     private function __construct(
         public string $name,
         public bool $isUnnamedTributary,
-    ) {}
+    ) {
+    }
 
     public static function parse(?string $raw): ?self
     {

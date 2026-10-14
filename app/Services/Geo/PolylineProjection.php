@@ -10,5 +10,6 @@ final readonly class PolylineProjection
     public function __construct(
         public int $distanceAlongMetres,
         public float $offsetMetres,
-    ) {}
+    ) {
+    }
 }

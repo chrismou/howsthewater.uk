@@ -10,8 +10,7 @@ use Illuminate\Support\Facades\Schema;
  * rain gauges, so the scheduled ingests can catch up on anything newly
  * seeded without a manual run. Existing data counts as searched already.
  */
-return new class extends Migration
-{
+return new class () extends Migration {
     public function up(): void
     {
         Schema::table('rivers', function (Blueprint $table) {

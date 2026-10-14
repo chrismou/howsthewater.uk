@@ -9,8 +9,7 @@ use Illuminate\Support\Facades\Schema;
  * names like Calder, Derwent and Ouse repeat across Britain. Spot slugs
  * likewise only need to be unique on their river.
  */
-return new class extends Migration
-{
+return new class () extends Migration {
     public function up(): void
     {
         Schema::table('rivers', function (Blueprint $table) {

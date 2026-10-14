@@ -27,7 +27,8 @@ final readonly class LevelSummary
         public ?float $changeLast3Hours,
         public ?string $relativeToTypical,
         public Collection $recentReadings,
-    ) {}
+    ) {
+    }
 
     /**
      * Whether the latest reading is too old to rely on. Evaluated at read

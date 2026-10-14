@@ -35,7 +35,8 @@ final readonly class SpotConditions
         public ?LevelSummary $level,
         public ?RainfallSummary $rainfall,
         public ?Carbon $dataUpdatedAt,
-    ) {}
+    ) {
+    }
 
     /**
      * Whether the upstream monitor data is too old to rely on. Evaluated at

@@ -16,7 +16,8 @@ final readonly class GaugeStationData
         public ?float $typicalRangeLow,
         public ?float $typicalRangeHigh,
         public bool $isActive,
-    ) {}
+    ) {
+    }
 
     /**
      * @param  array<string, mixed>  $item  A station item from the EA flood monitoring API

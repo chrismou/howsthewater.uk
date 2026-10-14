@@ -20,7 +20,9 @@ class SyncGaugeStations
      */
     private const MAX_OFFSET_METRES = 2000;
 
-    public function __construct(private FloodMonitoringClient $client) {}
+    public function __construct(private FloodMonitoringClient $client)
+    {
+    }
 
     /**
      * @return array{stations: int}

@@ -18,7 +18,8 @@ final readonly class OverflowMonitorData
         public ?Carbon $latestEventStartedAt,
         public ?Carbon $latestEventEndedAt,
         public ?Carbon $sourceUpdatedAt,
-    ) {}
+    ) {
+    }
 
     /**
      * @param  array<string, mixed>  $attributes  A feature's attributes from the ArcGIS feed

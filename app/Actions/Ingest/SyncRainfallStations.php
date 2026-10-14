@@ -19,7 +19,9 @@ use Illuminate\Support\Collection;
  */
 class SyncRainfallStations
 {
-    public function __construct(private FloodMonitoringClient $client) {}
+    public function __construct(private FloodMonitoringClient $client)
+    {
+    }
 
     /**
      * @return array{stations: int}

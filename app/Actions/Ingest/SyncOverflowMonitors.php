@@ -20,7 +20,9 @@ use Throwable;
  */
 class SyncOverflowMonitors
 {
-    public function __construct(private StormOverflowClient $client) {}
+    public function __construct(private StormOverflowClient $client)
+    {
+    }
 
     /**
      * Syncs every water company feed a region needs. A feed that fails is
@@ -75,7 +77,7 @@ class SyncOverflowMonitors
             if ($monitor === null) {
                 $monitor = new OverflowMonitor(['external_id' => $data->externalId]);
                 $added++;
-                $monitor->setRelation('openSpillEvents', new EloquentCollection);
+                $monitor->setRelation('openSpillEvents', new EloquentCollection());
             }
 
             $monitor->fill([

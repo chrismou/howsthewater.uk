@@ -39,7 +39,8 @@ final readonly class SpotSummary
         public ?string $gaugeLabel,
         public ?float $rainfallLast24HoursMillimetres,
         public ?Carbon $rainfallAt,
-    ) {}
+    ) {
+    }
 
     public static function fromConditions(SpotConditions $conditions): self
     {

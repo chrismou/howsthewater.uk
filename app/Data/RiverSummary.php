@@ -21,7 +21,8 @@ final readonly class RiverSummary
         public int $monitorCount,
         public int $dischargingNowCount,
         public Collection $spots,
-    ) {}
+    ) {
+    }
 
     public static function fromOverview(RiverOverview $overview): self
     {

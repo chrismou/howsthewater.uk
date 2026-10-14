@@ -14,7 +14,9 @@ use App\Services\Osm\OverpassClient;
  */
 class FetchRiverCentreline
 {
-    public function __construct(private OverpassClient $overpass) {}
+    public function __construct(private OverpassClient $overpass)
+    {
+    }
 
     public function fromOpenRivers(River $river, string $geoPackagePath): River
     {

@@ -9,7 +9,8 @@ final readonly class GaugeReadingData
     public function __construct(
         public Carbon $measuredAt,
         public float $value,
-    ) {}
+    ) {
+    }
 
     /**
      * @param  array<string, mixed>  $item  A reading item from the EA flood monitoring API
