@@ -36,7 +36,7 @@ it('introduces the site and its regions on the home page', function () {
         ->assertSee("What's the river doing right now?", false)
         ->assertSee('How to read it')
         ->assertSee('What this site does not do')
-        ->assertSee('Open Yorkshire')
+        ->assertSee('View Yorkshire')
         ->assertSee('/yorkshire/wharfe/otley')
         ->assertSee('/yorkshire"', false);
 });
@@ -302,7 +302,7 @@ it('totals every region on the home page and keeps the first region added as the
         ->assertDontSee('Browse Yorkshire')
         ->assertSeeInOrder(['data-live-bar', 'All regions', '>2</span> overflows discharging now'], false)
         ->assertSeeInOrder(['Yorkshire', '/avon"'], false)
-        ->assertSee('Open Avon');
+        ->assertSee('View Avon');
 
     $this->get(route('search', ['q' => 'x']))
         ->assertOk()
@@ -338,7 +338,7 @@ it('shows no flood warning blocks when none are in force', function () {
     FloodArea::factory()->hasAttached($spot)->create();
 
     $this->get(route('regions.show', $region))->assertOk()->assertDontSee('id="flood-warnings"', false)->assertDontSee('in force');
-    $this->get(route('home'))->assertOk()->assertDontSee('Environment Agency flood');
+    $this->get(route('home'))->assertOk()->assertSee('Environment Agency flood warnings for')->assertDontSee('role="alert"', false);
     $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertDontSee('aria-label="Flood warnings"', false);
 });
 
@@ -350,4 +350,17 @@ it('shortens long flood warning spot lists on the home page but not the region p
 
     $this->get(route('home'))->assertOk()->assertSee('and 2 more');
     $this->get(route('regions.show', $region))->assertOk()->assertDontSee('and 2 more');
+});
+
+it('credits the author and links to GitHub issues in the footer', function () {
+    spotWithUrl();
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('© '.now()->year, false)
+        ->assertSee('Lovingly crafted in Leeds')
+        ->assertSee('aria-label="love"', false)
+        ->assertSee('href="https://mou.me"', false)
+        ->assertSee('Seen a mistake?')
+        ->assertSee('https://github.com/chrismou/howsthewater.uk/issues');
 });

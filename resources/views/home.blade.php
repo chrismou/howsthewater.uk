@@ -28,7 +28,7 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $regionNames ?: 'Rivers' }}, updated every 15 minutes</p>
                     <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">What's the river doing right now?</h1>
                     <p class="max-w-xl text-lg text-ink-2">
-                        Storm overflow spills upstream, the river level and recent rainfall for {{ $totalSpots }} swimming, paddling and fishing spots on {{ $totalRivers }} rivers, read straight from the public monitors.
+                        Storm overflow spills upstream, the river level, recent rainfall and Environment Agency flood warnings for {{ $totalSpots }} swimming, paddling and fishing spots on {{ $totalRivers }} rivers, read straight from the public monitors.
                     </p>
                     <form action="{{ route('search') }}" method="get" role="search" class="flex max-w-xl flex-col gap-2 sm:flex-row">
                         <label for="hero-search" class="sr-only">Search spots and rivers</label>
@@ -95,11 +95,20 @@
         @endforeach
     </div>
 
-    <section id="how" class="grid gap-8 py-6 lg:grid-cols-12 lg:gap-12">
+    <section id="how" class="grid gap-8 py-12 lg:grid-cols-12 lg:gap-12">
         <div class="flex flex-col gap-3 lg:col-span-4">
             <div class="h-[3px] w-14 rounded bg-accent"></div>
             <h2 class="font-display text-3xl font-semibold tracking-tight">How to read it</h2>
-            <p class="text-ink-2">Every spot page shows the same three readings. Together they tell you whether the river is likely to be carrying sewage, running high, or about to.</p>
+            <p class="text-ink-2">Every spot page shows the same three readings, plus any flood warning in force. Together they tell you whether the river is likely to be carrying sewage, running high, or about to.</p>
+            <div class="mt-4 flex flex-col gap-3 rounded-lg border border-line bg-surface p-5">
+                <h3 class="font-display text-lg font-semibold">Flood alerts and warnings <x-help term="flood_warning" /></h3>
+                <p class="text-sm text-ink-2">When the Environment Agency has a flood alert or warning in force for a spot's stretch of river, the spot page shows it in their own words, with a link to the latest on GOV.UK.</p>
+                <div class="flex flex-wrap gap-1.5">
+                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::SevereFloodWarning" class="py-0.5" />
+                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodWarning" class="py-0.5" />
+                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodAlert" class="py-0.5" />
+                </div>
+            </div>
         </div>
         <ol class="divide-y divide-line border-y border-line lg:col-span-8">
             <li class="grid gap-4 py-6 sm:grid-cols-[4.5rem_1fr]">
@@ -134,41 +143,38 @@
         </ol>
     </section>
 
-    <section class="py-10">
+    <section class="py-12">
         <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div class="flex flex-col gap-3">
                 <div class="h-[3px] w-14 rounded bg-accent"></div>
                 <h2 class="font-display text-3xl font-semibold tracking-tight">Regions</h2>
             </div>
-            <p class="text-sm text-muted">{{ $regions->count() === 1 ? 'One so far.' : $regions->count().' so far.' }} The same data exists for most of England.</p>
+            <p class="max-w-md text-sm text-muted">
+                {{ $regions->count() === 1 ? 'One so far' : $regions->count().' so far' }}, with more on the way. Storm overflow and river data exists for most of England.
+                <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="font-semibold text-accent hover:underline">Suggest a river →</a>
+            </p>
         </div>
-        <div class="grid gap-5 lg:grid-cols-12">
+        <div class="grid gap-5 lg:grid-cols-2">
             @foreach ($regions as $region)
                 @php
                     $markers = $region->spots()->map(fn ($spot) => ['lat' => $spot->latitude, 'lng' => $spot->longitude, 'label' => $spot->name, 'kind' => 'spot', 'recency' => $spot->spillRecency->value])->values();
                 @endphp
-                <a href="{{ route('regions.show', $region->slug) }}" class="grid overflow-hidden rounded-lg border border-line bg-surface transition hover:border-muted hover:shadow-sm sm:grid-cols-2 lg:col-span-8">
-                    <div class="flex flex-col gap-4 p-6">
+                <a href="{{ route('regions.show', $region->slug) }}" class="flex flex-col overflow-hidden rounded-lg border border-line bg-surface transition hover:border-muted hover:shadow-sm">
+                    <div class="h-56 border-b border-line bg-water" data-map data-map-static data-map-markers="{{ json_encode($markers) }}"></div>
+                    <div class="flex flex-1 flex-col gap-4 p-6">
                         <span class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">Region</span>
                         <h3 class="font-display text-3xl font-semibold tracking-tight">{{ $region->name }}</h3>
-                        <p class="text-sm text-ink-2">{{ $region->riversByCatchment()->keys()->join(', ', ' and ') }}. {{ $region->rivers->count() }} rivers, source to mouth.</p>
+                        <p class="text-sm text-ink-2">{{ $region->riversByCatchment()->keys()->join(', ', ' and ') }}. {{ $region->rivers->count() }} {{ \Illuminate\Support\Str::plural('river', $region->rivers->count()) }}, source to mouth.</p>
                         <dl class="grid grid-cols-2 gap-x-5 gap-y-3 text-sm">
                             <div><dt class="text-muted">Rivers</dt><dd class="font-mono text-xl font-semibold tabular-nums">{{ $region->rivers->count() }}</dd></div>
                             <div><dt class="text-muted">Spots</dt><dd class="font-mono text-xl font-semibold tabular-nums">{{ $region->spots()->count() }}</dd></div>
                             <div><dt class="text-muted">Discharging now</dt><dd class="font-mono text-xl font-semibold tabular-nums {{ $region->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $region->dischargingNowCount() }}</dd></div>
                             <div><dt class="text-muted">Spill in last 24h</dt><dd class="font-mono text-xl font-semibold tabular-nums {{ $region->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $region->spotsWithSpillLast24HoursCount() }} <span class="font-sans text-sm font-normal text-muted">spots</span></dd></div>
                         </dl>
-                        <span class="inline-flex self-start rounded-lg border border-line px-4 py-2 text-sm font-semibold">Open {{ $region->name }}</span>
+                        <span class="mt-auto inline-flex self-start rounded-lg border border-line px-4 py-2 text-sm font-semibold">View {{ $region->name }}</span>
                     </div>
-                    <div class="min-h-72 bg-water" data-map data-map-static data-map-markers="{{ json_encode($markers) }}"></div>
                 </a>
             @endforeach
-            <div class="flex flex-col gap-3 rounded-lg border border-dashed border-line p-6 lg:col-span-4">
-                <span class="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Next</span>
-                <h3 class="font-display text-2xl font-semibold text-ink-2">More regions</h3>
-                <p class="text-sm text-muted">Storm overflow feeds are published by most English water companies and the Environment Agency covers all of England. Tell us where to add next.</p>
-                <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="text-sm font-semibold text-accent hover:underline">Suggest a river →</a>
-            </div>
         </div>
     </section>
 

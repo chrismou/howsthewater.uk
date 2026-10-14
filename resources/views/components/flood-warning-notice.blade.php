@@ -9,11 +9,6 @@
         \App\Enums\FloodSeverity::FloodWarning => 'border-l-alert bg-linear-to-r from-alert/5 to-alert/5',
         default => 'border-l-spill bg-linear-to-r from-spill/5 to-spill/5',
     };
-    $badgeClasses = fn ($severity) => match ($severity) {
-        \App\Enums\FloodSeverity::SevereFloodWarning => 'border-alert bg-alert text-surface',
-        \App\Enums\FloodSeverity::FloodWarning => 'border-pill-red-ring bg-pill-red-bg text-pill-red-text',
-        \App\Enums\FloodSeverity::FloodAlert => 'border-pill-amber-ring bg-pill-amber-bg text-pill-amber-text',
-    };
 @endphp
 
 {{-- The flood alerts and warnings in force across a region, shown only while there are some. Pass spotLimit to shorten long spot lists and linkRegion to link the heading to the region page. --}}
@@ -37,7 +32,7 @@
                     $hiddenSpotCount = $entry['spots']->count() - $shownSpots->count();
                 @endphp
                 <li class="flex flex-col gap-1.5 py-2.5 first:pt-0 last:pb-0 sm:flex-row sm:gap-4">
-                    <span class="w-fit shrink-0 self-start rounded-full border px-2.5 py-2.5 text-xs font-semibold sm:w-44 sm:text-center {{ $badgeClasses($warning->severity) }}">{{ $warning->severity->label() }}</span>
+                    <x-flood-severity-badge :severity="$warning->severity" class="w-fit shrink-0 self-start py-2.5 sm:w-44 sm:text-center" />
                     <div class="min-w-0">
                         <a href="{{ $warning->url() }}" rel="noopener" target="_blank" class="font-semibold text-ink hover:underline">{{ $warning->areaLabel }}</a>
                         @if ($warning->isStale())
