@@ -13,11 +13,11 @@
 </head>
 <body class="min-h-full flex flex-col bg-stone-50 text-stone-900 antialiased">
     <header class="border-b border-stone-200 bg-white">
-        <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-4">
             <a href="{{ route('home') }}" class="text-lg font-semibold tracking-tight">
                 How's the Water<span class="text-sky-600">?</span>
             </a>
-            <nav class="flex gap-5 text-sm text-stone-600">
+            <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-600">
                 @foreach (\App\Models\River::query()->main()->orderBy('name')->get() as $navRiver)
                     <a href="{{ route('rivers.show', $navRiver) }}" class="hover:text-stone-900">{{ $navRiver->name }}</a>
                 @endforeach

@@ -72,3 +72,47 @@ it('picks the same-named watercourse whose mouth is nearest the parent river', f
     expect($centreline)->toHaveCount(3)
         ->and(end($centreline))->toEqualWithDelta($confluence, 0.0001);
 });
+
+it('uses the mouth hint to pick between same-named rivers in different places', function () {
+    $path = openRiversFixture([
+        // A river of the same name 200 km south.
+        ['name' => 'River Test', 'start' => 'x', 'end' => 'y', 'points' => [[400000, 250000], [410000, 250000]]],
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [410000, 450000]]],
+    ]);
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('River Test', null, BritishNationalGrid::toLatLng(410500, 450200));
+
+    expect($centreline)->toHaveCount(2)
+        ->and($centreline[0])->toEqualWithDelta(BritishNationalGrid::toLatLng(400000, 450000), 0.0001);
+});
+
+it('joins fragments of the same river across a reservoir-sized gap', function () {
+    $path = openRiversFixture([
+        // Three fragments 1 km apart, flowing east, plus one far away upstream fragment to ignore.
+        ['name' => 'River Test', 'start' => 'e', 'end' => 'f', 'points' => [[408000, 450000], [412000, 450000]]],
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [403000, 450000]]],
+        ['name' => 'River Test', 'start' => 'c', 'end' => 'd', 'points' => [[404000, 450000], [407000, 450000]]],
+        ['name' => 'River Test', 'start' => 'p', 'end' => 'q', 'points' => [[380000, 450000], [390000, 450000]]],
+    ]);
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('River Test', null, BritishNationalGrid::toLatLng(412000, 450000));
+
+    expect($centreline)->toHaveCount(6)
+        ->and($centreline[0])->toEqualWithDelta(BritishNationalGrid::toLatLng(400000, 450000), 0.0001)
+        ->and(end($centreline))->toEqualWithDelta(BritishNationalGrid::toLatLng(412000, 450000), 0.0001);
+});
+
+it('follows the main stem past a dead-end side channel carrying the same name', function () {
+    $path = openRiversFixture([
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [401000, 450000]]],
+        // A short mill cut leaving the river at b and going nowhere.
+        ['name' => 'River Test', 'start' => 'b', 'end' => 'cut', 'points' => [[401000, 450000], [401000, 452000]]],
+        ['name' => 'River Test', 'start' => 'b', 'end' => 'c', 'points' => [[401000, 450000], [405000, 450000]]],
+        ['name' => 'River Test', 'start' => 'c', 'end' => 'd', 'points' => [[405000, 450000], [409000, 450000]]],
+    ]);
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('River Test');
+
+    expect($centreline)->toHaveCount(4)
+        ->and(end($centreline))->toEqualWithDelta(BritishNationalGrid::toLatLng(409000, 450000), 0.0001);
+});

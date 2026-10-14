@@ -3,6 +3,7 @@
 namespace App\Services\OrdnanceSurvey;
 
 use App\Services\Geo\BritishNationalGrid;
+use App\Services\Geo\Coordinates;
 use App\Services\Geo\PolylineProjector;
 use App\Services\Osm\WayChainer;
 use PDO;
@@ -14,6 +15,12 @@ use RuntimeException;
  */
 class OpenRiversReader
 {
+    /**
+     * The widest gap between two sets of links (a reservoir, or a reach that
+     * carries another name) still treated as one river.
+     */
+    private const GAP_METRES = 4000;
+
     public function __construct(private string $geoPackagePath)
     {
         if (! is_file($geoPackagePath)) {
@@ -22,14 +29,19 @@ class OpenRiversReader
     }
 
     /**
-     * Several unrelated becks can share a name, so when the watercourse is a
-     * tributary the caller passes the parent's centreline and only the
-     * connected set of links whose mouth lies nearest the parent is used.
+     * Reservoirs and brief changes of name split a river into several
+     * disconnected sets of links, and unrelated rivers across Britain can
+     * share a name. The caller passes either the parent river's centreline
+     * (for a tributary) or an approximate mouth (for a main river); the set
+     * whose mouth lies nearest is used as the seed, then any other set that
+     * ends within GAP_METRES of the seed's source, or starts within it of
+     * the seed's mouth, is joined on. With no hint every link is chained.
      *
      * @param  array<int, array{0: float, 1: float}>|null  $flowsInto  The parent river's centreline, if any
+     * @param  array{0: float, 1: float}|null  $mouthHint  Roughly where the river ends, as [lat, lng]
      * @return array<int, array{0: float, 1: float}> Ordered [lat, lng] pairs from source to mouth
      */
-    public function riverCentreline(string $watercourseName, ?array $flowsInto = null): array
+    public function riverCentreline(string $watercourseName, ?array $flowsInto = null, ?array $mouthHint = null): array
     {
         $pdo = new PDO('sqlite:'.$this->geoPackagePath, options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 
@@ -55,39 +67,87 @@ class OpenRiversReader
             throw new RuntimeException("No OS Open Rivers links named {$watercourseName}.");
         }
 
-        if ($flowsInto !== null) {
-            $links = $this->componentNearest($links, $flowsInto);
+        if ($flowsInto === null && $mouthHint === null) {
+            return WayChainer::chain($this->chainByTopology($links));
         }
 
-        return WayChainer::chain($this->chainByTopology($links));
+        $chains = array_map(
+            fn (array $component) => WayChainer::chain($this->chainByTopology($component)),
+            $this->connectedComponents($links),
+        );
+
+        $parent = $flowsInto !== null ? new PolylineProjector($flowsInto) : null;
+
+        $distanceToMouth = $parent !== null
+            ? fn (array $mouth) => $parent->project($mouth[0], $mouth[1])->offsetMetres
+            : fn (array $mouth) => Coordinates::distanceMetres($mouth[0], $mouth[1], $mouthHint[0], $mouthHint[1]);
+
+        return $this->joinAcrossGaps($chains, $this->nearestMouth($chains, $distanceToMouth));
     }
 
     /**
-     * Splits the links into groups that share nodes and returns the group
-     * whose downstream end sits closest to the given centreline.
-     *
-     * @param  array<string, array{start: string, end: string, points: array<int, array{0: float, 1: float}>}>  $links
-     * @param  array<int, array{0: float, 1: float}>  $centreline
-     * @return array<string, array{start: string, end: string, points: array<int, array{0: float, 1: float}>}>
+     * @param  array<int, array<int, array{0: float, 1: float}>>  $chains
+     * @param  callable(array{0: float, 1: float}): float  $distanceToMouth
      */
-    private function componentNearest(array $links, array $centreline): array
+    private function nearestMouth(array $chains, callable $distanceToMouth): int
     {
-        $projector = new PolylineProjector($centreline);
-        $best = null;
-        $bestOffset = INF;
+        $best = 0;
+        $bestDistance = INF;
 
-        foreach ($this->connectedComponents($links) as $component) {
-            $chain = WayChainer::chain($this->chainByTopology($component));
-            $mouth = end($chain);
-            $offset = $projector->project($mouth[0], $mouth[1])->offsetMetres;
+        foreach ($chains as $index => $chain) {
+            $distance = $distanceToMouth(end($chain));
 
-            if ($offset < $bestOffset) {
-                $best = $component;
-                $bestOffset = $offset;
+            if ($distance < $bestDistance) {
+                $best = $index;
+                $bestDistance = $distance;
             }
         }
 
-        return $best ?? $links;
+        return $best;
+    }
+
+    /**
+     * Extends the seed chain upstream and downstream with any other chain
+     * that ends or starts close enough to count as the same river.
+     *
+     * @param  array<int, array<int, array{0: float, 1: float}>>  $chains
+     * @return array<int, array{0: float, 1: float}>
+     */
+    private function joinAcrossGaps(array $chains, int $seedIndex): array
+    {
+        $chain = $chains[$seedIndex];
+        unset($chains[$seedIndex]);
+
+        do {
+            $joined = false;
+
+            foreach ($chains as $index => $candidate) {
+                $source = $chain[0];
+                $mouth = end($chain);
+
+                if ($this->distance(end($candidate), $source) <= self::GAP_METRES) {
+                    $chain = [...$candidate, ...$chain];
+                } elseif ($this->distance($candidate[0], $mouth) <= self::GAP_METRES) {
+                    $chain = [...$chain, ...$candidate];
+                } else {
+                    continue;
+                }
+
+                unset($chains[$index]);
+                $joined = true;
+            }
+        } while ($joined && $chains !== []);
+
+        return array_values($chain);
+    }
+
+    /**
+     * @param  array{0: float, 1: float}  $a
+     * @param  array{0: float, 1: float}  $b
+     */
+    private function distance(array $a, array $b): float
+    {
+        return Coordinates::distanceMetres($a[0], $a[1], $b[0], $b[1]);
     }
 
     /**
@@ -142,9 +202,12 @@ class OpenRiversReader
     }
 
     /**
-     * Follows start/end node ids to build contiguous runs of links. The
-     * runs are then handed to the proximity chainer to bridge any gaps
-     * where the main stem briefly carries a different name.
+     * Follows start/end node ids to build contiguous runs of links. Where
+     * the river splits (an island, or a mill cut carrying the river's name)
+     * the branch with the longest path downstream is taken as the main
+     * stem, so a dead-end side channel never truncates the run. The runs
+     * are then handed to the proximity chainer to bridge any gaps where the
+     * main stem briefly carries a different name.
      *
      * @param  array<string, array{start: string, end: string, points: array<int, array{0: float, 1: float}>}>  $links
      * @return array<int, array<int, array{0: float, 1: float}>>
@@ -157,11 +220,33 @@ class OpenRiversReader
             $byStart[$link['start']][] = $id;
         }
 
+        $downstream = [];
+
+        $longestDownstream = function (string $id) use (&$longestDownstream, &$downstream, $links, $byStart): float {
+            if (isset($downstream[$id])) {
+                return $downstream[$id];
+            }
+
+            $downstream[$id] = 0.0;
+            $longest = 0.0;
+
+            foreach ($byStart[$links[$id]['end']] ?? [] as $nextId) {
+                $longest = max($longest, $longestDownstream($nextId));
+            }
+
+            return $downstream[$id] = $this->linkLength($links[$id]['points']) + $longest;
+        };
+
+        foreach (array_keys($links) as $id) {
+            $longestDownstream($id);
+        }
+
         $endNodes = array_flip(array_column($links, 'end'));
+        $sources = array_keys(array_filter($links, fn (array $link) => ! isset($endNodes[$link['start']])));
+        usort($sources, fn (string $a, string $b) => $downstream[$b] <=> $downstream[$a]);
+
         $visited = [];
         $runs = [];
-
-        $sources = array_keys(array_filter($links, fn (array $link) => ! isset($endNodes[$link['start']])));
 
         foreach ([...$sources, ...array_keys($links)] as $startId) {
             if (isset($visited[$startId])) {
@@ -177,7 +262,7 @@ class OpenRiversReader
                 $run = $run === [] ? $link['points'] : [...$run, ...array_slice($link['points'], 1)];
 
                 $nextIds = array_values(array_filter($byStart[$link['end']] ?? [], fn (string $id) => ! isset($visited[$id])));
-                usort($nextIds, fn (string $a, string $b) => count($links[$b]['points']) <=> count($links[$a]['points']));
+                usort($nextIds, fn (string $a, string $b) => $downstream[$b] <=> $downstream[$a]);
 
                 $currentId = $nextIds[0] ?? null;
             }
@@ -188,6 +273,20 @@ class OpenRiversReader
         }
 
         return $runs;
+    }
+
+    /**
+     * @param  array<int, array{0: float, 1: float}>  $points
+     */
+    private function linkLength(array $points): float
+    {
+        $length = 0.0;
+
+        for ($i = 1, $count = count($points); $i < $count; $i++) {
+            $length += $this->distance($points[$i - 1], $points[$i]);
+        }
+
+        return $length;
     }
 
     /**

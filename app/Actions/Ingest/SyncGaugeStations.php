@@ -5,6 +5,7 @@ namespace App\Actions\Ingest;
 use App\Models\GaugeStation;
 use App\Models\River;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
+use App\Services\Geo\PolylineProjector;
 
 /**
  * Discovers Environment Agency level gauges on each river we cover and
@@ -12,6 +13,13 @@ use App\Services\EnvironmentAgency\FloodMonitoringClient;
  */
 class SyncGaugeStations
 {
+    /**
+     * The Environment Agency names rivers nationally, so a search for
+     * "River Calder" also returns Lancashire and Cumbria. Stations further
+     * than this from our centreline belong to one of those.
+     */
+    private const MAX_OFFSET_METRES = 2000;
+
     public function __construct(private FloodMonitoringClient $client) {}
 
     /**
@@ -20,9 +28,14 @@ class SyncGaugeStations
     public function handle(River $river): array
     {
         $count = 0;
+        $projector = $river->hasCentreline() ? new PolylineProjector($river->centreline) : null;
 
         foreach ($river->aliases ?? [] as $alias) {
             foreach ($this->client->stationsOnRiver($alias) as $data) {
+                if ($projector !== null && $projector->project($data->latitude, $data->longitude)->offsetMetres > self::MAX_OFFSET_METRES) {
+                    continue;
+                }
+
                 GaugeStation::query()->updateOrCreate(
                     ['external_id' => $data->externalId],
                     [

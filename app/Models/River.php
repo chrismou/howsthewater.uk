@@ -19,6 +19,8 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property string|null $catchment
  * @property array<int, string>|null $aliases
+ * @property float|null $mouth_latitude
+ * @property float|null $mouth_longitude
  * @property array<int, array{0: float, 1: float}>|null $centreline
  * @property int|null $length_metres
  * @property int|null $joins_at_metres
@@ -38,6 +40,8 @@ class River extends Model
         'slug',
         'catchment',
         'aliases',
+        'mouth_latitude',
+        'mouth_longitude',
         'centreline',
         'length_metres',
         'joins_at_metres',
@@ -47,6 +51,8 @@ class River extends Model
     {
         return [
             'aliases' => 'array',
+            'mouth_latitude' => 'float',
+            'mouth_longitude' => 'float',
             'centreline' => 'array',
         ];
     }
@@ -127,6 +133,21 @@ class River extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Where the river is expected to end, as seeded. Several rivers across
+     * Britain share names like Calder or Derwent, so this picks the right one.
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    public function mouthHint(): ?array
+    {
+        if ($this->mouth_latitude === null || $this->mouth_longitude === null) {
+            return null;
+        }
+
+        return [$this->mouth_latitude, $this->mouth_longitude];
     }
 
     /**

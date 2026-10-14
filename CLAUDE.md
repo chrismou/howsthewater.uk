@@ -162,6 +162,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   spot's status; `RiverOverviewService` wraps it for listings. Add new facts to the DTO first, then to both outputs.
 - Data is ingested in the background by scheduled artisan commands (see `routes/console.php`) and served from MySQL.
   Pages never call third-party APIs at request time.
+- Main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk, Hull) and their tributaries are seeded
+  by `RiverSeeder`, spots by `SpotSeeder`. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
   recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
@@ -183,8 +185,12 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
 - River centrelines: OS Open Rivers GeoPackage at `OS_OPEN_RIVERS_PATH` (default `storage/app/private/oprvrs_gb.gpkg`,
   gitignored, download from the OS Data Hub). OpenStreetMap via Overpass is a fallback (`--source=osm`) but is unreliable.
-  Beck names repeat across Yorkshire, so `OpenRiversReader` takes the parent centreline and keeps only the connected
-  set of links whose mouth is nearest it. Seed parents before tributaries; `rivers:centrelines` orders them that way.
+  Names repeat (becks across Yorkshire, and Calder, Don, Derwent, Ouse and Esk across Britain), so `OpenRiversReader`
+  seeds from the set of links whose mouth is nearest the parent centreline (tributaries) or the seeded `mouth_latitude`
+  and `mouth_longitude` (main rivers), then joins other fragments within 4 km to bridge reservoirs. Seed parents before
+  tributaries; `rivers:centrelines` orders them that way.
+- The Environment Agency also names rivers nationally, so `SyncGaugeStations` drops stations more than 2 km from the
+  centreline. Run `rivers:centrelines` before `ingest:gauges --stations` for a new river.
 - No API keys are needed. Map tiles are OpenStreetMap.
 
 ## Local setup

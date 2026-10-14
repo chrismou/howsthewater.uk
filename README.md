@@ -17,11 +17,11 @@ keep that distinction.
 - Shows a 30-day history per spot: minutes of upstream spilling per day and the individual events.
 - Serves a page per river and per spot, plus a read-only JSON API at `/api/v1` built from the same services.
 
-Covered rivers are seeded in `database/seeders/RiverSeeder.php` and spots in `SpotSeeder.php`. Currently the Wharfe
-(with the Washburn, Kex Beck, Weeton Beck, Keswick Beck, Bardsey Beck, Collingham Beck and Cock Beck) and the Aire
-(with the Worth, Bradford Beck, Meanwood Beck, Adel Beck and Wyke Beck). Tributaries don't get pages; their monitors
-count as upstream of any spot below the confluence, and distances follow the water down the tributary and then the
-main river.
+Covered rivers are seeded in `database/seeders/RiverSeeder.php` and spots in `SpotSeeder.php`. The main rivers are the
+Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk and Hull, each with the named tributaries that carry
+Yorkshire Water monitors (the Colne, Holme, Rother, Dearne, Sheaf, Loxley, Rye, Foss, Skell and around fifty becks and
+brooks). Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances
+follow the water down the tributary and then the main river.
 
 Spot conditions are cached for up to 30 minutes and flushed by every ingest and positioning run, so pages and the API
 are cheap to serve. Set `CACHE_STORE=redis` in production if Redis is available; the database store works fine too.
@@ -105,8 +105,11 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 
 1. Add the river to `RiverSeeder` with the receiving watercourse names the overflow feed uses as `aliases`. Names are
    matched after stripping qualifiers like "(Culverted)", and "Trib Of River Aire" counts as the Aire.
-2. For a tributary, set `parent` to the parent river's slug. Only name it as the OS Open Rivers data does. Several
-   becks can share a name; the centreline import picks the one whose mouth is nearest the parent river.
+2. Name it as the OS Open Rivers data does. A main river needs an approximate `mouth` lat/lng, because names like
+   Calder, Derwent and Ouse are shared with rivers elsewhere in Britain and the import keeps the one ending nearest it.
+   For a tributary, set `parent` to the parent river's slug instead; several becks can share a name and the import
+   picks the one whose mouth is nearest the parent river. Fragments split by reservoirs or a brief change of name are
+   joined when they sit within a few kilometres of each other.
 3. Add spots to `SpotSeeder`, source to mouth, with the lat/lng of the bank access point.
 4. Run `php artisan db:seed`, then `rivers:centrelines`, `ingest:gauges --stations` and `rivers:positions`. The
    positions step also records where each tributary joins its parent and links each spot to its nearest gauge,
