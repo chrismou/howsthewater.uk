@@ -18,5 +18,9 @@
             <span class="text-stone-400">&middot;</span>
             <span>{{ $level->relativeToTypical }}</span>
         @endif
+        @if ($level->isStale())
+            <span class="text-stone-400">&middot;</span>
+            <span class="font-medium text-amber-700">read {{ $level->latestAt->diffForHumans() }}</span>
+        @endif
     </span>
 @endif

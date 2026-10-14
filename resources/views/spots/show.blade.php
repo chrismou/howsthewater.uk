@@ -41,11 +41,26 @@
 
     <section class="mb-8 rounded-lg border border-stone-200 bg-white p-5">
         <div class="flex flex-wrap items-center gap-3">
-            <x-spill-badge :recency="$conditions->spillRecency" class="text-sm px-3 py-1" />
+            <x-spill-badge :recency="$conditions->spillRecency" :stale="$conditions->overflowDataIsStale()" class="text-sm px-3 py-1" />
             @if ($conditions->dataUpdatedAt)
                 <span class="text-xs text-stone-500">Monitor data updated {{ $conditions->dataUpdatedAt->diffForHumans() }}</span>
             @endif
         </div>
+
+        @if ($conditions->overflowDataIsStale())
+            <div class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+                <p class="font-medium">Monitor data is out of date.</p>
+                <p class="mt-1">
+                    @if ($conditions->dataUpdatedAt)
+                        The overflow feed has not updated for {{ $conditions->dataUpdatedAt->diffForHumans(null, \Illuminate\Support\Carbon::DIFF_ABSOLUTE) }}
+                        (last update {{ $conditions->dataUpdatedAt->format('j M, H:i') }}).
+                    @else
+                        The overflow feed gave no update time for these monitors.
+                    @endif
+                    The spill status and counts above describe the data as it was then, not what is happening now.
+                </p>
+            </div>
+        @endif
 
         <dl class="mt-5 grid gap-4 sm:grid-cols-4">
             <div>
@@ -145,6 +160,12 @@
                     <p class="mt-3 text-xs text-stone-500">
                         {{ $level->station->label }} gauge, read {{ $level->latestAt->diffForHumans() }}
                     </p>
+                    @if ($level->isStale())
+                        <p class="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+                            No reading from this gauge for {{ $level->latestAt->diffForHumans(null, \Illuminate\Support\Carbon::DIFF_ABSOLUTE) }}.
+                            The level shown is the last one received, not the current level.
+                        </p>
+                    @endif
                     <div class="mt-4 h-24" data-sparkline="{{ json_encode($sparkline) }}"></div>
                 @endif
             </div>

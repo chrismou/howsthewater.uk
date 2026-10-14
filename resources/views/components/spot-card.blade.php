@@ -7,9 +7,21 @@
             <h3 class="font-semibold">{{ $conditions->spot->name }}</h3>
             <p class="mt-0.5 text-xs text-stone-500">{{ $conditions->spot->river->name }}</p>
         </div>
-        <x-spill-badge :recency="$conditions->spillRecency" />
+        <x-spill-badge :recency="$conditions->spillRecency" :stale="$conditions->overflowDataIsStale()" />
     </div>
     <dl class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-600">
+        @if ($conditions->overflowDataIsStale())
+            <div class="basis-full">
+                <dt class="sr-only">Data freshness</dt>
+                <dd class="font-medium text-amber-700">
+                    @if ($conditions->dataUpdatedAt)
+                        Monitor data is {{ $conditions->dataUpdatedAt->diffForHumans(null, \Illuminate\Support\Carbon::DIFF_ABSOLUTE) }} old
+                    @else
+                        Monitor data has no update time
+                    @endif
+                </dd>
+            </div>
+        @endif
         <div>
             <dt class="sr-only">Upstream monitors</dt>
             <dd>{{ $conditions->upstreamMonitors->count() }} upstream {{ \Illuminate\Support\Str::plural('monitor', $conditions->upstreamMonitors->count()) }}</dd>

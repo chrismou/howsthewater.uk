@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\GaugeReading;
+use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
 use App\Models\River;
 use App\Models\SpillEvent;
@@ -54,4 +56,17 @@ it('returns river overviews', function () {
 
 it('404s for unknown spots as json', function () {
     $this->getJson(route('api.v1.spots.show', 'nowhere'))->assertNotFound();
+});
+
+it('flags stale overflow and gauge data', function () {
+    $river = River::factory()->create();
+    $station = GaugeStation::factory()->create(['river_id' => $river->id]);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'gauge_station_id' => $station->id, 'river_metres' => 50000]);
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 48000, 'source_updated_at' => now()->subHours(8)]);
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(8)]);
+
+    $this->getJson(route('api.v1.spots.show', $spot))
+        ->assertOk()
+        ->assertJsonPath('data.data_stale', true)
+        ->assertJsonPath('data.level.stale', true);
 });

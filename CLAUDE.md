@@ -175,6 +175,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `build()` in tests that change data between calls.
 - Gauges carry a `unit` (`m` for stage above the gauge datum, `mAOD` for height above sea level). Spots prefer `m`
   gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
+- Stale data: `SpotConditions::overflowDataIsStale()` and `LevelSummary::isStale()` compare the feed timestamp or latest
+  reading against `STALE_AFTER_HOURS` (6) at read time, so cached conditions still go stale on schedule. Show the
+  warning and the neutral badge wherever a spill status or level is printed; the API exposes `data_stale` and
+  `level.stale`.
 - Spill history (`SpillHistoryService`) is derived from `spill_events`, which only exist from the first ingest run
   onwards. Don't backfill from the feed; it has no history.
 

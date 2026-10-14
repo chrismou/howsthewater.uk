@@ -93,7 +93,8 @@ it('summarises the linked gauge level and trend', function () {
         ->and($level->trend)->toBe(LevelTrend::Rising)
         ->and($level->changeLast3Hours)->toEqualWithDelta(0.15, 0.001)
         ->and($level->relativeToTypical)->toBe('within typical range')
-        ->and($level->recentReadings)->toHaveCount(2);
+        ->and($level->recentReadings)->toHaveCount(2)
+        ->and($level->isStale())->toBeFalse();
 });
 
 it('reports an unknown trend when readings are stale', function () {
@@ -147,4 +148,39 @@ it('survives a round trip through a serialising cache store', function () {
         ->and($cached->dailyHistory)->toHaveCount(30);
 
     Cache::store('file')->flush();
+});
+
+it('flags overflow data as stale once the feed stops updating', function () {
+    [$spot, $upstream] = spotWithUpstream();
+    $upstream->update(['source_updated_at' => now()->subHours(7)]);
+
+    expect(app(SpotConditionsService::class)->build($spot)->overflowDataIsStale())->toBeTrue();
+
+    $upstream->update(['source_updated_at' => now()->subHours(5)]);
+
+    expect(app(SpotConditionsService::class)->build($spot)->overflowDataIsStale())->toBeFalse();
+});
+
+it('treats missing feed timestamps as stale but no monitors as fresh', function () {
+    [$spot, $upstream] = spotWithUpstream();
+    $upstream->update(['source_updated_at' => null]);
+
+    expect(app(SpotConditionsService::class)->build($spot)->overflowDataIsStale())->toBeTrue();
+
+    $noMonitors = Spot::factory()->create(['river_metres' => null]);
+
+    expect(app(SpotConditionsService::class)->build($noMonitors)->overflowDataIsStale())->toBeFalse();
+});
+
+it('flags the level as stale when the latest reading is old', function () {
+    $station = GaugeStation::factory()->create();
+    $spot = Spot::factory()->create(['gauge_station_id' => $station->id, 'river_metres' => null]);
+
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(7), 'value' => 0.40]);
+
+    expect(app(SpotConditionsService::class)->build($spot)->level->isStale())->toBeTrue();
+
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(5), 'value' => 0.41]);
+
+    expect(app(SpotConditionsService::class)->build($spot)->level->isStale())->toBeFalse();
 });

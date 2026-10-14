@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\GaugeReading;
+use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
 use App\Models\River;
 use App\Models\Spot;
@@ -42,4 +44,31 @@ it('hides unpublished spots', function () {
 
     $this->get(route('spots.show', $spot))->assertNotFound();
     $this->get(route('home'))->assertDontSee($spot->name);
+});
+
+it('warns when monitor and gauge data are out of date', function () {
+    $river = River::factory()->create();
+    $station = GaugeStation::factory()->create(['river_id' => $river->id]);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'gauge_station_id' => $station->id, 'river_metres' => 50000]);
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000, 'source_updated_at' => now()->subHours(8)]);
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(8)]);
+
+    $this->get(route('spots.show', $spot))
+        ->assertOk()
+        ->assertSee('Monitor data is out of date')
+        ->assertSee('No reading from this gauge for 8 hours');
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Monitor data is 8 hours old');
+});
+
+it('does not warn when data is fresh', function () {
+    $river = River::factory()->create();
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'river_metres' => 50000]);
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+
+    $this->get(route('spots.show', $spot))
+        ->assertOk()
+        ->assertDontSee('Monitor data is out of date');
 });

@@ -45,6 +45,7 @@ class SpotConditionsResource extends JsonResource
                 'trend' => $this->level->trend->value,
                 'change_last_3_hours' => $this->level->changeLast3Hours,
                 'relative_to_typical' => $this->level->relativeToTypical,
+                'stale' => $this->level->isStale(),
             ],
             'upstream_monitors' => OverflowMonitorResource::collection($this->upstreamMonitors),
             'history' => [
@@ -63,6 +64,7 @@ class SpotConditionsResource extends JsonResource
                 ]),
             ],
             'data_updated_at' => $this->dataUpdatedAt?->toIso8601String(),
+            'data_stale' => $this->overflowDataIsStale(),
         ];
     }
 }

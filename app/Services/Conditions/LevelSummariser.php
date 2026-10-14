@@ -68,7 +68,7 @@ class LevelSummariser
 
     private function trendFor(?float $change, GaugeReading $latest): LevelTrend
     {
-        if ($latest->measured_at->lessThan(now()->subHours(6))) {
+        if ($latest->measured_at->lessThan(now()->subHours(LevelSummary::STALE_AFTER_HOURS))) {
             return LevelTrend::Unknown;
         }
 
