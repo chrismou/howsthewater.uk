@@ -23,14 +23,25 @@ class HomeController extends Controller
     }
 
     /**
-     * A few spots to try from the search box: the best monitored spot on
-     * each of the first rivers, so the examples have something to show.
+     * A few spots to try from the search box: the ones flagged as featured
+     * in the seed data, or failing that the best monitored spot on each of
+     * the first rivers so the examples have something to show.
      *
      * @param  Collection<int, RegionSummary>  $regions
      * @return Collection<int, SpotSummary>
      */
     private function featuredSpots(Collection $regions): Collection
     {
+        $featured = $regions
+            ->flatMap(fn (RegionSummary $region) => $region->spots())
+            ->filter(fn (SpotSummary $spot) => $spot->featured)
+            ->take(6)
+            ->values();
+
+        if ($featured->isNotEmpty()) {
+            return $featured;
+        }
+
         return $regions
             ->flatMap(fn (RegionSummary $region) => $region->rivers)
             ->map(fn (RiverSummary $river) => $river->spots->sortByDesc('monitorCount')->first())

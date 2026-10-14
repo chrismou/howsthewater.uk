@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property float $longitude
  * @property int|null $river_metres
  * @property bool $is_published
+ * @property bool $is_featured
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read River $river
@@ -43,6 +44,7 @@ class Spot extends Model
         'longitude',
         'river_metres',
         'is_published',
+        'is_featured',
     ];
 
     protected function casts(): array
@@ -51,6 +53,7 @@ class Spot extends Model
             'latitude' => 'float',
             'longitude' => 'float',
             'is_published' => 'boolean',
+            'is_featured' => 'boolean',
         ];
     }
 

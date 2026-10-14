@@ -26,7 +26,13 @@ class SpotFactory extends Factory
             'longitude' => fake()->longitude(-2.0, -1.2),
             'river_metres' => fake()->numberBetween(1000, 90000),
             'is_published' => true,
+            'is_featured' => false,
         ];
+    }
+
+    public function featured(): static
+    {
+        return $this->state(fn () => ['is_featured' => true]);
     }
 
     public function unpublished(): static

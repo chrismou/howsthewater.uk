@@ -163,7 +163,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - Data is ingested in the background by scheduled artisan commands (see `routes/console.php`) and served from MySQL.
   Pages never call third-party APIs at request time.
 - Main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk, Hull) and their tributaries are seeded
-  by `RiverSeeder` (all in the Yorkshire region from `RegionSeeder`), spots by `SpotSeeder`. Spot coordinates sit on the OS centreline; new ones should too.
+  by `RiverSeeder` (all in the Yorkshire region from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
+  marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
   recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline

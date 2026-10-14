@@ -9,6 +9,8 @@ use App\Models\Region;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
+use App\Services\Conditions\ConditionsCache;
+use App\Services\Conditions\RegionSummaries;
 use App\View\Components\Help;
 
 /**
@@ -215,4 +217,18 @@ it('shows the live bar for the region on every page', function () {
 
 it('404s an unknown region', function () {
     $this->get('/narnia')->assertNotFound();
+});
+
+it('suggests featured spots on the home page before falling back to the best monitored', function () {
+    [$region, $river, $busy] = spotWithUrl(['name' => 'Castleford', 'slug' => 'castleford', 'river_metres' => 90000]);
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 80000]);
+    $popular = Spot::factory()->featured()->create(['river_id' => $river->id, 'name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 50000]);
+
+    $this->get(route('home'))->assertOk()->assertSee('Try Ilkley')->assertDontSee('Try Castleford');
+
+    $popular->update(['is_featured' => false]);
+    app(ConditionsCache::class)->flush();
+    app(RegionSummaries::class)->refresh($region);
+
+    $this->get(route('home'))->assertOk()->assertSee('Try Castleford');
 });

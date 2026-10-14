@@ -9,6 +9,13 @@ use Illuminate\Support\Str;
 class SpotSeeder extends Seeder
 {
     /**
+     * Well known spots suggested on the home page, by slug.
+     *
+     * @var array<int, string>
+     */
+    private const FEATURED = ['ilkley', 'bolton-abbey', 'burnsall', 'otley', 'knaresborough'];
+
+    /**
      * Spots listed source to mouth. Coordinates are the riverbank access point.
      *
      * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
@@ -149,7 +156,9 @@ class SpotSeeder extends Seeder
             $river = $region->rivers()->where('slug', $riverSlug)->firstOrFail();
 
             foreach ($spots as $spot) {
-                $river->spots()->updateOrCreate(['slug' => Str::slug($spot['name'])], $spot);
+                $slug = Str::slug($spot['name']);
+
+                $river->spots()->updateOrCreate(['slug' => $slug], [...$spot, 'is_featured' => in_array($slug, self::FEATURED, true)]);
             }
         }
     }
