@@ -27,7 +27,7 @@
         data-map-markers="{{ json_encode($mapMarkers) }}"
     ></div>
 
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
         @foreach ($overview->spots as $conditions)
             <x-spot-card :conditions="$conditions" />
         @endforeach
