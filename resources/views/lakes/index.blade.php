@@ -35,7 +35,7 @@
                 @foreach ($lakes as $conditions)
                     <tr class="hover:bg-surface-2">
                         <td class="px-4 py-2.5"><a href="{{ route('lakes.show', [$region, $conditions->lake]) }}" class="font-semibold hover:underline">{{ $conditions->lake->name }}</a></td>
-                        <td class="px-4 py-2.5">{{ $conditions->bathingWaters->isEmpty() ? 'None designated' : $conditions->bathingWaters->map(fn ($summary) => $summary->bathingWater->classification?->value ?? 'Not classified')->join(', ') }}</td>
+                        <td class="px-4 py-2.5">{{ $conditions->bathingWaters->isEmpty() ? 'No results yet' : $conditions->bathingWaters->map(fn ($summary) => $summary->bathingWater->classification?->value ?? 'Not classified')->join(', ') }}</td>
                         <td class="hidden px-4 py-2.5 sm:table-cell"><x-level-badge :level="$conditions->level" /></td>
                         <td class="hidden px-4 py-2.5 sm:table-cell"><x-spill-badge :recency="$conditions->overflows->spillRecency" :stale="$conditions->overflows->isStale()" nearby /></td>
                     </tr>

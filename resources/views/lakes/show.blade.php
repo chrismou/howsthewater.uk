@@ -101,7 +101,7 @@
     <section class="mt-10">
         <h2 class="font-display mb-3 text-lg font-semibold">Designated bathing sites</h2>
         @if ($conditions->bathingWaters->isEmpty())
-            <p class="text-sm text-ink-2">The Environment Agency has no designated bathing sites on {{ $lake->name }}, so it is not sampled for bathing water quality.</p>
+            <p class="text-sm text-ink-2">No Environment Agency bathing water results for {{ $lake->name }} yet.</p>
         @else
             <div class="grid gap-4 md:grid-cols-2">
                 @foreach ($conditions->bathingWaters as $summary)
