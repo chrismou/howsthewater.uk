@@ -37,6 +37,7 @@ final readonly class SpotConditions
         public ?RainfallSummary $rainfall,
         public ?Carbon $dataUpdatedAt,
         public Collection $floodWarnings,
+        public ?BathingWaterSummary $bathingWater = null,
     ) {
     }
 

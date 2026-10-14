@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Services\Conditions;
+
+use App\Data\BathingWaterSummary;
+use App\Data\BeachConditions;
+use App\Data\LakeConditions;
+use App\Data\NearbyMonitorSummary;
+use App\Data\NearbyOverflows;
+use App\Enums\OverflowStatus;
+use App\Enums\SpillRecency;
+use App\Models\BathingWater;
+use App\Models\Lake;
+use App\Models\SpillEvent;
+
+/**
+ * Builds the picture for beaches and lakes: the Environment Agency's
+ * bathing water records plus storm overflows within a fixed distance.
+ * Shared by web and API, and cached like spot conditions.
+ */
+class WaterBodyConditionsService
+{
+    /**
+     * How far from a beach, lake or bathing site an overflow can be and
+     * still be listed. The sea and lakes have no upstream, so distance is
+     * the only measure; this is close enough to plausibly reach the water.
+     */
+    public const NEARBY_RADIUS_METRES = 3000;
+
+    private const RECENT_SAMPLES = 10;
+
+    public function __construct(
+        private NearbyMonitorFinder $monitors,
+        private SpillHistoryService $spillHistory,
+        private LevelSummariser $levelSummariser,
+        private ConditionsCache $cache,
+    ) {
+    }
+
+    public function forBeach(BathingWater $beach): BeachConditions
+    {
+        return $this->cache->remember("beach:{$beach->id}", fn () => $this->buildBeach($beach));
+    }
+
+    public function forLake(Lake $lake): LakeConditions
+    {
+        return $this->cache->remember("lake:{$lake->id}", fn () => $this->buildLake($lake));
+    }
+
+    /**
+     * Computes beach conditions from the database, bypassing the cache.
+     */
+    public function buildBeach(BathingWater $beach): BeachConditions
+    {
+        return new BeachConditions(
+            bathingWater: $this->summarise($beach),
+            overflows: $this->overflowsNear([[$beach->latitude, $beach->longitude]]),
+        );
+    }
+
+    /**
+     * Computes lake conditions from the database, bypassing the cache.
+     * Overflows are measured from the lake's centre and each bathing site,
+     * so long lakes like Windermere are covered end to end.
+     */
+    public function buildLake(Lake $lake): LakeConditions
+    {
+        $lake->loadMissing(['gaugeStation', 'bathingWaters']);
+
+        $points = [[$lake->latitude, $lake->longitude], ...$lake->bathingWaters->map(fn (BathingWater $site) => [$site->latitude, $site->longitude])->all()];
+
+        return new LakeConditions(
+            lake: $lake,
+            bathingWaters: $lake->bathingWaters->map(fn (BathingWater $site) => $this->summarise($site))->values(),
+            level: $lake->gaugeStation !== null ? $this->levelSummariser->summarise($lake->gaugeStation) : null,
+            overflows: $this->overflowsNear($points),
+        );
+    }
+
+    /**
+     * A bathing water's recent samples and classification history.
+     */
+    public function summarise(BathingWater $bathingWater): BathingWaterSummary
+    {
+        return new BathingWaterSummary(
+            bathingWater: $bathingWater->withoutRelations(),
+            recentSamples: $bathingWater->samples()->limit(self::RECENT_SAMPLES)->get(),
+            classifications: $bathingWater->classifications()->get(),
+        );
+    }
+
+    /**
+     * @param  array<int, array{0: float, 1: float}>  $points
+     */
+    private function overflowsNear(array $points): NearbyOverflows
+    {
+        $monitors = $this->monitors->near($points, self::NEARBY_RADIUS_METRES);
+        $recentEvents = $this->spillHistory->recentEventsForMonitors($monitors->map(fn (NearbyMonitorSummary $summary) => $summary->monitor->id));
+
+        $byStatus = fn (OverflowStatus $status) => $monitors->filter(fn (NearbyMonitorSummary $summary) => $summary->status === $status)->count();
+        $dischargingNow = $byStatus(OverflowStatus::Discharging);
+        $offline = $byStatus(OverflowStatus::Offline);
+
+        return new NearbyOverflows(
+            radiusMetres: self::NEARBY_RADIUS_METRES,
+            monitors: $monitors,
+            spillRecency: SpillRecency::assess(
+                monitorCount: $monitors->count(),
+                dischargingNow: $dischargingNow,
+                offline: $offline,
+                spilledWithin24Hours: $monitors->contains(fn (NearbyMonitorSummary $summary) => $summary->spilledSince(now()->subHours(24))),
+                spilledWithin48Hours: $monitors->contains(fn (NearbyMonitorSummary $summary) => $summary->spilledSince(now()->subHours(48))),
+            ),
+            dischargingNowCount: $dischargingNow,
+            offlineCount: $offline,
+            spillsLast48HoursCount: $recentEvents->filter(fn (SpillEvent $event) => $event->ended_at === null || $event->ended_at->greaterThanOrEqualTo(now()->subHours(48)))->count(),
+            spillsLast30DaysCount: $recentEvents->count(),
+            recentSpillEvents: $recentEvents,
+            dataUpdatedAt: $monitors->max(fn (NearbyMonitorSummary $summary) => $summary->monitor->source_updated_at),
+        );
+    }
+}

@@ -25,8 +25,17 @@ class SpillHistoryService
      */
     public function recentEvents(Collection $monitors, ?Carbon $since = null): Collection
     {
-        $monitorIds = $monitors->map(fn (UpstreamMonitorSummary $summary) => $summary->monitor->id);
+        return $this->recentEventsForMonitors($monitors->map(fn (UpstreamMonitorSummary $summary) => $summary->monitor->id), $since);
+    }
 
+    /**
+     * As recentEvents(), for any set of monitor ids.
+     *
+     * @param  Collection<int, int>  $monitorIds
+     * @return Collection<int, SpillEvent>
+     */
+    public function recentEventsForMonitors(Collection $monitorIds, ?Carbon $since = null): Collection
+    {
         if ($monitorIds->isEmpty()) {
             return collect();
         }

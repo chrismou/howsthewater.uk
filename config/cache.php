@@ -1,7 +1,12 @@
 <?php
 
+use App\Data\BathingWaterSummary;
+use App\Data\BeachConditions;
 use App\Data\FloodWarningSummary;
+use App\Data\LakeConditions;
 use App\Data\LevelSummary;
+use App\Data\NearbyMonitorSummary;
+use App\Data\NearbyOverflows;
 use App\Data\RainfallSummary;
 use App\Data\RegionSummary;
 use App\Data\RiverSummary;
@@ -9,12 +14,19 @@ use App\Data\SpillHistoryDay;
 use App\Data\SpotConditions;
 use App\Data\SpotSummary;
 use App\Data\UpstreamMonitorSummary;
+use App\Enums\BathingWaterClassification;
+use App\Enums\BathingWaterKind;
 use App\Enums\FloodSeverity;
 use App\Enums\LevelTrend;
 use App\Enums\OverflowStatus;
+use App\Enums\PollutionRisk;
 use App\Enums\SpillRecency;
+use App\Models\BathingWater;
+use App\Models\BathingWaterClassificationRecord;
+use App\Models\BathingWaterSample;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
+use App\Models\Lake;
 use App\Models\OverflowMonitor;
 use App\Models\RainfallReading;
 use App\Models\RainfallStation;
@@ -159,7 +171,12 @@ return [
     */
 
     'serializable_classes' => [
+        BathingWaterSummary::class,
+        BeachConditions::class,
         FloodWarningSummary::class,
+        LakeConditions::class,
+        NearbyMonitorSummary::class,
+        NearbyOverflows::class,
         LevelSummary::class,
         RainfallSummary::class,
         RegionSummary::class,
@@ -168,12 +185,19 @@ return [
         SpotConditions::class,
         SpotSummary::class,
         UpstreamMonitorSummary::class,
+        BathingWaterClassification::class,
+        BathingWaterKind::class,
         FloodSeverity::class,
         LevelTrend::class,
         OverflowStatus::class,
+        PollutionRisk::class,
         SpillRecency::class,
+        BathingWater::class,
+        BathingWaterClassificationRecord::class,
+        BathingWaterSample::class,
         GaugeReading::class,
         GaugeStation::class,
+        Lake::class,
         OverflowMonitor::class,
         RainfallReading::class,
         RainfallStation::class,

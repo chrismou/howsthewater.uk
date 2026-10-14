@@ -15,6 +15,22 @@ enum SpillRecency: string
     case Offline = 'offline';
     case NoData = 'no_data';
 
+    /**
+     * The recency for a set of monitors. Every monitor being offline is an
+     * absence of data, not a clean bill, so it never reads as "none".
+     */
+    public static function assess(int $monitorCount, int $dischargingNow, int $offline, bool $spilledWithin24Hours, bool $spilledWithin48Hours): self
+    {
+        return match (true) {
+            $monitorCount === 0 => self::NoData,
+            $dischargingNow > 0 => self::DischargingNow,
+            $spilledWithin24Hours => self::Within24Hours,
+            $spilledWithin48Hours => self::Within48Hours,
+            $offline === $monitorCount => self::Offline,
+            default => self::None,
+        };
+    }
+
     public function label(): string
     {
         return match ($this) {

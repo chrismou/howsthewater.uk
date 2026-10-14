@@ -2,11 +2,13 @@
 
 namespace App\Services\Conditions;
 
+use App\Data\BathingWaterSummary;
 use App\Data\FloodWarningSummary;
 use App\Data\SpotConditions;
 use App\Data\UpstreamMonitorSummary;
 use App\Enums\OverflowStatus;
 use App\Enums\SpillRecency;
+use App\Models\BathingWater;
 use App\Models\FloodWarning;
 use App\Models\River;
 use App\Models\SpillEvent;
@@ -26,6 +28,7 @@ class SpotConditionsService
         private SpillHistoryService $spillHistory,
         private LevelSummariser $levelSummariser,
         private RainfallSummariser $rainfallSummariser,
+        private WaterBodyConditionsService $waterBodies,
         private ConditionsCache $cache,
     ) {
     }
@@ -75,7 +78,18 @@ class SpotConditionsService
             rainfall: $spot->rainfallStation !== null ? $this->rainfallSummariser->summarise($spot, $spot->rainfallStation) : null,
             dataUpdatedAt: $monitors->max(fn (UpstreamMonitorSummary $summary) => $summary->monitor->source_updated_at),
             floodWarnings: $this->floodWarnings($spot),
+            bathingWater: $this->bathingWater($spot),
         );
+    }
+
+    /**
+     * The EA designated bathing water at this spot, if it is one.
+     */
+    private function bathingWater(Spot $spot): ?BathingWaterSummary
+    {
+        $bathingWater = BathingWater::query()->where('spot_id', $spot->id)->first();
+
+        return $bathingWater === null ? null : $this->waterBodies->summarise($bathingWater);
     }
 
     /**
@@ -125,27 +139,12 @@ class SpotConditionsService
      */
     private function spillRecency(Collection $monitors, int $dischargingNow, int $offline): SpillRecency
     {
-        if ($monitors->isEmpty()) {
-            return SpillRecency::NoData;
-        }
-
-        if ($dischargingNow > 0) {
-            return SpillRecency::DischargingNow;
-        }
-
-        if ($monitors->contains(fn (UpstreamMonitorSummary $summary) => $summary->spilledSince(now()->subHours(24)))) {
-            return SpillRecency::Within24Hours;
-        }
-
-        if ($monitors->contains(fn (UpstreamMonitorSummary $summary) => $summary->spilledSince(now()->subHours(48)))) {
-            return SpillRecency::Within48Hours;
-        }
-
-        // Every monitor being offline is an absence of data, not a clean bill, so it must not read as one.
-        if ($offline === $monitors->count()) {
-            return SpillRecency::Offline;
-        }
-
-        return SpillRecency::None;
+        return SpillRecency::assess(
+            monitorCount: $monitors->count(),
+            dischargingNow: $dischargingNow,
+            offline: $offline,
+            spilledWithin24Hours: $monitors->contains(fn (UpstreamMonitorSummary $summary) => $summary->spilledSince(now()->subHours(24))),
+            spilledWithin48Hours: $monitors->contains(fn (UpstreamMonitorSummary $summary) => $summary->spilledSince(now()->subHours(48))),
+        );
     }
 }

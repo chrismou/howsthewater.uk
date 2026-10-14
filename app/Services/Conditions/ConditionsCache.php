@@ -67,6 +67,20 @@ class ConditionsCache
     }
 
     /**
+     * Caches any conditions object under the same version and code hash as
+     * spots, so ingest flushes and deploys invalidate it the same way.
+     *
+     * @template TValue
+     *
+     * @param  Closure(): TValue  $build
+     * @return TValue
+     */
+    public function remember(string $name, Closure $build): mixed
+    {
+        return Cache::remember(sprintf('conditions:v%d:%s:%s', $this->version(), self::codeVersion(), $name), now()->addMinutes(self::TTL_MINUTES), $build);
+    }
+
+    /**
      * Invalidates every cached spot at once by moving to a new version.
      */
     public function flush(): void
