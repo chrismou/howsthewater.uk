@@ -141,14 +141,17 @@ class BathingWater extends Model
 
     /**
      * Whether today falls in the bathing season, when the EA samples weekly
-     * and publishes daily pollution risk forecasts.
+     * and publishes daily pollution risk forecasts. The season dates are UK
+     * calendar dates, so today is taken in UK time, not UTC.
      */
     public function isInSeason(?Carbon $on = null): bool
     {
-        $on ??= now();
+        if ($this->season_starts_on === null || $this->season_ends_on === null) {
+            return false;
+        }
 
-        return $this->season_starts_on !== null
-            && $this->season_ends_on !== null
-            && $on->between($this->season_starts_on->copy()->startOfDay(), $this->season_ends_on->copy()->endOfDay());
+        $today = ($on ?? now())->copy()->timezone(config('app.display_timezone', 'Europe/London'))->toDateString();
+
+        return $today >= $this->season_starts_on->toDateString() && $today <= $this->season_ends_on->toDateString();
     }
 }

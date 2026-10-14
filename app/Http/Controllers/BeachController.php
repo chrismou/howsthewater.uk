@@ -16,7 +16,7 @@ class BeachController extends Controller
 
         return view('beaches.index', [
             'region' => $region,
-            'beaches' => $beaches->map(fn (BathingWater $beach) => $conditions->forBeach($beach)),
+            'beaches' => $conditions->forBeaches($beaches),
         ]);
     }
 

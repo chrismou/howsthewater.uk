@@ -102,3 +102,15 @@ it('has no feeds for unpublished spots or tributaries', function () {
     $this->get(route('spots.feed', [$region, $river, $hidden]))->assertNotFound();
     $this->get(route('rivers.feed', [$region, $tributary]))->assertNotFound();
 });
+
+it('keeps the feed valid XML whatever the EA message contains', function () {
+    [$region, $river, $spot] = feedSpot();
+    $area = FloodArea::factory()->hasAttached($spot)->create(['label' => 'Wharfe & Washburn']);
+    FloodWarning::factory()->create(['flood_area_id' => $area->id, 'message' => "Levels rising\x0B fast <now>"]);
+
+    $xml = $this->get(route('spots.feed', [$region, $river, $spot]))->assertOk()->getContent();
+
+    expect(simplexml_load_string($xml))->not->toBeFalse()
+        ->and($xml)->toContain('Wharfe &amp; Washburn')
+        ->and($xml)->not->toContain("\x0B");
+});

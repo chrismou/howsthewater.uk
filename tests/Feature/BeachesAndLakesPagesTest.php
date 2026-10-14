@@ -9,6 +9,7 @@ use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\Spot;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @return array{0: Region, 1: BathingWater, 2: Lake}
@@ -119,4 +120,40 @@ it('serves beaches and lakes from the API', function () {
         ->assertJsonPath('data.bathing_waters.0.name', 'Windermere, Fellfoot');
 
     $this->getJson(route('api.v1.beaches.index', $region))->assertOk()->assertJsonCount(1, 'data');
+});
+
+it('renders the menus from one cached lookup however many regions there are', function () {
+    waterBodies();
+    $this->get(route('search'))->assertOk();
+
+    foreach (range(1, 3) as $index) {
+        Lake::factory()->create(['region_id' => Region::factory()->create(['slug' => "extra-{$index}"])->id]);
+    }
+
+    DB::enableQueryLog();
+    $this->get(route('search'))->assertOk();
+    $menuQueries = collect(DB::getQueryLog())->filter(fn (array $query) => str_contains($query['query'], 'from `lakes`') || str_contains($query['query'], 'from `bathing_waters`'));
+
+    expect($menuQueries)->toBeEmpty();
+});
+
+it('rebuilds the menus when region summaries refresh after an ingest', function () {
+    [$region] = waterBodies();
+    $this->get(route('search'))->assertOk()->assertDontSee('Coniston Water');
+
+    Lake::factory()->create(['region_id' => $region->id, 'name' => 'Coniston Water', 'slug' => 'coniston-water']);
+    app(\App\Services\Conditions\RegionSummaries::class)->refreshAll();
+
+    $this->get(route('search'))->assertOk()->assertSee('Coniston Water');
+});
+
+it('reads a region\'s beach conditions from the cache in one batch', function () {
+    [$region] = waterBodies();
+    BathingWater::factory()->count(5)->create(['region_id' => $region->id]);
+    $this->get(route('beaches.index', $region))->assertOk();
+
+    DB::enableQueryLog();
+    $this->get(route('beaches.index', $region))->assertOk();
+
+    expect(count(DB::getQueryLog()))->toBeLessThan(12);
 });

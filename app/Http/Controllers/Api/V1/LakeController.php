@@ -13,7 +13,7 @@ class LakeController extends Controller
 {
     public function index(Region $region, WaterBodyConditionsService $conditions): AnonymousResourceCollection
     {
-        return LakeConditionsResource::collection($region->lakes()->get()->map(fn (Lake $lake) => $conditions->forLake($lake)));
+        return LakeConditionsResource::collection($conditions->forLakes($region->lakes()->get()));
     }
 
     public function show(Region $region, Lake $lake, WaterBodyConditionsService $conditions): LakeConditionsResource

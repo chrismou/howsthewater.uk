@@ -77,7 +77,38 @@ class ConditionsCache
      */
     public function remember(string $name, Closure $build): mixed
     {
-        return Cache::remember(sprintf('conditions:v%d:%s:%s', $this->version(), self::codeVersion(), $name), now()->addMinutes(self::TTL_MINUTES), $build);
+        return Cache::remember($this->keyForName($name), now()->addMinutes(self::TTL_MINUTES), $build);
+    }
+
+    /**
+     * Like remember() for several entries, fetching every cached one in a
+     * single round trip and building only the misses.
+     *
+     * @template TValue
+     *
+     * @param  array<string, Closure(): TValue>  $builders  Keyed by name
+     * @return array<string, TValue> In the same order as the builders
+     */
+    public function rememberMany(array $builders): array
+    {
+        if ($builders === []) {
+            return [];
+        }
+
+        $keys = array_map(fn (string $name) => $this->keyForName($name), array_combine(array_keys($builders), array_keys($builders)));
+        $cached = Cache::many(array_values($keys));
+        $results = [];
+
+        foreach ($builders as $name => $build) {
+            $results[$name] = $cached[$keys[$name]] ?? null;
+
+            if ($results[$name] === null) {
+                $results[$name] = $build();
+                Cache::put($keys[$name], $results[$name], now()->addMinutes(self::TTL_MINUTES));
+            }
+        }
+
+        return $results;
     }
 
     /**
@@ -106,6 +137,11 @@ class ConditionsCache
         );
 
         return self::$codeVersion = substr(md5(implode('', $sources)), 0, 8);
+    }
+
+    private function keyForName(string $name): string
+    {
+        return sprintf('conditions:v%d:%s:%s', $this->version(), self::codeVersion(), $name);
     }
 
     private function keyFor(Spot $spot): string

@@ -56,7 +56,7 @@ class SyncBathingWaters
                 'sampling_point' => $data->samplingPoint,
                 'kind' => $data->kind,
                 'name' => $data->name,
-                'slug' => Str::slug($data->name),
+                'slug' => $this->uniqueSlug($data, $placement['region_id']),
                 'district' => $data->districts[0] ?? null,
                 'sewerage_undertaker' => $data->sewerageUndertaker,
                 'latitude' => $data->latitude,
@@ -79,6 +79,24 @@ class SyncBathingWaters
         }
 
         return ['sites' => $sites, 'samples' => $samples];
+    }
+
+    /**
+     * The site's name as a slug, with its sampling point appended if another
+     * site in the same region already has that slug, since beach URLs are
+     * only unique within their region.
+     */
+    private function uniqueSlug(BathingWaterData $data, int $regionId): string
+    {
+        $slug = Str::slug($data->name);
+
+        $taken = BathingWater::query()
+            ->where('region_id', $regionId)
+            ->where('slug', $slug)
+            ->where('eubwid', '!=', $data->eubwid)
+            ->exists();
+
+        return $taken ? "{$slug}-{$data->samplingPoint}" : $slug;
     }
 
     /**

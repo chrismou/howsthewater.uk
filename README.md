@@ -113,13 +113,13 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 | --- | --- | --- |
 | `ingest:overflows` | Every 15 minutes | Refresh overflow status, open and close spill events, position monitors seen for the first time |
 | `ingest:gauges` | Every 15 minutes | Fetch new level readings, and discover gauges on any river never searched |
-| `ingest:gauges --stations` | Weekly, Monday 03:00 | Re-check every river for new or renamed gauge stations |
+| `ingest:gauges --stations` | Weekly, Monday 03:05 | Re-check every river for new or renamed gauge stations |
 | `ingest:rainfall` | Every 15 minutes | Fetch new rainfall totals, and find rain gauges for any spot never searched |
-| `ingest:rainfall --stations` | Weekly, Monday 03:15 | Refresh the rain gauges near spots and relink each spot to the nearest |
+| `ingest:rainfall --stations` | Weekly, Monday 03:20 | Refresh the rain gauges near spots and relink each spot to the nearest |
 | `ingest:floods` | Every 15 minutes | Fetch the flood alerts and warnings in force, and link any spot never searched to its flood areas |
-| `ingest:floods --areas` | Weekly, Monday 03:45 | Re-check the flood areas covering every spot |
+| `ingest:floods --areas` | Weekly, Monday 03:50 | Re-check the flood areas covering every spot |
 | `ingest:bathing-waters` | Hourly | Refresh bathing water classifications, samples and forecasts; backfill history for new sites; link lakes to their level gauge |
-| `ingest:bathing-waters --history` | Weekly, Monday 04:00 | Refetch sample and classification history for every bathing water |
+| `ingest:bathing-waters --history` | Weekly, Monday 04:20 | Refetch sample and classification history for every bathing water |
 | `rivers:positions` | Daily, 03:30 | Position any newly added monitors, gauges or spots |
 
 `rivers:centrelines` only needs running when a river is added or the OS data is updated.

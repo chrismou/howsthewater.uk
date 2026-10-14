@@ -16,7 +16,7 @@ class LakeController extends Controller
 
         return view('lakes.index', [
             'region' => $region,
-            'lakes' => $lakes->map(fn (Lake $lake) => $conditions->forLake($lake)),
+            'lakes' => $conditions->forLakes($lakes),
         ]);
     }
 

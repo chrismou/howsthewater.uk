@@ -191,8 +191,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - Rivers belong to a `Region` and URLs are region-scoped (`/{region}/{river}/{spot}`, API `/api/v1/regions/...`) with
   `scopeBindings()`, because river and spot names repeat across Britain; slugs are unique per region and per river.
   Build links with `route('spots.show', [$region, $river, $spot])` and eager-load `river.region` wherever spots are
-  listed. The header menu lists each region's main rivers grouped by `catchment` (`Region::riversByCatchment()`)
-  and the search box queries `/search`.
+  listed. The header's Rivers, Beaches and Lakes menus come from `NavigationMenus`: plain arrays built once
+  (rivers grouped by `catchment` via `Region::riversByCatchment()`, beaches by district), cached and cleared by
+  `RegionSummaries::refreshAll()`, so pages never query per region for the menus. The search box queries `/search`.
+  Search, feeds and the API are rate limited per IP by the `public` limiter in `AppServiceProvider`.
 - Listings read `RegionSummary` (plain-value `RiverSummary` and `SpotSummary` objects) from `RegionSummaries`, which
   ingest and positioning commands refresh after every run; the region page, live bar and API region endpoint never
   unserialise full conditions. Add listing facts to `SpotSummary::fromConditions()`.

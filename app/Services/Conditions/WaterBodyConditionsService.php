@@ -12,6 +12,7 @@ use App\Enums\SpillRecency;
 use App\Models\BathingWater;
 use App\Models\Lake;
 use App\Models\SpillEvent;
+use Illuminate\Support\Collection;
 
 /**
  * Builds the picture for beaches and lakes: the Environment Agency's
@@ -45,6 +46,32 @@ class WaterBodyConditionsService
     public function forLake(Lake $lake): LakeConditions
     {
         return $this->cache->remember("lake:{$lake->id}", fn () => $this->buildLake($lake));
+    }
+
+    /**
+     * Conditions for several beaches, read from the cache in one round trip.
+     *
+     * @param  Collection<int, BathingWater>  $beaches
+     * @return Collection<int, BeachConditions>
+     */
+    public function forBeaches(Collection $beaches): Collection
+    {
+        $builders = $beaches->mapWithKeys(fn (BathingWater $beach) => ["beach:{$beach->id}" => fn () => $this->buildBeach($beach)])->all();
+
+        return collect(array_values($this->cache->rememberMany($builders)));
+    }
+
+    /**
+     * Conditions for several lakes, read from the cache in one round trip.
+     *
+     * @param  Collection<int, Lake>  $lakes
+     * @return Collection<int, LakeConditions>
+     */
+    public function forLakes(Collection $lakes): Collection
+    {
+        $builders = $lakes->mapWithKeys(fn (Lake $lake) => ["lake:{$lake->id}" => fn () => $this->buildLake($lake)])->all();
+
+        return collect(array_values($this->cache->rememberMany($builders)));
     }
 
     /**

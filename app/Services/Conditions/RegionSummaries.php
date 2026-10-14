@@ -20,7 +20,7 @@ class RegionSummaries
 {
     private const KEY_PREFIX = 'region-summary';
 
-    public function __construct(private RiverOverviewService $overviews)
+    public function __construct(private RiverOverviewService $overviews, private NavigationMenus $menus)
     {
     }
 
@@ -49,6 +49,9 @@ class RegionSummaries
      */
     public function refreshAll(): Collection
     {
+        // Ingest and positioning are when rivers, beaches and lakes appear, so the menus are rebuilt with the summaries.
+        $this->menus->flush();
+
         return Region::query()->orderBy('name')->get()->map(fn (Region $region) => $this->refresh($region));
     }
 

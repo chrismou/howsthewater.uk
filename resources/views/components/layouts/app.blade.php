@@ -6,6 +6,7 @@
     $allRegions = \App\Models\Region::query()->orderBy('name')->get();
     $liveRegion = $region ?? $allRegions->sortBy('id')->first();
     $liveSummary ??= $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
+    $menus = app(\App\Services\Conditions\NavigationMenus::class)->all();
 @endphp
     <!DOCTYPE html>
 <html lang="en-GB" class="h-full">
@@ -59,9 +60,9 @@
 
         {{-- Phones: the menus get their own row under the logo; wider screens keep them beside it. --}}
         <nav class="order-4 flex w-full items-center gap-x-5 sm:order-2 sm:w-auto" aria-label="Main">
-            <x-rivers-menu :regions="$allRegions" :current="$liveRegion" />
-            <x-beaches-menu :regions="$allRegions" :current="$liveRegion" />
-            <x-lakes-menu :regions="$allRegions" :current="$liveRegion" />
+            <x-nav-menu label="Rivers" :entries="$menus['rivers']" :current="$liveRegion?->slug" />
+            <x-nav-menu label="Beaches" :entries="$menus['beaches']" :current="$liveRegion?->slug" />
+            <x-nav-menu label="Lakes" :entries="$menus['lakes']" :current="$liveRegion?->slug" />
         </nav>
 
         <form action="{{ route('search') }}" method="get" role="search" class="order-5 w-full sm:order-3 sm:ml-auto sm:w-auto">

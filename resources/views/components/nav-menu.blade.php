@@ -3,16 +3,14 @@
     (the current one first selected) and that region's places on the right, switched by nav.js. Narrow screens get a
     full-width accordion under the header.
 
-    entries: one per region, each ['region' => Region, 'url' => overview link, 'blurb' => overview description,
-    'groups' => [heading => [['name' => ..., 'url' => ...], ...]]]. current: the region to open on.
+    entries: one per region from NavigationMenus, each ['slug', 'name', 'url' => overview link, 'blurb',
+    'groups' => [heading => [['name' => ..., 'url' => ...], ...]]]. current: the slug of the region to open on.
 --}}
 @props(['label', 'entries', 'current' => null])
 
 @php
     $entries = collect($entries)->values();
-    $currentSlug = $entries->contains(fn ($entry) => $current !== null && $entry['region']->is($current))
-        ? $current->slug
-        : $entries->first()['region']->slug ?? null;
+    $currentSlug = $entries->contains('slug', $current) ? $current : ($entries->first()['slug'] ?? null);
 @endphp
 
 @if ($entries->isNotEmpty())
@@ -30,15 +28,15 @@
                 {{-- Narrow screens: one section per region, the current one open. --}}
                 <div class="divide-y divide-line-2 sm:hidden">
                     @foreach ($entries as $entry)
-                        <details class="group/region" @if ($entry['region']->slug === $currentSlug) open @endif>
+                        <details class="group/region" @if ($entry['slug'] === $currentSlug) open @endif>
                             <summary class="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold text-ink [&::-webkit-details-marker]:hidden">
-                                {{ $entry['region']->name }}
+                                {{ $entry['name'] }}
                                 <svg class="h-4 w-4 text-faint transition group-open/region:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                     <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"/>
                                 </svg>
                             </summary>
                             <div class="flex flex-col gap-3 px-4 pb-4">
-                                <a href="{{ $entry['url'] }}" class="font-medium text-accent hover:underline">{{ $entry['region']->name }} overview →</a>
+                                <a href="{{ $entry['url'] }}" class="font-medium text-accent hover:underline">{{ $entry['name'] }} overview →</a>
                                 @foreach ($entry['groups'] as $heading => $items)
                                     <div>
                                         <p class="mb-1 text-xs font-medium uppercase tracking-wide text-faint">{{ $heading }}</p>
@@ -60,9 +58,9 @@
                         @foreach ($entries as $entry)
                             <li>
                                 {{-- A link to the overview, so it still works without JavaScript; nav.js turns hover or a first tap into a preview. --}}
-                                <a href="{{ $entry['url'] }}" data-nav-region-tab="{{ $entry['region']->slug }}" data-selected="{{ $entry['region']->slug === $currentSlug ? 'true' : 'false' }}"
+                                <a href="{{ $entry['url'] }}" data-nav-region-tab="{{ $entry['slug'] }}" data-selected="{{ $entry['slug'] === $currentSlug ? 'true' : 'false' }}"
                                     class="flex w-full items-center justify-between px-4 py-2 font-medium text-ink-2 hover:text-ink data-[selected=true]:bg-surface data-[selected=true]:text-ink">
-                                    {{ $entry['region']->name }}
+                                    {{ $entry['name'] }}
                                     <span class="text-faint" aria-hidden="true">›</span>
                                 </a>
                             </li>
@@ -70,9 +68,9 @@
                     </ul>
                     <div class="w-[34rem] max-w-[calc(100vw-15rem)] p-4">
                         @foreach ($entries as $entry)
-                            <div data-nav-region-panel="{{ $entry['region']->slug }}" @if ($entry['region']->slug !== $currentSlug) data-nav-region-hidden @endif class="flex flex-wrap gap-x-8 gap-y-4 [&[data-nav-region-hidden]]:hidden">
+                            <div data-nav-region-panel="{{ $entry['slug'] }}" @if ($entry['slug'] !== $currentSlug) data-nav-region-hidden @endif class="flex flex-wrap gap-x-8 gap-y-4 [&[data-nav-region-hidden]]:hidden">
                                 <div class="basis-full border-b border-line-2 pb-3">
-                                    <a href="{{ $entry['url'] }}" class="font-semibold text-ink hover:underline">{{ $entry['region']->name }} overview</a>
+                                    <a href="{{ $entry['url'] }}" class="font-semibold text-ink hover:underline">{{ $entry['name'] }} overview</a>
                                     <span class="text-xs text-muted"> {{ $entry['blurb'] }}</span>
                                 </div>
                                 @foreach ($entry['groups'] as $heading => $items)

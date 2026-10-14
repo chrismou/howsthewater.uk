@@ -407,3 +407,22 @@ it('credits the author and links to GitHub issues in the footer', function () {
         ->assertSee('Let us know<span class="hidden sm:inline"> on GitHub</span>', false)
         ->assertSee('https://github.com/chrismou/howsthewater.uk/issues');
 });
+
+it('rate limits search, feeds and the API per client', function () {
+    spotWithUrl();
+
+    foreach (range(1, 60) as $attempt) {
+        $this->get(route('search', ['q' => 'x']))->assertOk();
+    }
+
+    $this->get(route('search', ['q' => 'x']))->assertTooManyRequests();
+    $this->getJson(route('api.v1.regions.index'))->assertTooManyRequests();
+});
+
+it('seeds no river or spot under a name the beach, lake or feed routes would hide', function () {
+    $riverSlugs = collect(\Database\Seeders\RiverSeeder::rivers())->flatten(1)->pluck('slug');
+    $spotSlugs = collect(\Database\Seeders\SpotSeeder::spots())->flatten(2)->pluck('name')->map(fn ($name) => \Illuminate\Support\Str::slug($name));
+
+    expect($riverSlugs->intersect(['beaches', 'lakes']))->toBeEmpty()
+        ->and($spotSlugs)->not->toContain('feed');
+});

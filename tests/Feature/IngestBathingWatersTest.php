@@ -118,3 +118,17 @@ it('logs an error and fails when a site history fetch fails', function () {
     expect(BathingWater::query()->sole()->history_fetched_at)->toBeNull();
     Log::shouldHaveReceived('error')->withArgs(fn (string $message) => str_starts_with($message, 'Bathing water history failed for Scarborough South Bay'));
 });
+
+it('gives a second site with the same name in a region its own slug', function () {
+    Region::factory()->create(['bathing_water_districts' => ['North Yorkshire']]);
+
+    fakeBathingWaterApi([
+        bathingWaterItem('uke0000-01000', 'Filey', 'CoastalBathingWater', ['North Yorkshire'], 54.21, -0.28),
+        bathingWaterItem('uke0000-02000', 'Filey', 'CoastalBathingWater', ['North Yorkshire'], 54.20, -0.27),
+    ]);
+
+    $this->artisan('ingest:bathing-waters')->assertSuccessful();
+    $this->artisan('ingest:bathing-waters')->assertSuccessful();
+
+    expect(BathingWater::query()->orderBy('eubwid')->pluck('slug')->all())->toBe(['filey', 'filey-02000']);
+});

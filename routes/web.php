@@ -12,7 +12,7 @@ use App\Http\Controllers\SpotController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
-Route::get('/search', SearchController::class)->name('search');
+Route::get('/search', SearchController::class)->name('search')->middleware('throttle:public');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap')->middleware('cache.headers:public;max_age=3600');
 
 // Rivers and spots are scoped to their region, since names repeat across Britain.
@@ -28,7 +28,7 @@ Route::scopeBindings()->group(function () {
     Route::get('/{region}/{river}', [RiverController::class, 'show'])->name('rivers.show');
 
     // Feeds come before the spot route, which would otherwise take "feed" as a spot slug.
-    Route::middleware('cache.headers:public;max_age=300')->group(function () {
+    Route::middleware(['throttle:public', 'cache.headers:public;max_age=300'])->group(function () {
         Route::get('/{region}/{river}/feed', [FeedController::class, 'river'])->name('rivers.feed');
         Route::get('/{region}/{river}/{spot}/feed', [FeedController::class, 'spot'])->name('spots.feed');
     });

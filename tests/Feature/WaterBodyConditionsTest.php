@@ -73,3 +73,13 @@ it('adds the bathing water record to a spot that is a designated bathing water',
     expect(app(SpotConditionsService::class)->build($spot)->bathingWater->bathingWater->name)->toBe('Wharfe at Cromwheel, Ilkley')
         ->and(app(SpotConditionsService::class)->build(Spot::factory()->create())->bathingWater)->toBeNull();
 });
+
+it('starts and ends the bathing season on UK dates, not UTC', function () {
+    $site = BathingWater::factory()->create(['season_starts_on' => '2026-05-15', 'season_ends_on' => '2026-09-30']);
+
+    // 00:30 BST on 15 May is still 14 May in UTC.
+    expect($site->isInSeason(\Illuminate\Support\Carbon::parse('2026-05-14 23:30', 'UTC')))->toBeTrue()
+        ->and($site->isInSeason(\Illuminate\Support\Carbon::parse('2026-05-14 22:30', 'UTC')))->toBeFalse()
+        // 00:30 BST on 1 October is still 30 September in UTC.
+        ->and($site->isInSeason(\Illuminate\Support\Carbon::parse('2026-09-30 23:30', 'UTC')))->toBeFalse();
+});
