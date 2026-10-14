@@ -35,7 +35,7 @@ class SpotConditionsService
      */
     public function build(Spot $spot): SpotConditions
     {
-        $spot->loadMissing(['river', 'gaugeStation', 'rainfallStation']);
+        $spot->loadMissing(['river.region', 'gaugeStation', 'rainfallStation']);
 
         $monitors = $this->upstreamMonitors->for($spot);
         $recentEvents = $this->spillHistory->recentEvents($monitors);

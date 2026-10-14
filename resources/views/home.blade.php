@@ -12,7 +12,7 @@
         <section class="mb-10">
             <div class="mb-3 flex items-baseline justify-between">
                 <h2 class="text-xl font-semibold">
-                    <a href="{{ route('rivers.show', $overview->river) }}" class="hover:underline">{{ $overview->river->name }}</a>
+                    <a href="{{ route('rivers.show', [$overview->river->region, $overview->river]) }}" class="hover:underline">{{ $overview->river->name }}</a>
                 </h2>
                 <p class="text-sm text-stone-500">
                     {{ $overview->monitorCount }} monitors,

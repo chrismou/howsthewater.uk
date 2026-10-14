@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Region;
 use App\Models\River;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -152,20 +153,29 @@ class RiverSeeder extends Seeder
 
     public function run(): void
     {
+        $region = Region::query()->where('slug', 'yorkshire')->firstOrFail();
+
         foreach (self::rivers() as $river) {
             $parentSlug = $river['parent'] ?? null;
             $mouth = $river['mouth'] ?? [null, null];
             unset($river['parent'], $river['mouth']);
 
-            $parent = $parentSlug === null ? null : River::query()->where('slug', $parentSlug)->firstOrFail();
+            $parent = $parentSlug === null ? null : $region->rivers()->where('slug', $parentSlug)->firstOrFail();
 
-            River::query()->updateOrCreate(['slug' => $river['slug']], [
+            // Rivers seeded before regions existed have no region yet, so claim those by slug rather than duplicating them.
+            $existing = River::query()
+                ->where('slug', $river['slug'])
+                ->where(fn ($query) => $query->whereNull('region_id')->orWhere('region_id', $region->id))
+                ->first();
+
+            ($existing ?? new River)->fill([
                 ...$river,
+                'region_id' => $region->id,
                 'catchment' => $river['catchment'] ?: $parent?->catchment,
                 'parent_river_id' => $parent?->id,
                 'mouth_latitude' => $mouth[0],
                 'mouth_longitude' => $mouth[1],
-            ]);
+            ])->save();
         }
     }
 }

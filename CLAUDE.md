@@ -163,12 +163,17 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - Data is ingested in the background by scheduled artisan commands (see `routes/console.php`) and served from MySQL.
   Pages never call third-party APIs at request time.
 - Main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk, Hull) and their tributaries are seeded
-  by `RiverSeeder`, spots by `SpotSeeder`. Spot coordinates sit on the OS centreline; new ones should too.
+  by `RiverSeeder` (all in the Yorkshire region from `RegionSeeder`), spots by `SpotSeeder`. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
   recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
   (`rivers:centrelines` then `rivers:positions`, which also sets each tributary's `joins_at_metres`).
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed.
+- Rivers belong to a `Region` and URLs are region-scoped (`/{region}/{river}/{spot}`, API `/api/v1/regions/...`) with
+  `scopeBindings()`, because river and spot names repeat across Britain; slugs are unique per region and per river.
+  Build links with `route('spots.show', [$region, $river, $spot])` and eager-load `river.region` wherever spots are
+  listed. The header menu lists each region's main rivers grouped by `catchment` (`Region::riversByCatchment()`)
+  and the search box queries `/search`.
 - `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL). Ingest and
   positioning commands call `flush()`. The cache stores objects, so any new class reachable from `SpotConditions`
   must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Keys also

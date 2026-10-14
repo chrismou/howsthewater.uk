@@ -13,6 +13,7 @@ use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
 use App\Models\RainfallReading;
 use App\Models\RainfallStation;
+use App\Models\Region;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
@@ -166,6 +167,7 @@ return [
         OverflowMonitor::class,
         RainfallReading::class,
         RainfallStation::class,
+        Region::class,
         River::class,
         SpillEvent::class,
         Spot::class,

@@ -1,6 +1,6 @@
 @props(['conditions'])
 
-<a href="{{ route('spots.show', $conditions->spot) }}"
+<a href="{{ route('spots.show', [$conditions->spot->river->region, $conditions->spot->river, $conditions->spot]) }}"
    class="block rounded-lg border border-stone-200 bg-white p-4 transition hover:border-stone-300 hover:shadow-sm">
     <div class="flex items-start justify-between gap-3">
         <div>

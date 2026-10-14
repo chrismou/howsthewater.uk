@@ -13,15 +13,44 @@
 </head>
 <body class="min-h-full flex flex-col bg-stone-50 text-stone-900 antialiased">
     <header class="border-b border-stone-200 bg-white">
-        <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-4">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
             <a href="{{ route('home') }}" class="text-lg font-semibold tracking-tight">
                 How's the Water<span class="text-sky-600">?</span>
             </a>
-            <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-600">
-                @foreach (\App\Models\River::query()->main()->orderBy('name')->get() as $navRiver)
-                    <a href="{{ route('rivers.show', $navRiver) }}" class="hover:text-stone-900">{{ $navRiver->name }}</a>
+
+            <nav class="flex items-center gap-x-4 text-sm text-stone-600" aria-label="Regions">
+                @foreach (\App\Models\Region::query()->orderBy('name')->get() as $navRegion)
+                    <details class="relative" data-nav-menu>
+                        <summary class="flex cursor-pointer list-none items-center gap-1 font-medium text-stone-700 hover:text-stone-900 [&::-webkit-details-marker]:hidden">
+                            {{ $navRegion->name }}
+                            <svg class="h-4 w-4 text-stone-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
+                            </svg>
+                        </summary>
+                        <div class="absolute left-0 z-20 mt-2 w-max max-w-[calc(100vw-2rem)] rounded-lg border border-stone-200 bg-white p-4 shadow-lg">
+                            <div class="flex flex-wrap gap-x-8 gap-y-4">
+                                @foreach ($navRegion->riversByCatchment() as $catchment => $rivers)
+                                    <div>
+                                        <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-stone-400">{{ $catchment }}</p>
+                                        <ul class="grid gap-x-6 gap-y-1 {{ $rivers->count() > 5 ? 'grid-cols-2' : '' }}">
+                                            @foreach ($rivers as $navRiver)
+                                                <li><a href="{{ route('rivers.show', [$navRegion, $navRiver]) }}" class="block whitespace-nowrap py-0.5 hover:text-stone-900">{{ $navRiver->name }}</a></li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </details>
                 @endforeach
             </nav>
+
+            <form action="{{ route('search') }}" method="get" role="search" class="ml-auto w-full sm:w-auto">
+                <label for="site-search" class="sr-only">Find a spot or river</label>
+                <input id="site-search" type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}"
+                       placeholder="Find a spot or river"
+                       class="w-full rounded-md border border-stone-300 px-3 py-1.5 text-sm placeholder:text-stone-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 sm:w-56">
+            </form>
         </div>
     </header>
 

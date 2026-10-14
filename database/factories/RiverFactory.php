@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Region;
 use App\Models\River;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -16,6 +17,7 @@ class RiverFactory extends Factory
         $name = 'River '.fake()->unique()->lastName();
 
         return [
+            'region_id' => Region::factory(),
             'name' => $name,
             'slug' => Str::slug($name),
             'catchment' => 'Yorkshire Ouse',

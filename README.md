@@ -15,7 +15,8 @@ keep that distinction.
 - Positions every monitor, gauge and spot along the river centreline (from OS Open Rivers), so "upstream" means
   further up the same river rather than just nearby.
 - Shows a 30-day history per spot: minutes of upstream spilling per day and the individual events.
-- Serves a page per river and per spot, plus a read-only JSON API at `/api/v1` built from the same services.
+- Serves a page per river (`/yorkshire/wharfe`) and per spot (`/yorkshire/wharfe/otley`), plus a read-only JSON API at
+  `/api/v1` built from the same services.
 
 Covered rivers are seeded in `database/seeders/RiverSeeder.php` and spots in `SpotSeeder.php`. The main rivers are the
 Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk and Hull, each with the named tributaries that carry
@@ -123,9 +124,14 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 
 ## API
 
-- `GET /api/v1/rivers` and `GET /api/v1/rivers/{slug}`: river overview with every spot's conditions.
-- `GET /api/v1/spots` and `GET /api/v1/spots/{slug}`: a spot's spill summary, upstream monitors, gauge level and
-  rainfall at the nearest rain gauge (`rainfall` is null when none is within 20 km).
+- `GET /api/v1/regions`: regions with their rivers and links.
+- `GET /api/v1/regions/{region}/rivers` and `GET /api/v1/regions/{region}/rivers/{river}`: river overview with every
+  spot's conditions.
+- `GET /api/v1/regions/{region}/spots` and `GET /api/v1/regions/{region}/rivers/{river}/spots/{spot}`: a spot's spill
+  summary, upstream monitors, gauge level and rainfall at the nearest rain gauge (`rainfall` is null when none is
+  within 20 km).
+
+River and spot slugs are only unique within their region and river, since names repeat across Britain.
 
 Responses carry `Cache-Control: public, max-age=300` and an ETag, so a CDN in front of the site can cache them.
 

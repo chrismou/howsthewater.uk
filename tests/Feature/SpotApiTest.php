@@ -5,29 +5,57 @@ use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
 use App\Models\RainfallReading;
 use App\Models\RainfallStation;
+use App\Models\Region;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
 
-it('lists published spots', function () {
-    $river = River::factory()->create(['slug' => 'wharfe']);
-    Spot::factory()->create(['river_id' => $river->id, 'slug' => 'otley']);
-    Spot::factory()->unpublished()->create(['river_id' => $river->id, 'slug' => 'hidden']);
+/**
+ * @return array{0: Region, 1: River, 2: Spot}
+ */
+function apiSpot(array $spotAttributes = [], array $riverAttributes = []): array
+{
+    $region = Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+    $river = River::factory()->create(['region_id' => $region->id, ...$riverAttributes]);
+    $spot = Spot::factory()->create(['river_id' => $river->id, ...$spotAttributes]);
 
-    $this->getJson(route('api.v1.spots.index'))
+    return [$region, $river, $spot];
+}
+
+it('lists regions with their rivers', function () {
+    [$region, $river] = apiSpot([], ['slug' => 'wharfe']);
+    River::factory()->tributaryOf($river, 1000)->create(['region_id' => $region->id, 'slug' => 'washburn']);
+
+    $this->getJson(route('api.v1.regions.index'))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.slug', 'yorkshire')
+        ->assertJsonCount(1, 'data.0.rivers')
+        ->assertJsonPath('data.0.rivers.0.slug', 'wharfe')
+        ->assertJsonPath('data.0.rivers.0.url', route('api.v1.rivers.show', [$region, $river]));
+});
+
+it('lists published spots in a region', function () {
+    [$region, $river, $spot] = apiSpot(['slug' => 'otley'], ['slug' => 'wharfe']);
+    Spot::factory()->unpublished()->create(['river_id' => $river->id, 'slug' => 'hidden']);
+    $other = Region::factory()->create(['slug' => 'lancashire']);
+    Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $other->id])->id]);
+
+    $this->getJson(route('api.v1.spots.index', $region))
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.slug', 'otley')
-        ->assertJsonPath('data.0.river.slug', 'wharfe');
+        ->assertJsonPath('data.0.river.slug', 'wharfe')
+        ->assertJsonPath('data.0.region.slug', 'yorkshire')
+        ->assertJsonPath('data.0.url', route('api.v1.spots.show', [$region, $river, $spot]));
 });
 
 it('returns full conditions for a spot', function () {
-    $river = River::factory()->create();
-    $spot = Spot::factory()->create(['river_id' => $river->id, 'slug' => 'ilkley', 'river_metres' => 50000]);
+    [$region, $river, $spot] = apiSpot(['slug' => 'ilkley', 'river_metres' => 50000]);
     $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 48000]);
     SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours(5), 'ended_at' => now()->subHours(4)]);
 
-    $this->getJson(route('api.v1.spots.show', $spot))
+    $this->getJson(route('api.v1.spots.show', [$region, $river, $spot]))
         ->assertOk()
         ->assertHeader('Cache-Control', 'max-age=300, public')
         ->assertJsonPath('data.spot.slug', 'ilkley')
@@ -43,31 +71,40 @@ it('returns full conditions for a spot', function () {
         ->assertJsonPath('data.upstream_monitors.0.latest_event.duration_minutes', 60);
 });
 
-it('returns river overviews', function () {
-    $river = River::factory()->create(['slug' => 'aire']);
-    Spot::factory()->create(['river_id' => $river->id]);
+it('returns river overviews for a region', function () {
+    [$region, $river] = apiSpot([], ['slug' => 'aire']);
     OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 1000]);
 
-    $this->getJson(route('api.v1.rivers.show', $river))
+    $this->getJson(route('api.v1.rivers.show', [$region, $river]))
         ->assertOk()
         ->assertJsonPath('data.slug', 'aire')
+        ->assertJsonPath('data.region.slug', 'yorkshire')
         ->assertJsonPath('data.monitor_count', 1)
         ->assertJsonPath('data.discharging_now', 1)
         ->assertJsonCount(1, 'data.spots');
+
+    $this->getJson(route('api.v1.rivers.index', $region))
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.slug', 'aire');
 });
 
-it('404s for unknown spots as json', function () {
-    $this->getJson(route('api.v1.spots.show', 'nowhere'))->assertNotFound();
+it('404s for unknown spots and rivers from other regions as json', function () {
+    [$region, $river, $spot] = apiSpot();
+    $other = Region::factory()->create(['slug' => 'lancashire']);
+
+    $this->getJson(route('api.v1.spots.show', [$region, $river, 'nowhere']))->assertNotFound();
+    $this->getJson(route('api.v1.rivers.show', [$other, $river]))->assertNotFound();
 });
 
 it('flags stale overflow and gauge data', function () {
-    $river = River::factory()->create();
+    [$region, $river, $spot] = apiSpot(['river_metres' => 50000]);
     $station = GaugeStation::factory()->create(['river_id' => $river->id]);
-    $spot = Spot::factory()->create(['river_id' => $river->id, 'gauge_station_id' => $station->id, 'river_metres' => 50000]);
+    $spot->update(['gauge_station_id' => $station->id]);
     OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 48000, 'source_updated_at' => now()->subHours(8)]);
     GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(8)]);
 
-    $this->getJson(route('api.v1.spots.show', $spot))
+    $this->getJson(route('api.v1.spots.show', [$region, $river, $spot]))
         ->assertOk()
         ->assertJsonPath('data.data_stale', true)
         ->assertJsonPath('data.level.stale', true);
@@ -75,10 +112,10 @@ it('flags stale overflow and gauge data', function () {
 
 it('includes rainfall at the nearest rain gauge', function () {
     $station = RainfallStation::factory()->create(['external_id' => '1001']);
-    $spot = Spot::factory()->create(['rainfall_station_id' => $station->id, 'river_metres' => null]);
+    [$region, $river, $spot] = apiSpot(['rainfall_station_id' => $station->id, 'river_metres' => null]);
     RainfallReading::factory()->create(['rainfall_station_id' => $station->id, 'measured_at' => now()->subMinutes(15), 'millimetres' => 3.2]);
 
-    $this->getJson(route('api.v1.spots.show', $spot))
+    $this->getJson(route('api.v1.spots.show', [$region, $river, $spot]))
         ->assertOk()
         ->assertJsonPath('data.rainfall.station.id', '1001')
         ->assertJsonPath('data.rainfall.last_24_hours_mm', 3.2)

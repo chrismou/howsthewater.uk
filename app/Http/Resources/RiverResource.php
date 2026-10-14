@@ -19,6 +19,7 @@ class RiverResource extends JsonResource
         return [
             'slug' => $this->river->slug,
             'name' => $this->river->name,
+            'region' => ['slug' => $this->river->region->slug, 'name' => $this->river->region->name],
             'catchment' => $this->river->catchment,
             'length_metres' => $this->river->length_metres,
             'monitor_count' => $this->monitorCount,

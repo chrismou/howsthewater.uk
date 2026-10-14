@@ -3,7 +3,7 @@
         'lat' => $conditions->spot->latitude,
         'lng' => $conditions->spot->longitude,
         'label' => $conditions->spot->name,
-        'url' => route('spots.show', $conditions->spot),
+        'url' => route('spots.show', [$conditions->spot->river->region, $conditions->spot->river, $conditions->spot]),
         'kind' => 'spot',
         'recency' => $conditions->spillRecency->value,
     ])->values();

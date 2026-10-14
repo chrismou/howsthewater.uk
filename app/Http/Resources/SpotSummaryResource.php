@@ -19,11 +19,12 @@ class SpotSummaryResource extends JsonResource
         return [
             'slug' => $this->slug,
             'name' => $this->name,
-            'river' => $this->whenLoaded('river', fn () => ['slug' => $this->river->slug, 'name' => $this->river->name]),
+            'river' => ['slug' => $this->river->slug, 'name' => $this->river->name],
+            'region' => ['slug' => $this->river->region->slug, 'name' => $this->river->region->name],
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'river_metres' => $this->river_metres,
-            'url' => route('api.v1.spots.show', $this),
+            'url' => route('api.v1.spots.show', [$this->river->region, $this->river, $this->resource]),
         ];
     }
 }

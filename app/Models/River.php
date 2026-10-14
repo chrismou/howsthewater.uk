@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property int|null $region_id
  * @property int|null $parent_river_id
  * @property string $name
  * @property string $slug
@@ -24,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property array<int, array{0: float, 1: float}>|null $centreline
  * @property int|null $length_metres
  * @property int|null $joins_at_metres
+ * @property-read Region|null $region
  * @property-read River|null $parent
  * @property-read Collection<int, River> $tributaries
  * @property Carbon|null $created_at
@@ -35,6 +37,7 @@ class River extends Model
     use HasFactory;
 
     protected $fillable = [
+        'region_id',
         'parent_river_id',
         'name',
         'slug',
@@ -60,6 +63,12 @@ class River extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /** @return BelongsTo<Region, $this> */
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class);
     }
 
     /** @return BelongsTo<River, $this> */

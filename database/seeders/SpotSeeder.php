@@ -2,8 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\River;
-use App\Models\Spot;
+use App\Models\Region;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -144,14 +143,13 @@ class SpotSeeder extends Seeder
 
     public function run(): void
     {
+        $region = Region::query()->where('slug', 'yorkshire')->firstOrFail();
+
         foreach (self::spots() as $riverSlug => $spots) {
-            $river = River::query()->where('slug', $riverSlug)->firstOrFail();
+            $river = $region->rivers()->where('slug', $riverSlug)->firstOrFail();
 
             foreach ($spots as $spot) {
-                Spot::query()->updateOrCreate(
-                    ['slug' => Str::slug($spot['name'])],
-                    [...$spot, 'river_id' => $river->id],
-                );
+                $river->spots()->updateOrCreate(['slug' => Str::slug($spot['name'])], $spot);
             }
         }
     }

@@ -32,7 +32,7 @@
         <p class="text-sm text-stone-500">
             <a href="{{ route('home') }}" class="hover:underline">All rivers</a>
             <span class="mx-1">/</span>
-            <a href="{{ route('rivers.show', $spot->river) }}" class="hover:underline">{{ $spot->river->name }}</a>
+            <a href="{{ route('rivers.show', [$spot->river->region, $spot->river]) }}" class="hover:underline">{{ $spot->river->name }}</a>
         </p>
         <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ $spot->name }}</h1>
         @if ($spot->description)

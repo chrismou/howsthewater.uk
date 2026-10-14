@@ -5,6 +5,7 @@ namespace App\Services\Conditions;
 use App\Data\RiverOverview;
 use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
+use App\Models\Region;
 use App\Models\River;
 use App\Models\Spot;
 use Illuminate\Support\Collection;
@@ -17,11 +18,22 @@ class RiverOverviewService
     public function __construct(private SpotConditionsService $spotConditions) {}
 
     /**
+     * Every river with a page, across all regions.
+     *
      * @return Collection<int, RiverOverview>
      */
     public function all(): Collection
     {
-        return River::query()->main()->orderBy('name')->get()->map(fn (River $river) => $this->for($river));
+        return River::query()->main()->with('region')->orderBy('name')->get()->map(fn (River $river) => $this->for($river));
+    }
+
+    /**
+     * @return Collection<int, RiverOverview>
+     */
+    public function forRegion(Region $region): Collection
+    {
+        return $region->rivers()->main()->get()
+            ->map(fn (River $river) => $this->for($river->setRelation('region', $region)));
     }
 
     /**
@@ -42,6 +54,8 @@ class RiverOverviewService
 
     public function for(River $river): RiverOverview
     {
+        $river->loadMissing('region');
+
         $spots = $river->spots()
             ->published()
             ->with(['gaugeStation', 'rainfallStation'])
