@@ -81,4 +81,11 @@ it('prefers a stage gauge over a nearer mAOD gauge when linking a spot', functio
 
     expect($spot->fresh()->gaugeStation->is($farStageGauge))->toBeTrue()
         ->and($nearAodGauge->fresh()->river_metres)->not->toBeNull();
+
+    // Once the only stage gauge is more than 10 km along the river, the sea level gauge beside the spot wins.
+    $farStageGauge->update(['latitude' => 53.95, 'longitude' => -1.90]);
+
+    app(AssignRiverPositions::class)->handle($river);
+
+    expect($spot->fresh()->gaugeStation->is($nearAodGauge))->toBeTrue();
 });

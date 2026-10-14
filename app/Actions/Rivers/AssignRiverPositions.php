@@ -30,6 +30,12 @@ class AssignRiverPositions
     private const MAX_TRIBUTARY_OFFSET_METRES = 6000;
 
     /**
+     * How far along the river a metres gauge may be before a closer sea
+     * level (mAOD) gauge is linked to the spot instead.
+     */
+    private const MAX_PREFERRED_GAUGE_DISTANCE_METRES = 10000;
+
+    /**
      * @return array{monitors: int, gauges: int, spots: int}
      */
     public function handle(River $river): array
@@ -122,13 +128,13 @@ class AssignRiverPositions
             ->each(function (Spot $spot) use ($projector, $gauges, &$count) {
                 $projection = $projector->project($spot->latitude, $spot->longitude);
 
-                // Prefer a gauge reading stage above its own datum; mAOD gauges are a last resort.
-                $nearestGauge = $gauges
-                    ->sortBy([
-                        fn (GaugeStation $a, GaugeStation $b) => $a->isAboveOrdnanceDatum() <=> $b->isAboveOrdnanceDatum(),
-                        fn (GaugeStation $a, GaugeStation $b) => abs($a->river_metres - $projection->distanceAlongMetres) <=> abs($b->river_metres - $projection->distanceAlongMetres),
-                    ])
-                    ->first();
+                $byDistance = $gauges->sortBy(fn (GaugeStation $gauge) => abs($gauge->river_metres - $projection->distanceAlongMetres));
+
+                // Prefer a gauge reading stage above its own datum, but only if one is reasonably close; a sea level
+                // gauge beside the spot says more about the river there than a metres gauge far upstream.
+                $nearestGauge = $byDistance
+                    ->filter(fn (GaugeStation $gauge) => ! $gauge->isAboveOrdnanceDatum() && abs($gauge->river_metres - $projection->distanceAlongMetres) <= self::MAX_PREFERRED_GAUGE_DISTANCE_METRES)
+                    ->first() ?? $byDistance->first();
 
                 $spot->update([
                     'river_metres' => $projection->distanceAlongMetres,

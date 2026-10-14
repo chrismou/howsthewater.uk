@@ -27,8 +27,9 @@
                                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
                             </svg>
                         </summary>
-                        <div class="absolute left-0 z-20 mt-2 w-max max-w-[calc(100vw-2rem)] rounded-lg border border-stone-200 bg-white p-4 shadow-lg">
-                            <div class="flex flex-wrap gap-x-8 gap-y-4">
+                        {{-- The panel starts flush with the button and carries its own top padding, so moving the mouse into it never leaves the menu. --}}
+                        <div class="absolute left-0 top-full z-20 w-max max-w-[calc(100vw-2rem)] pt-2">
+                            <div class="flex flex-wrap gap-x-8 gap-y-4 rounded-lg border border-stone-200 bg-white p-4 shadow-lg">
                                 @foreach ($navRegion->riversByCatchment() as $catchment => $rivers)
                                     <div>
                                         <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-stone-400">{{ $catchment }}</p>
