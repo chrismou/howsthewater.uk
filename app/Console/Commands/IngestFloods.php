@@ -9,6 +9,7 @@ use App\Services\Conditions\RegionSummaries;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Log;
 
 class IngestFloods extends Command
 {
@@ -31,6 +32,7 @@ class IngestFloods extends Command
         } catch (ConnectionException|RequestException $exception) {
             $failed = true;
             $this->error("Flood area search failed, {$exception->getMessage()}");
+            Log::error("Flood area search failed: {$exception->getMessage()}");
         }
 
         $result = $syncWarnings->handle();

@@ -7,6 +7,7 @@ use App\Models\Region;
 use App\Models\River;
 use App\Models\SpillEvent;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Sleep;
 
 beforeEach(function () {
@@ -168,13 +169,16 @@ it('polls only the feeds a region needs and keeps going when one fails', functio
     Http::assertNotSent(fn ($request) => str_contains($request->url(), 'services1.arcgis.com'));
 });
 
-it('fails the ingest command when a feed fails', function () {
+it('fails the ingest command and logs an error when a feed fails', function () {
     Sleep::fake();
+    Log::spy();
     Http::fake(['*' => Http::response('Service unavailable', 503)]);
 
     $this->artisan('ingest:overflows')
         ->expectsOutputToContain('Yorkshire Water feed failed')
         ->assertFailed();
+
+    Log::shouldHaveReceived('error')->withArgs(fn (string $message) => str_starts_with($message, 'Storm overflow feed yorkshire_water failed'));
 });
 
 it('positions monitors the first time it sees them', function () {

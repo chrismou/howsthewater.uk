@@ -39,7 +39,7 @@ class SyncOverflowMonitors
             try {
                 $result = $this->sync($this->client->all($feed['url']));
             } catch (Throwable $exception) {
-                Log::warning("Storm overflow feed {$key} failed: {$exception->getMessage()}");
+                Log::error("Storm overflow feed {$key} failed: {$exception->getMessage()}");
                 $totals['failed'][] = $feed['name'];
 
                 continue;

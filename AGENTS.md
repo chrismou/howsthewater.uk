@@ -227,6 +227,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `ingest:floods` search anything still null, and `ingest:overflows` positions monitors it sees for the first time.
   `--stations` (and `--areas` for floods) re-checks everything (weekly).
 - No API keys are needed. Map tiles are OpenStreetMap.
+- Ingest failures are logged at `error` level, which the `rollbar` log channel forwards in production (it ignores
+  anything below `error`). A failing feed, river or flood area search logs its own error, and `routes/console.php`
+  adds an `onFailure()` hook to every scheduled command so any non-zero exit is reported too. Keep new ingest
+  failures at `error` or they will not be seen.
 
 ## Local setup
 

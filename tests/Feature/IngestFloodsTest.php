@@ -10,6 +10,7 @@ use App\Models\Spot;
 use App\Services\Conditions\SpotConditionsService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 function environmentAgencyFloodAreaItem(string $code, string $riverOrSea): array
 {
@@ -132,8 +133,9 @@ it('links new spots and syncs warnings from the scheduled command', function () 
     expect($spot->floodAreas()->sole()->warning->severity_level)->toBe(FloodSeverity::FloodAlert);
 });
 
-it('still syncs warnings when the flood area search fails', function () {
+it('still syncs warnings and logs an error when the flood area search fails', function () {
     Spot::factory()->create();
+    Log::spy();
 
     Http::fake([
         'environment.data.gov.uk/flood-monitoring/id/floodAreas*' => Http::response('', 500),
@@ -143,4 +145,5 @@ it('still syncs warnings when the flood area search fails', function () {
     $this->artisan('ingest:floods')->assertFailed();
 
     Http::assertSent(fn (Request $request) => str_contains($request->url(), 'id/floods'));
+    Log::shouldHaveReceived('error')->withArgs(fn (string $message) => str_starts_with($message, 'Flood area search failed'));
 });

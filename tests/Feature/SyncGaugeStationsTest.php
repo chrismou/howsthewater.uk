@@ -4,6 +4,7 @@ use App\Actions\Ingest\SyncGaugeStations;
 use App\Models\GaugeStation;
 use App\Models\River;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Sleep;
 
 function environmentAgencyStationItem(string $reference, float $lat, float $long): array
@@ -50,8 +51,9 @@ it('keeps every station when the river has no centreline yet', function () {
     expect(app(SyncGaugeStations::class)->handle($river))->toBe(['stations' => 2]);
 });
 
-it('keeps discovering gauges for other rivers when one request fails', function () {
+it('keeps discovering gauges for other rivers when one request fails, and logs the failure', function () {
     Sleep::fake();
+    Log::spy();
     River::factory()->create(['name' => 'River Bad', 'aliases' => ['River Bad']]);
     River::factory()->create(['name' => 'River Good', 'aliases' => ['River Good']]);
 
@@ -67,6 +69,7 @@ it('keeps discovering gauges for other rivers when one request fails', function 
         ->assertFailed();
 
     expect(GaugeStation::query()->pluck('external_id')->all())->toBe(['L0009']);
+    Log::shouldHaveReceived('error')->withArgs(fn (string $message) => str_starts_with($message, 'Gauge discovery failed for River Bad'));
 });
 
 it('discovers gauges on rivers never searched during a normal ingest, and only those', function () {
