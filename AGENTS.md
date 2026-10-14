@@ -172,6 +172,14 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
   recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
   (`rivers:centrelines` then `rivers:positions`, which also sets each tributary's `joins_at_metres`).
+- Beaches and lakes come from the EA designated bathing water register. `BathingWater` holds every site we track:
+  beaches (coastal and estuary) belong to the region whose `bathing_water_districts` lists their district, lake sites
+  to a seeded `Lake` (`LakeSeeder`, matched by name prefix), and river sites to a spot within 1.5 km, which then shows
+  them. `WaterBodyConditionsService` builds `BeachConditions` and `LakeConditions` (cached through
+  `ConditionsCache::remember()`): the bathing water record plus `NearbyOverflows`, every monitor within 3 km by
+  straight-line distance, since the sea and lakes have no upstream. Use `SpillRecency::nearbyLabel()` there, never the
+  "upstream" wording. Beach and lake routes sit before the river routes, which would otherwise take "beaches" or
+  "lakes" as a river slug. The Rivers, Beaches and Lakes menus all render through `components/nav-menu`.
 - RSS feeds for each spot and river (`spots.feed`, `rivers.feed`, at `.../feed`) come from `ConditionsFeed`: one item when
   an upstream overflow starts, one when it stops, and one per flood warning in force, over 30 days, capped at 50.
   Guids are stable per event so readers notify once. The feed routes sit before the spot route, which would otherwise
@@ -237,6 +245,12 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `ingest:floods` search anything still null, and `ingest:overflows` positions monitors it sees for the first time.
   `--stations` (and `--areas` for floods) re-checks everything (weekly).
 - No API keys are needed. Map tiles are OpenStreetMap.
+- Bathing waters: the EA register at `environment.data.gov.uk/doc/bathing-water.json`, `ingest:bathing-waters` (hourly).
+  One request returns every site's latest classification, sample and pollution risk forecast; each run stores the
+  latest sample, and sample and classification history is backfilled per site on first sight (and weekly with
+  `--history`). The same command links each lake to its EA level gauge by `gauge_reference`; the gauge readings sync
+  keeps it current. Forecasts only run 15 May to 30 Sep; `BathingWaterSummary::currentRisk()` returns null outside the
+  season or once the forecast expires. Copy reports classifications, counts and forecasts, never that water is safe.
 - Ingest failures are logged at `error` level, which the `rollbar` log channel forwards in production (it ignores
   anything below `error`). A failing feed, river or flood area search logs its own error, and `routes/console.php`
   adds an `onFailure()` hook to every scheduled command so any non-zero exit is reported too. Keep new ingest
@@ -250,6 +264,7 @@ php artisan ingest:overflows
 php artisan ingest:gauges --stations
 php artisan ingest:rainfall --stations
 php artisan ingest:floods
+php artisan ingest:bathing-waters
 php artisan rivers:centrelines
 php artisan rivers:positions
 ```

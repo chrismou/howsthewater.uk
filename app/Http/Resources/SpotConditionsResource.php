@@ -63,6 +63,7 @@ class SpotConditionsResource extends JsonResource
                 'stale' => $this->rainfall->isStale(),
             ],
             'flood_warnings' => FloodWarningResource::collection($this->floodWarnings),
+            'bathing_water' => $this->bathingWater === null ? null : new BathingWaterResource($this->bathingWater),
             'upstream_monitors' => OverflowMonitorResource::collection($this->upstreamMonitors),
             'history' => [
                 'days' => $this->dailyHistory->map(fn ($day) => [

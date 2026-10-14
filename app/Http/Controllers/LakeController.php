@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Lake;
+use App\Models\Region;
+use App\Services\Conditions\WaterBodyConditionsService;
+use Illuminate\View\View;
+
+class LakeController extends Controller
+{
+    public function index(Region $region, WaterBodyConditionsService $conditions): View
+    {
+        $lakes = $region->lakes()->get();
+        abort_if($lakes->isEmpty(), 404);
+
+        return view('lakes.index', [
+            'region' => $region,
+            'lakes' => $lakes->map(fn (Lake $lake) => $conditions->forLake($lake)),
+        ]);
+    }
+
+    public function show(Region $region, Lake $lake, WaterBodyConditionsService $conditions): View
+    {
+        return view('lakes.show', ['region' => $region, 'conditions' => $conditions->forLake($lake->setRelation('region', $region))]);
+    }
+}

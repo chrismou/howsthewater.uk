@@ -31,6 +31,22 @@ enum SpillRecency: string
         };
     }
 
+    /**
+     * The same summary for a beach or lake, where monitors are near the
+     * water rather than upstream of it.
+     */
+    public function nearbyLabel(): string
+    {
+        return match ($this) {
+            self::DischargingNow => 'Overflow discharging nearby now',
+            self::Within24Hours => 'Spill nearby in the last 24 hours',
+            self::Within48Hours => 'Spill nearby in the last 48 hours',
+            self::None => 'No spills reported nearby in the last 48 hours',
+            self::Offline => 'Nearby monitors offline, no spill data',
+            self::NoData => 'No monitored overflows nearby',
+        };
+    }
+
     public function label(): string
     {
         return match ($this) {

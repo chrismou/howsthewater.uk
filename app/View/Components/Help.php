@@ -60,6 +60,22 @@ class Help extends Component
             'label' => 'Where do flood warnings come from?',
             'text' => 'The Environment Agency issues flood alerts (flooding is possible), flood warnings (flooding is expected) and severe flood warnings (danger to life) for areas along each river. We show any in force for an area covering this stretch, checked every 15 minutes, in the Environment Agency\'s own words.',
         ],
+        'bathing_classification' => [
+            'label' => 'What does the classification mean?',
+            'text' => 'Each designated bathing water is classified every year as Excellent, Good, Sufficient or Poor, from the last four seasons of Environment Agency samples. It describes those samples, not the water on any one day.',
+        ],
+        'pollution_risk' => [
+            'label' => 'What is the pollution risk forecast?',
+            'text' => 'In the bathing season (15 May to 30 September) the Environment Agency forecasts each day whether rain, wind or tide make short-term pollution more likely at sites where that happens. Increased means the risk is higher than usual today.',
+        ],
+        'bathing_samples' => [
+            'label' => 'What do the sample counts mean?',
+            'text' => 'Environment Agency samplers test the water about weekly in the season for two bacteria from sewage and animal waste: E. coli and intestinal enterococci, counted per 100 ml. Lower is better. A "<" means below the lowest level the test can measure.',
+        ],
+        'nearby_overflows' => [
+            'label' => 'Which overflows count as nearby?',
+            'text' => 'The sea and lakes have no upstream, so we list every storm overflow monitor within 3 km of the beach, the lake or one of its bathing sites, by straight-line distance. Overflows further away, or up rivers that flow in, can still affect the water.',
+        ],
         'stale' => [
             'label' => 'What does out of date mean?',
             'text' => 'The feed behind this figure has not updated for over six hours. The number shown is the last one received, not the current state.',

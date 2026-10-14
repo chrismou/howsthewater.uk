@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BathingWater;
+use App\Models\Lake;
 use App\Models\River;
 use App\Models\Spot;
 use Illuminate\Http\Request;
@@ -43,6 +45,22 @@ class SearchController extends Controller
             ->filter(fn (River $river) => $matches($river->name))
             ->take(self::MAX_RESULTS);
 
-        return view('search', ['query' => $query, 'spots' => $spots, 'rivers' => $rivers]);
+        $beaches = BathingWater::query()
+            ->beaches()
+            ->whereNotNull('region_id')
+            ->with('region')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (BathingWater $beach) => $matches($beach->name))
+            ->take(self::MAX_RESULTS);
+
+        $lakes = Lake::query()
+            ->with('region')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (Lake $lake) => $matches($lake->name))
+            ->take(self::MAX_RESULTS);
+
+        return view('search', ['query' => $query, 'spots' => $spots, 'rivers' => $rivers, 'beaches' => $beaches, 'lakes' => $lakes]);
     }
 }

@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\BeachController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LakeController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\RiverController;
 use App\Http\Controllers\SearchController;
@@ -16,6 +18,13 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap')->middlewar
 // Rivers and spots are scoped to their region, since names repeat across Britain.
 Route::scopeBindings()->group(function () {
     Route::get('/{region}', [RegionController::class, 'show'])->name('regions.show');
+
+    // Beaches and lakes come before rivers, which would otherwise take "beaches" or "lakes" as a river slug.
+    Route::get('/{region}/beaches', [BeachController::class, 'index'])->name('beaches.index');
+    Route::get('/{region}/beaches/{beach}', [BeachController::class, 'show'])->name('beaches.show');
+    Route::get('/{region}/lakes', [LakeController::class, 'index'])->name('lakes.index');
+    Route::get('/{region}/lakes/{lake}', [LakeController::class, 'show'])->name('lakes.show');
+
     Route::get('/{region}/{river}', [RiverController::class, 'show'])->name('rivers.show');
 
     // Feeds come before the spot route, which would otherwise take "feed" as a spot slug.

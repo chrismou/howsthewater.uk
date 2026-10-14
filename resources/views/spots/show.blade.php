@@ -85,6 +85,13 @@
         <x-flood-warnings :warnings="$conditions->floodWarnings" />
     @endif
 
+    @if ($conditions->bathingWater)
+        <section class="mb-8">
+            <h2 class="font-display mb-3 text-lg font-semibold">Designated bathing water</h2>
+            <x-bathing-water :summary="$conditions->bathingWater" heading />
+        </section>
+    @endif
+
     <section class="mb-8 rounded-lg border border-line bg-surface p-5">
         <div class="flex flex-wrap items-center gap-3">
             <x-spill-badge :recency="$conditions->spillRecency" :stale="$conditions->overflowDataIsStale()" class="text-sm px-3 py-1" />

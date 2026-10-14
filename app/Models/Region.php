@@ -104,6 +104,17 @@ class Region extends Model
         return $this->hasMany(BathingWater::class)->orderBy('name');
     }
 
+    /**
+     * Coastal and estuary bathing waters. Named for route model binding,
+     * which scopes {beach} to its region through this relation.
+     *
+     * @return HasMany<BathingWater, $this>
+     */
+    public function beaches(): HasMany
+    {
+        return $this->bathingWaters()->beaches();
+    }
+
     /** @return HasMany<River, $this> */
     public function rivers(): HasMany
     {

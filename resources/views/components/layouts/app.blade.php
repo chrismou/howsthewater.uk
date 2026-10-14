@@ -57,11 +57,14 @@
             How's the Water<span class="text-accent">?</span>
         </a>
 
-        <nav class="order-2 flex items-center gap-x-5" aria-label="Main">
+        {{-- Phones: the menus get their own row under the logo; wider screens keep them beside it. --}}
+        <nav class="order-4 flex w-full items-center gap-x-5 sm:order-2 sm:w-auto" aria-label="Main">
             <x-rivers-menu :regions="$allRegions" :current="$liveRegion" />
+            <x-beaches-menu :regions="$allRegions" :current="$liveRegion" />
+            <x-lakes-menu :regions="$allRegions" :current="$liveRegion" />
         </nav>
 
-        <form action="{{ route('search') }}" method="get" role="search" class="order-4 w-full sm:order-3 sm:ml-auto sm:w-auto">
+        <form action="{{ route('search') }}" method="get" role="search" class="order-5 w-full sm:order-3 sm:ml-auto sm:w-auto">
                 <label for="site-search" class="sr-only">Find a spot or river</label>
                 <input id="site-search" type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}"
                     placeholder="Find a spot or river"

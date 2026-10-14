@@ -1,4 +1,4 @@
-@props(['recency', 'stale' => false])
+@props(['recency', 'stale' => false, 'nearby' => false])
 
 @php
     // Stale data gets the neutral style whatever it says, so an old "no spills" never reads as reassurance.
@@ -14,5 +14,5 @@
 
 <span {{ $attributes->merge(['class' => "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {$classes}"]) }}
       @if ($stale) title="Monitor data is out of date" @endif>
-    {{ $recency->label() }}
+    {{ $nearby ? $recency->nearbyLabel() : $recency->label() }}
 </span>

@@ -18,6 +18,9 @@ keep that distinction.
 - Positions every monitor, gauge and spot along the river centreline (from OS Open Rivers), so "upstream" means
   further up the same river rather than just nearby.
 - Shows a 30-day history per spot: minutes of upstream spilling per day and the individual events.
+- Covers designated beaches and lakes from the Environment Agency bathing water register: annual classifications,
+  weekly sample counts and daily pollution risk forecasts in the bathing season, lake levels, and storm overflows
+  within 3 km. River spots that are themselves designated bathing waters show the same record.
 - Offers an RSS feed per spot and river (`/yorkshire/wharfe/otley/feed`, `/yorkshire/wharfe/feed`): overflows upstream
   starting and stopping, and flood warnings in force.
 - Serves a page per river (`/yorkshire/wharfe`) and per spot (`/yorkshire/wharfe/otley`), plus a read-only JSON API at
@@ -91,6 +94,7 @@ php artisan ingest:overflows          # all monitors and their latest spill even
 php artisan ingest:gauges --stations  # discover gauges on each river, backfill 7 days of readings
 php artisan ingest:rainfall --stations # find rain gauges near spots, link the nearest, backfill 7 days
 php artisan ingest:floods             # link spots to EA flood areas (slow: one request per spot), fetch warnings
+php artisan ingest:bathing-waters     # beaches, lakes and their bathing water history (a couple of minutes)
 php artisan rivers:centrelines        # as above
 php artisan rivers:positions          # place monitors, gauges and spots along each river
 ```
@@ -114,6 +118,8 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 | `ingest:rainfall --stations` | Weekly, Monday 03:15 | Refresh the rain gauges near spots and relink each spot to the nearest |
 | `ingest:floods` | Every 15 minutes | Fetch the flood alerts and warnings in force, and link any spot never searched to its flood areas |
 | `ingest:floods --areas` | Weekly, Monday 03:45 | Re-check the flood areas covering every spot |
+| `ingest:bathing-waters` | Hourly | Refresh bathing water classifications, samples and forecasts; backfill history for new sites; link lakes to their level gauge |
+| `ingest:bathing-waters --history` | Weekly, Monday 04:00 | Refetch sample and classification history for every bathing water |
 | `rivers:positions` | Daily, 03:30 | Position any newly added monitors, gauges or spots |
 
 `rivers:centrelines` only needs running when a river is added or the OS data is updated.
