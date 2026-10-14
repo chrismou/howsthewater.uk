@@ -232,3 +232,42 @@ it('suggests featured spots on the home page before falling back to the best mon
 
     $this->get(route('home'))->assertOk()->assertSee('Try Castleford');
 });
+
+it('describes pages for sharing and search engines', function () {
+    [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley', 'river_metres' => null], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: spills and river level - ', false)
+        ->assertSee('<meta property="og:url" content="'.route('spots.show', [$region, $river, $spot]).'"', false)
+        ->assertSee('og-image.png')
+        ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
+        ->assertSee('<link rel="canonical"', false)
+        ->assertSee('favicon.svg');
+});
+
+it('serves a sitemap of every public page', function () {
+    [$region, $river, $spot] = spotWithUrl(['slug' => 'otley', 'river_metres' => null], ['slug' => 'wharfe']);
+    Spot::factory()->unpublished()->create(['river_id' => $river->id, 'slug' => 'hidden']);
+    River::factory()->tributaryOf($river, 1000)->create(['region_id' => $region->id, 'slug' => 'washburn']);
+
+    $this->get('/sitemap.xml')
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
+        ->assertSee('<loc>'.route('home').'</loc>', false)
+        ->assertSee('<loc>'.route('regions.show', $region).'</loc>', false)
+        ->assertSee('<loc>'.route('rivers.show', [$region, $river]).'</loc>', false)
+        ->assertSee('<loc>'.route('spots.show', [$region, $river, $spot]).'</loc>', false)
+        ->assertDontSee('hidden')
+        ->assertDontSee('washburn');
+});
+
+it('shows a helpful 404 page in the site layout', function () {
+    Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+
+    $this->get('/yorkshire/nowhere/at-all')
+        ->assertNotFound()
+        ->assertSee('Nothing here')
+        ->assertSee('Find a spot or river')
+        ->assertSee('data-live-bar', false);
+});

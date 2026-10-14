@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#f6f3ec"/>
+  <g fill="none" stroke="#1f5f8b" stroke-opacity="0.14" stroke-width="1.6">
+    <path d="M-20 420 C 200 360, 380 500, 620 440 S 1000 340, 1220 420"/>
+    <path d="M-20 470 C 220 410, 400 550, 640 490 S 1020 390, 1220 470"/>
+    <path d="M-20 520 C 240 460, 420 600, 660 540 S 1040 440, 1220 520"/>
+    <path d="M-20 570 C 260 510, 440 650, 680 590 S 1060 490, 1220 570"/>
+    <path d="M-20 620 C 280 560, 460 700, 700 640 S 1080 540, 1220 620"/>
+  </g>
+  <rect x="80" y="80" width="56" height="6" rx="3" fill="#1f5f8b"/>
+  <text x="80" y="128" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="bold" fill="#1f5f8b" letter-spacing="2">HOW'S THE WATER?</text>
+  <text x="80" y="270" font-family="DejaVu Sans, Arial, sans-serif" font-size="78" font-weight="bold" fill="#1b2a33">What's the river</text>
+  <text x="80" y="360" font-family="DejaVu Sans, Arial, sans-serif" font-size="78" font-weight="bold" fill="#1b2a33">doing right now?</text>
+  <text x="80" y="430" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" fill="#3a464f">Storm overflow spills upstream, river levels and rainfall</text>
+  <text x="80" y="470" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" fill="#3a464f">for swimming, paddling and fishing spots on Yorkshire's rivers.</text>
+  <g transform="translate(980 80)">
+    <rect width="140" height="140" rx="30" fill="#1b2a33"/>
+    <path d="M18 84c13-13 26-13 39 0s26 13 39 0 26-13 39 0" fill="none" stroke="#7fb6dd" stroke-width="8" stroke-linecap="round"/>
+    <path d="M18 106c13-13 26-13 39 0s26 13 39 0 26-13 39 0" fill="none" stroke="#1f5f8b" stroke-width="8" stroke-linecap="round"/>
+    <text x="70" y="66" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="bold" font-size="56" fill="#fffdf8">?</text>
+  </g>
+</svg>
