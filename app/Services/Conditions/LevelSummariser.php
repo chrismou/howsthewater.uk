@@ -18,6 +18,13 @@ class LevelSummariser
 
     private const STEADY_THRESHOLD_METRES = 0.03;
 
+    /**
+     * How far before the start of the trend window the comparison reading
+     * may be. Readings arrive every 15 minutes, so anything older means a
+     * gap (an outage), and the change would span far more than 3 hours.
+     */
+    private const MAX_BASELINE_GAP_MINUTES = 60;
+
     private const CHART_WINDOW_HOURS = 48;
 
     public function summarise(GaugeStation $station): LevelSummary
@@ -52,18 +59,26 @@ class LevelSummariser
     }
 
     /**
+     * The change since the reading at the start of the trend window, or
+     * null when there is no reading close enough to it.
+     *
      * @param  Collection<int, GaugeReading>  $readings
      */
     private function changeOverWindow(Collection $readings, GaugeReading $latest): ?float
     {
         $windowStart = $latest->measured_at->copy()->subHours(self::TREND_WINDOW_HOURS);
+        $oldestBaseline = $windowStart->copy()->subMinutes(self::MAX_BASELINE_GAP_MINUTES);
 
         /** @var GaugeReading|null $earlier */
         $earlier = $readings
             ->filter(fn (GaugeReading $reading) => $reading->measured_at->lessThanOrEqualTo($windowStart))
             ->last();
 
-        return $earlier === null ? null : round($latest->value - $earlier->value, 3);
+        if ($earlier === null || $earlier->measured_at->lessThan($oldestBaseline)) {
+            return null;
+        }
+
+        return round($latest->value - $earlier->value, 3);
     }
 
     private function trendFor(?float $change, GaugeReading $latest): LevelTrend
@@ -72,7 +87,11 @@ class LevelSummariser
             return LevelTrend::Unknown;
         }
 
-        if ($change === null || abs($change) < self::STEADY_THRESHOLD_METRES) {
+        if ($change === null) {
+            return LevelTrend::Unknown;
+        }
+
+        if (abs($change) < self::STEADY_THRESHOLD_METRES) {
             return LevelTrend::Steady;
         }
 

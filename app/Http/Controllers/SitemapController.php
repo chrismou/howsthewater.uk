@@ -17,7 +17,7 @@ class SitemapController extends Controller
     {
         $regions = Region::query()->orderBy('name')->get();
         $rivers = River::query()->main()->withoutCentreline()->with('region')->orderBy('name')->get();
-        $spots = Spot::query()->published()->with('river.region')->orderBy('name')->get();
+        $spots = Spot::query()->published()->onMainRiver()->with('river.region')->orderBy('name')->get();
 
         $urls = collect([['loc' => route('home'), 'changefreq' => 'hourly', 'priority' => '1.0', 'lastmod' => null]])
             ->concat($regions->map(fn (Region $region) => ['loc' => route('regions.show', $region), 'changefreq' => 'hourly', 'priority' => '0.9', 'lastmod' => $region->updated_at]))

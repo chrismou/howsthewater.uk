@@ -27,6 +27,7 @@ class SearchController extends Controller
 
         $spots = Spot::query()
             ->published()
+            ->onMainRiver()
             ->with('river.region')
             ->orderBy('name')
             ->get()

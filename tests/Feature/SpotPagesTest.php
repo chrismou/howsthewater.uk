@@ -50,6 +50,19 @@ it('shows a river page with its spots source to mouth', function () {
         ->assertSeeInOrder(['Skipton', 'Castleford']);
 });
 
+it('says river monitor counts include tributaries and offline monitors', function () {
+    [$region, $river] = spotWithUrl([], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
+    $tributary = River::factory()->create(['region_id' => $region->id, 'parent_river_id' => $river->id]);
+    OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id]);
+    OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'status' => \App\Enums\OverflowStatus::Offline]);
+    OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'status' => \App\Enums\OverflowStatus::NotDischarging]);
+
+    $this->get('/yorkshire/wharfe')
+        ->assertOk()
+        ->assertSeeInOrder(['3 storm overflow monitors on the River Wharfe and its tributaries,', '1 discharging right now and 1 offline.'])
+        ->assertDontSee('discharge into');
+});
+
 it('scopes rivers and spots to their region', function () {
     [$region, $river, $spot] = spotWithUrl(['slug' => 'otley'], ['slug' => 'calder']);
     $other = Region::factory()->create(['slug' => 'lancashire']);
@@ -77,6 +90,18 @@ it('hides unpublished spots', function () {
 
     $this->get(route('spots.show', [$region, $river, $spot]))->assertNotFound();
     $this->get(route('home'))->assertDontSee($spot->name);
+});
+
+it('hides spots on tributaries, which have no pages', function () {
+    [$region, $river] = spotWithUrl();
+    $tributary = River::factory()->create(['region_id' => $region->id, 'parent_river_id' => $river->id, 'slug' => 'test-beck']);
+    $spot = Spot::factory()->create(['river_id' => $tributary->id, 'name' => 'Becksidebridge', 'slug' => 'becksidebridge']);
+
+    $this->get(route('spots.show', [$region, $tributary, $spot]))->assertNotFound();
+    $this->getJson(route('api.v1.spots.show', [$region, $tributary, $spot]))->assertNotFound();
+    $this->getJson(route('api.v1.spots.index', $region))->assertOk()->assertDontSee('becksidebridge');
+    $this->get(route('search', ['q' => 'Becksidebridge']))->assertOk()->assertDontSee('/test-beck/becksidebridge');
+    $this->get(route('sitemap'))->assertOk()->assertDontSee('becksidebridge');
 });
 
 it('lists rivers by catchment in the region menu', function () {

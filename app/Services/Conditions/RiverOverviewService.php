@@ -85,12 +85,16 @@ class RiverOverviewService
             ->each(fn (Spot $spot) => $spot->setRelation('river', $river));
 
         $spots = $this->spotConditions->forMany($spots);
+        $riverIds = $this->riverFamilyIds($river);
+        $monitorsByStatus = OverflowMonitor::query()->whereIn('river_id', $riverIds)->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
 
         return new RiverOverview(
             river: $river,
             spots: $spots,
-            monitorCount: OverflowMonitor::query()->whereIn('river_id', $riverIds = $this->riverFamilyIds($river))->count(),
-            dischargingNowCount: OverflowMonitor::query()->whereIn('river_id', $riverIds)->where('status', OverflowStatus::Discharging)->count(),
+            monitorCount: (int) $monitorsByStatus->sum(),
+            dischargingNowCount: (int) ($monitorsByStatus[OverflowStatus::Discharging->value] ?? 0),
+            offlineCount: (int) ($monitorsByStatus[OverflowStatus::Offline->value] ?? 0),
+            hasTributaries: count($riverIds) > 1,
         );
     }
 }

@@ -99,6 +99,22 @@ it('summarises the linked gauge level and trend', function () {
         ->and($level->isStale())->toBeFalse();
 });
 
+it('does not report a gap after an outage as a 3 hour change', function () {
+    $station = GaugeStation::factory()->create();
+    $spot = Spot::factory()->create(['gauge_station_id' => $station->id, 'river_metres' => null]);
+
+    // The gauge went quiet for most of a day; the last reading before the gap is 10 hours old.
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(10), 'value' => 0.40]);
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subMinutes(30), 'value' => 0.90]);
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subMinutes(15), 'value' => 0.91]);
+
+    $level = app(SpotConditionsService::class)->for($spot)->level;
+
+    expect($level->changeLast3Hours)->toBeNull()
+        ->and($level->trend)->toBe(LevelTrend::Unknown)
+        ->and($level->latestValue)->toBe(0.91);
+});
+
 it('reports an unknown trend when readings are stale', function () {
     $station = GaugeStation::factory()->create();
     $spot = Spot::factory()->create(['gauge_station_id' => $station->id, 'river_metres' => null]);

@@ -116,3 +116,20 @@ it('follows the main stem past a dead-end side channel carrying the same name', 
     expect($centreline)->toHaveCount(4)
         ->and(end($centreline))->toEqualWithDelta(BritishNationalGrid::toLatLng(409000, 450000), 0.0001);
 });
+
+it('follows the river through a braid with a link drawn against the flow', function () {
+    $path = openRiversFixture([
+        // The upper reach, which only meets the rest through a link drawn the wrong way round (j1 to k).
+        ['name' => 'Test Beck', 'start' => 'u', 'end' => 'k', 'points' => [[397000, 450000], [399000, 450000]]],
+        ['name' => 'Test Beck', 'start' => 'j1', 'end' => 'k', 'points' => [[401000, 450000], [399000, 450000]]],
+        // A short side channel feeding the main stem, which must not become the source.
+        ['name' => 'Test Beck', 'start' => 's', 'end' => 'j1', 'points' => [[401000, 451000], [401000, 450000]]],
+        ['name' => 'Test Beck', 'start' => 'j1', 'end' => 'j2', 'points' => [[401000, 450000], [402000, 450000]]],
+        ['name' => 'Test Beck', 'start' => 'j2', 'end' => 'm', 'points' => [[402000, 450000], [403000, 450000]]],
+    ]);
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('Test Beck', mouthHint: BritishNationalGrid::toLatLng(403500, 450000));
+
+    expect($centreline[0])->toEqual(BritishNationalGrid::toLatLng(397000, 450000))
+        ->and(end($centreline))->toEqual(BritishNationalGrid::toLatLng(403000, 450000));
+});

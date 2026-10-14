@@ -15,8 +15,8 @@
         <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">All regions</a> <span class="mx-1">/</span> <a href="{{ route('regions.show', $overview->river->region) }}" class="hover:underline">{{ $overview->river->region->name }}</a></p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">{{ $overview->river->name }}</h1>
         <p class="mt-2 text-ink-2">
-            {{ $overview->monitorCount }} storm overflow monitors discharge into the {{ $overview->river->name }},
-            {{ $overview->dischargingNowCount }} of them discharging right now. Spots are listed source to mouth.
+            {{ $overview->monitorCount }} storm overflow {{ \Illuminate\Support\Str::plural('monitor', $overview->monitorCount) }} on the {{ $overview->river->name }}{{ $overview->hasTributaries ? ' and its tributaries' : '' }},
+            {{ $overview->dischargingNowCount }} discharging right now{{ $overview->offlineCount > 0 ? ' and '.$overview->offlineCount.' offline' : '' }}. Spots are listed source to mouth.
         </p>
     </div>
 

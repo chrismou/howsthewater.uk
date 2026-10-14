@@ -96,6 +96,18 @@ class Spot extends Model
     }
 
     /**
+     * Spots on main rivers only. Tributaries have no pages, so spots on
+     * them are never linked to or served.
+     *
+     * @param  Builder<Spot>  $query
+     * @return Builder<Spot>
+     */
+    public function scopeOnMainRiver(Builder $query): Builder
+    {
+        return $query->whereHas('river', fn (Builder $river) => $river->whereNull('parent_river_id'));
+    }
+
+    /**
      * @param  Builder<Spot>  $query
      * @return Builder<Spot>
      */

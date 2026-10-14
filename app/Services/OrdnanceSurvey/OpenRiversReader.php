@@ -8,6 +8,7 @@ use App\Services\Geo\PolylineProjector;
 use App\Services\Osm\WayChainer;
 use PDO;
 use RuntimeException;
+use SplPriorityQueue;
 
 /**
  * Reads named watercourse links from the OS Open Rivers GeoPackage and
@@ -71,16 +72,13 @@ class OpenRiversReader
             return WayChainer::chain($this->chainByTopology($links));
         }
 
-        $chains = array_map(
-            fn (array $component) => WayChainer::chain($this->chainByTopology($component)),
-            $this->connectedComponents($links),
-        );
-
         $parent = $flowsInto !== null ? new PolylineProjector($flowsInto) : null;
 
         $distanceToMouth = $parent !== null
             ? fn (array $mouth) => $parent->project($mouth[0], $mouth[1])->offsetMetres
             : fn (array $mouth) => Coordinates::distanceMetres($mouth[0], $mouth[1], $mouthHint[0], $mouthHint[1]);
+
+        $chains = array_map(fn (array $component) => $this->mainStem($component, $distanceToMouth), $this->connectedComponents($links));
 
         return $this->joinAcrossGaps($chains, $this->nearestMouth($chains, $distanceToMouth));
     }
@@ -199,6 +197,82 @@ class OpenRiversReader
         }
 
         return $components;
+    }
+
+    /**
+     * The main stem of one connected set of links, from source to mouth.
+     * The mouth is the point where flow ends (a node nothing flows out of)
+     * nearest the parent river or mouth hint. Recorded flow directions are
+     * then ignored, since braided reaches (lakes, mill cuts) often have a
+     * link drawn the wrong way round, which would cut a flow-following walk
+     * short. The source is the node furthest from the mouth along the links,
+     * and the stem is the shortest path between the two, which also
+     * collapses parallel channels to one line.
+     *
+     * @param  array<string, array{start: string, end: string, points: array<int, array{0: float, 1: float}>}>  $links
+     * @param  callable(array{0: float, 1: float}): float  $distanceToMouth
+     * @return array<int, array{0: float, 1: float}>
+     */
+    private function mainStem(array $links, callable $distanceToMouth): array
+    {
+        $positions = [];
+        $edges = [];
+
+        foreach ($links as $id => $link) {
+            $positions[$link['start']] = $link['points'][0];
+            $positions[$link['end']] = end($link['points']);
+            $length = $this->linkLength($link['points']);
+            $edges[$link['start']][] = ['node' => $link['end'], 'link' => $id, 'length' => $length];
+            $edges[$link['end']][] = ['node' => $link['start'], 'link' => $id, 'length' => $length];
+        }
+
+        $startNodes = array_flip(array_column($links, 'start'));
+        $sinks = array_diff_key($positions, $startNodes) ?: $positions;
+
+        $mouth = array_keys($sinks)[0];
+        $mouthDistance = INF;
+
+        foreach ($sinks as $node => $position) {
+            $distance = $distanceToMouth($position);
+
+            if ($distance < $mouthDistance) {
+                $mouth = $node;
+                $mouthDistance = $distance;
+            }
+        }
+
+        // Dijkstra from the mouth; $towardsMouth records each node's next step downstream.
+        $distances = [$mouth => 0.0];
+        $towardsMouth = [];
+        $queue = new SplPriorityQueue();
+        $queue->insert($mouth, 0.0);
+
+        while (! $queue->isEmpty()) {
+            $node = $queue->extract();
+
+            foreach ($edges[$node] as $edge) {
+                $distance = $distances[$node] + $edge['length'];
+
+                if ($distance < ($distances[$edge['node']] ?? INF)) {
+                    $distances[$edge['node']] = $distance;
+                    $towardsMouth[$edge['node']] = ['node' => $node, 'link' => $edge['link']];
+                    $queue->insert($edge['node'], -$distance);
+                }
+            }
+        }
+
+        $node = array_keys($distances, max($distances))[0];
+        $stem = [$positions[$node]];
+
+        while (isset($towardsMouth[$node])) {
+            $step = $towardsMouth[$node];
+            $link = $links[$step['link']];
+            $points = $link['start'] === $node ? $link['points'] : array_reverse($link['points']);
+            $stem = [...$stem, ...array_slice($points, 1)];
+            $node = $step['node'];
+        }
+
+        return $stem;
     }
 
     /**

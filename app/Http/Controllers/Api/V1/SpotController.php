@@ -17,6 +17,7 @@ class SpotController extends Controller
     {
         $spots = Spot::query()
             ->published()
+            ->onMainRiver()
             ->whereHas('river', fn ($query) => $query->where('region_id', $region->id))
             ->with('river.region')
             ->orderBy('river_id')
@@ -29,6 +30,7 @@ class SpotController extends Controller
     public function show(Region $region, River $river, Spot $spot, SpotConditionsService $conditions): SpotConditionsResource
     {
         abort_unless($spot->is_published, 404);
+        abort_if($river->isTributary(), 404);
 
         $spot->setRelation('river', $river->setRelation('region', $region));
 

@@ -13,6 +13,7 @@ class SpotController extends Controller
     public function show(Region $region, River $river, Spot $spot, SpotConditionsService $conditions): View
     {
         abort_unless($spot->is_published, 404);
+        abort_if($river->isTributary(), 404);
 
         $spot->setRelation('river', $river->setRelation('region', $region));
 

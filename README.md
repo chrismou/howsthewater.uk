@@ -22,8 +22,9 @@ keep that distinction.
 
 Covered rivers are seeded by region in `database/seeders/RiverSeeder.php` and spots in `SpotSeeder.php`. Yorkshire's
 main rivers are the Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk and Hull. The Thames Valley has the
-Thames from its source to the tidal limit at Teddington, with the twenty tributaries that join above it (Churn, Coln,
-Windrush, Evenlode, Cherwell, Thame, Kennet, Loddon, Colne, Wey, Mole and others). Each main river carries the named
+Thames from its source to the tidal limit at Teddington, with the twenty-four tributaries that join above it (Churn, Coln,
+Windrush, Evenlode, Cherwell, Thame, Kennet and Lambourn, Loddon, the Colne with the Ver, Gade and Chess, Wey and Cranleigh
+Waters, Mole and others). Each main river carries the named
 tributaries that hold water company monitors (the Colne, Holme, Rother, Dearne, Sheaf, Loxley, Rye, Foss, Skell and around fifty becks and
 brooks). Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances
 follow the water down the tributary and then the main river.

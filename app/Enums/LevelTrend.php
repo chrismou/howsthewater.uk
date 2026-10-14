@@ -15,7 +15,7 @@ enum LevelTrend: string
             self::Rising => 'Rising',
             self::Steady => 'Steady',
             self::Falling => 'Falling',
-            self::Unknown => 'No recent readings',
+            self::Unknown => 'Trend unknown',
         };
     }
 }

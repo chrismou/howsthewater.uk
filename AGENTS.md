@@ -173,7 +173,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   (`rivers:centrelines` then `rivers:positions`, which also sets each tributary's `joins_at_metres`).
 - `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
   green "no spills". Keep that distinction for any new status.
-- Tributaries have no pages. Use the `main()` scope wherever rivers are listed.
+- Tributaries have no pages. Use the `main()` scope wherever rivers are listed, and `Spot::onMainRiver()` wherever spots
+  are listed; the spot controllers 404 a spot on a tributary.
 - Rivers belong to a `Region` and URLs are region-scoped (`/{region}/{river}/{spot}`, API `/api/v1/regions/...`) with
   `scopeBindings()`, because river and spot names repeat across Britain; slugs are unique per region and per river.
   Build links with `route('spots.show', [$region, $river, $spot])` and eager-load `river.region` wherever spots are
@@ -218,8 +219,11 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   gitignored, download from the OS Data Hub). OpenStreetMap via Overpass is a fallback (`--source=osm`) but is unreliable.
   Names repeat (becks across Yorkshire, and Calder, Don, Derwent, Ouse and Esk across Britain), so `OpenRiversReader`
   seeds from the set of links whose mouth is nearest the parent centreline (tributaries) or the seeded `mouth_latitude`
-  and `mouth_longitude` (main rivers), then joins other fragments within 4 km to bridge reservoirs. Seed parents before
-  tributaries; `rivers:centrelines` orders them that way.
+  and `mouth_longitude` (main rivers), then joins other fragments within 4 km to bridge reservoirs. Within each set of
+  connected links the main stem runs from the flow sink nearest the parent or hint to the node furthest from it along
+  the links, ignoring recorded flow directions, which OS often draws backwards in braided reaches. Seed parents before
+  tributaries; `rivers:centrelines` orders them that way. It only fetches rivers without a centreline, so a fix that
+  should reach an existing river needs a migration that clears its `centreline` (deploys then refetch it).
 - The Environment Agency also names rivers nationally, so `SyncGaugeStations` drops stations more than 2 km from the
   centreline. Rivers are only searched for gauges once they have a centreline.
 - New rivers, spots and monitors need no manual commands. Rivers record `gauges_discovered_at` and spots

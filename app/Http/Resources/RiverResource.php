@@ -24,6 +24,7 @@ class RiverResource extends JsonResource
             'length_metres' => $this->river->length_metres,
             'monitor_count' => $this->monitorCount,
             'discharging_now' => $this->dischargingNowCount,
+            'offline_monitor_count' => $this->offlineCount,
             'spots' => SpotConditionsResource::collection($this->spots),
         ];
     }
