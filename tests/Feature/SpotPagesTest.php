@@ -271,3 +271,28 @@ it('shows a helpful 404 page in the site layout', function () {
         ->assertSee('Find a spot or river')
         ->assertSee('data-live-bar', false);
 });
+
+it('credits the water companies that cover the regions', function () {
+    spotWithUrl(['river_metres' => null]);
+    Region::factory()->create(['name' => 'North East', 'slug' => 'north-east', 'overflow_feeds' => ['northumbrian_water']]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Northumbrian Water and Yorkshire Water storm overflow data')
+        ->assertSee('Northumbrian Water and Yorkshire Water monitors report')
+        ->assertSee('rivers in Yorkshire and North East');
+});
+
+it('keeps the first region added as the default once there are several', function () {
+    spotWithUrl(['river_metres' => null]);
+    $later = Region::factory()->create(['name' => 'Avon', 'slug' => 'avon', 'overflow_feeds' => ['wessex_water']]);
+    Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $later->id, 'name' => 'River Avon'])->id, 'river_metres' => null]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Browse Yorkshire')
+        ->assertSee('Across Yorkshire now')
+        ->assertSee('Open Avon');
+
+    $this->get(route('regions.show', $later))->assertOk()->assertSee('1 river and 1 spots', false);
+});

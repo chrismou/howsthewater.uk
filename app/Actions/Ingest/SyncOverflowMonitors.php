@@ -5,11 +5,14 @@ namespace App\Actions\Ingest;
 use App\Data\OverflowMonitorData;
 use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
+use App\Models\Region;
 use App\Models\SpillEvent;
 use App\Services\Stream\StormOverflowClient;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Pulls the current state of every storm overflow monitor and records any
@@ -20,11 +23,33 @@ class SyncOverflowMonitors
     public function __construct(private StormOverflowClient $client) {}
 
     /**
-     * @return array{monitors: int, events_opened: int, events_closed: int}
+     * Syncs every water company feed a region needs. A feed that fails is
+     * logged and skipped, so one company's outage never stops the others;
+     * its monitors simply go stale and the pages say so.
+     *
+     * @return array{monitors: int, events_opened: int, events_closed: int, feeds: int, failed: array<int, string>}
      */
     public function handle(): array
     {
-        return $this->sync($this->client->all());
+        $totals = ['monitors' => 0, 'events_opened' => 0, 'events_closed' => 0, 'feeds' => 0, 'failed' => []];
+
+        foreach (Region::overflowFeeds() as $key => $feed) {
+            try {
+                $result = $this->sync($this->client->all($feed['url']));
+            } catch (Throwable $exception) {
+                Log::warning("Storm overflow feed {$key} failed: {$exception->getMessage()}");
+                $totals['failed'][] = $feed['name'];
+
+                continue;
+            }
+
+            $totals['monitors'] += $result['monitors'];
+            $totals['events_opened'] += $result['events_opened'];
+            $totals['events_closed'] += $result['events_closed'];
+            $totals['feeds']++;
+        }
+
+        return $totals;
     }
 
     /**

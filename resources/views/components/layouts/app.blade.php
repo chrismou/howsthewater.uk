@@ -1,8 +1,9 @@
 @props(['title' => null, 'description' => null, 'region' => null, 'hero' => null, 'after' => null])
 
 @php
-    // The live bar shows the page's region, or the first region on pages that have none.
-    $liveRegion = $region ?? \App\Models\Region::query()->orderBy('name')->first();
+    // The live bar shows the page's region, or the first region added on pages that have none.
+    $allRegions = \App\Models\Region::query()->orderBy('name')->get();
+    $liveRegion = $region ?? $allRegions->sortBy('id')->first();
     $liveSummary = $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
 @endphp
 <!DOCTYPE html>
@@ -12,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @php
         $pageTitle = ($title ? $title.' - ' : '').config('app.name');
-        $pageDescription = $description ?? 'Storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on Yorkshire\'s rivers, read from the public monitors every 15 minutes.';
+        $pageDescription = $description ?? 'Storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on rivers in '.$allRegions->pluck('name')->join(', ', ' and ').', read from the public monitors every 15 minutes.';
     @endphp
     <title>{{ $pageTitle }}</title>
     <meta name="description" content="{{ $pageDescription }}">
@@ -47,7 +48,7 @@
             </a>
 
             <nav class="flex items-center gap-x-4 text-sm text-ink-2" aria-label="Regions">
-                @foreach (\App\Models\Region::query()->orderBy('name')->get() as $navRegion)
+                @foreach ($allRegions as $navRegion)
                     <details class="relative" data-nav-menu>
                         <summary class="flex cursor-pointer list-none items-center gap-1 font-medium text-ink hover:text-ink [&::-webkit-details-marker]:hidden">
                             {{ $navRegion->name }}
@@ -111,7 +112,7 @@
         <div class="mx-auto max-w-5xl px-4 py-6 text-xs leading-relaxed text-muted">
             <p>
                 Near real-time, unvalidated data. Contains Environment Agency data from the real-time data API (Beta) and
-                Yorkshire Water storm overflow data (via Stream), Open Government Licence v3.0. River centrelines from
+                {{ $allRegions->flatMap->waterCompanies()->unique()->join(', ', ' and ') }} storm overflow data (via Stream), Open Government Licence v3.0. River centrelines from
                 Ordnance Survey Open Rivers, OGL v3.0. Map tiles © OpenStreetMap contributors.
                 <a href="{{ route('home') }}#limits" class="underline hover:text-ink">What this site does not do</a>.
             </p>

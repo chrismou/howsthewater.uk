@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots on Yorkshire rivers. The site
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley). The site
 reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -162,8 +162,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   spot's status; `RiverOverviewService` wraps it for listings. Add new facts to the DTO first, then to both outputs.
 - Data is ingested in the background by scheduled artisan commands (see `routes/console.php`) and served from MySQL.
   Pages never call third-party APIs at request time.
-- Main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk, Hull) and their tributaries are seeded
-  by `RiverSeeder` (all in the Yorkshire region from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
+- Rivers are seeded per region: Yorkshire's main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse,
+  Esk, Hull) and the Thames (source to Teddington, mouth hint in central London because the tidal Thames is split into
+  pieces too far apart to join). Main rivers and their tributaries are seeded
+  by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
@@ -198,7 +200,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 
 ## Data sources
 
-- Storm overflows: Stream (Yorkshire Water) ArcGIS feature service, polled every 15 minutes by `ingest:overflows`.
+- Storm overflows: Stream publishes one ArcGIS feature service per water company, all with the same fields, listed in
+  `services.stream.feeds`. Each region names the feeds it needs in `overflow_feeds`, and `ingest:overflows` polls only
+  those, every 15 minutes. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by
+  company (`YWS`, `NWL`, `UUP`...) so feeds share one table. South West Water and Scottish Water use other fields.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
 - Rainfall: the same API's tipping bucket rain gauges, `ingest:rainfall`. Each spot links to the nearest gauge within

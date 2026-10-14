@@ -20,12 +20,18 @@ class IngestOverflows extends Command
         $summaries->refreshAll();
 
         $this->info(sprintf(
-            'Synced %d monitors (%d events opened, %d closed).',
+            'Synced %d monitors from %d %s (%d events opened, %d closed).',
             $result['monitors'],
+            $result['feeds'],
+            $result['feeds'] === 1 ? 'feed' : 'feeds',
             $result['events_opened'],
             $result['events_closed'],
         ));
 
-        return self::SUCCESS;
+        foreach ($result['failed'] as $name) {
+            $this->error("{$name} feed failed; its monitors were left as they were.");
+        }
+
+        return $result['failed'] === [] ? self::SUCCESS : self::FAILURE;
     }
 }

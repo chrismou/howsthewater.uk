@@ -3,8 +3,14 @@
 use App\Actions\Ingest\SyncOverflowMonitors;
 use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
+use App\Models\Region;
 use App\Models\SpillEvent;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
+
+beforeEach(function () {
+    Region::factory()->create(['overflow_feeds' => ['yorkshire_water']]);
+});
 
 function arcGisFeature(array $overrides = []): array
 {
@@ -34,7 +40,7 @@ it('creates monitors and records their latest spill event', function () {
 
     $result = app(SyncOverflowMonitors::class)->handle();
 
-    expect($result)->toBe(['monitors' => 1, 'events_opened' => 1, 'events_closed' => 0]);
+    expect($result)->toBe(['monitors' => 1, 'events_opened' => 1, 'events_closed' => 0, 'feeds' => 1, 'failed' => []]);
 
     $monitor = OverflowMonitor::query()->where('external_id', 'YWS00001')->firstOrFail();
 
@@ -139,4 +145,33 @@ it('closes an older open event when a new one starts while still discharging', f
         ->and($events)->toHaveCount(2)
         ->and($events[0]->ended_at->timestamp)->toBe(1760110000)
         ->and($events[1]->ended_at)->toBeNull();
+});
+
+it('polls only the feeds a region needs and keeps going when one fails', function () {
+    Sleep::fake();
+    Region::factory()->create(['overflow_feeds' => ['northumbrian_water', 'united_utilities']]);
+
+    Http::fake([
+        'services-eu1.arcgis.com/1WqkK5cDKUbF0CkH/*' => Http::response(['features' => [arcGisFeature(['Id' => 'YWS00001'])]]),
+        'services-eu1.arcgis.com/MSNNjkZ51iVh8yBj/*' => Http::response(['features' => [arcGisFeature(['Id' => 'NWL00001', 'Company' => 'Northumbrian Water Ltd'])]]),
+        'services5.arcgis.com/*' => Http::response('Service unavailable', 503),
+        '*' => Http::response(['features' => [arcGisFeature(['Id' => 'XXX00001'])]]),
+    ]);
+
+    $result = app(SyncOverflowMonitors::class)->handle();
+
+    expect($result['feeds'])->toBe(2)
+        ->and($result['failed'])->toBe(['United Utilities'])
+        ->and(OverflowMonitor::query()->orderBy('external_id')->pluck('external_id')->all())->toBe(['NWL00001', 'YWS00001']);
+
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'services1.arcgis.com'));
+});
+
+it('fails the ingest command when a feed fails', function () {
+    Sleep::fake();
+    Http::fake(['*' => Http::response('Service unavailable', 503)]);
+
+    $this->artisan('ingest:overflows')
+        ->expectsOutputToContain('Yorkshire Water feed failed')
+        ->assertFailed();
 });

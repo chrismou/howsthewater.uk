@@ -18,6 +18,7 @@ class RegionFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name),
+            'overflow_feeds' => ['yorkshire_water'],
         ];
     }
 }

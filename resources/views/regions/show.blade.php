@@ -34,7 +34,7 @@
             <div class="max-w-2xl">
                 <h1 class="font-display text-4xl font-semibold tracking-tight">{{ $summary->name }}</h1>
                 <p class="mt-2 text-ink-2">
-                    {{ $summary->rivers->count() }} rivers and {{ $spots->count() }} spots, listed source to mouth.
+                    {{ $summary->rivers->count() }} {{ \Illuminate\Support\Str::plural('river', $summary->rivers->count()) }} and {{ $spots->count() }} spots, listed source to mouth.
                     @if ($summary->dataUpdatedAt)
                         Monitor data updated {{ $summary->dataUpdatedAt->diffForHumans() }}.
                     @endif

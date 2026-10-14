@@ -12,7 +12,7 @@
   <text x="80" y="270" font-family="DejaVu Sans, Arial, sans-serif" font-size="78" font-weight="bold" fill="#1b2a33">What's the river</text>
   <text x="80" y="360" font-family="DejaVu Sans, Arial, sans-serif" font-size="78" font-weight="bold" fill="#1b2a33">doing right now?</text>
   <text x="80" y="430" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" fill="#3a464f">Storm overflow spills upstream, river levels and rainfall</text>
-  <text x="80" y="470" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" fill="#3a464f">for swimming, paddling and fishing spots on Yorkshire's rivers.</text>
+  <text x="80" y="470" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" fill="#3a464f">for swimming, paddling and fishing spots, every 15 minutes.</text>
   <g transform="translate(980 80)">
     <rect width="140" height="140" rx="30" fill="#1b2a33"/>
     <path d="M18 84c13-13 26-13 39 0s26 13 39 0 26-13 39 0" fill="none" stroke="#7fb6dd" stroke-width="8" stroke-linecap="round"/>

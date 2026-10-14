@@ -4,6 +4,7 @@ use App\Actions\Ingest\SyncGaugeStations;
 use App\Models\GaugeStation;
 use App\Models\River;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 
 function environmentAgencyStationItem(string $reference, float $lat, float $long): array
 {
@@ -47,4 +48,23 @@ it('keeps every station when the river has no centreline yet', function () {
     ]);
 
     expect(app(SyncGaugeStations::class)->handle($river))->toBe(['stations' => 2]);
+});
+
+it('keeps discovering gauges for other rivers when one request fails', function () {
+    Sleep::fake();
+    River::factory()->create(['name' => 'River Bad', 'aliases' => ['River Bad']]);
+    River::factory()->create(['name' => 'River Good', 'aliases' => ['River Good']]);
+
+    Http::fake([
+        'environment.data.gov.uk/*riverName=River%20Bad*' => Http::response('Gateway timeout', 504),
+        'environment.data.gov.uk/*riverName=River%20Good*' => Http::response(['items' => [environmentAgencyStationItem('L0009', 53.90, -1.80)]]),
+        'environment.data.gov.uk/*' => Http::response(['items' => []]),
+    ]);
+
+    $this->artisan('ingest:gauges --stations')
+        ->expectsOutputToContain('River Bad: gauge discovery failed')
+        ->expectsOutputToContain('River Good: 1 gauge stations.')
+        ->assertFailed();
+
+    expect(GaugeStation::query()->pluck('external_id')->all())->toBe(['L0009']);
 });

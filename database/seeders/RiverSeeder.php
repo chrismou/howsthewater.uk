@@ -15,10 +15,22 @@ class RiverSeeder extends Seeder
      * must match OS Open Rivers; aliases are the receiving watercourse names
      * the overflow feed and the Environment Agency use. Main rivers carry an
      * approximate mouth so same-named rivers elsewhere in Britain are ignored.
+     * Keyed by region slug; slugs only need to be unique within a region.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>
+     * @return array<string, array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>>
      */
     public static function rivers(): array
+    {
+        return [
+            'yorkshire' => self::yorkshire(),
+            'thames-valley' => self::thamesValley(),
+        ];
+    }
+
+    /**
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>
+     */
+    private static function yorkshire(): array
     {
         return [
             // Wharfe
@@ -127,12 +139,45 @@ class RiverSeeder extends Seeder
     }
 
     /**
+     * The Thames from its source to the tidal limit, with the tributaries
+     * that join above Teddington. Rivers joining below it (the Lee, Brent,
+     * Wandle, Roding) only affect tidal water, so they are left out.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>
+     */
+    private static function thamesValley(): array
+    {
+        return [
+            self::main('River Thames', 'Thames', [51.5055, -0.0880], ['River Isis', 'Seacourt Stream', 'Shill Brook']),
+            self::tributary('River Churn', 'thames'),
+            self::tributary('River Coln', 'thames'),
+            self::tributary('River Leach', 'thames'),
+            self::tributary('River Windrush', 'thames'),
+            self::tributary('River Evenlode', 'thames'),
+            self::tributary('River Cherwell', 'thames'),
+            self::tributary('River Ray', 'cherwell'),
+            self::tributary('River Ock', 'thames', ['Marcham Brook']),
+            self::tributary('River Thame', 'thames'),
+            self::tributary('River Pang', 'thames'),
+            self::tributary('River Kennet', 'thames', ['Kennet and Avon Canal']),
+            self::tributary('River Loddon', 'thames'),
+            self::tributary('Blackwater River', 'loddon', ['River Blackwater'], slug: 'blackwater'),
+            self::tributary('River Colne', 'thames'),
+            self::tributary('River Misbourne', 'colne'),
+            self::tributary('River Wey', 'thames'),
+            self::tributary('River Mole', 'thames'),
+            self::tributary('Hogsmill River', 'thames', ['River Hogsmill'], slug: 'hogsmill'),
+        ];
+    }
+
+    /**
      * @param  array{0: float, 1: float}  $mouth  Approximate [lat, lng] of the mouth
+     * @param  array<int, string>  $extraAliases
      * @return array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth: array{0: float, 1: float}}
      */
-    private static function main(string $name, string $catchment, array $mouth): array
+    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = []): array
     {
-        return ['name' => $name, 'slug' => self::slug($name), 'catchment' => $catchment, 'aliases' => [$name], 'mouth' => $mouth];
+        return ['name' => $name, 'slug' => self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...$extraAliases], 'mouth' => $mouth];
     }
 
     /**
@@ -153,9 +198,17 @@ class RiverSeeder extends Seeder
 
     public function run(): void
     {
-        $region = Region::query()->where('slug', 'yorkshire')->firstOrFail();
+        foreach (self::rivers() as $regionSlug => $rivers) {
+            $this->seedRegion(Region::query()->where('slug', $regionSlug)->firstOrFail(), $rivers);
+        }
+    }
 
-        foreach (self::rivers() as $river) {
+    /**
+     * @param  array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>  $rivers
+     */
+    private function seedRegion(Region $region, array $rivers): void
+    {
+        foreach ($rivers as $river) {
             $parentSlug = $river['parent'] ?? null;
             $mouth = $river['mouth'] ?? [null, null];
             unset($river['parent'], $river['mouth']);

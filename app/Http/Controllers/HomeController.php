@@ -14,7 +14,8 @@ class HomeController extends Controller
 {
     public function __invoke(RegionSummaries $summaries): View
     {
-        $regions = Region::query()->orderBy('name')->get()->map(fn (Region $region) => $summaries->for($region));
+        // The first region added leads the hero; the rest follow in the order they were added.
+        $regions = Region::query()->orderBy('id')->get()->map(fn (Region $region) => $summaries->for($region));
 
         return view('home', [
             'regions' => $regions,
