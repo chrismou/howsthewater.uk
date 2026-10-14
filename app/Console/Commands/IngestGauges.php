@@ -8,6 +8,8 @@ use App\Models\River;
 use App\Services\Conditions\ConditionsCache;
 use App\Services\Conditions\RegionSummaries;
 use Illuminate\Console\Command;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 
 class IngestGauges extends Command
 {
@@ -17,10 +19,18 @@ class IngestGauges extends Command
 
     public function handle(SyncGaugeStations $syncStations, SyncGaugeReadings $syncReadings, ConditionsCache $cache, RegionSummaries $summaries): int
     {
+        $failed = [];
+
         if ($this->option('stations')) {
-            River::query()->each(function (River $river) use ($syncStations) {
-                $result = $syncStations->handle($river);
-                $this->line(sprintf('%s: %d gauge stations.', $river->name, $result['stations']));
+            // One river's request failing (a timeout, an API blip) must not stop discovery for the rest.
+            River::query()->each(function (River $river) use ($syncStations, &$failed) {
+                try {
+                    $result = $syncStations->handle($river);
+                    $this->line(sprintf('%s: %d gauge stations.', $river->name, $result['stations']));
+                } catch (ConnectionException|RequestException $exception) {
+                    $failed[] = $river->name;
+                    $this->error("{$river->name}: gauge discovery failed, {$exception->getMessage()}");
+                }
             });
         }
 
@@ -30,6 +40,6 @@ class IngestGauges extends Command
 
         $this->info(sprintf('Stored %d readings across %d stations.', $result['readings'], $result['stations']));
 
-        return self::SUCCESS;
+        return $failed === [] ? self::SUCCESS : self::FAILURE;
     }
 }

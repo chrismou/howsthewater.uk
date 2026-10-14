@@ -4,6 +4,8 @@ use App\Actions\Ingest\SyncRainfallReadings;
 use App\Actions\Ingest\SyncRainfallStations;
 use App\Actions\Rivers\LinkNearestRainfallStations;
 use App\Models\RainfallStation;
+use App\Models\Region;
+use App\Models\River;
 use App\Models\Spot;
 use Illuminate\Support\Facades\Http;
 
@@ -89,4 +91,21 @@ it('retires a rain gauge that never reports so the spot can be relinked', functi
     app(LinkNearestRainfallStations::class)->handle();
 
     expect($spot->fresh()->rainfallStation->is($live))->toBeTrue();
+});
+
+it('searches for rain gauges once per region rather than one circle around everything', function () {
+    $yorkshire = Region::factory()->create();
+    $thames = Region::factory()->create();
+    Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $yorkshire->id])->id, 'latitude' => 53.90, 'longitude' => -1.80]);
+    Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $thames->id])->id, 'latitude' => 51.50, 'longitude' => -0.90]);
+
+    Http::fake(['environment.data.gov.uk/*' => Http::response(['items' => [
+        environmentAgencyRainfallItem('1001', 53.91, -1.80),
+        environmentAgencyRainfallItem('2002', 51.51, -0.90),
+    ]])]);
+
+    expect(app(SyncRainfallStations::class)->handle())->toBe(['stations' => 2]);
+
+    Http::assertSentCount(2);
+    Http::assertSent(fn ($request) => $request['dist'] < 60);
 });

@@ -12,8 +12,10 @@ use Illuminate\Support\Collection;
 
 /**
  * Discovers Environment Agency rain gauges near the spots we cover. One
- * search covers every spot, and only gauges close enough to be linked to
- * a spot are stored, so readings are not fetched for the whole country.
+ * search covers each region's spots, and only gauges close enough to be
+ * linked to a spot are stored, so readings are not fetched for the whole
+ * country. Searching per region keeps each circle small; one circle around
+ * every region would span England and hit the API's result limit.
  */
 class SyncRainfallStations
 {
@@ -24,15 +26,13 @@ class SyncRainfallStations
      */
     public function handle(): array
     {
-        $spots = Spot::query()->published()->get();
+        $spotsByRegion = Spot::query()->published()->with('river')->get()->groupBy(fn (Spot $spot) => $spot->river->region_id);
 
-        if ($spots->isEmpty()) {
-            return ['stations' => 0];
-        }
-
-        $stations = $this->client->rainfallStationsNear(...$this->searchCircle($spots))
-            ->filter(fn (RainfallStationData $station) => $station->measureId !== null)
-            ->filter(fn (RainfallStationData $station) => $this->isNearAnySpot($station, $spots));
+        $stations = $spotsByRegion
+            ->flatMap(fn (Collection $spots) => $this->client->rainfallStationsNear(...$this->searchCircle($spots))
+                ->filter(fn (RainfallStationData $station) => $station->measureId !== null)
+                ->filter(fn (RainfallStationData $station) => $this->isNearAnySpot($station, $spots)))
+            ->unique(fn (RainfallStationData $station) => $station->externalId);
 
         foreach ($stations as $data) {
             RainfallStation::query()->updateOrCreate(

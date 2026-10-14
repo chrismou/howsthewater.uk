@@ -16,11 +16,61 @@ class SpotSeeder extends Seeder
     private const FEATURED = ['ilkley', 'bolton-abbey', 'burnsall', 'otley', 'knaresborough'];
 
     /**
-     * Spots listed source to mouth. Coordinates are the riverbank access point.
+     * Spots by region slug, then river slug, listed source to mouth.
+     * Coordinates are the riverbank access point, snapped onto the OS centreline.
      *
-     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     * @return array<string, array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>>
      */
     public static function spots(): array
+    {
+        return [
+            'yorkshire' => self::yorkshire(),
+            'thames-valley' => self::thamesValley(),
+        ];
+    }
+
+    /**
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function thamesValley(): array
+    {
+        return [
+            'thames' => [
+                ['name' => 'Ashton Keynes', 'latitude' => 51.6437, 'longitude' => -1.9339, 'description' => 'The infant Thames running through the village.'],
+                ['name' => 'Cricklade', 'latitude' => 51.6444, 'longitude' => -1.8554, 'description' => 'North Meadow and the first town on the Thames.'],
+                ['name' => 'Lechlade', 'latitude' => 51.6921, 'longitude' => -1.6891, 'description' => "Ha'penny Bridge and the head of navigation."],
+                ['name' => 'Kelmscott', 'latitude' => 51.6868, 'longitude' => -1.6392, 'description' => 'Meadows below Kelmscott Manor.'],
+                ['name' => 'Radcot Bridge', 'latitude' => 51.6938, 'longitude' => -1.5864, 'description' => 'The oldest bridge on the Thames.'],
+                ['name' => 'Tadpole Bridge', 'latitude' => 51.7112, 'longitude' => -1.4631, 'description' => 'Quiet upper Thames reach by the Trout inn.'],
+                ['name' => 'Newbridge', 'latitude' => 51.7099, 'longitude' => -1.4180, 'description' => 'Where the Windrush meets the Thames.'],
+                ['name' => 'Bablock Hythe', 'latitude' => 51.7362, 'longitude' => -1.3736, 'description' => 'Old ferry crossing west of Oxford.'],
+                ['name' => 'Port Meadow, Oxford', 'latitude' => 51.7663, 'longitude' => -1.2792, 'description' => 'Common land and a long-standing swimming spot.'],
+                ['name' => 'Sandford Lock', 'latitude' => 51.7113, 'longitude' => -1.2329, 'description' => 'Below Oxford, by the lasher.'],
+                ['name' => 'Abingdon', 'latitude' => 51.6685, 'longitude' => -1.2805, 'description' => 'Abbey Meadows and the town bridge.'],
+                ['name' => 'Clifton Hampden', 'latitude' => 51.6556, 'longitude' => -1.2094, 'description' => 'Brick bridge and riverside meadows.'],
+                ['name' => 'Wallingford', 'latitude' => 51.5984, 'longitude' => -1.1212, 'description' => 'Riverside meadows by the medieval bridge.'],
+                ['name' => 'Goring', 'latitude' => 51.5222, 'longitude' => -1.1418, 'description' => 'Goring Gap, between Goring and Streatley.'],
+                ['name' => 'Pangbourne', 'latitude' => 51.4871, 'longitude' => -1.0835, 'description' => 'Pangbourne Meadow below Whitchurch Bridge.'],
+                ['name' => 'Sonning', 'latitude' => 51.4761, 'longitude' => -0.9136, 'description' => 'Sonning Bridge and the lock.'],
+                ['name' => 'Henley-on-Thames', 'latitude' => 51.5372, 'longitude' => -0.9003, 'description' => 'The regatta reach and Mill Meadows.'],
+                ['name' => 'Marlow', 'latitude' => 51.5670, 'longitude' => -0.7738, 'description' => 'Higginson Park by the suspension bridge.'],
+                ['name' => 'Cookham', 'latitude' => 51.5627, 'longitude' => -0.7075, 'description' => 'Cookham Moor and the bridge.'],
+                ['name' => 'Maidenhead', 'latitude' => 51.5299, 'longitude' => -0.7004, 'description' => "Boulter's Lock and Ray Mill Island."],
+                ['name' => 'Windsor', 'latitude' => 51.4861, 'longitude' => -0.6081, 'description' => 'Alexandra Gardens and the Brocas meadow.'],
+                ['name' => 'Runnymede', 'latitude' => 51.4419, 'longitude' => -0.5566, 'description' => 'National Trust meadows below Old Windsor.'],
+                ['name' => 'Staines', 'latitude' => 51.4330, 'longitude' => -0.5161, 'description' => 'Below the Colne confluence.'],
+                ['name' => 'Shepperton', 'latitude' => 51.3867, 'longitude' => -0.4401, 'description' => 'Shepperton Lock and the Wey confluence.'],
+                ['name' => 'Hampton Court', 'latitude' => 51.4026, 'longitude' => -0.3400, 'description' => 'By the palace, below the Mole.'],
+                ['name' => 'Kingston upon Thames', 'latitude' => 51.4110, 'longitude' => -0.3089, 'description' => 'Canbury Gardens and the town bridge.'],
+                ['name' => 'Teddington Lock', 'latitude' => 51.4303, 'longitude' => -0.3226, 'description' => 'The tidal limit of the Thames.'],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function yorkshire(): array
     {
         return [
             'wharfe' => [
@@ -150,15 +200,17 @@ class SpotSeeder extends Seeder
 
     public function run(): void
     {
-        $region = Region::query()->where('slug', 'yorkshire')->firstOrFail();
+        foreach (self::spots() as $regionSlug => $rivers) {
+            $region = Region::query()->where('slug', $regionSlug)->firstOrFail();
 
-        foreach (self::spots() as $riverSlug => $spots) {
-            $river = $region->rivers()->where('slug', $riverSlug)->firstOrFail();
+            foreach ($rivers as $riverSlug => $spots) {
+                $river = $region->rivers()->where('slug', $riverSlug)->firstOrFail();
 
-            foreach ($spots as $spot) {
-                $slug = Str::slug($spot['name']);
+                foreach ($spots as $spot) {
+                    $slug = Str::slug($spot['name']);
 
-                $river->spots()->updateOrCreate(['slug' => $slug], [...$spot, 'is_featured' => in_array($slug, self::FEATURED, true)]);
+                    $river->spots()->updateOrCreate(['slug' => $slug], [...$spot, 'is_featured' => in_array($slug, self::FEATURED, true)]);
+                }
             }
         }
     }

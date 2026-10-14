@@ -1,9 +1,9 @@
 @props(['title' => null, 'description' => null, 'region' => null, 'hero' => null, 'after' => null])
 
 @php
-    // The live bar shows the page's region, or the first region on pages that have none.
+    // The live bar shows the page's region, or the first region added on pages that have none.
     $allRegions = \App\Models\Region::query()->orderBy('name')->get();
-    $liveRegion = $region ?? $allRegions->first();
+    $liveRegion = $region ?? $allRegions->sortBy('id')->first();
     $liveSummary = $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
 @endphp
 <!DOCTYPE html>

@@ -69,9 +69,19 @@ class GaugeStation extends Model
         return strcasecmp((string) $this->unit, 'mAOD') === 0;
     }
 
+    /**
+     * Stage readings are shown as plain metres. Some gauges (the Thames
+     * locks, for one) label the same measure mASD, metres above stage datum,
+     * which means nothing to most readers. mAOD stays as it is, since that
+     * really is a different measure.
+     */
     public function unitLabel(): string
     {
-        return $this->unit ?? 'm';
+        if ($this->unit === null || strcasecmp($this->unit, 'mASD') === 0) {
+            return 'm';
+        }
+
+        return $this->unit;
     }
 
     /** @return BelongsTo<River, $this> */
