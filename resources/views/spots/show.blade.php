@@ -65,23 +65,23 @@
 
         <dl class="mt-5 grid gap-4 sm:grid-cols-4">
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Discharging now</dt>
+                <dt class="text-xs uppercase tracking-wide text-muted">Discharging now <x-help term="discharging_now" /></dt>
                 <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">{{ $conditions->dischargingNowCount }}</dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 48h</dt>
+                <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 48h <x-help term="spill" /></dt>
                 <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">{{ $conditions->spillsLast48HoursCount }}</dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 30 days</dt>
+                <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 30 days <x-help term="history" /></dt>
                 <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">{{ $conditions->spillsLast30DaysCount }}</dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Upstream monitors</dt>
+                <dt class="text-xs uppercase tracking-wide text-muted">Upstream monitors <x-help term="upstream" /></dt>
                 <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">
                     {{ $conditions->upstreamMonitors->count() }}
                     @if ($conditions->offlineCount > 0)
-                        <span class="text-sm font-normal text-muted">{{ $conditions->offlineCount }} offline</span>
+                        <span class="text-sm font-normal text-muted">{{ $conditions->offlineCount }} offline <x-help term="offline" /></span>
                     @endif
                 </dd>
             </div>
@@ -100,7 +100,7 @@
             <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Last 30 days</h2>
             <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" />
 
-            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Upstream storm overflows</h2>
+            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Upstream storm overflows <x-help term="upstream" /></h2>
             @if ($conditions->upstreamMonitors->isEmpty())
                 <p class="text-sm text-ink-2">No monitors have been matched upstream of this spot yet.</p>
             @else
@@ -145,7 +145,7 @@
         </div>
 
         <aside class="lg:col-span-2">
-            <h2 class="font-display mb-3 text-lg font-semibold">River level</h2>
+            <h2 class="font-display mb-3 text-lg font-semibold">River level <x-help term="level" /></h2>
             <div class="rounded-lg border border-line bg-surface p-5">
                 @if ($level === null)
                     <p class="text-sm text-ink-2">No gauge is linked to this spot yet.</p>
@@ -153,15 +153,15 @@
                     <p class="text-sm text-ink-2">No recent readings from the {{ $level->station->label }} gauge.</p>
                 @else
                     <p class="font-mono text-3xl font-semibold tabular-nums">{{ number_format($level->latestValue, 2) }} {{ $level->station->unitLabel() }}</p>
-                    <p class="mt-1 text-sm text-ink-2">{{ $trendText }}</p>
+                    <p class="mt-1 text-sm text-ink-2">{{ $trendText }} <x-help term="trend" /></p>
                     @if ($level->relativeToTypical)
                         <p class="mt-1 text-sm text-ink-2">
                             {{ ucfirst($level->relativeToTypical) }}
-                            ({{ number_format($level->station->typical_range_low, 2) }} to {{ number_format($level->station->typical_range_high, 2) }} {{ $level->station->unitLabel() }})
+                            ({{ number_format($level->station->typical_range_low, 2) }} to {{ number_format($level->station->typical_range_high, 2) }} {{ $level->station->unitLabel() }}) <x-help term="typical_range" />
                         </p>
                     @endif
                     @if ($level->station->isAboveOrdnanceDatum())
-                        <p class="mt-1 text-xs text-muted">This gauge reports height above sea level, not depth above the river bed.</p>
+                        <p class="mt-1 text-xs text-muted">This gauge reports height above sea level, not depth above the river bed. <x-help term="maod" /></p>
                     @endif
                     <p class="mt-3 text-xs text-muted">
                         {{ $level->station->label }} gauge, read {{ $level->latestAt->diffForHumans() }}
@@ -176,7 +176,7 @@
                 @endif
             </div>
 
-            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Rainfall</h2>
+            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Rainfall <x-help term="rainfall" /></h2>
             <div class="rounded-lg border border-line bg-surface p-5">
                 @if ($rainfall === null)
                     <p class="text-sm text-ink-2">No rain gauge within {{ \App\Actions\Rivers\LinkNearestRainfallStations::MAX_DISTANCE_METRES / 1000 }} km of this spot.</p>

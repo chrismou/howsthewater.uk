@@ -230,6 +230,8 @@ php artisan rivers:positions
   `border-line`, `text-accent`, `bg-pill-*`, `bg-warn-*`), each with a dark value under `.dark`. Never use raw
   Tailwind palette classes in views. Dark mode is a class on `<html>` set by the header toggle and remembered in
   `localStorage`; light is the default. Headings use `font-display`, big readings use `font-mono tabular-nums`.
+- Explain data terms with `<x-help term="..." />`, whose glossary lives in `App\View\Components\Help`. Add a term there
+  rather than writing one-off explanations in views.
 
 ## Quality
 

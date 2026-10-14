@@ -9,3 +9,6 @@ initNavMenus();
 import { initThemeToggle } from './theme';
 
 initThemeToggle();
+import { initTooltips } from './tooltip';
+
+initTooltips();

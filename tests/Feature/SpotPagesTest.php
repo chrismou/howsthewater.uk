@@ -8,6 +8,7 @@ use App\Models\RainfallStation;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\Spot;
+use App\View\Components\Help;
 
 /**
  * @return array{0: Region, 1: River, 2: Spot}
@@ -151,4 +152,19 @@ it('offers a light and dark theme toggle that defaults to light', function () {
         ->assertOk()
         ->assertSee('data-theme-toggle', false)
         ->assertSee('<html lang="en-GB" class="h-full">', false);
+});
+
+it('explains the data with help tooltips on the spot page', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee('What does discharging now mean?')
+        ->assertSee('Which monitors count as upstream?')
+        ->assertSee('role="tooltip"', false);
+});
+
+it('rejects unknown glossary terms', function () {
+    expect(fn () => new Help('nonsense'))->toThrow(InvalidArgumentException::class);
 });
