@@ -7,6 +7,7 @@ use App\Models\RainfallReading;
 use App\Models\RainfallStation;
 use App\Models\Region;
 use App\Models\River;
+use App\Models\SpillEvent;
 use App\Models\Spot;
 use App\View\Components\Help;
 
@@ -167,4 +168,19 @@ it('explains the data with help tooltips on the spot page', function () {
 
 it('rejects unknown glossary terms', function () {
     expect(fn () => new Help('nonsense'))->toThrow(InvalidArgumentException::class);
+});
+
+it('lists active upstream monitors with duration and spill counts, and tucks quiet ones away', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    $active = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+    $quiet = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 40000]);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $active->id, 'started_at' => now()->subDays(2), 'ended_at' => now()->subDays(2)->addMinutes(45)]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSeeInOrder([$active->external_id, '45 min', $quiet->external_id])
+        ->assertSee('1 more monitor upstream had no spill in the last 30 days')
+        ->assertSee('data-quiet-monitors hidden', false)
+        ->assertSee('Copy link')
+        ->assertSee('openstreetmap.org/?mlat=');
 });
