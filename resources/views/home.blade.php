@@ -3,10 +3,11 @@
     $totalSpots = $regions->sum(fn ($region) => $region->spots()->count());
     $totalRivers = $regions->sum(fn ($region) => $region->rivers->count());
     $regionNames = $regions->pluck('name')->join(', ', ' and ');
+    $companyNames = \App\Models\Region::query()->orderBy('name')->get()->flatMap->waterCompanies()->unique()->join(', ', ' and ') ?: 'Water company';
 @endphp
 
-<x-layouts.app title="Upstream spills, river levels and rainfall for Yorkshire's rivers"
-               description="Live storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on Yorkshire's rivers, read from the public monitors every 15 minutes.">
+<x-layouts.app :title="'Upstream spills, river levels and rainfall for rivers in '.$regionNames"
+               :description="'Live storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on rivers in '.$regionNames.', read from the public monitors every 15 minutes.'">
     <x-slot:hero>
         <section class="relative overflow-hidden border-b border-line bg-surface">
             <svg aria-hidden="true" class="pointer-events-none absolute inset-0 h-full w-full text-accent" viewBox="0 0 1280 520" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-opacity="0.12" stroke-width="1.2">
@@ -94,7 +95,7 @@
                 <span class="font-mono text-3xl text-accent">01</span>
                 <div class="flex flex-col gap-2">
                     <h3 class="font-display text-xl font-semibold">Storm overflows upstream <x-help term="spill" /></h3>
-                    <p class="text-ink-2">Yorkshire Water's monitors report every overflow that is discharging. We trace every monitor upstream of a spot, tributaries included, and summarise the last 48 hours and 30 days.</p>
+                    <p class="text-ink-2">{{ $companyNames }} monitors report every overflow that is discharging. We trace every monitor upstream of a spot, tributaries included, and summarise the last 48 hours and 30 days.</p>
                     <div class="flex flex-wrap gap-1.5">
                         <x-spill-badge :recency="\App\Enums\SpillRecency::DischargingNow" />
                         <x-spill-badge :recency="\App\Enums\SpillRecency::Within24Hours" />

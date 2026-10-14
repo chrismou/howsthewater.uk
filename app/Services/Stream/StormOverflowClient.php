@@ -16,15 +16,18 @@ class StormOverflowClient
     private const PAGE_SIZE = 2000;
 
     /**
+     * Every monitor in one company's feed.
+     *
+     * @param  string  $feedUrl  The feature layer URL, ending in the layer number
      * @return Collection<int, OverflowMonitorData>
      */
-    public function all(): Collection
+    public function all(string $feedUrl): Collection
     {
         $monitors = collect();
         $offset = 0;
 
         do {
-            $response = $this->request()->get($this->queryUrl(), [
+            $response = $this->request()->get(rtrim($feedUrl, '/').'/query', [
                 'where' => '1=1',
                 'outFields' => 'Id,Company,Status,StatusStart,LatestEventStart,LatestEventEnd,Latitude,Longitude,ReceivingWaterCourse,LastUpdated',
                 'returnGeometry' => 'false',
@@ -44,11 +47,6 @@ class StormOverflowClient
         } while ($hasMore && count($features) > 0);
 
         return $monitors;
-    }
-
-    private function queryUrl(): string
-    {
-        return rtrim(config('services.stream.yorkshire_water_url'), '/').'/query';
     }
 
     private function request(): PendingRequest

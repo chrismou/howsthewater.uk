@@ -198,7 +198,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 
 ## Data sources
 
-- Storm overflows: Stream (Yorkshire Water) ArcGIS feature service, polled every 15 minutes by `ingest:overflows`.
+- Storm overflows: Stream publishes one ArcGIS feature service per water company, all with the same fields, listed in
+  `services.stream.feeds`. Each region names the feeds it needs in `overflow_feeds`, and `ingest:overflows` polls only
+  those, every 15 minutes. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by
+  company (`YWS`, `NWL`, `UUP`...) so feeds share one table. South West Water and Scottish Water use other fields.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
 - Rainfall: the same API's tipping bucket rain gauges, `ingest:rainfall`. Each spot links to the nearest gauge within

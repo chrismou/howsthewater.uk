@@ -271,3 +271,14 @@ it('shows a helpful 404 page in the site layout', function () {
         ->assertSee('Find a spot or river')
         ->assertSee('data-live-bar', false);
 });
+
+it('credits the water companies that cover the regions', function () {
+    spotWithUrl(['river_metres' => null]);
+    Region::factory()->create(['name' => 'North East', 'slug' => 'north-east', 'overflow_feeds' => ['northumbrian_water']]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Northumbrian Water and Yorkshire Water storm overflow data')
+        ->assertSee('Northumbrian Water and Yorkshire Water monitors report')
+        ->assertSee('rivers in North East and Yorkshire');
+});
