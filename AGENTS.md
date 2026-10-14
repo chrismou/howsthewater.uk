@@ -163,7 +163,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - Data is ingested in the background by scheduled artisan commands (see `routes/console.php`) and served from MySQL.
   Pages never call third-party APIs at request time.
 - Main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk, Hull) and their tributaries are seeded
-  by `RiverSeeder` (all in the Yorkshire region from `RegionSeeder`), spots by `SpotSeeder`. Spot coordinates sit on the OS centreline; new ones should too.
+  by `RiverSeeder` (all in the Yorkshire region from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
+  marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
   recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
@@ -176,6 +177,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Build links with `route('spots.show', [$region, $river, $spot])` and eager-load `river.region` wherever spots are
   listed. The header menu lists each region's main rivers grouped by `catchment` (`Region::riversByCatchment()`)
   and the search box queries `/search`.
+- Listings read `RegionSummary` (plain-value `RiverSummary` and `SpotSummary` objects) from `RegionSummaries`, which
+  ingest and positioning commands refresh after every run; the region page, live bar and API region endpoint never
+  unserialise full conditions. Add listing facts to `SpotSummary::fromConditions()`.
 - `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL). Ingest and
   positioning commands call `flush()`. The cache stores objects, so any new class reachable from `SpotConditions`
   must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Keys also
@@ -226,6 +230,12 @@ php artisan rivers:positions
 - Build data for `data-*` attributes in a `@php` block and output with `{{ json_encode(...) }}`. Multi-line `@json(...)`
   inside attributes breaks the Blade compiler.
 - Use a plain hyphen for dashes in any user-facing text.
+- Colours are semantic tokens defined in `resources/css/app.css` (`bg-ground`, `bg-surface`, `text-ink`, `text-muted`,
+  `border-line`, `text-accent`, `bg-pill-*`, `bg-warn-*`), each with a dark value under `.dark`. Never use raw
+  Tailwind palette classes in views. Dark mode is a class on `<html>` set by the header toggle and remembered in
+  `localStorage`; light is the default. Headings use `font-display`, big readings use `font-mono tabular-nums`.
+- Explain data terms with `<x-help term="..." />`, whose glossary lives in `App\View\Components\Help`. Add a term there
+  rather than writing one-off explanations in views.
 
 ## Quality
 

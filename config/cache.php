@@ -2,8 +2,11 @@
 
 use App\Data\LevelSummary;
 use App\Data\RainfallSummary;
+use App\Data\RegionSummary;
+use App\Data\RiverSummary;
 use App\Data\SpillHistoryDay;
 use App\Data\SpotConditions;
+use App\Data\SpotSummary;
 use App\Data\UpstreamMonitorSummary;
 use App\Enums\LevelTrend;
 use App\Enums\OverflowStatus;
@@ -156,8 +159,11 @@ return [
     'serializable_classes' => [
         LevelSummary::class,
         RainfallSummary::class,
+        RegionSummary::class,
+        RiverSummary::class,
         SpillHistoryDay::class,
         SpotConditions::class,
+        SpotSummary::class,
         UpstreamMonitorSummary::class,
         LevelTrend::class,
         OverflowStatus::class,

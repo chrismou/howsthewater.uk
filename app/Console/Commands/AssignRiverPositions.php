@@ -6,7 +6,7 @@ use App\Actions\Rivers\AssignRiverPositions as AssignRiverPositionsAction;
 use App\Actions\Rivers\LinkNearestRainfallStations;
 use App\Models\River;
 use App\Services\Conditions\ConditionsCache;
-use App\Services\Conditions\RiverOverviewService;
+use App\Services\Conditions\RegionSummaries;
 use Illuminate\Console\Command;
 
 class AssignRiverPositions extends Command
@@ -15,7 +15,7 @@ class AssignRiverPositions extends Command
 
     protected $description = 'Position overflow monitors, gauges and spots along each river centreline';
 
-    public function handle(AssignRiverPositionsAction $assign, LinkNearestRainfallStations $linkRainfall, ConditionsCache $cache, RiverOverviewService $overview): int
+    public function handle(AssignRiverPositionsAction $assign, LinkNearestRainfallStations $linkRainfall, ConditionsCache $cache, RegionSummaries $summaries): int
     {
         $rivers = River::query()
             ->when($this->argument('river'), fn ($query, $slug) => $query->where('slug', $slug))
@@ -37,7 +37,7 @@ class AssignRiverPositions extends Command
         $this->info(sprintf('%d spots linked to a rain gauge.', $linked['spots']));
 
         $cache->flush();
-        $overview->all();
+        $summaries->refreshAll();
 
         return self::SUCCESS;
     }

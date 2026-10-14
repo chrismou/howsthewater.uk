@@ -125,6 +125,8 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 ## API
 
 - `GET /api/v1/regions`: regions with their rivers and links.
+- `GET /api/v1/regions/{region}`: the region summary: headline numbers plus every river and spot with its spill status,
+  level and rainfall, refreshed after each ingest run.
 - `GET /api/v1/regions/{region}/rivers` and `GET /api/v1/regions/{region}/rivers/{river}`: river overview with every
   spot's conditions.
 - `GET /api/v1/regions/{region}/spots` and `GET /api/v1/regions/{region}/rivers/{river}/spots/{spot}`: a spot's spill
@@ -134,6 +136,9 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 River and spot slugs are only unique within their region and river, since names repeat across Britain.
 
 Responses carry `Cache-Control: public, max-age=300` and an ETag, so a CDN in front of the site can cache them.
+
+Every page carries Open Graph and Twitter card tags with a shared image at `/og-image.png` (rendered from
+`resources/images/og-image.svg` with Inkscape), and `/sitemap.xml` lists the home, region, river and spot pages.
 
 `spills.offline` counts upstream monitors reporting offline; when all of them are, `spills.recency` is `offline`.
 `data_stale` is true when the overflow feed behind a spot's upstream monitors has not updated for 6 hours, and

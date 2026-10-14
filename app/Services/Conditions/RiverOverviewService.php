@@ -35,7 +35,7 @@ class RiverOverviewService
      */
     public function forRegion(Region $region): Collection
     {
-        return $region->rivers()->main()->get()
+        return $region->rivers()->main()->reorder('id')->get()
             ->map(fn (River $river) => $this->for($river->setRelation('region', $region)));
     }
 

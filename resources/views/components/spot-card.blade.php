@@ -1,19 +1,19 @@
 @props(['conditions'])
 
 <a href="{{ route('spots.show', [$conditions->spot->river->region, $conditions->spot->river, $conditions->spot]) }}"
-   class="block rounded-lg border border-stone-200 bg-white p-4 transition hover:border-stone-300 hover:shadow-sm">
+   class="block rounded-lg border border-line bg-surface p-4 transition hover:border-muted hover:shadow-sm">
     <div class="flex items-start justify-between gap-3">
         <div>
-            <h3 class="font-semibold">{{ $conditions->spot->name }}</h3>
-            <p class="mt-0.5 text-xs text-stone-500">{{ $conditions->spot->river->name }}</p>
+            <h3 class="font-display font-semibold">{{ $conditions->spot->name }}</h3>
+            <p class="mt-0.5 text-xs text-muted">{{ $conditions->spot->river->name }}</p>
         </div>
         <x-spill-badge :recency="$conditions->spillRecency" :stale="$conditions->overflowDataIsStale()" />
     </div>
-    <dl class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-600">
+    <dl class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2">
         @if ($conditions->overflowDataIsStale())
             <div class="basis-full">
                 <dt class="sr-only">Data freshness</dt>
-                <dd class="font-medium text-amber-700">
+                <dd class="font-medium text-warn-text">
                     @if ($conditions->dataUpdatedAt)
                         Monitor data is {{ $conditions->dataUpdatedAt->diffForHumans(null, \Illuminate\Support\Carbon::DIFF_ABSOLUTE) }} old
                     @else

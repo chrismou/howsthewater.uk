@@ -7,7 +7,11 @@ use App\Models\RainfallReading;
 use App\Models\RainfallStation;
 use App\Models\Region;
 use App\Models\River;
+use App\Models\SpillEvent;
 use App\Models\Spot;
+use App\Services\Conditions\ConditionsCache;
+use App\Services\Conditions\RegionSummaries;
+use App\View\Components\Help;
 
 /**
  * @return array{0: Region, 1: River, 2: Spot}
@@ -21,14 +25,17 @@ function spotWithUrl(array $spotAttributes = [], array $riverAttributes = []): a
     return [$region, $river, $spot];
 }
 
-it('lists rivers and spots on the home page', function () {
+it('introduces the site and its regions on the home page', function () {
     [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley'], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('River Wharfe')
-        ->assertSee('Otley')
-        ->assertSee('/yorkshire/wharfe/otley');
+        ->assertSee("What's the river doing right now?", false)
+        ->assertSee('How to read it')
+        ->assertSee('What this site does not do')
+        ->assertSee('Open Yorkshire')
+        ->assertSee('/yorkshire/wharfe/otley')
+        ->assertSee('/yorkshire"', false);
 });
 
 it('shows a river page with its spots source to mouth', function () {
@@ -110,7 +117,7 @@ it('warns when monitor and gauge data are out of date', function () {
         ->assertSee('Monitor data is out of date')
         ->assertSee('No reading from this gauge for 8 hours');
 
-    $this->get(route('home'))
+    $this->get(route('rivers.show', [$region, $river]))
         ->assertOk()
         ->assertSee('Monitor data is 8 hours old');
 });
@@ -134,7 +141,7 @@ it('shows rainfall at the nearest rain gauge', function () {
         ->assertSee('in the last 24 hours')
         ->assertSee('3.3 mm');
 
-    $this->get(route('home'))->assertSee('3.3 mm rain in 24h');
+    $this->get(route('rivers.show', [$region, $river]))->assertSee('3.3 mm rain in 24h');
 });
 
 it('treats search wildcards literally and caps the query length', function () {
@@ -144,4 +151,123 @@ it('treats search wildcards literally and caps the query length', function () {
     $this->get(route('search', ['q' => '%']))->assertOk()->assertSee('Nothing matched');
     $this->get(route('search', ['q' => '_tley']))->assertOk()->assertSee('Nothing matched');
     $this->get(route('search', ['q' => str_repeat('a', 500)]))->assertOk()->assertSee('Nothing matched');
+});
+
+it('offers a light and dark theme toggle that defaults to light', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('data-theme-toggle', false)
+        ->assertSee('<html lang="en-GB" class="h-full">', false);
+});
+
+it('explains the data with help tooltips on the spot page', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee('What does discharging now mean?')
+        ->assertSee('Which monitors count as upstream?')
+        ->assertSee('role="tooltip"', false);
+});
+
+it('rejects unknown glossary terms', function () {
+    expect(fn () => new Help('nonsense'))->toThrow(InvalidArgumentException::class);
+});
+
+it('lists active upstream monitors with duration and spill counts, and tucks quiet ones away', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    $active = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+    $quiet = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 40000]);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $active->id, 'started_at' => now()->subDays(2), 'ended_at' => now()->subDays(2)->addMinutes(45)]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSeeInOrder([$active->external_id, '45 min', $quiet->external_id])
+        ->assertSee('1 more monitor upstream had no spill in the last 30 days')
+        ->assertSee('data-quiet-monitors hidden', false)
+        ->assertSee('Copy link')
+        ->assertSee('openstreetmap.org/?mlat=');
+});
+
+it('shows the region page with river strips, catchment tables and the right now panel', function () {
+    [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley', 'river_metres' => 50000], ['name' => 'River Wharfe', 'slug' => 'wharfe', 'catchment' => 'Yorkshire Ouse', 'length_metres' => 100000]);
+    $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $monitor->id]);
+
+    $this->get(route('regions.show', $region))
+        ->assertOk()
+        ->assertSee('Every river, source to mouth')
+        ->assertSee('Yorkshire Ouse')
+        ->assertSee('Right now')
+        ->assertSeeInOrder(['Discharging now', 'Otley'])
+        ->assertSee('/yorkshire/wharfe/otley')
+        ->assertSee('data-map-centrelines', false);
+});
+
+it('shows the live bar for the region on every page', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $monitor->id]);
+
+    $this->get(route('home'))->assertOk()->assertSee('data-live-bar', false)->assertSee('>1</span> overflow discharging now', false);
+    $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertSee('data-live-bar', false);
+    $this->get(route('search', ['q' => 'x']))->assertOk()->assertSee('data-live-bar', false);
+});
+
+it('404s an unknown region', function () {
+    $this->get('/narnia')->assertNotFound();
+});
+
+it('suggests featured spots on the home page before falling back to the best monitored', function () {
+    [$region, $river, $busy] = spotWithUrl(['name' => 'Castleford', 'slug' => 'castleford', 'river_metres' => 90000]);
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 80000]);
+    $popular = Spot::factory()->featured()->create(['river_id' => $river->id, 'name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 50000]);
+
+    $this->get(route('home'))->assertOk()->assertSee('Try Ilkley')->assertDontSee('Try Castleford');
+
+    $popular->update(['is_featured' => false]);
+    app(ConditionsCache::class)->flush();
+    app(RegionSummaries::class)->refresh($region);
+
+    $this->get(route('home'))->assertOk()->assertSee('Try Castleford');
+});
+
+it('describes pages for sharing and search engines', function () {
+    [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley', 'river_metres' => null], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: spills and river level - ', false)
+        ->assertSee('<meta property="og:url" content="'.route('spots.show', [$region, $river, $spot]).'"', false)
+        ->assertSee('og-image.png')
+        ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
+        ->assertSee('<link rel="canonical"', false)
+        ->assertSee('favicon.svg');
+});
+
+it('serves a sitemap of every public page', function () {
+    [$region, $river, $spot] = spotWithUrl(['slug' => 'otley', 'river_metres' => null], ['slug' => 'wharfe']);
+    Spot::factory()->unpublished()->create(['river_id' => $river->id, 'slug' => 'hidden']);
+    River::factory()->tributaryOf($river, 1000)->create(['region_id' => $region->id, 'slug' => 'washburn']);
+
+    $this->get('/sitemap.xml')
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
+        ->assertSee('<loc>'.route('home').'</loc>', false)
+        ->assertSee('<loc>'.route('regions.show', $region).'</loc>', false)
+        ->assertSee('<loc>'.route('rivers.show', [$region, $river]).'</loc>', false)
+        ->assertSee('<loc>'.route('spots.show', [$region, $river, $spot]).'</loc>', false)
+        ->assertDontSee('hidden')
+        ->assertDontSee('washburn');
+});
+
+it('shows a helpful 404 page in the site layout', function () {
+    Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+
+    $this->get('/yorkshire/nowhere/at-all')
+        ->assertNotFound()
+        ->assertSee('Nothing here')
+        ->assertSee('Find a spot or river')
+        ->assertSee('data-live-bar', false);
 });

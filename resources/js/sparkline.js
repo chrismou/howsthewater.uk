@@ -32,7 +32,7 @@ export function initSparklines() {
 
         element.innerHTML = `
             <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" role="img" aria-label="River level over the last 48 hours">
-                <path d="${path}" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
+                <path d="${path}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
             </svg>`;
     });
 }
