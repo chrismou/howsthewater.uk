@@ -57,7 +57,7 @@
                             </svg>
                         </summary>
                         {{-- The panel starts flush with the button and carries its own top padding, so moving the mouse into it never leaves the menu. --}}
-                        <div class="absolute left-0 top-full z-20 w-max max-w-[calc(100vw-2rem)] pt-2">
+                        <div class="absolute left-0 top-full z-[1100] w-max max-w-[calc(100vw-2rem)] pt-2">
                             <div class="flex flex-wrap gap-x-8 gap-y-4 rounded-lg border border-line bg-surface p-4 shadow-lg">
                                 <div class="basis-full border-b border-line-2 pb-3">
                                     <a href="{{ route('regions.show', $navRegion) }}" class="font-semibold text-ink hover:underline">{{ $navRegion->name }} overview</a>
