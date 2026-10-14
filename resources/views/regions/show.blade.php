@@ -72,7 +72,7 @@
 
     <div class="relative mb-10">
         <div
-            class="h-72 w-full rounded-lg border border-line sm:h-[420px]"
+            class="w-full rounded-lg border border-line {{ $mapIsTall ? 'h-96 sm:h-[640px]' : 'h-72 sm:h-[420px]' }}"
             data-map
             data-map-centrelines="{{ json_encode($centrelines) }}"
             data-map-markers="{{ json_encode($mapMarkers) }}"

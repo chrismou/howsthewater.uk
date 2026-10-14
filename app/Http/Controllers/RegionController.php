@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Region;
 use App\Services\Conditions\RegionSummaries;
+use App\Services\Geo\Coordinates;
 use Illuminate\View\View;
 
 class RegionController extends Controller
@@ -19,6 +20,7 @@ class RegionController extends Controller
             'region' => $region,
             'summary' => $summaries->for($region),
             'centrelines' => $centrelines,
+            'mapIsTall' => Coordinates::isTallerThanWide($centrelines->flatten(1)),
         ]);
     }
 }

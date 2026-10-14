@@ -44,6 +44,9 @@ export function initMaps() {
             boxZoom: !isStatic,
             keyboard: !isStatic,
             zoomControl: !isStatic,
+            // Half steps let the map fit a region's shape closely (a tall region in a wide box would otherwise drop a
+            // whole level and show twice the area), while keeping tile labels sharp enough to read.
+            zoomSnap: 0.5,
         });
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -74,7 +77,7 @@ export function initMaps() {
         });
 
         if (layers.length > 0) {
-            map.fitBounds(L.featureGroup(layers).getBounds().pad(0.1));
+            map.fitBounds(L.featureGroup(layers).getBounds().pad(0.05));
         } else {
             map.setView([53.9, -1.7], 9);
         }
