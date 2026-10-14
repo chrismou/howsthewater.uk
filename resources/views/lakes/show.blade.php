@@ -1,44 +1,115 @@
 @php
     $lake = $conditions->lake;
     $level = $conditions->level;
+    $overflows = $conditions->overflows;
+
+    $mapMarkers = collect([[
+        'lat' => $lake->latitude,
+        'lng' => $lake->longitude,
+        'label' => $lake->name,
+        'kind' => 'place',
+    ]])->concat($conditions->bathingWaters->map(fn ($summary) => [
+        'lat' => $summary->bathingWater->latitude,
+        'lng' => $summary->bathingWater->longitude,
+        'label' => $summary->bathingWater->name.' ('.($summary->bathingWater->classification?->value ?? 'not classified').')',
+        'kind' => 'bathing',
+        'classification' => $summary->bathingWater->classification?->value,
+    ]))->concat($overflows->monitors->map(fn ($monitor) => [
+        'lat' => $monitor->monitor->latitude,
+        'lng' => $monitor->monitor->longitude,
+        'label' => $monitor->monitor->external_id.', '.number_format($monitor->distanceMetres / 1000, 1).' km ('.$monitor->status->label().')',
+        'kind' => 'monitor',
+        'status' => $monitor->status->value,
+    ]))->values();
 @endphp
 
 <x-layouts.app :region="$region" :title="$lake->name.': bathing water, level and nearby overflows'"
                :description="'Environment Agency bathing water results, lake level and storm overflows near '.$lake->name.'.'">
-    <div class="mb-6">
-        <p class="text-sm text-muted">
-            <a href="{{ route('home') }}" class="hover:underline">All regions</a>
-            <span class="mx-1">/</span>
-            <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
-            <span class="mx-1">/</span>
-            <a href="{{ route('lakes.index', $region) }}" class="hover:underline">Lakes</a>
-        </p>
-        <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $lake->name }}</h1>
-        @if ($lake->description)
-            <p class="mt-1 text-ink-2">{{ $lake->description }}</p>
-        @endif
-    </div>
-
-    <section class="mb-8">
-        <h2 class="font-display mb-3 text-lg font-semibold">Lake level <x-help term="level" /></h2>
-        <div class="rounded-lg border border-line bg-surface p-5 text-sm">
-            @if ($level === null)
-                <p class="text-ink-2">No Environment Agency gauge reads this lake's level.</p>
-            @else
-                <x-level-badge :level="$level" class="text-sm" />
-                <p class="mt-1 text-xs text-muted">{{ $level->station->label }} gauge{{ $level->latestAt ? ', read '.$level->latestAt->diffForHumans() : '' }}.</p>
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-sm text-muted">
+                <a href="{{ route('home') }}" class="hover:underline">All regions</a>
+                <span class="mx-1">/</span>
+                <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
+                <span class="mx-1">/</span>
+                <a href="{{ route('lakes.index', $region) }}" class="hover:underline">Lakes</a>
+            </p>
+            <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $lake->name }}</h1>
+            @if ($lake->description)
+                <p class="mt-1 text-ink-2">{{ $lake->description }}</p>
             @endif
         </div>
+        <x-place-actions :latitude="$lake->latitude" :longitude="$lake->longitude" :label="$lake->name" />
+    </div>
+
+    <section class="mb-8 rounded-lg border border-line bg-surface p-5">
+        <div class="flex flex-wrap items-center gap-2">
+            <x-spill-badge :recency="$overflows->spillRecency" :stale="$overflows->isStale()" nearby class="px-3 py-1 text-sm" />
+            @foreach ($conditions->bathingWaters->filter(fn ($summary) => $summary->currentRisk() === \App\Enums\PollutionRisk::Increased) as $summary)
+                <x-bathing-forecast :summary="$summary" class="px-3 py-1 text-sm" />
+            @endforeach
+        </div>
+
+        @if ($overflows->isStale())
+            <p class="mt-4 rounded-md border border-warn-line bg-warn-bg px-4 py-3 text-sm text-warn-text" role="status">Overflow monitor data is out of date, so the spill status describes the data as it was, not now. <x-help term="stale" /></p>
+        @endif
+
+        <dl class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div>
+                <dt class="text-xs uppercase tracking-wide text-muted">Lake level <x-help term="level" /></dt>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $level?->latestValue !== null ? number_format($level->latestValue, 2).' '.$level->station->unitLabel() : '-' }}</dd>
+                @if ($level?->latestValue !== null)
+                    <dd class="text-xs text-muted">{{ strtolower($level->trend->label()) }}{{ $level->relativeToTypical ? ', '.$level->relativeToTypical : '' }}</dd>
+                @endif
+            </div>
+            <div>
+                <dt class="text-xs uppercase tracking-wide text-muted">Bathing sites <x-help term="bathing_classification" /></dt>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $conditions->bathingWaters->count() }}</dd>
+                @if ($conditions->bathingWaters->isNotEmpty())
+                    <dd class="text-xs text-muted">{{ $conditions->bathingWaters->map(fn ($summary) => $summary->bathingWater->classification?->value ?? 'not classified')->countBy()->map(fn ($count, $classification) => $count.' '.$classification)->join(', ') }}</dd>
+                @endif
+            </div>
+            <div>
+                <dt class="text-xs uppercase tracking-wide text-muted">Overflows within {{ $overflows->radiusMetres / 1000 }} km <x-help term="nearby_overflows" /></dt>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $overflows->dischargingNowCount > 0 ? 'text-alert' : '' }}">
+                    {{ $overflows->monitors->count() }}
+                    @if ($overflows->dischargingNowCount > 0)
+                        <span class="font-sans text-sm font-normal">{{ $overflows->dischargingNowCount }} discharging</span>
+                    @elseif ($overflows->offlineCount > 0)
+                        <span class="font-sans text-sm font-normal text-muted">{{ $overflows->offlineCount }} offline</span>
+                    @endif
+                </dd>
+            </div>
+            <div>
+                <dt class="text-xs uppercase tracking-wide text-muted">Spills nearby, 30 days</dt>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $overflows->spillsLast30DaysCount }}</dd>
+            </div>
+        </dl>
     </section>
 
-    <section class="mb-8">
+    <div class="grid gap-8 lg:grid-cols-5">
+        <div class="lg:col-span-3">
+            <div class="h-80 w-full rounded-lg border border-line" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+            <x-bathing-map-key :overflows="$overflows->monitors->isNotEmpty()" :place="$lake->name" />
+        </div>
+        <aside class="lg:col-span-2">
+            <h2 class="font-display mb-3 text-lg font-semibold">Lake level <x-help term="level" /></h2>
+            <x-level-card :level="$level" empty="No Environment Agency gauge reads this lake's level." />
+        </aside>
+    </div>
+
+    <section class="mt-10">
         <h2 class="font-display mb-3 text-lg font-semibold">Designated bathing sites</h2>
-        @forelse ($conditions->bathingWaters as $summary)
-            <x-bathing-water :summary="$summary" heading class="mb-4" />
-        @empty
+        @if ($conditions->bathingWaters->isEmpty())
             <p class="text-sm text-ink-2">The Environment Agency has no designated bathing sites on {{ $lake->name }}, so it is not sampled for bathing water quality.</p>
-        @endforelse
+        @else
+            <div class="grid gap-4 md:grid-cols-2">
+                @foreach ($conditions->bathingWaters as $summary)
+                    <x-bathing-water :summary="$summary" />
+                @endforeach
+            </div>
+        @endif
     </section>
 
-    <x-nearby-overflows :overflows="$conditions->overflows" />
+    <x-nearby-overflows :overflows="$overflows" class="mt-10" />
 </x-layouts.app>

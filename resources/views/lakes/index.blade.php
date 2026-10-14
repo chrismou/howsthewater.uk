@@ -9,6 +9,18 @@
         <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $region->name }} lakes</h1>
     </div>
 
+    @php
+        $mapMarkers = $lakes->map(fn ($conditions) => [
+            'lat' => $conditions->lake->latitude,
+            'lng' => $conditions->lake->longitude,
+            'label' => $conditions->lake->name,
+            'url' => route('lakes.show', [$region, $conditions->lake]),
+            'kind' => 'place',
+        ])->values();
+    @endphp
+
+    <div class="mb-8 h-72 w-full rounded-lg border border-line" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+
     <div class="overflow-x-auto rounded-lg border border-line bg-surface">
         <table class="w-full text-sm">
             <thead class="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted">

@@ -1,20 +1,21 @@
-{{-- Storm overflow monitors within a fixed distance of a beach or lake, nearest first. --}}
+{{-- Storm overflow monitors within a fixed distance of a beach or lake: those active in 30 days first, the rest tucked away. --}}
 @props(['overflows'])
 
-@php($timezone = config('app.display_timezone', 'Europe/London'))
+@php
+    $spilledMonitorIds = $overflows->recentSpillEvents->pluck('overflow_monitor_id')->unique();
+    [$active, $quiet] = $overflows->monitors->partition(fn ($summary) => $summary->status === \App\Enums\OverflowStatus::Discharging || $spilledMonitorIds->contains($summary->monitor->id));
+    $spillCounts = $overflows->recentSpillEvents->countBy('overflow_monitor_id');
+@endphp
 
 <section {{ $attributes }}>
-    <h2 class="font-display mb-3 text-lg font-semibold">Storm overflows within {{ $overflows->radiusMetres / 1000 }} km <x-help term="nearby_overflows" /></h2>
-    <div class="mb-3 flex flex-wrap items-center gap-3">
-        <x-spill-badge :recency="$overflows->spillRecency" :stale="$overflows->isStale()" nearby />
-        <span class="text-sm text-muted">{{ $overflows->spillsLast30DaysCount }} {{ \Illuminate\Support\Str::plural('spill', $overflows->spillsLast30DaysCount) }} in the last 30 days</span>
+    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="font-display text-lg font-semibold">Storm overflows within {{ $overflows->radiusMetres / 1000 }} km <x-help term="nearby_overflows" /></h2>
+        <span class="text-sm text-muted">Nearest first, straight-line distance.</span>
     </div>
 
-    @if ($overflows->isStale())
-        <p class="mb-3 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-text" role="status">Monitor data is out of date, so this describes the data as it was, not now. <x-help term="stale" /></p>
-    @endif
-
-    @if ($overflows->monitors->isNotEmpty())
+    @if ($overflows->monitors->isEmpty())
+        <p class="text-sm text-ink-2">No water company monitors within {{ $overflows->radiusMetres / 1000 }} km.</p>
+    @else
         <div class="overflow-x-auto rounded-lg border border-line bg-surface">
             <table class="w-full text-sm">
                 <thead class="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted">
@@ -23,22 +24,40 @@
                         <th class="px-4 py-2.5 font-medium">Distance</th>
                         <th class="px-4 py-2.5 font-medium">Status</th>
                         <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Last spill</th>
+                        <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Spills, 30 days</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-line-2">
-                    @foreach ($overflows->monitors as $summary)
-                        <tr>
-                            <td class="px-4 py-2.5">
-                                <span class="font-mono text-xs">{{ $summary->monitor->external_id }}</span>
-                                <span class="block text-xs text-muted">{{ $summary->monitor->receiving_watercourse }}</span>
-                            </td>
-                            <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums">{{ number_format($summary->distanceMetres / 1000, 1) }} km</td>
-                            <td class="px-4 py-2.5">{{ $summary->status->label() }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-2.5 text-ink-2 sm:table-cell">{{ $summary->latestEvent ? $summary->latestEvent->started_at->diffForHumans() : 'None recorded' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
+                @foreach (['active' => $active, 'quiet' => $quiet] as $group => $monitors)
+                    <tbody class="divide-y divide-line-2" @if ($group === 'quiet' && $active->isNotEmpty()) data-quiet-monitors hidden @endif>
+                        @foreach ($monitors as $summary)
+                            <tr>
+                                <td class="px-4 py-2.5">
+                                    <span class="font-mono text-xs">{{ $summary->monitor->external_id }}</span>
+                                    <span class="block text-xs text-muted">{{ $summary->monitor->receiving_watercourse }}</span>
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums">{{ number_format($summary->distanceMetres / 1000, 1) }} km</td>
+                                <td class="px-4 py-2.5">
+                                    @if ($summary->status === \App\Enums\OverflowStatus::Discharging)
+                                        <span class="font-medium text-alert">Discharging now</span>
+                                    @elseif ($summary->status === \App\Enums\OverflowStatus::Offline)
+                                        <span class="text-muted">Monitor offline</span>
+                                    @else
+                                        <span class="text-ink-2">Not discharging</span>
+                                    @endif
+                                </td>
+                                <td class="hidden whitespace-nowrap px-4 py-2.5 text-ink-2 sm:table-cell">{{ $summary->latestEvent ? $summary->latestEvent->started_at->diffForHumans() : 'None recorded' }}</td>
+                                <td class="hidden px-4 py-2.5 font-mono tabular-nums sm:table-cell">{{ $spillCounts->get($summary->monitor->id, 0) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                @endforeach
             </table>
         </div>
+        @if ($active->isNotEmpty() && $quiet->isNotEmpty())
+            <p class="mt-2 text-sm text-muted">
+                {{ $quiet->count() }} more {{ \Illuminate\Support\Str::plural('monitor', $quiet->count()) }} nearby had no spill in the last 30 days.
+                <button type="button" data-show-quiet class="font-medium text-accent hover:underline">Show all {{ $overflows->monitors->count() }}</button>
+            </p>
+        @endif
     @endif
 </section>

@@ -15,14 +15,26 @@ const monitorColours = {
     '-1': '#a8a29e',
 };
 
+// Beaches and lake bathing sites take the EA classification's colour; places without one (a lake centre) use the accent.
+const classificationColours = {
+    Excellent: '#047857',
+    Good: '#047857',
+    Sufficient: '#b45309',
+    Poor: '#b91c1c',
+};
+
 function markerFor(marker) {
-    const isSpot = marker.kind === 'spot';
-    const colour = isSpot ? recencyColours[marker.recency] ?? '#78716c' : monitorColours[marker.status] ?? '#64748b';
+    const isPlace = marker.kind === 'spot' || marker.kind === 'bathing' || marker.kind === 'place';
+    const colour = {
+        spot: () => recencyColours[marker.recency] ?? '#78716c',
+        bathing: () => classificationColours[marker.classification] ?? '#78716c',
+        place: () => '#1f5f8b',
+    }[marker.kind]?.() ?? monitorColours[marker.status] ?? '#64748b';
 
     return L.circleMarker([marker.lat, marker.lng], {
-        radius: isSpot ? 8 : 5,
+        radius: isPlace ? 8 : 5,
         color: '#ffffff',
-        weight: isSpot ? 2 : 1,
+        weight: isPlace ? 2 : 1,
         fillColor: colour,
         fillOpacity: 0.95,
     });

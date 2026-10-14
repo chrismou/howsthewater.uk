@@ -10,6 +10,22 @@
         <p class="mt-2 text-ink-2">Every designated bathing water on the {{ $region->name }} coast, with its Environment Agency classification and the storm overflows nearby.</p>
     </div>
 
+    @php
+        $mapMarkers = $beaches->map(fn ($conditions) => [
+            'lat' => $conditions->bathingWater->bathingWater->latitude,
+            'lng' => $conditions->bathingWater->bathingWater->longitude,
+            'label' => $conditions->bathingWater->bathingWater->name,
+            'url' => route('beaches.show', [$region, $conditions->bathingWater->bathingWater]),
+            'kind' => 'bathing',
+            'classification' => $conditions->bathingWater->bathingWater->classification?->value,
+        ])->values();
+    @endphp
+
+    <div class="mb-8">
+        <div class="h-80 w-full rounded-lg border border-line sm:h-[420px]" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+        <x-bathing-map-key :overflows="false" />
+    </div>
+
     <div class="overflow-x-auto rounded-lg border border-line bg-surface">
         <table class="w-full text-sm">
             <thead class="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted">
@@ -21,13 +37,15 @@
             </thead>
             <tbody class="divide-y divide-line-2">
                 @foreach ($beaches as $conditions)
-                    @php($beach = $conditions->bathingWater->bathingWater)
+                    @php
+                        $beach = $conditions->bathingWater->bathingWater;
+                    @endphp
                     <tr class="hover:bg-surface-2">
                         <td class="px-4 py-2.5">
                             <a href="{{ route('beaches.show', [$region, $beach]) }}" class="font-semibold hover:underline">{{ $beach->name }}</a>
                             <span class="block text-xs text-muted">{{ $beach->district }}</span>
                         </td>
-                        <td class="px-4 py-2.5">{{ $beach->classification?->value ?? 'Not classified' }}{{ $beach->classification_year ? ' ('.$beach->classification_year.')' : '' }}</td>
+                        <td class="px-4 py-2.5"><x-classification-pill :site="$beach" /></td>
                         <td class="hidden px-4 py-2.5 sm:table-cell"><x-spill-badge :recency="$conditions->overflows->spillRecency" :stale="$conditions->overflows->isStale()" nearby /></td>
                     </tr>
                 @endforeach

@@ -56,7 +56,7 @@ it('shows a lake with its bathing sites', function () {
         ->assertOk()
         ->assertSee('Windermere, Fellfoot')
         ->assertSee('Excellent')
-        ->assertSee('No Environment Agency gauge reads this lake\'s level.', false);
+        ->assertSee('No Environment Agency gauge reads this lake\'s level.');
 });
 
 it('scopes beaches and lakes to their region', function () {
