@@ -34,5 +34,11 @@
             <dt class="sr-only">River level</dt>
             <dd><x-level-badge :level="$conditions->level" /></dd>
         </div>
+        @if ($conditions->rainfall?->hasReadings())
+            <div>
+                <dt class="sr-only">Rainfall in last 24 hours</dt>
+                <dd>{{ number_format($conditions->rainfall->last24HoursMillimetres, 1) }} mm rain in 24h</dd>
+            </div>
+        @endif
     </dl>
 </a>

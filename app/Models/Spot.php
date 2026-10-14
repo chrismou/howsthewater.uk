@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $river_id
  * @property int|null $gauge_station_id
+ * @property int|null $rainfall_station_id
  * @property string $name
  * @property string $slug
  * @property string|null $description
@@ -24,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read River $river
  * @property-read GaugeStation|null $gaugeStation
+ * @property-read RainfallStation|null $rainfallStation
  */
 class Spot extends Model
 {
@@ -33,6 +35,7 @@ class Spot extends Model
     protected $fillable = [
         'river_id',
         'gauge_station_id',
+        'rainfall_station_id',
         'name',
         'slug',
         'description',
@@ -66,6 +69,12 @@ class Spot extends Model
     public function gaugeStation(): BelongsTo
     {
         return $this->belongsTo(GaugeStation::class);
+    }
+
+    /** @return BelongsTo<RainfallStation, $this> */
+    public function rainfallStation(): BelongsTo
+    {
+        return $this->belongsTo(RainfallStation::class);
     }
 
     /**

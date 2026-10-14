@@ -47,6 +47,20 @@ class SpotConditionsResource extends JsonResource
                 'relative_to_typical' => $this->level->relativeToTypical,
                 'stale' => $this->level->isStale(),
             ],
+            'rainfall' => $this->rainfall === null ? null : [
+                'station' => [
+                    'id' => $this->rainfall->station->external_id,
+                    'grid_reference' => $this->rainfall->station->grid_reference,
+                    'latitude' => $this->rainfall->station->latitude,
+                    'longitude' => $this->rainfall->station->longitude,
+                    'distance_metres' => $this->rainfall->distanceMetres,
+                ],
+                'last_6_hours_mm' => $this->rainfall->last6HoursMillimetres,
+                'last_24_hours_mm' => $this->rainfall->last24HoursMillimetres,
+                'last_72_hours_mm' => $this->rainfall->last72HoursMillimetres,
+                'measured_at' => $this->rainfall->latestAt?->toIso8601String(),
+                'stale' => $this->rainfall->isStale(),
+            ],
             'upstream_monitors' => OverflowMonitorResource::collection($this->upstreamMonitors),
             'history' => [
                 'days' => $this->dailyHistory->map(fn ($day) => [

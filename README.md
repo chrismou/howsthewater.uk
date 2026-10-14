@@ -78,6 +78,7 @@ Run these once, in this order:
 ```sh
 php artisan ingest:overflows          # all monitors and their latest spill events
 php artisan ingest:gauges --stations  # discover gauges on each river, backfill 7 days of readings
+php artisan ingest:rainfall --stations # find rain gauges near spots, link the nearest, backfill 7 days
 php artisan rivers:centrelines        # as above
 php artisan rivers:positions          # place monitors, gauges and spots along each river
 ```
@@ -97,6 +98,8 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 | `ingest:overflows` | Every 15 minutes | Refresh overflow status, open and close spill events |
 | `ingest:gauges` | Every 15 minutes | Fetch new level readings since the last stored one |
 | `ingest:gauges --stations` | Weekly, Monday 03:00 | Pick up new or renamed gauge stations |
+| `ingest:rainfall` | Every 15 minutes | Fetch new 15 minute rainfall totals from the rain gauges spots use |
+| `ingest:rainfall --stations` | Weekly, Monday 03:15 | Refresh the rain gauges near spots and relink each spot to the nearest |
 | `rivers:positions` | Daily, 03:30 | Position any newly added monitors, gauges or spots |
 
 `rivers:centrelines` only needs running when a river is added or the OS data is updated.
@@ -121,7 +124,8 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 ## API
 
 - `GET /api/v1/rivers` and `GET /api/v1/rivers/{slug}`: river overview with every spot's conditions.
-- `GET /api/v1/spots` and `GET /api/v1/spots/{slug}`: a spot's spill summary, upstream monitors and gauge level.
+- `GET /api/v1/spots` and `GET /api/v1/spots/{slug}`: a spot's spill summary, upstream monitors, gauge level and
+  rainfall at the nearest rain gauge (`rainfall` is null when none is within 20 km).
 
 Responses carry `Cache-Control: public, max-age=300` and an ETag, so a CDN in front of the site can cache them.
 

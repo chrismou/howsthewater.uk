@@ -4,6 +4,7 @@ namespace App\Services\EnvironmentAgency;
 
 use App\Data\GaugeReadingData;
 use App\Data\GaugeStationData;
+use App\Data\RainfallStationData;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -34,6 +35,31 @@ class FloodMonitoringClient
         return collect($items)
             ->map(fn (array $item) => GaugeStationData::fromEnvironmentAgency($item))
             ->filter(fn (GaugeStationData $station) => $station->measureId !== null)
+            ->values();
+    }
+
+    /**
+     * Rain gauges within a radius of a point.
+     *
+     * @return Collection<int, RainfallStationData>
+     */
+    public function rainfallStationsNear(float $latitude, float $longitude, int $radiusKm): Collection
+    {
+        /** @var array<int, array<string, mixed>> $items */
+        $items = $this->request()
+            ->get($this->url('id/stations'), [
+                'parameter' => 'rainfall',
+                'lat' => $latitude,
+                'long' => $longitude,
+                'dist' => $radiusKm,
+                '_view' => 'full',
+                '_limit' => 1000,
+            ])
+            ->throw()
+            ->json('items', []);
+
+        return collect($items)
+            ->map(fn (array $item) => RainfallStationData::fromEnvironmentAgency($item))
             ->values();
     }
 

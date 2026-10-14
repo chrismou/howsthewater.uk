@@ -3,6 +3,8 @@
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
+use App\Models\RainfallReading;
+use App\Models\RainfallStation;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
@@ -69,4 +71,16 @@ it('flags stale overflow and gauge data', function () {
         ->assertOk()
         ->assertJsonPath('data.data_stale', true)
         ->assertJsonPath('data.level.stale', true);
+});
+
+it('includes rainfall at the nearest rain gauge', function () {
+    $station = RainfallStation::factory()->create(['external_id' => '1001']);
+    $spot = Spot::factory()->create(['rainfall_station_id' => $station->id, 'river_metres' => null]);
+    RainfallReading::factory()->create(['rainfall_station_id' => $station->id, 'measured_at' => now()->subMinutes(15), 'millimetres' => 3.2]);
+
+    $this->getJson(route('api.v1.spots.show', $spot))
+        ->assertOk()
+        ->assertJsonPath('data.rainfall.station.id', '1001')
+        ->assertJsonPath('data.rainfall.last_24_hours_mm', 3.2)
+        ->assertJsonPath('data.rainfall.stale', false);
 });

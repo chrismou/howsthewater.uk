@@ -1,6 +1,7 @@
 <?php
 
 use App\Data\LevelSummary;
+use App\Data\RainfallSummary;
 use App\Data\SpillHistoryDay;
 use App\Data\SpotConditions;
 use App\Data\UpstreamMonitorSummary;
@@ -10,6 +11,8 @@ use App\Enums\SpillRecency;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
+use App\Models\RainfallReading;
+use App\Models\RainfallStation;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
@@ -151,6 +154,7 @@ return [
 
     'serializable_classes' => [
         LevelSummary::class,
+        RainfallSummary::class,
         SpillHistoryDay::class,
         SpotConditions::class,
         UpstreamMonitorSummary::class,
@@ -160,6 +164,8 @@ return [
         GaugeReading::class,
         GaugeStation::class,
         OverflowMonitor::class,
+        RainfallReading::class,
+        RainfallStation::class,
         River::class,
         SpillEvent::class,
         Spot::class,

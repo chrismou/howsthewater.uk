@@ -32,6 +32,7 @@ final readonly class SpotConditions
         public Collection $recentSpillEvents,
         public Collection $dailyHistory,
         public ?LevelSummary $level,
+        public ?RainfallSummary $rainfall,
         public ?Carbon $dataUpdatedAt,
     ) {}
 

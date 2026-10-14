@@ -44,7 +44,7 @@ class RiverOverviewService
     {
         $spots = $river->spots()
             ->published()
-            ->with('gaugeStation')
+            ->with(['gaugeStation', 'rainfallStation'])
             ->get()
             ->map(fn (Spot $spot) => $this->spotConditions->for($spot->setRelation('river', $river)));
 

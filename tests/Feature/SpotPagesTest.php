@@ -3,6 +3,8 @@
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
+use App\Models\RainfallReading;
+use App\Models\RainfallStation;
 use App\Models\River;
 use App\Models\Spot;
 
@@ -71,4 +73,17 @@ it('does not warn when data is fresh', function () {
     $this->get(route('spots.show', $spot))
         ->assertOk()
         ->assertDontSee('Monitor data is out of date');
+});
+
+it('shows rainfall at the nearest rain gauge', function () {
+    $station = RainfallStation::factory()->create();
+    $spot = Spot::factory()->create(['rainfall_station_id' => $station->id, 'river_metres' => null]);
+    RainfallReading::factory()->create(['rainfall_station_id' => $station->id, 'measured_at' => now()->subMinutes(15), 'millimetres' => 3.25]);
+
+    $this->get(route('spots.show', $spot))
+        ->assertOk()
+        ->assertSee('in the last 24 hours')
+        ->assertSee('3.3 mm');
+
+    $this->get(route('home'))->assertSee('3.3 mm rain in 24h');
 });

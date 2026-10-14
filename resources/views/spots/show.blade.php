@@ -1,6 +1,7 @@
 @php
     $spot = $conditions->spot;
     $level = $conditions->level;
+    $rainfall = $conditions->rainfall;
 
     $mapMarkers = collect([[
         'lat' => $spot->latitude,
@@ -167,6 +168,38 @@
                         </p>
                     @endif
                     <div class="mt-4 h-24" data-sparkline="{{ json_encode($sparkline) }}"></div>
+                @endif
+            </div>
+
+            <h2 class="mt-8 mb-3 text-lg font-semibold">Rainfall</h2>
+            <div class="rounded-lg border border-stone-200 bg-white p-5">
+                @if ($rainfall === null)
+                    <p class="text-sm text-stone-600">No rain gauge within {{ \App\Actions\Rivers\LinkNearestRainfallStations::MAX_DISTANCE_METRES / 1000 }} km of this spot.</p>
+                @elseif (! $rainfall->hasReadings())
+                    <p class="text-sm text-stone-600">No recent readings from the nearest rain gauge.</p>
+                @else
+                    <p class="text-3xl font-semibold">{{ number_format($rainfall->last24HoursMillimetres, 1) }} mm</p>
+                    <p class="mt-1 text-sm text-stone-600">in the last 24 hours</p>
+                    <dl class="mt-3 flex gap-x-6 text-sm text-stone-600">
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-stone-500">Last 6 hours</dt>
+                            <dd class="font-medium text-stone-900">{{ number_format($rainfall->last6HoursMillimetres, 1) }} mm</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-stone-500">Last 3 days</dt>
+                            <dd class="font-medium text-stone-900">{{ number_format($rainfall->last72HoursMillimetres, 1) }} mm</dd>
+                        </div>
+                    </dl>
+                    <p class="mt-3 text-xs text-stone-500">
+                        Rain gauge {{ number_format($rainfall->distanceMetres / 1000, 1) }} km from this spot, read {{ $rainfall->latestAt->diffForHumans() }}.
+                        Rain upstream in the catchment may differ.
+                    </p>
+                    @if ($rainfall->isStale())
+                        <p class="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+                            No reading from this rain gauge for {{ $rainfall->latestAt->diffForHumans(null, \Illuminate\Support\Carbon::DIFF_ABSOLUTE) }}.
+                            Recent rain may be missing from these totals.
+                        </p>
+                    @endif
                 @endif
             </div>
         </aside>

@@ -21,6 +21,7 @@ class SpotConditionsService
         private UpstreamMonitorFinder $upstreamMonitors,
         private SpillHistoryService $spillHistory,
         private LevelSummariser $levelSummariser,
+        private RainfallSummariser $rainfallSummariser,
         private ConditionsCache $cache,
     ) {}
 
@@ -34,7 +35,7 @@ class SpotConditionsService
      */
     public function build(Spot $spot): SpotConditions
     {
-        $spot->loadMissing(['river', 'gaugeStation']);
+        $spot->loadMissing(['river', 'gaugeStation', 'rainfallStation']);
 
         $monitors = $this->upstreamMonitors->for($spot);
         $recentEvents = $this->spillHistory->recentEvents($monitors);
@@ -51,6 +52,7 @@ class SpotConditionsService
             recentSpillEvents: $recentEvents,
             dailyHistory: $this->spillHistory->dailyBreakdown($recentEvents),
             level: $spot->gaugeStation !== null ? $this->levelSummariser->summarise($spot->gaugeStation) : null,
+            rainfall: $spot->rainfallStation !== null ? $this->rainfallSummariser->summarise($spot, $spot->rainfallStation) : null,
             dataUpdatedAt: $monitors->max(fn (UpstreamMonitorSummary $summary) => $summary->monitor->source_updated_at),
         );
     }

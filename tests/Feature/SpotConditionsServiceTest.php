@@ -5,6 +5,8 @@ use App\Enums\SpillRecency;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
+use App\Models\RainfallReading;
+use App\Models\RainfallStation;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
@@ -183,4 +185,30 @@ it('flags the level as stale when the latest reading is old', function () {
     GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(5), 'value' => 0.41]);
 
     expect(app(SpotConditionsService::class)->build($spot)->level->isStale())->toBeFalse();
+});
+
+it('totals rainfall at the nearest rain gauge', function () {
+    $station = RainfallStation::factory()->create(['latitude' => 53.91, 'longitude' => -1.80]);
+    $spot = Spot::factory()->create(['rainfall_station_id' => $station->id, 'latitude' => 53.90, 'longitude' => -1.80, 'river_metres' => null]);
+
+    RainfallReading::factory()->create(['rainfall_station_id' => $station->id, 'measured_at' => now()->subHours(50), 'millimetres' => 5.0]);
+    RainfallReading::factory()->create(['rainfall_station_id' => $station->id, 'measured_at' => now()->subHours(12), 'millimetres' => 2.5]);
+    RainfallReading::factory()->create(['rainfall_station_id' => $station->id, 'measured_at' => now()->subMinutes(15), 'millimetres' => 0.4]);
+
+    $rainfall = app(SpotConditionsService::class)->for($spot)->rainfall;
+
+    expect($rainfall->last6HoursMillimetres)->toBe(0.4)
+        ->and($rainfall->last24HoursMillimetres)->toBe(2.9)
+        ->and($rainfall->last72HoursMillimetres)->toBe(7.9)
+        ->and($rainfall->distanceMetres)->toBeBetween(1000, 1300)
+        ->and($rainfall->isStale())->toBeFalse();
+});
+
+it('flags rainfall as stale when the rain gauge stops reporting', function () {
+    $station = RainfallStation::factory()->create();
+    $spot = Spot::factory()->create(['rainfall_station_id' => $station->id, 'river_metres' => null]);
+
+    RainfallReading::factory()->create(['rainfall_station_id' => $station->id, 'measured_at' => now()->subHours(7), 'millimetres' => 1.0]);
+
+    expect(app(SpotConditionsService::class)->for($spot)->rainfall->isStale())->toBeTrue();
 });

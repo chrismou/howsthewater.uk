@@ -187,6 +187,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - Storm overflows: Stream (Yorkshire Water) ArcGIS feature service, polled every 15 minutes by `ingest:overflows`.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
+- Rainfall: the same API's tipping bucket rain gauges, `ingest:rainfall`. Each spot links to the nearest gauge within
+  20 km (`LinkNearestRainfallStations`, also run by `rivers:positions`); totals are sums of 15 minute readings.
 - River centrelines: OS Open Rivers GeoPackage at `OS_OPEN_RIVERS_PATH` (default `storage/app/private/oprvrs_gb.gpkg`,
   gitignored, download from the OS Data Hub). OpenStreetMap via Overpass is a fallback (`--source=osm`) but is unreliable.
   Names repeat (becks across Yorkshire, and Calder, Don, Derwent, Ouse and Esk across Britain), so `OpenRiversReader`
@@ -203,6 +205,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 php artisan migrate --seed
 php artisan ingest:overflows
 php artisan ingest:gauges --stations
+php artisan ingest:rainfall --stations
 php artisan rivers:centrelines
 php artisan rivers:positions
 ```
