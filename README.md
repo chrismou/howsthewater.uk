@@ -98,10 +98,10 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 
 | Command | Frequency | What it does |
 | --- | --- | --- |
-| `ingest:overflows` | Every 15 minutes | Refresh overflow status, open and close spill events |
-| `ingest:gauges` | Every 15 minutes | Fetch new level readings since the last stored one |
-| `ingest:gauges --stations` | Weekly, Monday 03:00 | Pick up new or renamed gauge stations |
-| `ingest:rainfall` | Every 15 minutes | Fetch new 15 minute rainfall totals from the rain gauges spots use |
+| `ingest:overflows` | Every 15 minutes | Refresh overflow status, open and close spill events, position monitors seen for the first time |
+| `ingest:gauges` | Every 15 minutes | Fetch new level readings, and discover gauges on any river never searched |
+| `ingest:gauges --stations` | Weekly, Monday 03:00 | Re-check every river for new or renamed gauge stations |
+| `ingest:rainfall` | Every 15 minutes | Fetch new rainfall totals, and find rain gauges for any spot never searched |
 | `ingest:rainfall --stations` | Weekly, Monday 03:15 | Refresh the rain gauges near spots and relink each spot to the nearest |
 | `rivers:positions` | Daily, 03:30 | Position any newly added monitors, gauges or spots |
 
@@ -121,8 +121,10 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
    positions step also records where each tributary joins its parent and links each spot to its nearest gauge,
    preferring gauges that report stage in metres over ones reporting height above sea level (mAOD).
 5. Push. The deploy runs the seeders, centrelines and positions itself (the GeoPackage must already be on the
-   server). Gauges for the new river are picked up by the weekly `ingest:gauges --stations` run, or sooner if you
-   run it by hand.
+   server). The next scheduled ingests catch up on the rest without a manual step: the overflow ingest positions a new
+   region's monitors when it first sees them, the gauge ingest discovers and backfills gauges on rivers never searched,
+   and the rainfall ingest finds rain gauges for spots never searched. The first of those runs can take several
+   minutes while it backfills a week of readings; it runs in the scheduler, so deploys are not delayed.
 
 ## API
 

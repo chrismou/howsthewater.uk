@@ -215,7 +215,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   and `mouth_longitude` (main rivers), then joins other fragments within 4 km to bridge reservoirs. Seed parents before
   tributaries; `rivers:centrelines` orders them that way.
 - The Environment Agency also names rivers nationally, so `SyncGaugeStations` drops stations more than 2 km from the
-  centreline. Run `rivers:centrelines` before `ingest:gauges --stations` for a new river.
+  centreline. Rivers are only searched for gauges once they have a centreline.
+- New rivers, spots and monitors need no manual commands. Rivers record `gauges_discovered_at` and spots
+  `rain_gauges_searched_at`; the 15-minute `ingest:gauges` and `ingest:rainfall` search anything still null, and
+  `ingest:overflows` positions monitors it sees for the first time. `--stations` re-checks everything (weekly).
 - No API keys are needed. Map tiles are OpenStreetMap.
 
 ## Local setup

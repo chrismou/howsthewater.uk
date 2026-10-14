@@ -68,3 +68,24 @@ it('keeps discovering gauges for other rivers when one request fails', function 
 
     expect(GaugeStation::query()->pluck('external_id')->all())->toBe(['L0009']);
 });
+
+it('discovers gauges on rivers never searched during a normal ingest, and only those', function () {
+    $new = River::factory()->withCentreline()->create(['name' => 'River New', 'aliases' => ['River New']]);
+    $known = River::factory()->withCentreline()->create(['name' => 'River Known', 'aliases' => ['River Known'], 'gauges_discovered_at' => now()->subDay()]);
+    River::factory()->create(['name' => 'River Unmapped', 'aliases' => ['River Unmapped']]);
+
+    Http::fake([
+        'environment.data.gov.uk/*/id/stations*' => Http::response(['items' => [environmentAgencyStationItem('L0010', 53.90, -1.80)]]),
+        'environment.data.gov.uk/*' => Http::response(['items' => []]),
+    ]);
+
+    $this->artisan('ingest:gauges')->expectsOutputToContain('River New: 1 gauge stations.')->assertSuccessful();
+
+    expect($new->fresh()->gauges_discovered_at)->not->toBeNull()
+        ->and(GaugeStation::query()->first()->river_id)->toBe($new->id)
+        ->and(GaugeStation::query()->first()->river_metres)->not->toBeNull();
+
+    Http::assertNotSent(fn ($request) => str_contains(urldecode($request->url()), 'River Known') || str_contains(urldecode($request->url()), 'River Unmapped'));
+
+    $this->artisan('ingest:gauges')->doesntExpectOutputToContain('gauge stations.')->assertSuccessful();
+});

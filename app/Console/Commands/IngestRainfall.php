@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Actions\Ingest\SyncRainfallReadings;
 use App\Actions\Ingest\SyncRainfallStations;
 use App\Actions\Rivers\LinkNearestRainfallStations;
+use App\Models\Spot;
 use App\Services\Conditions\ConditionsCache;
 use App\Services\Conditions\RegionSummaries;
 use Illuminate\Console\Command;
@@ -18,7 +19,7 @@ class IngestRainfall extends Command
      */
     private const MAX_RELINK_PASSES = 3;
 
-    protected $signature = 'ingest:rainfall {--stations : Also refresh the rain gauges near each spot and relink spots to the nearest}';
+    protected $signature = 'ingest:rainfall {--stations : Refresh the rain gauges near every spot, not just spots never searched}';
 
     protected $description = 'Fetch new rainfall readings from the Environment Agency';
 
@@ -29,9 +30,13 @@ class IngestRainfall extends Command
         ConditionsCache $cache,
         RegionSummaries $summaries,
     ): int {
-        if ($this->option('stations')) {
+        // Every run catches up when a spot has never been searched (a newly seeded region); --stations always searches.
+        $hasUnsearchedSpots = Spot::query()->published()->whereNull('rain_gauges_searched_at')->exists();
+
+        if ($this->option('stations') || $hasUnsearchedSpots) {
             $stations = $syncStations->handle();
             $linked = $link->handle();
+            Spot::query()->published()->update(['rain_gauges_searched_at' => now()]);
             $this->line(sprintf('%d rain gauges near spots, %d spots linked to one.', $stations['stations'], $linked['spots']));
         }
 

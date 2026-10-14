@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property array<int, array{0: float, 1: float}>|null $centreline
  * @property int|null $length_metres
  * @property int|null $joins_at_metres
+ * @property Carbon|null $gauges_discovered_at
  * @property-read Region|null $region
  * @property-read River|null $parent
  * @property-read Collection<int, River> $tributaries
@@ -48,6 +49,7 @@ class River extends Model
         'centreline',
         'length_metres',
         'joins_at_metres',
+        'gauges_discovered_at',
     ];
 
     protected function casts(): array
@@ -57,6 +59,7 @@ class River extends Model
             'mouth_latitude' => 'float',
             'mouth_longitude' => 'float',
             'centreline' => 'array',
+            'gauges_discovered_at' => 'datetime',
         ];
     }
 

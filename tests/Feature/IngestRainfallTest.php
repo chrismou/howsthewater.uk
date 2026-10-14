@@ -109,3 +109,19 @@ it('searches for rain gauges once per region rather than one circle around every
     Http::assertSentCount(2);
     Http::assertSent(fn ($request) => $request['dist'] < 60);
 });
+
+it('searches for rain gauges during a normal ingest only while a spot has never been searched', function () {
+    $spot = Spot::factory()->create(['latitude' => 53.90, 'longitude' => -1.80]);
+
+    Http::fake([
+        'environment.data.gov.uk/*/id/stations*' => Http::response(['items' => [environmentAgencyRainfallItem('1001', 53.91, -1.80)]]),
+        'environment.data.gov.uk/*' => Http::response(['items' => [['dateTime' => now()->subMinutes(15)->toIso8601String(), 'value' => 0.4]]]),
+    ]);
+
+    $this->artisan('ingest:rainfall')->expectsOutputToContain('1 rain gauges near spots, 1 spots linked to one.')->assertSuccessful();
+
+    expect($spot->fresh()->rain_gauges_searched_at)->not->toBeNull()
+        ->and($spot->fresh()->rainfall_station_id)->not->toBeNull();
+
+    $this->artisan('ingest:rainfall')->doesntExpectOutputToContain('rain gauges near spots')->assertSuccessful();
+});

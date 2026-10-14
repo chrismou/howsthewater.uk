@@ -27,11 +27,11 @@ class SyncOverflowMonitors
      * logged and skipped, so one company's outage never stops the others;
      * its monitors simply go stale and the pages say so.
      *
-     * @return array{monitors: int, events_opened: int, events_closed: int, feeds: int, failed: array<int, string>}
+     * @return array{monitors: int, monitors_added: int, events_opened: int, events_closed: int, feeds: int, failed: array<int, string>}
      */
     public function handle(): array
     {
-        $totals = ['monitors' => 0, 'events_opened' => 0, 'events_closed' => 0, 'feeds' => 0, 'failed' => []];
+        $totals = ['monitors' => 0, 'monitors_added' => 0, 'events_opened' => 0, 'events_closed' => 0, 'feeds' => 0, 'failed' => []];
 
         foreach (Region::overflowFeeds() as $key => $feed) {
             try {
@@ -44,6 +44,7 @@ class SyncOverflowMonitors
             }
 
             $totals['monitors'] += $result['monitors'];
+            $totals['monitors_added'] += $result['monitors_added'];
             $totals['events_opened'] += $result['events_opened'];
             $totals['events_closed'] += $result['events_closed'];
             $totals['feeds']++;
@@ -54,7 +55,7 @@ class SyncOverflowMonitors
 
     /**
      * @param  Collection<int, OverflowMonitorData>  $monitors
-     * @return array{monitors: int, events_opened: int, events_closed: int}
+     * @return array{monitors: int, monitors_added: int, events_opened: int, events_closed: int}
      */
     public function sync(Collection $monitors): array
     {
@@ -65,6 +66,7 @@ class SyncOverflowMonitors
 
         $opened = 0;
         $closed = 0;
+        $added = 0;
 
         foreach ($monitors as $data) {
             /** @var OverflowMonitor|null $monitor */
@@ -72,6 +74,7 @@ class SyncOverflowMonitors
 
             if ($monitor === null) {
                 $monitor = new OverflowMonitor(['external_id' => $data->externalId]);
+                $added++;
                 $monitor->setRelation('openSpillEvents', new EloquentCollection);
             }
 
@@ -93,7 +96,7 @@ class SyncOverflowMonitors
             $closed += $closedHere;
         }
 
-        return ['monitors' => $monitors->count(), 'events_opened' => $opened, 'events_closed' => $closed];
+        return ['monitors' => $monitors->count(), 'monitors_added' => $added, 'events_opened' => $opened, 'events_closed' => $closed];
     }
 
     /**

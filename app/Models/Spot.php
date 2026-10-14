@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
  * @property int $river_id
  * @property int|null $gauge_station_id
  * @property int|null $rainfall_station_id
+ * @property Carbon|null $rain_gauges_searched_at
  * @property string $name
  * @property string $slug
  * @property string|null $description
@@ -37,6 +38,7 @@ class Spot extends Model
         'river_id',
         'gauge_station_id',
         'rainfall_station_id',
+        'rain_gauges_searched_at',
         'name',
         'slug',
         'description',
@@ -54,6 +56,7 @@ class Spot extends Model
             'longitude' => 'float',
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
+            'rain_gauges_searched_at' => 'datetime',
         ];
     }
 

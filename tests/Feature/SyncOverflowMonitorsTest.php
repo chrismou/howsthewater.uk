@@ -4,6 +4,7 @@ use App\Actions\Ingest\SyncOverflowMonitors;
 use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
 use App\Models\Region;
+use App\Models\River;
 use App\Models\SpillEvent;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
@@ -40,7 +41,7 @@ it('creates monitors and records their latest spill event', function () {
 
     $result = app(SyncOverflowMonitors::class)->handle();
 
-    expect($result)->toBe(['monitors' => 1, 'events_opened' => 1, 'events_closed' => 0, 'feeds' => 1, 'failed' => []]);
+    expect($result)->toBe(['monitors' => 1, 'monitors_added' => 1, 'events_opened' => 1, 'events_closed' => 0, 'feeds' => 1, 'failed' => []]);
 
     $monitor = OverflowMonitor::query()->where('external_id', 'YWS00001')->firstOrFail();
 
@@ -174,4 +175,15 @@ it('fails the ingest command when a feed fails', function () {
     $this->artisan('ingest:overflows')
         ->expectsOutputToContain('Yorkshire Water feed failed')
         ->assertFailed();
+});
+
+it('positions monitors the first time it sees them', function () {
+    $river = River::factory()->withCentreline()->create(['name' => 'River Wharfe', 'aliases' => ['River Wharfe']]);
+    fakeStreamFeed([arcGisFeature(['Latitude' => 53.90, 'Longitude' => -1.80])]);
+
+    $this->artisan('ingest:overflows')->expectsOutputToContain('1 new monitors positioned.')->assertSuccessful();
+
+    expect(OverflowMonitor::query()->first()->river_id)->toBe($river->id);
+
+    $this->artisan('ingest:overflows')->doesntExpectOutputToContain('new monitors positioned')->assertSuccessful();
 });
