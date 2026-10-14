@@ -48,52 +48,24 @@
 </head>
 <body class="min-h-full flex flex-col bg-ground text-ink antialiased">
 <header class="border-b border-line bg-surface">
-    <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
-        <a href="{{ route('home') }}" class="font-display text-lg font-semibold tracking-tight">
+    {{-- Phones: logo, menu and theme toggle on one row, search below. Wider: one row with search and toggle on the right. --}}
+    <div class="relative mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
+        <a href="{{ route('home') }}" class="order-1 font-display text-lg font-semibold tracking-tight">
             How's the Water<span class="text-accent">?</span>
         </a>
 
-        <nav class="flex items-center gap-x-4 text-sm text-ink-2" aria-label="Regions">
-            @foreach ($allRegions as $navRegion)
-                <details class="relative" data-nav-menu>
-                    <summary class="flex cursor-pointer list-none items-center gap-1 font-medium text-ink hover:text-ink [&::-webkit-details-marker]:hidden">
-                        {{ $navRegion->name }}
-                        <svg class="h-4 w-4 text-faint" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"/>
-                        </svg>
-                    </summary>
-                    {{-- The panel starts flush with the button and carries its own top padding, so moving the mouse into it never leaves the menu. --}}
-                    <div class="absolute left-0 top-full z-[1100] w-max max-w-[calc(100vw-2rem)] pt-2">
-                        <div class="flex flex-wrap gap-x-8 gap-y-4 rounded-lg border border-line bg-surface p-4 shadow-lg">
-                            <div class="basis-full border-b border-line-2 pb-3">
-                                <a href="{{ route('regions.show', $navRegion) }}" class="font-semibold text-ink hover:underline">{{ $navRegion->name }} overview</a>
-                                <span class="text-xs text-muted"> map, river strips and every spot</span>
-                            </div>
-                            @foreach ($navRegion->riversByCatchment() as $catchment => $rivers)
-                                <div>
-                                    <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-faint">{{ $catchment }}</p>
-                                    <ul class="grid gap-x-6 gap-y-1 {{ $rivers->count() > 5 ? 'grid-cols-2' : '' }}">
-                                        @foreach ($rivers as $navRiver)
-                                            <li><a href="{{ route('rivers.show', [$navRegion, $navRiver]) }}" class="block whitespace-nowrap py-0.5 hover:text-ink">{{ $navRiver->name }}</a></li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </details>
-            @endforeach
+        <nav class="order-2 flex items-center gap-x-5" aria-label="Main">
+            <x-rivers-menu :regions="$allRegions" :current="$liveRegion" />
         </nav>
 
-        <div class="ml-auto flex w-full items-center gap-2 sm:w-auto">
-            <form action="{{ route('search') }}" method="get" role="search" class="flex-1 sm:flex-none">
+        <form action="{{ route('search') }}" method="get" role="search" class="order-4 w-full sm:order-3 sm:ml-auto sm:w-auto">
                 <label for="site-search" class="sr-only">Find a spot or river</label>
                 <input id="site-search" type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}"
                     placeholder="Find a spot or river"
                     class="w-full rounded-md border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:w-56">
-            </form>
+        </form>
             <button type="button" data-theme-toggle
-                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-surface text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                class="order-3 ml-auto inline-flex h-9 w-9 shrink-0 sm:order-4 sm:-ml-4 items-center justify-center rounded-md border border-line bg-surface text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent"
                 aria-label="Switch between light and dark mode">
                 <svg class="h-5 w-5 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
                     <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
@@ -103,7 +75,6 @@
                     <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
                 </svg>
             </button>
-        </div>
     </div>
     @if ($liveSummary)
         <x-live-bar :summary="$liveSummary"/>

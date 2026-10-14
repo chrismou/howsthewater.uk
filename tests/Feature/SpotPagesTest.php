@@ -104,6 +104,21 @@ it('hides spots on tributaries, which have no pages', function () {
     $this->get(route('sitemap'))->assertOk()->assertDontSee('becksidebridge');
 });
 
+it('opens the rivers menu on the current region, or the first region added elsewhere', function () {
+    [$region] = spotWithUrl();
+    $thames = Region::factory()->create(['name' => 'Thames Valley', 'slug' => 'thames-valley']);
+    River::factory()->create(['region_id' => $thames->id, 'name' => 'River Thames', 'slug' => 'thames']);
+
+    $this->get(route('regions.show', $thames))
+        ->assertOk()
+        ->assertSee('data-nav-region-tab="thames-valley" data-selected="true"', false)
+        ->assertSee('data-nav-region-tab="yorkshire" data-selected="false"', false);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('data-nav-region-tab="yorkshire" data-selected="true"', false);
+});
+
 it('lists rivers by catchment in the region menu', function () {
     [$region, $river] = spotWithUrl([], ['name' => 'River Wharfe', 'catchment' => 'Yorkshire Ouse']);
     River::factory()->create(['region_id' => $region->id, 'name' => 'River Esk', 'catchment' => 'Esk and Coast']);
