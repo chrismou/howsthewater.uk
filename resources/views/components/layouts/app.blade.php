@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'region' => null])
+@props(['title' => null, 'description' => null, 'region' => null, 'hero' => null, 'after' => null])
 
 @php
     // The live bar shows the page's region, or the first region on pages that have none.
@@ -79,20 +79,22 @@
         @endif
     </header>
 
+    {{-- Full-bleed sections a page wants above or below its content, such as the home page hero. --}}
+    {{ $hero }}
+
     <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
         {{ $slot }}
     </main>
 
+    {{ $after }}
+
     <footer class="border-t border-line bg-surface">
         <div class="mx-auto max-w-5xl px-4 py-6 text-xs leading-relaxed text-muted">
             <p>
-                Shows unvalidated near real-time data from Yorkshire Water storm overflow monitors (via Stream) and
-                Environment Agency river level gauges. It describes what the monitors report. It does not say whether
-                water is safe to enter.
-            </p>
-            <p class="mt-2">
-                Contains Environment Agency data from the real-time data API (Beta) and Yorkshire Water storm overflow
-                data, Open Government Licence v3.0. River centrelines from Ordnance Survey Open Rivers, OGL v3.0.
+                Near real-time, unvalidated data. Contains Environment Agency data from the real-time data API (Beta) and
+                Yorkshire Water storm overflow data (via Stream), Open Government Licence v3.0. River centrelines from
+                Ordnance Survey Open Rivers, OGL v3.0. Map tiles © OpenStreetMap contributors.
+                <a href="{{ route('home') }}#limits" class="underline hover:text-ink">What this site does not do</a>.
             </p>
         </div>
     </footer>

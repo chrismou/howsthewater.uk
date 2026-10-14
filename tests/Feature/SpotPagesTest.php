@@ -23,14 +23,17 @@ function spotWithUrl(array $spotAttributes = [], array $riverAttributes = []): a
     return [$region, $river, $spot];
 }
 
-it('lists rivers and spots on the home page', function () {
+it('introduces the site and its regions on the home page', function () {
     [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley'], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('River Wharfe')
-        ->assertSee('Otley')
-        ->assertSee('/yorkshire/wharfe/otley');
+        ->assertSee("What's the river doing right now?", false)
+        ->assertSee('How to read it')
+        ->assertSee('What this site does not do')
+        ->assertSee('Open Yorkshire')
+        ->assertSee('/yorkshire/wharfe/otley')
+        ->assertSee('/yorkshire"', false);
 });
 
 it('shows a river page with its spots source to mouth', function () {
@@ -112,7 +115,7 @@ it('warns when monitor and gauge data are out of date', function () {
         ->assertSee('Monitor data is out of date')
         ->assertSee('No reading from this gauge for 8 hours');
 
-    $this->get(route('home'))
+    $this->get(route('rivers.show', [$region, $river]))
         ->assertOk()
         ->assertSee('Monitor data is 8 hours old');
 });
@@ -136,7 +139,7 @@ it('shows rainfall at the nearest rain gauge', function () {
         ->assertSee('in the last 24 hours')
         ->assertSee('3.3 mm');
 
-    $this->get(route('home'))->assertSee('3.3 mm rain in 24h');
+    $this->get(route('rivers.show', [$region, $river]))->assertSee('3.3 mm rain in 24h');
 });
 
 it('treats search wildcards literally and caps the query length', function () {

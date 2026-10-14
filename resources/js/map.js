@@ -34,7 +34,17 @@ export function initMaps() {
         const centrelines = JSON.parse(element.dataset.mapCentrelines || '[]');
         const markers = JSON.parse(element.dataset.mapMarkers || '[]');
 
-        const map = L.map(element, { scrollWheelZoom: false });
+        // A static map is a picture: no panning, zooming or controls, so it can sit inside a link.
+        const isStatic = element.hasAttribute('data-map-static');
+        const map = L.map(element, {
+            scrollWheelZoom: false,
+            dragging: !isStatic,
+            touchZoom: !isStatic,
+            doubleClickZoom: !isStatic,
+            boxZoom: !isStatic,
+            keyboard: !isStatic,
+            zoomControl: !isStatic,
+        });
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,

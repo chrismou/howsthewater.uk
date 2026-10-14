@@ -1,29 +1,178 @@
-<x-layouts.app title="Upstream spills and river levels across Yorkshire"
-               description="Live storm overflow activity and river levels for swimming, paddling and fishing spots on the Wharfe and Aire.">
-    <div class="mb-8">
-        <h1 class="font-display text-3xl font-semibold tracking-tight">How's the water?</h1>
-        <p class="mt-2 max-w-2xl text-ink-2">
-            Upstream storm overflow spills and river levels for popular spots on Yorkshire's rivers, updated every
-            15 minutes from Yorkshire Water and Environment Agency monitors.
-        </p>
-    </div>
+@php
+    $timezone = config('app.display_timezone', 'Europe/London');
+    $totalSpots = $regions->sum(fn ($region) => $region->spots()->count());
+    $totalRivers = $regions->sum(fn ($region) => $region->rivers->count());
+    $regionNames = $regions->pluck('name')->join(', ', ' and ');
+@endphp
 
-    @foreach ($rivers as $overview)
-        <section class="mb-10">
-            <div class="mb-3 flex items-baseline justify-between">
-                <h2 class="font-display text-xl font-semibold">
-                    <a href="{{ route('rivers.show', [$overview->river->region, $overview->river]) }}" class="hover:underline">{{ $overview->river->name }}</a>
-                </h2>
-                <p class="text-sm text-muted">
-                    {{ $overview->monitorCount }} monitors,
-                    {{ $overview->dischargingNowCount }} discharging now
-                </p>
-            </div>
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach ($overview->spots as $conditions)
-                    <x-spot-card :conditions="$conditions" />
+<x-layouts.app title="Upstream spills, river levels and rainfall for Yorkshire's rivers"
+               description="Live storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on Yorkshire's rivers, read from the public monitors every 15 minutes.">
+    <x-slot:hero>
+        <section class="relative overflow-hidden border-b border-line bg-surface">
+            <svg aria-hidden="true" class="pointer-events-none absolute inset-0 h-full w-full text-accent" viewBox="0 0 1280 520" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-opacity="0.12" stroke-width="1.2">
+                <path d="M-20 120 C 200 60, 380 200, 620 140 S 1000 40, 1300 120"/>
+                <path d="M-20 170 C 220 110, 400 250, 640 190 S 1020 90, 1300 170"/>
+                <path d="M-20 220 C 240 160, 420 300, 660 240 S 1040 140, 1300 220"/>
+                <path d="M-20 270 C 260 210, 440 350, 680 290 S 1060 190, 1300 270"/>
+                <path d="M-20 320 C 280 260, 460 400, 700 340 S 1080 240, 1300 320"/>
+                <path d="M-20 370 C 300 310, 480 450, 720 390 S 1100 290, 1300 370"/>
+                <path d="M-20 420 C 320 360, 500 500, 740 440 S 1120 340, 1300 420"/>
+                <path d="M-20 470 C 340 410, 520 550, 760 490 S 1140 390, 1300 470"/>
+            </svg>
+            <div class="relative mx-auto grid max-w-5xl gap-8 px-4 py-14 lg:grid-cols-12 lg:py-16">
+                <div class="flex flex-col gap-5 lg:col-span-7">
+                    <p class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $regionNames ?: 'Rivers' }}, updated every 15 minutes</p>
+                    <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">What's the river doing right now?</h1>
+                    <p class="max-w-xl text-lg text-ink-2">
+                        Storm overflow spills upstream, the river level and recent rainfall for {{ $totalSpots }} swimming, paddling and fishing spots on {{ $totalRivers }} rivers, read straight from the public monitors.
+                    </p>
+                    <form action="{{ route('search') }}" method="get" role="search" class="flex max-w-xl flex-col gap-2 sm:flex-row">
+                        <label for="hero-search" class="sr-only">Search spots and rivers</label>
+                        <input id="hero-search" type="search" name="q" placeholder="Try {{ $featured->pluck('name')->take(2)->join(' or ') }}"
+                               class="min-h-12 flex-1 rounded-lg border border-line bg-surface px-4 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent">
+                        @if ($regions->isNotEmpty())
+                            <a href="{{ route('regions.show', $regions->first()->slug) }}" class="inline-flex min-h-12 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-surface hover:bg-accent-strong">Browse {{ $regions->first()->name }}</a>
+                        @endif
+                    </form>
+                    @if ($featured->isNotEmpty())
+                        <div class="flex flex-wrap items-center gap-2 text-sm text-muted">
+                            <span>Try:</span>
+                            @foreach ($featured as $spot)
+                                <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" class="rounded-full border border-pill-grey-ring bg-pill-grey-bg px-2.5 py-0.5 text-[13px] font-medium text-pill-grey-text hover:border-muted">{{ $spot->name }}</a>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+                @foreach ($regions->take(1) as $region)
+                    @php
+                        $rain = $region->spots()->map(fn ($spot) => $spot->rainfallLast24HoursMillimetres)->filter(fn ($mm) => $mm !== null)->sort()->values();
+                        $medianRain = $rain->isEmpty() ? null : $rain[intdiv($rain->count(), 2)];
+                    @endphp
+                    <div class="rounded-lg border border-line bg-surface p-6 lg:col-span-5">
+                        <div class="flex items-baseline justify-between">
+                            <span class="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Across {{ $region->name }} now</span>
+                            @if ($region->dataUpdatedAt)
+                                <span class="font-mono text-xs text-muted">{{ $region->dataUpdatedAt->timezone($timezone)->format('H:i') }}</span>
+                            @endif
+                        </div>
+                        <dl class="mt-4 grid grid-cols-2 gap-5">
+                            <div>
+                                <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $region->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $region->dischargingNowCount() }}</dd>
+                                <dt class="mt-1.5 text-sm text-ink-2">{{ \Illuminate\Support\Str::plural('overflow', $region->dischargingNowCount()) }} discharging now <x-help term="discharging_now" /></dt>
+                            </div>
+                            <div>
+                                <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $region->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $region->spotsWithSpillLast24HoursCount() }}</dd>
+                                <dt class="mt-1.5 text-sm text-ink-2">spots with a spill upstream in the last 24h</dt>
+                            </div>
+                            <div>
+                                <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $region->spotsAboveTypicalRange()->count() }}</dd>
+                                <dt class="mt-1.5 text-sm text-ink-2">gauges above their typical range</dt>
+                            </div>
+                            <div>
+                                <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $medianRain === null ? '-' : number_format($medianRain, 1) }}<span class="text-lg"> mm</span></dd>
+                                <dt class="mt-1.5 text-sm text-ink-2">median rainfall, last 24h</dt>
+                            </div>
+                        </dl>
+                        <div class="mt-5 flex flex-wrap justify-between gap-2 border-t border-line pt-4 text-xs text-muted">
+                            <span>{{ number_format($region->monitorCount) }} monitors · {{ $region->gaugeCount }} gauges · {{ $region->rainGaugeCount }} rain gauges</span>
+                            <a href="{{ route('regions.show', $region->slug) }}" class="font-medium text-accent hover:underline">{{ $region->name }} →</a>
+                        </div>
+                    </div>
                 @endforeach
             </div>
         </section>
-    @endforeach
+    </x-slot:hero>
+
+    <section id="how" class="grid gap-8 py-6 lg:grid-cols-12 lg:gap-12">
+        <div class="flex flex-col gap-3 lg:col-span-4">
+            <div class="h-[3px] w-14 rounded bg-accent"></div>
+            <h2 class="font-display text-3xl font-semibold tracking-tight">How to read it</h2>
+            <p class="text-ink-2">Every spot page shows the same three readings. Together they tell you whether the river is likely to be carrying sewage, running high, or about to.</p>
+        </div>
+        <ol class="divide-y divide-line border-y border-line lg:col-span-8">
+            <li class="grid gap-4 py-6 sm:grid-cols-[4.5rem_1fr]">
+                <span class="font-mono text-3xl text-accent">01</span>
+                <div class="flex flex-col gap-2">
+                    <h3 class="font-display text-xl font-semibold">Storm overflows upstream <x-help term="spill" /></h3>
+                    <p class="text-ink-2">Yorkshire Water's monitors report every overflow that is discharging. We trace every monitor upstream of a spot, tributaries included, and summarise the last 48 hours and 30 days.</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        <x-spill-badge :recency="\App\Enums\SpillRecency::DischargingNow" />
+                        <x-spill-badge :recency="\App\Enums\SpillRecency::Within24Hours" />
+                        <x-spill-badge :recency="\App\Enums\SpillRecency::None" />
+                        <x-spill-badge :recency="\App\Enums\SpillRecency::Offline" />
+                    </div>
+                </div>
+            </li>
+            <li class="grid gap-4 py-6 sm:grid-cols-[4.5rem_1fr]">
+                <span class="font-mono text-3xl text-accent">02</span>
+                <div class="flex flex-col gap-2">
+                    <h3 class="font-display text-xl font-semibold">River level and trend <x-help term="level" /></h3>
+                    <p class="text-ink-2">Environment Agency gauges read the river every 15 minutes. The latest reading, the change over 3 hours and where it sits in the gauge's typical range. High and rising means fast, cold water.</p>
+                    <p class="flex items-baseline gap-3"><span class="font-mono text-2xl font-semibold tabular-nums">0.43 m</span><span class="text-sm text-muted">↑ rising · within typical range <x-help term="typical_range" /></span></p>
+                </div>
+            </li>
+            <li class="grid gap-4 py-6 sm:grid-cols-[4.5rem_1fr]">
+                <span class="font-mono text-3xl text-accent">03</span>
+                <div class="flex flex-col gap-2">
+                    <h3 class="font-display text-xl font-semibold">Rainfall nearby <x-help term="rainfall" /></h3>
+                    <p class="text-ink-2">Totals from the nearest rain gauge over 6 hours, 24 hours and 3 days. Rain is what triggers overflows and lifts levels, so it is the earliest signal you get.</p>
+                    <p class="flex items-baseline gap-3"><span class="font-mono text-2xl font-semibold tabular-nums">12.4 mm</span><span class="text-sm text-muted">last 24h · gauge 2.2 km away</span></p>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <section class="py-10">
+        <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div class="flex flex-col gap-3">
+                <div class="h-[3px] w-14 rounded bg-accent"></div>
+                <h2 class="font-display text-3xl font-semibold tracking-tight">Regions</h2>
+            </div>
+            <p class="text-sm text-muted">{{ $regions->count() === 1 ? 'One so far.' : $regions->count().' so far.' }} The same data exists for most of England.</p>
+        </div>
+        <div class="grid gap-5 lg:grid-cols-12">
+            @foreach ($regions as $region)
+                @php
+                    $markers = $region->spots()->map(fn ($spot) => ['lat' => $spot->latitude, 'lng' => $spot->longitude, 'label' => $spot->name, 'kind' => 'spot', 'recency' => $spot->spillRecency->value])->values();
+                @endphp
+                <a href="{{ route('regions.show', $region->slug) }}" class="grid overflow-hidden rounded-lg border border-line bg-surface transition hover:border-muted hover:shadow-sm sm:grid-cols-2 lg:col-span-8">
+                    <div class="flex flex-col gap-4 p-6">
+                        <span class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">Region</span>
+                        <h3 class="font-display text-3xl font-semibold tracking-tight">{{ $region->name }}</h3>
+                        <p class="text-sm text-ink-2">{{ $region->riversByCatchment()->keys()->join(', ', ' and ') }}. {{ $region->rivers->count() }} rivers, source to mouth.</p>
+                        <dl class="grid grid-cols-2 gap-x-5 gap-y-3 text-sm">
+                            <div><dt class="text-muted">Rivers</dt><dd class="font-mono text-xl font-semibold tabular-nums">{{ $region->rivers->count() }}</dd></div>
+                            <div><dt class="text-muted">Spots</dt><dd class="font-mono text-xl font-semibold tabular-nums">{{ $region->spots()->count() }}</dd></div>
+                            <div><dt class="text-muted">Discharging now</dt><dd class="font-mono text-xl font-semibold tabular-nums {{ $region->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $region->dischargingNowCount() }}</dd></div>
+                            <div><dt class="text-muted">Spill in last 24h</dt><dd class="font-mono text-xl font-semibold tabular-nums {{ $region->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $region->spotsWithSpillLast24HoursCount() }} <span class="font-sans text-sm font-normal text-muted">spots</span></dd></div>
+                        </dl>
+                        <span class="inline-flex self-start rounded-lg border border-line px-4 py-2 text-sm font-semibold">Open {{ $region->name }}</span>
+                    </div>
+                    <div class="min-h-72 bg-water" data-map data-map-static data-map-markers="{{ json_encode($markers) }}"></div>
+                </a>
+            @endforeach
+            <div class="flex flex-col gap-3 rounded-lg border border-dashed border-line p-6 lg:col-span-4">
+                <span class="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Next</span>
+                <h3 class="font-display text-2xl font-semibold text-ink-2">More regions</h3>
+                <p class="text-sm text-muted">Storm overflow feeds are published by most English water companies and the Environment Agency covers all of England. Tell us where to add next.</p>
+                <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="text-sm font-semibold text-accent hover:underline">Suggest a river →</a>
+            </div>
+        </div>
+    </section>
+
+    <x-slot:after>
+        <section id="limits" class="bg-ink text-ground dark:bg-surface-2 dark:text-ink">
+            <div class="mx-auto grid max-w-5xl gap-8 px-4 py-14 lg:grid-cols-12">
+                <div class="flex flex-col gap-3 lg:col-span-5">
+                    <div class="h-[3px] w-14 rounded bg-ground dark:bg-ink"></div>
+                    <h2 class="font-display text-3xl font-semibold tracking-tight">What this site does not do</h2>
+                </div>
+                <ul class="grid gap-4 lg:col-span-7">
+                    <li class="flex gap-3"><span class="text-spill">-</span><span>It does not say whether water is safe or clean. Nobody measures that in real time.</span></li>
+                    <li class="flex gap-3"><span class="text-spill">-</span><span>It does not know about spills from monitors that are offline, or from anything the water company does not monitor.</span></li>
+                    <li class="flex gap-3"><span class="text-spill">-</span><span>It does not validate the data. Feeds are near real-time and unchecked. When a feed goes quiet, the page says so.</span></li>
+                </ul>
+            </div>
+        </section>
+    </x-slot:after>
 </x-layouts.app>
