@@ -212,3 +212,15 @@ it('flags rainfall as stale when the rain gauge stops reporting', function () {
 
     expect(app(SpotConditionsService::class)->for($spot)->rainfall->isStale())->toBeTrue();
 });
+
+it('keys cached conditions by the code that wrote them', function () {
+    [$spot] = spotWithUpstream();
+
+    app(SpotConditionsService::class)->for($spot);
+
+    $codeVersion = ConditionsCache::codeVersion();
+
+    expect($codeVersion)->toMatch('/^[0-9a-f]{8}$/')
+        ->and(Cache::has("conditions:v1:{$codeVersion}:spot:{$spot->id}"))->toBeTrue()
+        ->and(Cache::has("conditions:v1:spot:{$spot->id}"))->toBeFalse();
+});

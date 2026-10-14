@@ -171,8 +171,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed.
 - `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL). Ingest and
   positioning commands call `flush()`. The cache stores objects, so any new class reachable from `SpotConditions`
-  must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Use
-  `build()` in tests that change data between calls.
+  must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Keys also
+  carry a hash of those classes' source, so a deploy that changes their shape never reads the old release's entries.
+  Use `build()` in tests that change data between calls.
 - Gauges carry a `unit` (`m` for stage above the gauge datum, `mAOD` for height above sea level). Spots prefer `m`
   gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
 - Stale data: `SpotConditions::overflowDataIsStale()` and `LevelSummary::isStale()` compare the feed timestamp or latest
