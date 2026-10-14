@@ -28,7 +28,7 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $regionNames ?: 'Rivers' }}, updated every 15 minutes</p>
                     <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">What's the river doing right now?</h1>
                     <p class="max-w-xl text-lg text-ink-2">
-                        Storm overflow spills upstream, the river level, recent rainfall and Environment Agency flood warnings for {{ $totalSpots }} swimming, paddling and fishing spots on {{ $totalRivers }} rivers, read straight from the public monitors.
+                        Find details of storm overflows, spills upstream, river levels, recent rainfall and flood warnings for {{ $totalSpots }} swimming, paddling and fishing spots on {{ $totalRivers }} rivers. Pulled straight from the public monitors.
                     </p>
                     <form action="{{ route('search') }}" method="get" role="search" class="flex max-w-xl flex-col gap-2 sm:flex-row">
                         <label for="hero-search" class="sr-only">Search spots and rivers</label>
@@ -150,8 +150,8 @@
                 <h2 class="font-display text-3xl font-semibold tracking-tight">Regions</h2>
             </div>
             <p class="max-w-md text-sm text-muted">
-                {{ $regions->count() === 1 ? 'One so far' : $regions->count().' so far' }}, with more on the way. Storm overflow and river data exists for most of England.
-                <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="font-semibold text-accent hover:underline">Suggest a river →</a>
+                {{ $regions->count() === 1 ? 'One so far' : $regions->count().' so far' }}, with more on the way.
+                <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="font-semibold text-accent hover:underline">Suggest a region/river →</a>
             </p>
         </div>
         <div class="grid gap-5 lg:grid-cols-2">
