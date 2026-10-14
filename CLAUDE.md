@@ -172,6 +172,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
   recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
   (`rivers:centrelines` then `rivers:positions`, which also sets each tributary's `joins_at_metres`).
+- RSS feeds for each spot and river (`spots.feed`, `rivers.feed`, at `.../feed`) come from `ConditionsFeed`: one item when
+  an upstream overflow starts, one when it stops, and one per flood warning in force, over 30 days, capped at 50.
+  Guids are stable per event so readers notify once. The feed routes sit before the spot route, which would otherwise
+  take "feed" as a spot slug. Spot and river pages pass `feed` to the layout for the `<link rel="alternate">`.
 - `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
   green "no spills". Keep that distinction for any new status.
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed, and `Spot::onMainRiver()` wherever spots

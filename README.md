@@ -18,6 +18,8 @@ keep that distinction.
 - Positions every monitor, gauge and spot along the river centreline (from OS Open Rivers), so "upstream" means
   further up the same river rather than just nearby.
 - Shows a 30-day history per spot: minutes of upstream spilling per day and the individual events.
+- Offers an RSS feed per spot and river (`/yorkshire/wharfe/otley/feed`, `/yorkshire/wharfe/feed`): overflows upstream
+  starting and stopping, and flood warnings in force.
 - Serves a page per river (`/yorkshire/wharfe`) and per spot (`/yorkshire/wharfe/otley`), plus a read-only JSON API at
   `/api/v1` built from the same services.
 

@@ -48,7 +48,7 @@ class RiverOverviewService
      *
      * @return array<int, int>
      */
-    private function riverFamilyIds(River $river): array
+    public function riverFamilyIds(River $river): array
     {
         $this->childrenByParent ??= River::query()
             ->whereNotNull('parent_river_id')

@@ -42,7 +42,7 @@
     $osmUrl = sprintf('https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=15/%s/%s', $spot->latitude, $spot->longitude, $spot->latitude, $spot->longitude);
 @endphp
 
-<x-layouts.app :region="$spot->river->region" :title="$spot->name.', '.$spot->river->name.': spills and river level'"
+<x-layouts.app :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$spot->name.', '.$spot->river->name.': spills and river level'"
                :description="'Storm overflow spills upstream of '.$spot->name.' on the '.$spot->river->name.', plus the current river level and trend.'">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -61,7 +61,7 @@
                 @endif
             </p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <button type="button" data-copy-link="{{ url()->current() }}"
                     class="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent"
                     aria-label="Copy a link to this spot">
@@ -72,6 +72,11 @@
                class="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
                 Open in OpenStreetMap
+            </a>
+            <a href="{{ route('spots.feed', [$spot->river->region, $spot->river, $spot]) }}" title="Follow overflows upstream and flood warnings in a feed reader"
+               class="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 11a8 8 0 0 1 8 8"/><path d="M5 5a14 14 0 0 1 14 14"/><circle cx="6" cy="18" r="1.2" fill="currentColor"/></svg>
+                RSS feed
             </a>
         </div>
     </div>

@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'region' => null, 'liveSummary' => null, 'hero' => null, 'after' => null])
+@props(['title' => null, 'description' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null])
 
 @php
     // The live bar shows the summary a page passes (the home page passes every region combined), else the page's
@@ -19,6 +19,9 @@
     <title>{{ $pageTitle }}</title>
     <meta name="description" content="{{ $pageDescription }}">
     <link rel="canonical" href="{{ url()->current() }}">
+    @if ($feed)
+        <link rel="alternate" type="application/rss+xml" title="{{ $pageTitle }}" href="{{ $feed }}">
+    @endif
     <meta property="og:site_name" content="{{ config('app.name') }}">
     <meta property="og:type" content="website">
     <meta property="og:title" content="{{ $pageTitle }}">
