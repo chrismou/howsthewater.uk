@@ -43,7 +43,7 @@ export function initMaps() {
         const layers = [];
 
         if (centreline.length > 1) {
-            layers.push(L.polyline(centreline, { color: '#0284c7', weight: 2, opacity: 0.7 }).addTo(map));
+            layers.push(L.polyline(centreline, { color: '#1f5f8b', weight: 2, opacity: 0.7 }).addTo(map));
         }
 
         markers.forEach((marker) => {

@@ -145,3 +145,10 @@ it('treats search wildcards literally and caps the query length', function () {
     $this->get(route('search', ['q' => '_tley']))->assertOk()->assertSee('Nothing matched');
     $this->get(route('search', ['q' => str_repeat('a', 500)]))->assertOk()->assertSee('Nothing matched');
 });
+
+it('offers a light and dark theme toggle that defaults to light', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('data-theme-toggle', false)
+        ->assertSee('<html lang="en-GB" class="h-full">', false);
+});

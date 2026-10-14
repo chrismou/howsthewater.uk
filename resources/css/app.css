@@ -4,6 +4,117 @@
 @source '../../storage/framework/views/*.php';
 @source '../views/**/*.blade.php';
 
+/* Dark mode is a class on <html>, set from the header toggle and remembered per browser. Light is the default. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Semantic colour tokens. Utilities compile to var(--color-*), so the .dark
+ * block below swaps every token at once without touching the markup.
+ */
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Bricolage Grotesque', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Surfaces and text */
+    --color-ground: #f6f3ec;
+    --color-surface: #fffdf8;
+    --color-surface-2: #f9f6ef;
+    --color-ink: #1b2a33;
+    --color-ink-2: #3a464f;
+    --color-muted: #5b6670;
+    --color-faint: #9aa3aa;
+    --color-line: #ded8cb;
+    --color-line-2: #eee9df;
+
+    /* Accent (river blue) and the two signal colours */
+    --color-accent: #1f5f8b;
+    --color-accent-strong: #174a6e;
+    --color-spill: #d4611f;
+    --color-alert: #b4231f;
+
+    /* Status pills: discharging, recent spill, no spills, neutral */
+    --color-pill-red-bg: #fbe3da;
+    --color-pill-red-text: #8a2e0c;
+    --color-pill-red-ring: #f0b79f;
+    --color-pill-amber-bg: #fbebd1;
+    --color-pill-amber-text: #7a4a08;
+    --color-pill-amber-ring: #efcb8e;
+    --color-pill-green-bg: #ddefe2;
+    --color-pill-green-text: #1f5a36;
+    --color-pill-green-ring: #a9d3b6;
+    --color-pill-grey-bg: #ece8df;
+    --color-pill-grey-text: #5b6670;
+    --color-pill-grey-ring: #d6d0c4;
+
+    /* Stale and offline warnings */
+    --color-warn-bg: #fbebd1;
+    --color-warn-line: #efcb8e;
+    --color-warn-text: #5a3706;
+
+    /* Map water */
+    --color-water: #e9f0f3;
+}
+
+@layer base {
+    .dark {
+        --color-ground: #0f1c24;
+        --color-surface: #16262f;
+        --color-surface-2: #121f27;
+        --color-ink: #e6ecf0;
+        --color-ink-2: #b9c6ce;
+        --color-muted: #9fb0bb;
+        --color-faint: #6b7a85;
+        --color-line: #2e4350;
+        --color-line-2: #223440;
+
+        --color-accent: #7fb6dd;
+        --color-accent-strong: #a9d0ea;
+        --color-spill: #f2a07b;
+        --color-alert: #f28b7d;
+
+        --color-pill-red-bg: #3a1a12;
+        --color-pill-red-text: #f7b9a3;
+        --color-pill-red-ring: #7a3a24;
+        --color-pill-amber-bg: #3a2a10;
+        --color-pill-amber-text: #f3cc7a;
+        --color-pill-amber-ring: #7a5a24;
+        --color-pill-green-bg: #12301f;
+        --color-pill-green-text: #9ed8b0;
+        --color-pill-green-ring: #2e6a45;
+        --color-pill-grey-bg: #223440;
+        --color-pill-grey-text: #b9c6ce;
+        --color-pill-grey-ring: #3b4f5b;
+
+        --color-warn-bg: #2a1e10;
+        --color-warn-line: #92400e;
+        --color-warn-text: #fcd9a6;
+
+        --color-water: #182a34;
+    }
+
+    html {
+        color-scheme: light;
+    }
+
+    html.dark {
+        color-scheme: dark;
+    }
+
+    /* Leaflet draws its own chrome, so it needs the tokens applied by hand. */
+    .dark .leaflet-tile {
+        filter: brightness(0.72) saturate(0.7);
+    }
+
+    .dark .leaflet-popup-content-wrapper,
+    .dark .leaflet-popup-tip {
+        background: var(--color-surface);
+        color: var(--color-ink);
+    }
+
+    .dark .leaflet-control-zoom a,
+    .dark .leaflet-control-attribution {
+        background: var(--color-surface);
+        color: var(--color-ink);
+    }
 }

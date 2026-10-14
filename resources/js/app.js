@@ -6,3 +6,6 @@ initSparklines();
 import { initNavMenus } from './nav';
 
 initNavMenus();
+import { initThemeToggle } from './theme';
+
+initThemeToggle();
