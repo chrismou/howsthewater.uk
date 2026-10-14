@@ -2,10 +2,12 @@
 
 namespace App\Services\Conditions;
 
+use App\Data\FloodWarningSummary;
 use App\Data\SpotConditions;
 use App\Data\UpstreamMonitorSummary;
 use App\Enums\OverflowStatus;
 use App\Enums\SpillRecency;
+use App\Models\FloodWarning;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
@@ -14,7 +16,8 @@ use Illuminate\Support\Collection;
 
 /**
  * Builds the full picture for a spot: upstream overflow activity, recent
- * spill history and the nearest gauge's level. Shared by web and API.
+ * spill history, the nearest gauge's level, nearby rainfall and any flood
+ * warnings in force. Shared by web and API.
  */
 class SpotConditionsService
 {
@@ -71,7 +74,26 @@ class SpotConditionsService
             level: $spot->gaugeStation !== null ? $this->levelSummariser->summarise($spot->gaugeStation) : null,
             rainfall: $spot->rainfallStation !== null ? $this->rainfallSummariser->summarise($spot, $spot->rainfallStation) : null,
             dataUpdatedAt: $monitors->max(fn (UpstreamMonitorSummary $summary) => $summary->monitor->source_updated_at),
+            floodWarnings: $this->floodWarnings($spot),
         );
+    }
+
+    /**
+     * Warnings in force for the flood areas covering the spot, most severe
+     * first. Queried rather than loaded onto the spot, which is cached.
+     *
+     * @return Collection<int, FloodWarningSummary>
+     */
+    private function floodWarnings(Spot $spot): Collection
+    {
+        return FloodWarning::query()
+            ->whereHas('floodArea.spots', fn ($query) => $query->whereKey($spot->id))
+            ->with('floodArea')
+            ->orderBy('severity_level')
+            ->get()
+            ->map(fn (FloodWarning $warning) => FloodWarningSummary::fromWarning($warning))
+            ->values()
+            ->toBase();
     }
 
     /**

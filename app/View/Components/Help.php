@@ -56,6 +56,10 @@ class Help extends Component
             'label' => 'Where is rainfall measured?',
             'text' => 'Totals from the Environment Agency rain gauge nearest this spot, summed from its 15 minute readings. Rain further up the catchment may differ, and heavy rain is what triggers overflows.',
         ],
+        'flood_warning' => [
+            'label' => 'Where do flood warnings come from?',
+            'text' => 'The Environment Agency issues flood alerts (flooding is possible), flood warnings (flooding is expected) and severe flood warnings (danger to life) for areas along each river. We show any in force for an area covering this stretch, checked every 15 minutes, in the Environment Agency\'s own words.',
+        ],
         'stale' => [
             'label' => 'What does out of date mean?',
             'text' => 'The feed behind this figure has not updated for over six hours. The number shown is the last one received, not the current state.',

@@ -1,10 +1,11 @@
-@props(['title' => null, 'description' => null, 'region' => null, 'hero' => null, 'after' => null])
+@props(['title' => null, 'description' => null, 'region' => null, 'liveSummary' => null, 'hero' => null, 'after' => null])
 
 @php
-    // The live bar shows the page's region, or the first region added on pages that have none.
+    // The live bar shows the summary a page passes (the home page passes every region combined), else the page's
+    // region, or the first region added on pages that have none.
     $allRegions = \App\Models\Region::query()->orderBy('name')->get();
     $liveRegion = $region ?? $allRegions->sortBy('id')->first();
-    $liveSummary = $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
+    $liveSummary ??= $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
 @endphp
 <!DOCTYPE html>
 <html lang="en-GB" class="h-full">

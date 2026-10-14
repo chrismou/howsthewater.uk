@@ -76,6 +76,10 @@
         </div>
     </div>
 
+    @if ($conditions->floodWarnings->isNotEmpty())
+        <x-flood-warnings :warnings="$conditions->floodWarnings" />
+    @endif
+
     <section class="mb-8 rounded-lg border border-line bg-surface p-5">
         <div class="flex flex-wrap items-center gap-3">
             <x-spill-badge :recency="$conditions->spillRecency" :stale="$conditions->overflowDataIsStale()" class="text-sm px-3 py-1" />

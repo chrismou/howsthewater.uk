@@ -208,6 +208,12 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
 - Rainfall: the same API's tipping bucket rain gauges, `ingest:rainfall`. Each spot links to the nearest gauge within
   20 km (`LinkNearestRainfallStations`, also run by `rivers:positions`); totals are sums of 15 minute readings.
+- Flood alerts and warnings: the same API's `/id/floods`, `ingest:floods`. `SyncFloodAreas` links each spot to the flood
+  areas whose outline comes within 1 km and whose `riverOrSea` names the spot's river (`River::matchesWatercourse()`).
+  The whole national feed is read every 15 minutes and `flood_warnings` is replaced with what is in force for linked
+  areas (severity 1-3; level 4 "no longer in force" is dropped). EA flood times carry no offset and are UK local time.
+  `FloodWarningSummary::isStale()` flags a warning no poll has confirmed for 6 hours. The area search is slow (a few
+  seconds per spot), so it only runs for spots with a null `flood_areas_searched_at`, or all spots with `--areas`.
 - River centrelines: OS Open Rivers GeoPackage at `OS_OPEN_RIVERS_PATH` (default `storage/app/private/oprvrs_gb.gpkg`,
   gitignored, download from the OS Data Hub). OpenStreetMap via Overpass is a fallback (`--source=osm`) but is unreliable.
   Names repeat (becks across Yorkshire, and Calder, Don, Derwent, Ouse and Esk across Britain), so `OpenRiversReader`
@@ -217,8 +223,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - The Environment Agency also names rivers nationally, so `SyncGaugeStations` drops stations more than 2 km from the
   centreline. Rivers are only searched for gauges once they have a centreline.
 - New rivers, spots and monitors need no manual commands. Rivers record `gauges_discovered_at` and spots
-  `rain_gauges_searched_at`; the 15-minute `ingest:gauges` and `ingest:rainfall` search anything still null, and
-  `ingest:overflows` positions monitors it sees for the first time. `--stations` re-checks everything (weekly).
+  `rain_gauges_searched_at` and `flood_areas_searched_at`; the 15-minute `ingest:gauges`, `ingest:rainfall` and
+  `ingest:floods` search anything still null, and `ingest:overflows` positions monitors it sees for the first time.
+  `--stations` (and `--areas` for floods) re-checks everything (weekly).
 - No API keys are needed. Map tiles are OpenStreetMap.
 
 ## Local setup
@@ -228,6 +235,7 @@ php artisan migrate --seed
 php artisan ingest:overflows
 php artisan ingest:gauges --stations
 php artisan ingest:rainfall --stations
+php artisan ingest:floods
 php artisan rivers:centrelines
 php artisan rivers:positions
 ```

@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\FloodArea;
+use App\Models\FloodWarning;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
@@ -135,4 +137,24 @@ it('returns a region summary', function () {
         ->assertJsonPath('data.rivers.0.spots.0.slug', 'otley')
         ->assertJsonPath('data.rivers.0.spots.0.spills.recency', 'discharging_now')
         ->assertJsonPath('data.rivers.0.spots.0.url', route('api.v1.spots.show', [$region, $river, $spot]));
+});
+
+it('includes flood warnings in force in spot conditions and the region summary', function () {
+    [$region, $river, $spot] = apiSpot(['slug' => 'ilkley']);
+    $area = FloodArea::factory()->hasAttached($spot)->create(['code' => '122WAF942']);
+    FloodWarning::factory()->create(['flood_area_id' => $area->id]);
+
+    $this->getJson(route('api.v1.spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertJsonPath('data.flood_warnings.0.area.code', '122WAF942')
+        ->assertJsonPath('data.flood_warnings.0.severity', 'Flood alert')
+        ->assertJsonPath('data.flood_warnings.0.severity_level', 3)
+        ->assertJsonPath('data.flood_warnings.0.stale', false)
+        ->assertJsonPath('data.flood_warnings.0.url', 'https://check-for-flooding.service.gov.uk/target-area/122WAF942');
+
+    $this->getJson(route('api.v1.regions.show', $region))
+        ->assertOk()
+        ->assertJsonPath('data.flood_warnings.0.area.code', '122WAF942')
+        ->assertJsonPath('data.flood_warnings.0.spots.0.slug', 'ilkley')
+        ->assertJsonPath('data.rivers.0.spots.0.flood_warnings.0.severity_level', 3);
 });

@@ -62,6 +62,7 @@ class SpotConditionsResource extends JsonResource
                 'measured_at' => $this->rainfall->latestAt?->toIso8601String(),
                 'stale' => $this->rainfall->isStale(),
             ],
+            'flood_warnings' => FloodWarningResource::collection($this->floodWarnings),
             'upstream_monitors' => OverflowMonitorResource::collection($this->upstreamMonitors),
             'history' => [
                 'days' => $this->dailyHistory->map(fn ($day) => [

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Data\FloodWarningSummary;
 use App\Data\RegionSummary;
 use App\Data\RiverSummary;
 use App\Data\SpotSummary;
@@ -30,6 +31,10 @@ class RegionSummaryResource extends JsonResource
             'data_updated_at' => $this->dataUpdatedAt?->toIso8601String(),
             'data_stale' => $this->dataIsStale(),
             'generated_at' => $this->generatedAt->toIso8601String(),
+            'flood_warnings' => $this->floodWarnings()->map(fn (array $entry) => [
+                ...(new FloodWarningResource($entry['warning']))->toArray($request),
+                'spots' => $entry['spots']->map(fn (SpotSummary $spot) => ['slug' => $spot->slug, 'river' => $spot->riverSlug]),
+            ]),
             'rivers' => $this->rivers->map(fn (RiverSummary $river) => [
                 'slug' => $river->slug,
                 'name' => $river->name,
@@ -61,11 +66,22 @@ class RegionSummaryResource extends JsonResource
                         'stale' => $spot->levelIsStale(),
                     ],
                     'rainfall_last_24_hours_mm' => $spot->rainfallLast24HoursMillimetres,
+                    'flood_warnings' => $this->spotFloodWarnings($spot),
                     'data_updated_at' => $spot->dataUpdatedAt?->toIso8601String(),
                     'data_stale' => $spot->overflowDataIsStale(),
                     'url' => route('api.v1.spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]),
                 ]),
             ]),
         ];
+    }
+
+    /**
+     * @return array<int, array{area: string, severity_level: int, severity: string}>
+     */
+    private function spotFloodWarnings(SpotSummary $spot): array
+    {
+        return $spot->floodWarnings
+            ->map(fn (FloodWarningSummary $warning) => ['area' => $warning->areaCode, 'severity_level' => $warning->severity->value, 'severity' => $warning->severity->label()])
+            ->all();
     }
 }

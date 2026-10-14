@@ -12,6 +12,8 @@ keep that distinction.
 - Polls Yorkshire Water's near real-time storm overflow feed (via the Stream open data hub) every 15 minutes and builds
   a spill history, since the feed only exposes each monitor's latest event.
 - Polls Environment Agency river level gauges every 15 minutes.
+- Polls the Environment Agency's flood alerts and warnings every 15 minutes and shows any in force for a flood area
+  covering a spot on its page, in the live bar and on the home and region pages, with a link to GOV.UK.
 - Positions every monitor, gauge and spot along the river centreline (from OS Open Rivers), so "upstream" means
   further up the same river rather than just nearby.
 - Shows a 30-day history per spot: minutes of upstream spilling per day and the individual events.
@@ -82,6 +84,7 @@ Run these once, in this order:
 php artisan ingest:overflows          # all monitors and their latest spill events
 php artisan ingest:gauges --stations  # discover gauges on each river, backfill 7 days of readings
 php artisan ingest:rainfall --stations # find rain gauges near spots, link the nearest, backfill 7 days
+php artisan ingest:floods             # link spots to EA flood areas (slow: one request per spot), fetch warnings
 php artisan rivers:centrelines        # as above
 php artisan rivers:positions          # place monitors, gauges and spots along each river
 ```
@@ -103,6 +106,8 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 | `ingest:gauges --stations` | Weekly, Monday 03:00 | Re-check every river for new or renamed gauge stations |
 | `ingest:rainfall` | Every 15 minutes | Fetch new rainfall totals, and find rain gauges for any spot never searched |
 | `ingest:rainfall --stations` | Weekly, Monday 03:15 | Refresh the rain gauges near spots and relink each spot to the nearest |
+| `ingest:floods` | Every 15 minutes | Fetch the flood alerts and warnings in force, and link any spot never searched to its flood areas |
+| `ingest:floods --areas` | Weekly, Monday 03:45 | Re-check the flood areas covering every spot |
 | `rivers:positions` | Daily, 03:30 | Position any newly added monitors, gauges or spots |
 
 `rivers:centrelines` only needs running when a river is added or the OS data is updated.

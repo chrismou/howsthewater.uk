@@ -14,10 +14,11 @@ use Illuminate\Support\Collection;
 final readonly class RegionSummary
 {
     /**
+     * @param  string|null  $slug  Null for the combined summary of every region
      * @param  Collection<int, RiverSummary>  $rivers  In seed order, which runs through the catchments
      */
     public function __construct(
-        public string $slug,
+        public ?string $slug,
         public string $name,
         public Collection $rivers,
         public int $monitorCount,
@@ -27,6 +28,32 @@ final readonly class RegionSummary
         public ?Carbon $dataUpdatedAt,
         public Carbon $generatedAt,
     ) {
+    }
+
+    /**
+     * Every region's rivers and counts in one summary, for pages that cover
+     * the whole site rather than one region.
+     *
+     * @param  Collection<int, RegionSummary>  $summaries
+     */
+    public static function combine(Collection $summaries, string $name = 'All regions'): self
+    {
+        return new self(
+            slug: null,
+            name: $name,
+            rivers: $summaries->flatMap(fn (RegionSummary $summary) => $summary->rivers)->values(),
+            monitorCount: $summaries->sum('monitorCount'),
+            offlineMonitorCount: $summaries->sum('offlineMonitorCount'),
+            gaugeCount: $summaries->sum('gaugeCount'),
+            rainGaugeCount: $summaries->sum('rainGaugeCount'),
+            dataUpdatedAt: $summaries->max('dataUpdatedAt'),
+            generatedAt: $summaries->min('generatedAt') ?? now(),
+        );
+    }
+
+    public function isCombined(): bool
+    {
+        return $this->slug === null;
     }
 
     /**
@@ -94,6 +121,42 @@ final readonly class RegionSummary
             ->sortByDesc('rainfallLast24HoursMillimetres')
             ->take($limit)
             ->values();
+    }
+
+    /**
+     * Each flood alert and warning in force across the region, most severe
+     * first, with the spots it covers.
+     *
+     * @return Collection<int, array{warning: FloodWarningSummary, spots: Collection<int, SpotSummary>}>
+     */
+    public function floodWarnings(): Collection
+    {
+        $spots = $this->spots();
+
+        return $spots
+            ->flatMap(fn (SpotSummary $spot) => $spot->floodWarnings)
+            ->unique('areaCode')
+            ->sortBy(fn (FloodWarningSummary $warning) => $warning->severity->value)
+            ->map(fn (FloodWarningSummary $warning) => [
+                'warning' => $warning,
+                'spots' => $spots->filter(fn (SpotSummary $spot) => $spot->floodWarnings->contains('areaCode', $warning->areaCode))->values(),
+            ])
+            ->values();
+    }
+
+    /**
+     * The median 24 hour rainfall across spots with a rain gauge, so one
+     * downpour does not stand for the whole region.
+     */
+    public function medianRainfallLast24HoursMillimetres(): ?float
+    {
+        $rain = $this->spots()
+            ->map(fn (SpotSummary $spot) => $spot->rainfallLast24HoursMillimetres)
+            ->filter(fn (?float $millimetres) => $millimetres !== null)
+            ->sort()
+            ->values();
+
+        return $rain->isEmpty() ? null : $rain[intdiv($rain->count(), 2)];
     }
 
     public function silentGaugeCount(): int

@@ -68,6 +68,8 @@
         </div>
     @endif
 
+    <x-flood-warning-notice :summary="$summary" />
+
     <div class="relative mb-10">
         <div
             class="h-[420px] w-full rounded-lg border border-line"

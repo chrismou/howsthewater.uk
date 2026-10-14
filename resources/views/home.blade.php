@@ -1,13 +1,16 @@
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
-    $totalSpots = $regions->sum(fn ($region) => $region->spots()->count());
-    $totalRivers = $regions->sum(fn ($region) => $region->rivers->count());
+    $allRegions = \App\Data\RegionSummary::combine($regions);
+    $totalSpots = $allRegions->spots()->count();
+    $totalRivers = $allRegions->rivers->count();
+    $medianRain = $allRegions->medianRainfallLast24HoursMillimetres();
     $regionNames = $regions->pluck('name')->join(', ', ' and ');
     $companyNames = \App\Models\Region::query()->orderBy('name')->get()->flatMap->waterCompanies()->unique()->join(', ', ' and ') ?: 'Water company';
 @endphp
 
 <x-layouts.app :title="'Upstream spills, river levels and rainfall for rivers in '.$regionNames"
-               :description="'Live storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on rivers in '.$regionNames.', read from the public monitors every 15 minutes.'">
+               :description="'Live storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on rivers in '.$regionNames.', read from the public monitors every 15 minutes.'"
+               :live-summary="$allRegions">
     <x-slot:hero>
         <section class="relative overflow-hidden border-b border-line bg-surface">
             <svg aria-hidden="true" class="pointer-events-none absolute inset-0 h-full w-full text-accent" viewBox="0 0 1280 520" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-opacity="0.12" stroke-width="1.2">
@@ -31,9 +34,7 @@
                         <label for="hero-search" class="sr-only">Search spots and rivers</label>
                         <input id="hero-search" type="search" name="q" placeholder="Try {{ $featured->pluck('name')->take(2)->join(' or ') }}"
                                class="min-h-12 flex-1 rounded-lg border border-line bg-surface px-4 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent">
-                        @if ($regions->isNotEmpty())
-                            <a href="{{ route('regions.show', $regions->first()->slug) }}" class="inline-flex min-h-12 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-surface hover:bg-accent-strong">Browse {{ $regions->first()->name }}</a>
-                        @endif
+                        <button type="submit" class="inline-flex min-h-12 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-surface hover:bg-accent-strong">Search</button>
                     </form>
                     @if ($featured->isNotEmpty())
                         <div class="flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -44,45 +45,55 @@
                         </div>
                     @endif
                 </div>
-                @foreach ($regions->take(1) as $region)
-                    @php
-                        $rain = $region->spots()->map(fn ($spot) => $spot->rainfallLast24HoursMillimetres)->filter(fn ($mm) => $mm !== null)->sort()->values();
-                        $medianRain = $rain->isEmpty() ? null : $rain[intdiv($rain->count(), 2)];
-                    @endphp
-                    <div class="rounded-lg border border-line bg-surface p-6 lg:col-span-5">
-                        <div class="flex items-baseline justify-between">
-                            <span class="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Across {{ $region->name }} now</span>
-                            @if ($region->dataUpdatedAt)
-                                <span class="font-mono text-xs text-muted">{{ $region->dataUpdatedAt->timezone($timezone)->format('H:i') }}</span>
-                            @endif
-                        </div>
-                        <dl class="mt-4 grid grid-cols-2 gap-5">
-                            <div>
-                                <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $region->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $region->dischargingNowCount() }}</dd>
-                                <dt class="mt-1.5 text-sm text-ink-2">{{ \Illuminate\Support\Str::plural('overflow', $region->dischargingNowCount()) }} discharging now <x-help term="discharging_now" /></dt>
-                            </div>
-                            <div>
-                                <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $region->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $region->spotsWithSpillLast24HoursCount() }}</dd>
-                                <dt class="mt-1.5 text-sm text-ink-2">spots with a spill upstream in the last 24h</dt>
-                            </div>
-                            <div>
-                                <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $region->spotsAboveTypicalRange()->count() }}</dd>
-                                <dt class="mt-1.5 text-sm text-ink-2">gauges above their typical range</dt>
-                            </div>
-                            <div>
-                                <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $medianRain === null ? '-' : number_format($medianRain, 1) }}<span class="text-lg"> mm</span></dd>
-                                <dt class="mt-1.5 text-sm text-ink-2">median rainfall, last 24h</dt>
-                            </div>
-                        </dl>
-                        <div class="mt-5 flex flex-wrap justify-between gap-2 border-t border-line pt-4 text-xs text-muted">
-                            <span>{{ number_format($region->monitorCount) }} monitors · {{ $region->gaugeCount }} gauges · {{ $region->rainGaugeCount }} rain gauges</span>
-                            <a href="{{ route('regions.show', $region->slug) }}" class="font-medium text-accent hover:underline">{{ $region->name }} →</a>
-                        </div>
+                <div class="rounded-lg border border-line bg-surface p-6 lg:col-span-5">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Across all rivers now</span>
+                        @if ($allRegions->dataUpdatedAt)
+                            <span class="font-mono text-xs text-muted">{{ $allRegions->dataUpdatedAt->timezone($timezone)->format('H:i') }}</span>
+                        @endif
                     </div>
-                @endforeach
+                    <dl class="mt-4 grid grid-cols-2 gap-5">
+                        <div>
+                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $allRegions->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $allRegions->dischargingNowCount() }}</dd>
+                            <dt class="mt-1.5 text-sm text-ink-2">{{ \Illuminate\Support\Str::plural('overflow', $allRegions->dischargingNowCount()) }} discharging now <x-help term="discharging_now" /></dt>
+                        </div>
+                        <div>
+                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $allRegions->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $allRegions->spotsWithSpillLast24HoursCount() }}</dd>
+                            <dt class="mt-1.5 text-sm text-ink-2">spots with a spill upstream in the last 24h</dt>
+                        </div>
+                        <div>
+                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $allRegions->spotsAboveTypicalRange()->count() }}</dd>
+                            <dt class="mt-1.5 text-sm text-ink-2">gauges above their typical range</dt>
+                        </div>
+                        <div>
+                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $medianRain === null ? '-' : number_format($medianRain, 1) }}<span class="text-lg"> mm</span></dd>
+                            <dt class="mt-1.5 text-sm text-ink-2">median rainfall, last 24h</dt>
+                        </div>
+                    </dl>
+                    <ul class="mt-5 divide-y divide-line-2 border-t border-line text-sm">
+                        @foreach ($regions as $region)
+                            <li>
+                                <a href="{{ route('regions.show', $region->slug) }}" class="group flex items-baseline justify-between gap-3 py-2">
+                                    <span class="font-semibold group-hover:underline">{{ $region->name }}</span>
+                                    <span class="text-muted">
+                                        <span class="font-mono font-semibold {{ $region->dischargingNowCount() > 0 ? 'text-alert' : 'text-ink' }}">{{ $region->dischargingNowCount() }}</span> discharging ·
+                                        <span class="font-mono">{{ $region->spots()->count() }}</span> spots <span class="text-accent">→</span>
+                                    </span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                    <p class="border-t border-line pt-3 text-xs text-muted">{{ number_format($allRegions->monitorCount) }} monitors · {{ $allRegions->gaugeCount }} gauges · {{ $allRegions->rainGaugeCount }} rain gauges</p>
+                </div>
             </div>
         </section>
     </x-slot:hero>
+
+    <div id="flood-warnings">
+        @foreach ($regions as $region)
+            <x-flood-warning-notice :summary="$region" :spot-limit="5" link-region />
+        @endforeach
+    </div>
 
     <section id="how" class="grid gap-8 py-6 lg:grid-cols-12 lg:gap-12">
         <div class="flex flex-col gap-3 lg:col-span-4">

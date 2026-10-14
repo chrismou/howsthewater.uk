@@ -2,6 +2,8 @@
 
 namespace App\Services\EnvironmentAgency;
 
+use App\Data\FloodAreaData;
+use App\Data\FloodWarningData;
 use App\Data\GaugeReadingData;
 use App\Data\GaugeStationData;
 use App\Data\RainfallStationData;
@@ -11,8 +13,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Reads river level stations and readings from the Environment Agency's
- * real-time flood monitoring API (open data, no key required).
+ * Reads river level and rain gauges, their readings, and flood alerts and
+ * warnings from the Environment Agency's real-time flood monitoring API
+ * (open data, no key required).
  */
 class FloodMonitoringClient
 {
@@ -81,6 +84,48 @@ class FloodMonitoringClient
         return collect($items)
             ->filter(fn (array $item) => isset($item['dateTime'], $item['value']))
             ->map(fn (array $item) => GaugeReadingData::fromEnvironmentAgency($item))
+            ->values();
+    }
+
+    /**
+     * Flood alert and warning areas whose outline comes within a radius of a point.
+     *
+     * @return Collection<int, FloodAreaData>
+     */
+    public function floodAreasNear(float $latitude, float $longitude, float $radiusKm): Collection
+    {
+        /** @var array<int, array<string, mixed>> $items */
+        $items = $this->request()
+            ->get($this->url('id/floodAreas'), [
+                'lat' => $latitude,
+                'long' => $longitude,
+                'dist' => $radiusKm,
+                '_limit' => 500,
+            ])
+            ->throw()
+            ->json('items', []);
+
+        return collect($items)
+            ->map(fn (array $item) => FloodAreaData::fromEnvironmentAgency($item))
+            ->values();
+    }
+
+    /**
+     * Every flood alert and warning in England issued in the last 24 hours,
+     * including those since lifted. Usually a few dozen items at most.
+     *
+     * @return Collection<int, FloodWarningData>
+     */
+    public function floodWarnings(): Collection
+    {
+        /** @var array<int, array<string, mixed>> $items */
+        $items = $this->request()
+            ->get($this->url('id/floods'))
+            ->throw()
+            ->json('items', []);
+
+        return collect($items)
+            ->map(fn (array $item) => FloodWarningData::fromEnvironmentAgency($item))
             ->values();
     }
 

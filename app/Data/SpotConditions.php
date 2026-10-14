@@ -21,6 +21,7 @@ final readonly class SpotConditions
      * @param  Collection<int, UpstreamMonitorSummary>  $upstreamMonitors  Nearest upstream first
      * @param  Collection<int, SpillEvent>  $recentSpillEvents  Most recent first, within the history window
      * @param  Collection<int, SpillHistoryDay>  $dailyHistory  Oldest day first
+     * @param  Collection<int, FloodWarningSummary>  $floodWarnings  Most severe first
      */
     public function __construct(
         public Spot $spot,
@@ -35,6 +36,7 @@ final readonly class SpotConditions
         public ?LevelSummary $level,
         public ?RainfallSummary $rainfall,
         public ?Carbon $dataUpdatedAt,
+        public Collection $floodWarnings,
     ) {
     }
 

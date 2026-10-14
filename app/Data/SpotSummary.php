@@ -5,6 +5,7 @@ namespace App\Data;
 use App\Enums\LevelTrend;
 use App\Enums\SpillRecency;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Everything a listing needs to say about a spot, as plain values. Built
@@ -13,6 +14,9 @@ use Illuminate\Support\Carbon;
  */
 final readonly class SpotSummary
 {
+    /**
+     * @param  Collection<int, FloodWarningSummary>  $floodWarnings  Most severe first
+     */
     public function __construct(
         public int $id,
         public string $name,
@@ -39,6 +43,7 @@ final readonly class SpotSummary
         public ?string $gaugeLabel,
         public ?float $rainfallLast24HoursMillimetres,
         public ?Carbon $rainfallAt,
+        public Collection $floodWarnings,
     ) {
     }
 
@@ -73,6 +78,7 @@ final readonly class SpotSummary
             gaugeLabel: $level?->station->label,
             rainfallLast24HoursMillimetres: $conditions->rainfall?->hasReadings() ? $conditions->rainfall->last24HoursMillimetres : null,
             rainfallAt: $conditions->rainfall?->latestAt,
+            floodWarnings: $conditions->floodWarnings,
         );
     }
 

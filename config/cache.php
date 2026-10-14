@@ -1,5 +1,6 @@
 <?php
 
+use App\Data\FloodWarningSummary;
 use App\Data\LevelSummary;
 use App\Data\RainfallSummary;
 use App\Data\RegionSummary;
@@ -8,6 +9,7 @@ use App\Data\SpillHistoryDay;
 use App\Data\SpotConditions;
 use App\Data\SpotSummary;
 use App\Data\UpstreamMonitorSummary;
+use App\Enums\FloodSeverity;
 use App\Enums\LevelTrend;
 use App\Enums\OverflowStatus;
 use App\Enums\SpillRecency;
@@ -157,6 +159,7 @@ return [
     */
 
     'serializable_classes' => [
+        FloodWarningSummary::class,
         LevelSummary::class,
         RainfallSummary::class,
         RegionSummary::class,
@@ -165,6 +168,7 @@ return [
         SpotConditions::class,
         SpotSummary::class,
         UpstreamMonitorSummary::class,
+        FloodSeverity::class,
         LevelTrend::class,
         OverflowStatus::class,
         SpillRecency::class,

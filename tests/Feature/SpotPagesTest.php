@@ -1,5 +1,8 @@
 <?php
 
+use App\Enums\FloodSeverity;
+use App\Models\FloodArea;
+use App\Models\FloodWarning;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
@@ -283,16 +286,68 @@ it('credits the water companies that cover the regions', function () {
         ->assertSee('rivers in Yorkshire and North East');
 });
 
-it('keeps the first region added as the default once there are several', function () {
-    spotWithUrl(['river_metres' => null]);
+it('totals every region on the home page and keeps the first region added as the default elsewhere', function () {
+    [, $river] = spotWithUrl(['river_metres' => 50000]);
+    $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 45000]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $monitor->id]);
     $later = Region::factory()->create(['name' => 'Avon', 'slug' => 'avon', 'overflow_feeds' => ['wessex_water']]);
-    Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $later->id, 'name' => 'River Avon'])->id, 'river_metres' => null]);
+    $avon = River::factory()->create(['region_id' => $later->id, 'name' => 'River Avon']);
+    Spot::factory()->create(['river_id' => $avon->id, 'river_metres' => 50000]);
+    $avonMonitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $avon->id, 'river_metres' => 45000]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $avonMonitor->id]);
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('Browse Yorkshire')
-        ->assertSee('Across Yorkshire now')
+        ->assertSee('Across all rivers now')
+        ->assertDontSee('Browse Yorkshire')
+        ->assertSeeInOrder(['data-live-bar', 'All regions', '>2</span> overflows discharging now'], false)
+        ->assertSeeInOrder(['Yorkshire', '/avon"'], false)
         ->assertSee('Open Avon');
 
+    $this->get(route('search', ['q' => 'x']))
+        ->assertOk()
+        ->assertSeeInOrder(['data-live-bar', 'Yorkshire', '>1</span> overflow discharging now'], false);
+
     $this->get(route('regions.show', $later))->assertOk()->assertSee('1 river and 1 spots', false);
+});
+
+it('shows flood warnings on the spot, region and home pages and in the live bar', function () {
+    [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley'], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
+    $area = FloodArea::factory()->hasAttached($spot)->create(['code' => '122WAF943', 'label' => 'Lower River Wharfe']);
+    FloodWarning::factory()->severity(FloodSeverity::FloodWarning)->create(['flood_area_id' => $area->id, 'message' => 'Flooding is expected on the Wharfe.']);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSeeInOrder(['Flood warning in force', 'Flooding is expected. Immediate action required.', 'Lower River Wharfe'])
+        ->assertSee('Flooding is expected on the Wharfe.')
+        ->assertSee('https://check-for-flooding.service.gov.uk/target-area/122WAF943');
+
+    $this->get(route('regions.show', $region))
+        ->assertOk()
+        ->assertSee('id="flood-warnings"', false)
+        ->assertSeeInOrder(['Flood warning', 'Lower River Wharfe', 'Covers', 'Otley'])
+        ->assertSee('1 flood warning in force"', false);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSeeInOrder(['Environment Agency flood warning in', 'href="'.route('regions.show', $region).'"', 'Yorkshire'], false);
+});
+
+it('shows no flood warning blocks when none are in force', function () {
+    [$region, $river, $spot] = spotWithUrl();
+    FloodArea::factory()->hasAttached($spot)->create();
+
+    $this->get(route('regions.show', $region))->assertOk()->assertDontSee('id="flood-warnings"', false)->assertDontSee('in force');
+    $this->get(route('home'))->assertOk()->assertDontSee('Environment Agency flood');
+    $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertDontSee('aria-label="Flood warnings"', false);
+});
+
+it('shortens long flood warning spot lists on the home page but not the region page', function () {
+    [$region, $river, $spot] = spotWithUrl();
+    $spots = Spot::factory()->count(6)->create(['river_id' => $river->id]);
+    $area = FloodArea::factory()->hasAttached($spots->push($spot))->create();
+    FloodWarning::factory()->create(['flood_area_id' => $area->id]);
+
+    $this->get(route('home'))->assertOk()->assertSee('and 2 more');
+    $this->get(route('regions.show', $region))->assertOk()->assertDontSee('and 2 more');
 });

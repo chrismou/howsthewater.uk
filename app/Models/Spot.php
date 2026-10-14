@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Database\Factories\SpotFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -15,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $gauge_station_id
  * @property int|null $rainfall_station_id
  * @property Carbon|null $rain_gauges_searched_at
+ * @property Carbon|null $flood_areas_searched_at
  * @property string $name
  * @property string $slug
  * @property string|null $description
@@ -28,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property-read River $river
  * @property-read GaugeStation|null $gaugeStation
  * @property-read RainfallStation|null $rainfallStation
+ * @property-read Collection<int, FloodArea> $floodAreas
  */
 class Spot extends Model
 {
@@ -39,6 +43,7 @@ class Spot extends Model
         'gauge_station_id',
         'rainfall_station_id',
         'rain_gauges_searched_at',
+        'flood_areas_searched_at',
         'name',
         'slug',
         'description',
@@ -57,6 +62,7 @@ class Spot extends Model
             'is_published' => 'boolean',
             'is_featured' => 'boolean',
             'rain_gauges_searched_at' => 'datetime',
+            'flood_areas_searched_at' => 'datetime',
         ];
     }
 
@@ -81,6 +87,12 @@ class Spot extends Model
     public function rainfallStation(): BelongsTo
     {
         return $this->belongsTo(RainfallStation::class);
+    }
+
+    /** @return BelongsToMany<FloodArea, $this> */
+    public function floodAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(FloodArea::class);
     }
 
     /**
