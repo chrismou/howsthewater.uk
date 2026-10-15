@@ -9,8 +9,8 @@ class RegionSeeder extends Seeder
 {
     /**
      * Coastal bathing waters belong to the region whose districts list
-     * theirs. Redcar and Cleveland is left out of Yorkshire: its beaches
-     * are Northumbrian Water's, for a future North East region.
+     * theirs. Redcar and Cleveland is in the North East, not Yorkshire: its
+     * beaches are Northumbrian Water's.
      */
     public function run(): void
     {
@@ -28,6 +28,11 @@ class RegionSeeder extends Seeder
             'name' => 'North West',
             'overflow_feeds' => ['united_utilities'],
             'bathing_water_districts' => ['Cumberland', 'Westmorland and Furness', 'Lancaster', 'Wyre', 'Blackpool', 'Fylde', 'Sefton', 'Wirral'],
+        ]);
+        Region::query()->updateOrCreate(['slug' => 'north-east'], [
+            'name' => 'North East',
+            'overflow_feeds' => ['northumbrian_water'],
+            'bathing_water_districts' => ['Northumberland', 'North Tyneside', 'South Tyneside', 'Sunderland', 'County Durham', 'Hartlepool', 'Redcar and Cleveland'],
         ]);
     }
 }

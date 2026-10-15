@@ -27,6 +27,7 @@ class RiverSeeder extends Seeder
             'yorkshire' => self::yorkshire(),
             'thames-valley' => self::thamesValley(),
             'north-west' => self::northWest(),
+            'north-east' => self::northEast(),
         ];
     }
 
@@ -223,6 +224,65 @@ class RiverSeeder extends Seeder
             // Derwent: a second River Greta, which joins at Keswick, so it needs its own slug.
             self::main('River Derwent', 'Derwent', [54.6460, -3.5500]),
             self::tributary('River Greta', 'derwent', slug: 'greta-keswick'),
+        ];
+    }
+
+    /**
+     * The rivers Northumbrian Water monitors, from the Tees to the Till.
+     * The North and South Tyne flow into the Tyne, so their overflows count
+     * for Tyne spots. The Till joins the Tweed, which is left out until
+     * Scottish Water's overflows are supported, as most of them are in
+     * Scotland. Tributaries that join below the tidal limit (the Derwent,
+     * Team, Ouse Burn and Don on the Tyne) still count on the river page.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     */
+    private static function northEast(): array
+    {
+        return [
+            // Tyne
+            self::main('River Tyne', 'Tyne', [55.0090, -1.4300]),
+            self::tributary('River Derwent', 'tyne'),
+            self::tributary('River Team', 'tyne'),
+            self::tributary('Ouse Burn', 'tyne'),
+            self::tributary('River Don', 'tyne'),
+            self::main('River South Tyne', 'Tyne', [54.9880, -2.1430], flowsInto: 'tyne'),
+            self::tributary('River Nent', 'south-tyne'),
+            self::tributary('River Allen', 'south-tyne'),
+            self::tributary('River East Allen', 'allen'),
+            self::tributary('River West Allen', 'allen'),
+            self::main('River North Tyne', 'Tyne', [54.9900, -2.1380], flowsInto: 'tyne'),
+            self::tributary('River Rede', 'north-tyne'),
+
+            // Wear
+            self::main('River Wear', 'Wear', [54.9140, -1.3700]),
+            self::tributary('Bedburn Beck', 'wear'),
+            self::tributary('River Gaunless', 'wear'),
+            self::tributary('River Browney', 'wear'),
+            self::tributary('River Deerness', 'browney'),
+
+            // Tees
+            self::main('River Tees', 'Tees', [54.6300, -1.1500]),
+            self::tributary('River Lune', 'tees', slug: 'lune-teesdale'),
+            self::tributary('River Balder', 'tees'),
+            self::tributary('River Greta', 'tees'),
+            self::tributary('River Skerne', 'tees'),
+            self::tributary('River Leven', 'tees'),
+            self::tributary('Lustrum Beck', 'tees'),
+
+            // Northumberland's coastal rivers
+            self::main('River Coquet', 'Northumberland Coast', [55.3380, -1.5830]),
+            self::main('River Aln', 'Northumberland Coast', [55.3870, -1.6150]),
+            self::main('River Wansbeck', 'Northumberland Coast', [55.1720, -1.5480]),
+            self::tributary('River Font', 'wansbeck'),
+            self::main('River Blyth', 'Northumberland Coast', [55.1300, -1.5100]),
+            self::tributary('River Pont', 'blyth'),
+
+            // Till, which joins the Tweed at Twizel
+            self::main('River Till', 'Tweed', [55.6860, -2.2140]),
+            self::tributary('River Breamish', 'till'),
+            self::tributary('Wooler Water', 'till'),
+            self::tributary('River Glen', 'till'),
         ];
     }
 

@@ -1,7 +1,7 @@
 # How's the Water?
 
 [howsthewater.uk](https://howsthewater.uk) shows upstream storm overflow spills and river levels for popular swimming,
-paddling and fishing spots on rivers in Yorkshire, the Thames Valley and the North West. Pick a spot and it tells you which sewage overflows upstream have
+paddling and fishing spots on rivers in Yorkshire, the Thames Valley, the North West and the North East. Pick a spot and it tells you which sewage overflows upstream have
 discharged recently, whether any are discharging now, and what the nearest river gauge is reading.
 
 It reports what the monitors say. It does not say whether the water is safe or clean, and all copy on the site should
@@ -9,7 +9,7 @@ keep that distinction.
 
 ## What it does
 
-- Polls the water companies' near real-time storm overflow feeds (Yorkshire Water, Thames Water and United Utilities, via
+- Polls the water companies' near real-time storm overflow feeds (Yorkshire Water, Thames Water, United Utilities and Northumbrian Water, via
   the Stream open data hub) every 15 minutes and builds
   a spill history, since the feed only exposes each monitor's latest event.
 - Polls Environment Agency river level gauges every 15 minutes.
@@ -32,7 +32,10 @@ Thames from its source to the tidal limit at Teddington, with the twenty-four tr
 Windrush, Evenlode, Cherwell, Thame, Kennet and Lambourn, Loddon, the Colne with the Ver, Gade and Chess, Wey and Cranleigh
 Waters, Mole and others). The North West has the Ribble, Lune, Kent, Eden and Cumbrian Derwent, with the tributaries that
 hold United Utilities monitors (the Lancashire Calder with Pendle Water, the Darwen and Blakewater, the Wenning, two
-Gretas, the Eamont, Irthing, Petteril and Caldew and others). Each main river carries the named
+Gretas, the Eamont, Irthing, Petteril and Caldew and others). The North East has the Tyne, with the North and South
+Tyne flowing into it, the Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Till. The Tweed waits for Scottish Water's
+overflows, since most of its own are in Scotland. A main river that joins another (the Ure into the Ouse, the North
+Tyne into the Tyne) keeps its own pages, and its overflows count upstream of the river it joins. Each main river carries the named
 tributaries that hold water company monitors (the Colne, Holme, Rother, Dearne, Sheaf, Loxley, Rye, Foss, Skell and around fifty becks and
 brooks). Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances
 follow the water down the tributary and then the main river.
@@ -46,7 +49,7 @@ All open data, no API keys required.
 
 | Source | Used for | Licence |
 | --- | --- | --- |
-| Stream / Yorkshire Water storm overflow activity (ArcGIS feature service) | Overflow status and spill events | OGL v3 |
+| Stream storm overflow activity, one ArcGIS feature service per water company | Overflow status and spill events | CC BY 4.0 |
 | Environment Agency real-time flood monitoring API | Gauge stations and 15-minute level readings | OGL v3 |
 | OS Open Rivers (GeoPackage download) | River centrelines for upstream positioning | OGL v3 |
 | OpenStreetMap | Map tiles, and a fallback centreline source via Overpass | ODbL |

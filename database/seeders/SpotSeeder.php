@@ -27,6 +27,90 @@ class SpotSeeder extends Seeder
             'yorkshire' => self::yorkshire(),
             'thames-valley' => self::thamesValley(),
             'north-west' => self::northWest(),
+            'north-east' => self::northEast(),
+        ];
+    }
+
+    /**
+     * Spots on the Northumbrian Water rivers. Coordinates are snapped onto the OS centreline.
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function northEast(): array
+    {
+        return [
+            'south-tyne' => [
+                ['name' => 'Alston', 'latitude' => 54.8100, 'longitude' => -2.4431, 'description' => 'Below the town bridge, the highest market town in England.'],
+                ['name' => 'Lambley Viaduct', 'latitude' => 54.9280, 'longitude' => -2.5072, 'description' => 'Pools below the railway viaduct, on the South Tyne Trail.'],
+                ['name' => 'Haltwhistle', 'latitude' => 54.9664, 'longitude' => -2.4557, 'description' => 'Riverside below the town, near the Haltwhistle Burn.'],
+                ['name' => 'Bardon Mill', 'latitude' => 54.9738, 'longitude' => -2.3449, 'description' => 'Village footbridge and shingle banks.'],
+                ['name' => 'Haydon Bridge', 'latitude' => 54.9745, 'longitude' => -2.2449, 'description' => 'The old bridge and riverside green.'],
+            ],
+            'north-tyne' => [
+                ['name' => 'Bellingham', 'latitude' => 55.1420, 'longitude' => -2.2570, 'description' => 'Below the bridge, near where the Rede joins.'],
+                ['name' => 'Wark', 'latitude' => 55.0861, 'longitude' => -2.2160, 'description' => 'Riverside village below Wark Common.'],
+                ['name' => 'Chollerford', 'latitude' => 55.0305, 'longitude' => -2.1237, 'description' => 'Chollerford bridge, beside Chesters Roman fort.'],
+            ],
+            'tyne' => [
+                ['name' => 'Hexham', 'latitude' => 54.9774, 'longitude' => -2.0965, 'description' => 'Tyne Green and the bridge, below the North and South Tyne meeting.'],
+                ['name' => 'Corbridge', 'latitude' => 54.9707, 'longitude' => -2.0150, 'description' => 'The old bridge and riverside path.'],
+                ['name' => 'Riding Mill', 'latitude' => 54.9508, 'longitude' => -1.9714, 'description' => 'Riverside meadows below the village.'],
+                ['name' => 'Bywell', 'latitude' => 54.9500, 'longitude' => -1.9237, 'description' => 'Bywell bridge and the shingle reach by the castle.'],
+                ['name' => 'Ovingham', 'latitude' => 54.9661, 'longitude' => -1.8680, 'description' => 'Footbridge and riverside, opposite Prudhoe.'],
+                ['name' => 'Wylam', 'latitude' => 54.9738, 'longitude' => -1.8204, 'description' => 'Wylam bridge and the riverside park, near the tidal limit.'],
+                ['name' => 'Newburn', 'latitude' => 54.9818, 'longitude' => -1.7472, 'description' => 'Newburn Riverside, where the Tyne turns tidal.'],
+            ],
+            'wear' => [
+                ['name' => 'Stanhope', 'latitude' => 54.7460, 'longitude' => -2.0079, 'description' => 'Stepping stones and the riverside by Durham Street.'],
+                ['name' => 'Frosterley', 'latitude' => 54.7258, 'longitude' => -1.9620, 'description' => 'Riverside below the village.'],
+                ['name' => 'Wolsingham', 'latitude' => 54.7287, 'longitude' => -1.8817, 'description' => 'Riverside path and bridge below the town.'],
+                ['name' => 'Witton-le-Wear', 'latitude' => 54.6714, 'longitude' => -1.7722, 'description' => 'Riverside by the village and the castle.'],
+                ['name' => 'Bishop Auckland', 'latitude' => 54.6679, 'longitude' => -1.6799, 'description' => 'Newton Cap bridge, below Auckland Castle.'],
+                ['name' => 'Durham', 'latitude' => 54.7734, 'longitude' => -1.5789, 'description' => 'Prebends Bridge and the wooded banks below the cathedral.'],
+                ['name' => 'Finchale Priory', 'latitude' => 54.8174, 'longitude' => -1.5528, 'description' => 'Riverside meadows by the priory ruins.'],
+                ['name' => 'Chester-le-Street', 'latitude' => 54.8581, 'longitude' => -1.5657, 'description' => 'Riverside Park, below the cricket ground.'],
+            ],
+            'tees' => [
+                ['name' => 'High Force', 'latitude' => 54.6506, 'longitude' => -2.1866, 'description' => 'Below the waterfall, in Upper Teesdale.'],
+                ['name' => 'Low Force', 'latitude' => 54.6458, 'longitude' => -2.1543, 'description' => 'Falls and Wynch Bridge near Bowlees.'],
+                ['name' => 'Middleton-in-Teesdale', 'latitude' => 54.6223, 'longitude' => -2.0841, 'description' => 'Riverside path by the town bridge.'],
+                ['name' => 'Eggleston', 'latitude' => 54.6046, 'longitude' => -2.0079, 'description' => 'Eggleston Bridge, below the village.'],
+                ['name' => 'Cotherstone', 'latitude' => 54.5757, 'longitude' => -1.9795, 'description' => 'Where the Balder joins, below the village.'],
+                ['name' => 'Barnard Castle', 'latitude' => 54.5428, 'longitude' => -1.9273, 'description' => 'County Bridge and the riverside below the castle.'],
+                ['name' => 'Whorlton', 'latitude' => 54.5282, 'longitude' => -1.8460, 'description' => 'Whorlton suspension bridge and the riverside lido area.'],
+                ['name' => 'Gainford', 'latitude' => 54.5450, 'longitude' => -1.7342, 'description' => 'Riverside by the village green.'],
+                ['name' => 'Piercebridge', 'latitude' => 54.5347, 'longitude' => -1.6765, 'description' => 'The bridge and riverside by the Roman fort.'],
+                ['name' => 'Croft-on-Tees', 'latitude' => 54.4843, 'longitude' => -1.5546, 'description' => 'Croft bridge, where the Tees meets the Yorkshire border.'],
+                ['name' => 'Yarm', 'latitude' => 54.5093, 'longitude' => -1.3518, 'description' => 'Riverside below the town bridge and viaduct.'],
+                ['name' => 'Preston Park', 'latitude' => 54.5339, 'longitude' => -1.3230, 'description' => 'Riverside path by the park, above the Tees Barrage.'],
+            ],
+            'coquet' => [
+                ['name' => 'Alwinton', 'latitude' => 55.3440, 'longitude' => -2.1197, 'description' => 'Upper Coquetdale, where the Alwin joins.'],
+                ['name' => 'Harbottle', 'latitude' => 55.3374, 'longitude' => -2.1034, 'description' => 'Riverside below the village and castle.'],
+                ['name' => 'Rothbury', 'latitude' => 55.3080, 'longitude' => -1.9099, 'description' => 'The bridge and riverside below the town.'],
+                ['name' => 'Felton', 'latitude' => 55.2966, 'longitude' => -1.7097, 'description' => 'The old bridge and riverside.'],
+                ['name' => 'Warkworth', 'latitude' => 55.3459, 'longitude' => -1.6133, 'description' => 'Below the castle, above the tidal reach.'],
+            ],
+            'aln' => [
+                ['name' => 'Alnwick', 'latitude' => 55.4181, 'longitude' => -1.7078, 'description' => 'Lion Bridge, below Alnwick Castle.'],
+                ['name' => 'Lesbury', 'latitude' => 55.3975, 'longitude' => -1.6337, 'description' => 'Lesbury bridge, above the estuary at Alnmouth.'],
+            ],
+            'wansbeck' => [
+                ['name' => 'Mitford', 'latitude' => 55.1641, 'longitude' => -1.7329, 'description' => 'Where the Font joins, below Mitford castle.'],
+                ['name' => 'Morpeth', 'latitude' => 55.1672, 'longitude' => -1.6885, 'description' => 'Carlisle Park and the riverside through the town.'],
+                ['name' => 'Bothal', 'latitude' => 55.1707, 'longitude' => -1.6254, 'description' => 'Wooded riverside below Bothal castle.'],
+                ['name' => 'Sheepwash', 'latitude' => 55.1706, 'longitude' => -1.5898, 'description' => 'Riverside path near Sheepwash bridge.'],
+            ],
+            'blyth' => [
+                ['name' => 'Plessey Woods', 'latitude' => 55.1087, 'longitude' => -1.6366, 'description' => 'Hartford Bridge and the country park.'],
+                ['name' => 'Humford Mill', 'latitude' => 55.1151, 'longitude' => -1.6088, 'description' => 'The weir and riverside below Bedlington.'],
+            ],
+            'till' => [
+                ['name' => 'Chatton', 'latitude' => 55.5451, 'longitude' => -1.9093, 'description' => 'Riverside below the village.'],
+                ['name' => 'Ford', 'latitude' => 55.6304, 'longitude' => -2.0979, 'description' => 'Ford bridge and the riverside below the village.'],
+                ['name' => 'Etal', 'latitude' => 55.6492, 'longitude' => -2.1206, 'description' => 'The ford and riverside by Etal castle.'],
+                ['name' => 'Twizel Bridge', 'latitude' => 55.6808, 'longitude' => -2.2001, 'description' => 'The old bridge, above where the Till joins the Tweed.'],
+            ],
         ];
     }
 

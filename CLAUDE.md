@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West). The site
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East). The site
 reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -164,8 +164,11 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Pages never call third-party APIs at request time.
 - Rivers are seeded per region: Yorkshire's main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse,
   Esk, Hull) and the Thames (source to Teddington, mouth hint in central London because the tidal Thames is split into
-  pieces too far apart to join), and the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
-  Utilities, mouths at the head of each estuary). Main rivers and their tributaries are seeded
+  pieces too far apart to join), the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
+  Utilities, mouths at the head of each estuary), and the North East's Tyne (with the North and South Tyne flowing
+  into it), Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Till (Northumbrian Water). The Tweed is left out until
+  Scottish Water's overflows are supported, since most of its overflows are in Scotland. Main rivers and their
+  tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
