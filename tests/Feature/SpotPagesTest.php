@@ -404,7 +404,7 @@ it('credits the author and links to GitHub issues in the footer', function () {
         ->assertSee('aria-label="love"', false)
         ->assertSee('href="https://mou.me"', false)
         ->assertSee('Seen a mistake?')
-        ->assertSee('Let us know<span class="hidden sm:inline"> on GitHub</span>', false)
+        ->assertSee('Let us know on GitHub')
         ->assertSee('https://github.com/chrismou/howsthewater.uk/issues');
 });
 
