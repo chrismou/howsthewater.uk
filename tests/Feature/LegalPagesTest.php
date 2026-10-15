@@ -35,6 +35,15 @@ it('offers the analytics consent banner only in production', function () {
         ->assertDontSee('googletagmanager.com');
 });
 
+it('sets no cookies and stores no session for visitors', function () {
+    Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+
+    $response = $this->get(route('home'))->assertOk();
+
+    expect($response->headers->getCookies())->toBeEmpty();
+    $this->assertDatabaseCount('sessions', 0);
+});
+
 it('lists the legal pages in the sitemap', function () {
     $this->get(route('sitemap'))->assertOk()->assertSee(route('privacy'))->assertSee(route('terms'));
 });
