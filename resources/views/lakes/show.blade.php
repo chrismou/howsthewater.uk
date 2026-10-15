@@ -23,7 +23,7 @@
     ]))->values();
 @endphp
 
-<x-layouts.app :region="$region" :title="$lake->name.': bathing water, level and nearby overflows'"
+<x-layouts.app :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': bathing water, level and nearby overflows'"
                :description="'Environment Agency bathing water results, lake level and storm overflows near '.$lake->name.'.'">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -39,7 +39,7 @@
                 <p class="mt-1 text-ink-2">{{ $lake->description }}</p>
             @endif
         </div>
-        <x-place-actions :latitude="$lake->latitude" :longitude="$lake->longitude" :label="$lake->name" />
+        <x-place-actions :latitude="$lake->latitude" :longitude="$lake->longitude" :label="$lake->name" :feed="route('lakes.feed', [$region, $lake])" />
     </div>
 
     <section class="mb-8 rounded-lg border border-line bg-surface p-5">

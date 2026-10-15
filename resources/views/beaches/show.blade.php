@@ -21,7 +21,7 @@
     ]))->values();
 @endphp
 
-<x-layouts.app :region="$region" :title="$beach->name.': bathing water and nearby overflows'"
+<x-layouts.app :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$beach->name.': bathing water and nearby overflows'"
                :description="'Environment Agency bathing water classification, samples and pollution forecast for '.$beach->name.', plus storm overflows nearby.'">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -37,7 +37,7 @@
                 {{ collect([$beach->district, $beach->kind === \App\Enums\BathingWaterKind::Estuary ? 'estuary bathing water' : null, $beach->sewerage_undertaker ? 'sewerage by '.$beach->sewerage_undertaker : null])->filter()->join(' · ') }}
             </p>
         </div>
-        <x-place-actions :latitude="$beach->latitude" :longitude="$beach->longitude" :label="$beach->name" />
+        <x-place-actions :latitude="$beach->latitude" :longitude="$beach->longitude" :label="$beach->name" :feed="route('beaches.feed', [$region, $beach])" />
     </div>
 
     <section class="mb-8 rounded-lg border border-line bg-surface p-5">

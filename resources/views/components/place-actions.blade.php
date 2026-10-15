@@ -1,5 +1,5 @@
-{{-- Copy link and open in OpenStreetMap, for a place's page header. --}}
-@props(['latitude', 'longitude', 'label'])
+{{-- Copy link, open in OpenStreetMap and, when the place has one, its RSS feed, for a place's page header. --}}
+@props(['latitude', 'longitude', 'label', 'feed' => null])
 
 <div class="flex flex-wrap gap-2">
     <button type="button" data-copy-link="{{ url()->current() }}"
@@ -13,4 +13,11 @@
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
         Open in OpenStreetMap
     </a>
+    @if ($feed)
+        <a href="{{ $feed }}" title="Follow nearby overflows, samples and pollution forecasts in a feed reader"
+           class="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 11a8 8 0 0 1 8 8"/><path d="M5 5a14 14 0 0 1 14 14"/><circle cx="6" cy="18" r="1.2" fill="currentColor"/></svg>
+            RSS feed
+        </a>
+    @endif
 </div>

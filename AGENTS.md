@@ -180,10 +180,12 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   straight-line distance, since the sea and lakes have no upstream. Use `SpillRecency::nearbyLabel()` there, never the
   "upstream" wording. Beach and lake routes sit before the river routes, which would otherwise take "beaches" or
   "lakes" as a river slug. The Rivers, Beaches and Lakes menus all render through `components/nav-menu`.
-- RSS feeds for each spot and river (`spots.feed`, `rivers.feed`, at `.../feed`) come from `ConditionsFeed`: one item when
-  an upstream overflow starts, one when it stops, and one per flood warning in force, over 30 days, capped at 50.
-  Guids are stable per event so readers notify once. The feed routes sit before the spot route, which would otherwise
-  take "feed" as a spot slug. Spot and river pages pass `feed` to the layout for the `<link rel="alternate">`.
+- RSS feeds for each spot, river, beach and lake (`spots.feed`, `rivers.feed`, `beaches.feed`, `lakes.feed`, at
+  `.../feed`) come from `ConditionsFeed`: one item when an upstream (or, for beaches and lakes, nearby) overflow starts,
+  one when it stops, one per flood warning in force, and for bathing waters one per sample and one per increased
+  pollution risk forecast in force, over 30 days, capped at 50.
+  Guids are stable per event so readers notify once. The feed routes sit before the river and spot routes, which would
+  otherwise take "feed" as a spot slug (or a beach feed as a spot). Spot, river, beach and lake pages pass `feed` to the layout for the `<link rel="alternate">`.
 - `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
   green "no spills". Keep that distinction for any new status.
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed, and `Spot::onMainRiver()` wherever spots

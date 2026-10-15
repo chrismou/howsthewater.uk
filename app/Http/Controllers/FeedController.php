@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Data\FeedItem;
+use App\Models\BathingWater;
+use App\Models\Lake;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\Spot;
@@ -38,6 +40,30 @@ class FeedController extends Controller
             description: "Storm overflows discharging on the {$river->name} and its tributaries, and Environment Agency flood warnings, as the monitors report them. Not a statement that the water is safe or clean.",
             link: route('rivers.show', [$region, $river]),
             items: $feed->forRiver($river),
+        );
+    }
+
+    public function beach(Region $region, BathingWater $beach, ConditionsFeed $feed): Response
+    {
+        $beach->setRelation('region', $region);
+
+        return $this->rss(
+            title: $beach->name,
+            description: "Storm overflows discharging near {$beach->name}, and Environment Agency bathing water samples and pollution risk forecasts, as they are reported. Not a statement that the water is safe or clean.",
+            link: route('beaches.show', [$region, $beach]),
+            items: $feed->forBeach($beach),
+        );
+    }
+
+    public function lake(Region $region, Lake $lake, ConditionsFeed $feed): Response
+    {
+        $lake->setRelation('region', $region);
+
+        return $this->rss(
+            title: $lake->name,
+            description: "Storm overflows discharging near {$lake->name}, and Environment Agency bathing water samples and pollution risk forecasts for its bathing sites, as they are reported. Not a statement that the water is safe or clean.",
+            link: route('lakes.show', [$region, $lake]),
+            items: $feed->forLake($lake),
         );
     }
 

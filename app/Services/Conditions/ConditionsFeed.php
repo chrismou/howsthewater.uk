@@ -2,18 +2,27 @@
 
 namespace App\Services\Conditions;
 
+use App\Data\BathingWaterSummary;
 use App\Data\FeedItem;
 use App\Data\FloodWarningSummary;
+use App\Data\NearbyMonitorSummary;
+use App\Data\NearbyOverflows;
 use App\Data\SpotConditions;
 use App\Data\UpstreamMonitorSummary;
+use App\Enums\PollutionRisk;
+use App\Models\BathingWater;
+use App\Models\BathingWaterSample;
+use App\Models\Lake;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
 use Illuminate\Support\Collection;
 
 /**
- * Builds the RSS items for a spot or a river: each upstream overflow
- * starting and stopping, and each flood alert or warning in force. Items
+ * Builds the RSS items for a spot or a river (each upstream overflow
+ * starting and stopping, and each flood alert or warning in force) and for
+ * a beach or lake (each nearby overflow starting and stopping, each new
+ * bathing water sample and each increased pollution risk forecast). Items
  * describe what the monitors report, never whether the water is safe.
  */
 class ConditionsFeed
@@ -25,6 +34,7 @@ class ConditionsFeed
     public function __construct(
         private SpotConditionsService $conditions,
         private RiverOverviewService $overviews,
+        private WaterBodyConditionsService $waterBodies,
     ) {
     }
 
@@ -39,7 +49,7 @@ class ConditionsFeed
         $distances = $conditions->upstreamMonitors->mapWithKeys(fn (UpstreamMonitorSummary $summary) => [$summary->monitor->id => $summary->distanceUpstreamMetres]);
 
         $spillItems = $conditions->recentSpillEvents
-            ->flatMap(fn (SpillEvent $event) => $this->spillItems($event, $link, $distances->get($event->overflow_monitor_id)));
+            ->flatMap(fn (SpillEvent $event) => $this->spillItems($event, $link, $this->distance($distances->get($event->overflow_monitor_id), 'upstream')));
 
         return $this->latest($spillItems->concat($this->floodItems($conditions->floodWarnings, $link)));
     }
@@ -62,7 +72,7 @@ class ConditionsFeed
             ->orderByDesc('started_at')
             ->limit(self::MAX_ITEMS)
             ->get()
-            ->flatMap(fn (SpillEvent $event) => $this->spillItems($event, $link, null));
+            ->flatMap(fn (SpillEvent $event) => $this->spillItems($event, $link, ''));
 
         $spots = $river->spots()->published()->get()->each(fn (Spot $spot) => $spot->setRelation('river', $river));
         $floodWarnings = $this->conditions->forMany($spots)
@@ -70,6 +80,35 @@ class ConditionsFeed
             ->unique('areaCode');
 
         return $this->latest($spillItems->concat($this->floodItems($floodWarnings, $link)));
+    }
+
+    /**
+     * Overflows within the nearby radius, plus the beach's samples and forecasts.
+     *
+     * @return Collection<int, FeedItem>
+     */
+    public function forBeach(BathingWater $beach): Collection
+    {
+        $conditions = $this->waterBodies->forBeach($beach);
+        $link = route('beaches.show', [$beach->region, $beach]);
+
+        return $this->latest($this->nearbySpillItems($conditions->overflows, $link)->concat($this->bathingWaterItems($conditions->bathingWater, $link, null)));
+    }
+
+    /**
+     * Overflows near the lake and its bathing sites, plus each site's samples
+     * and forecasts, named so readers can tell the sites apart.
+     *
+     * @return Collection<int, FeedItem>
+     */
+    public function forLake(Lake $lake): Collection
+    {
+        $conditions = $this->waterBodies->forLake($lake);
+        $link = route('lakes.show', [$lake->region, $lake]);
+
+        $bathingItems = $conditions->bathingWaters->flatMap(fn (BathingWaterSummary $summary) => $this->bathingWaterItems($summary, $link, $summary->bathingWater->name));
+
+        return $this->latest($this->nearbySpillItems($conditions->overflows, $link)->concat($bathingItems));
     }
 
     /**
@@ -82,15 +121,77 @@ class ConditionsFeed
     }
 
     /**
+     * @return Collection<int, FeedItem>
+     */
+    private function nearbySpillItems(NearbyOverflows $overflows, string $link): Collection
+    {
+        $distances = $overflows->monitors->mapWithKeys(fn (NearbyMonitorSummary $summary) => [$summary->monitor->id => $summary->distanceMetres]);
+
+        return $overflows->recentSpillEvents
+            ->flatMap(fn (SpillEvent $event) => $this->spillItems($event, $link, $this->distance($distances->get($event->overflow_monitor_id), 'away')));
+    }
+
+    /**
+     * One item per sample taken in the last 30 days, and one for an
+     * increased pollution risk forecast while it is in force.
+     *
+     * @return Collection<int, FeedItem>
+     */
+    private function bathingWaterItems(BathingWaterSummary $summary, string $link, ?string $site): Collection
+    {
+        $bathingWater = $summary->bathingWater;
+        $at = $site === null ? '' : " at {$site}";
+        $since = now()->subDays(self::HISTORY_DAYS);
+
+        $items = $summary->recentSamples
+            ->filter(fn (BathingWaterSample $sample) => $sample->sampled_at->greaterThanOrEqualTo($since))
+            ->map(function (BathingWaterSample $sample) use ($at, $link, $summary) {
+                $counts = collect([
+                    'E. coli' => BathingWaterSample::formatCount($sample->e_coli, $sample->e_coli_qualifier),
+                    'intestinal enterococci' => BathingWaterSample::formatCount($sample->enterococci, $sample->enterococci_qualifier),
+                ])->filter()->map(fn (string $count, string $name) => "{$name} {$count}")->join(' and ');
+
+                return new FeedItem(
+                    guid: "sample-{$sample->id}",
+                    title: $this->xmlText("Bathing water sample{$at} taken ".$sample->sampled_at->timezone($this->timezone())->format('j M')),
+                    description: $this->xmlText('The Environment Agency sample '.($counts === '' ? 'has no counts reported yet.' : "counted {$counts} per 100 ml.").' Read the full results: '.$summary->url()),
+                    link: $link,
+                    publishedAt: $sample->sampled_at,
+                );
+            })
+            ->values();
+
+        if ($summary->currentRisk() === PollutionRisk::Increased && $bathingWater->risk_expires_at !== null) {
+            $items->push(new FeedItem(
+                guid: "risk-{$bathingWater->id}-{$bathingWater->risk_expires_at->getTimestamp()}",
+                title: $this->xmlText(PollutionRisk::Increased->label().$at),
+                description: $this->xmlText('The Environment Agency forecasts an increased risk of pollution'.$at.', usually after heavy rain, until '.$bathingWater->risk_expires_at->timezone($this->timezone())->format('j M, H:i').'. Read the forecast: '.$summary->url()),
+                link: $link,
+                // Forecasts are issued daily and only their expiry is kept, so date the item a day before it.
+                publishedAt: $bathingWater->risk_expires_at->copy()->subDay(),
+            ));
+        }
+
+        return $items;
+    }
+
+    /**
+     * ", 2.4 km upstream" or ", 1.2 km away", or nothing when the distance is unknown.
+     */
+    private function distance(?int $metres, string $direction): string
+    {
+        return $metres === null ? '' : ', '.number_format($metres / 1000, 1)." km {$direction}";
+    }
+
+    /**
      * One item when an overflow starts discharging and another when it stops.
      *
      * @return array<int, FeedItem>
      */
-    private function spillItems(SpillEvent $event, string $link, ?int $distanceUpstreamMetres): array
+    private function spillItems(SpillEvent $event, string $link, string $distance): array
     {
         $monitor = $event->overflowMonitor;
-        $where = ($distanceUpstreamMetres === null ? '' : ', '.number_format($distanceUpstreamMetres / 1000, 1).' km upstream')
-            .($monitor->river === null ? '' : ' on the '.$monitor->river->name);
+        $where = $distance.($monitor->river === null ? '' : ' on the '.$monitor->river->name);
 
         $items = [new FeedItem(
             guid: "spill-{$event->id}-start",

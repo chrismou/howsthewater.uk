@@ -1,8 +1,13 @@
 <?php
 
+use App\Enums\BathingWaterKind;
 use App\Enums\FloodSeverity;
+use App\Enums\PollutionRisk;
+use App\Models\BathingWater;
+use App\Models\BathingWaterSample;
 use App\Models\FloodArea;
 use App\Models\FloodWarning;
+use App\Models\Lake;
 use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
@@ -113,4 +118,67 @@ it('keeps the feed valid XML whatever the EA message contains', function () {
     expect(simplexml_load_string($xml))->not->toBeFalse()
         ->and($xml)->toContain('Wharfe &amp; Washburn')
         ->and($xml)->not->toContain("\x0B");
+});
+
+it('lists nearby overflows, recent samples and increased pollution forecasts in the beach feed', function () {
+    $region = Region::factory()->create(['slug' => 'north-west']);
+    $beach = BathingWater::factory()->create([
+        'region_id' => $region->id, 'name' => 'Blackpool North', 'slug' => 'blackpool-north',
+        'season_starts_on' => now()->subMonth(), 'season_ends_on' => now()->addMonth(),
+        'risk_level' => PollutionRisk::Increased, 'risk_expires_at' => now()->addHours(20),
+    ]);
+    $recent = BathingWaterSample::factory()->create(['bathing_water_id' => $beach->id, 'sampled_at' => now()->subDays(3), 'e_coli' => 310, 'enterococci' => 45, 'enterococci_qualifier' => '=']);
+    $old = BathingWaterSample::factory()->create(['bathing_water_id' => $beach->id, 'sampled_at' => now()->subDays(40)]);
+    $near = OverflowMonitor::factory()->create(['latitude' => $beach->latitude + 0.01, 'longitude' => $beach->longitude, 'external_id' => 'UUP00001']);
+    $far = OverflowMonitor::factory()->create(['latitude' => $beach->latitude + 0.1, 'longitude' => $beach->longitude, 'external_id' => 'UUP00002']);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $near->id]);
+    SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $far->id]);
+
+    $this->get(route('beaches.feed', [$region, $beach]))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/rss+xml; charset=UTF-8')
+        ->assertSee('<title>Blackpool North - '.e(config('app.name')).'</title>', false)
+        ->assertSee('Not a statement that the water is safe or clean.')
+        ->assertSee('Storm overflow UUP00001 started discharging, 1.1 km away')
+        ->assertDontSee('UUP00002')
+        ->assertSee("sample-{$recent->id}")
+        ->assertSee('E. coli 310 and intestinal enterococci 45 per 100 ml')
+        ->assertDontSee("sample-{$old->id}")
+        ->assertSee('Increased pollution risk forecast')
+        ->assertSee("risk-{$beach->id}-");
+
+    $this->get(route('beaches.show', [$region, $beach]))->assertOk()->assertSee(route('beaches.feed', [$region, $beach]));
+});
+
+it('leaves out pollution forecasts that are normal or out of season', function () {
+    $region = Region::factory()->create();
+    $normal = BathingWater::factory()->create(['region_id' => $region->id, 'season_starts_on' => now()->subMonth(), 'season_ends_on' => now()->addMonth(), 'risk_level' => PollutionRisk::Normal, 'risk_expires_at' => now()->addDay()]);
+    $offSeason = BathingWater::factory()->create(['region_id' => $region->id, 'season_starts_on' => now()->subMonths(3), 'season_ends_on' => now()->subMonth(), 'risk_level' => PollutionRisk::Increased, 'risk_expires_at' => now()->addDay()]);
+
+    $this->get(route('beaches.feed', [$region, $normal]))->assertOk()->assertDontSee('Increased pollution risk forecast');
+    $this->get(route('beaches.feed', [$region, $offSeason]))->assertOk()->assertDontSee('Increased pollution risk forecast');
+});
+
+it('names each bathing site in the lake feed', function () {
+    $region = Region::factory()->create(['slug' => 'north-west']);
+    $lake = Lake::factory()->create(['region_id' => $region->id, 'name' => 'Windermere', 'slug' => 'windermere']);
+    $site = BathingWater::factory()->kind(BathingWaterKind::Lake)->create(['region_id' => $region->id, 'lake_id' => $lake->id, 'name' => 'Windermere, Fellfoot']);
+    BathingWaterSample::factory()->create(['bathing_water_id' => $site->id, 'sampled_at' => now()->subDays(2)]);
+
+    $this->get(route('lakes.feed', [$region, $lake]))
+        ->assertOk()
+        ->assertSee('<title>Windermere - '.e(config('app.name')).'</title>', false)
+        ->assertSee('Bathing water sample at Windermere, Fellfoot taken');
+
+    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSee(route('lakes.feed', [$region, $lake]));
+});
+
+it('404s beach and lake feeds from another region', function () {
+    $region = Region::factory()->create();
+    $other = Region::factory()->create();
+    $beach = BathingWater::factory()->create(['region_id' => $other->id]);
+    $lake = Lake::factory()->create(['region_id' => $other->id]);
+
+    $this->get(route('beaches.feed', [$region, $beach]))->assertNotFound();
+    $this->get(route('lakes.feed', [$region, $lake]))->assertNotFound();
 });
