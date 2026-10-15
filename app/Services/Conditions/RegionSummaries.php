@@ -8,19 +8,18 @@ use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
 use App\Models\RainfallStation;
 use App\Models\Region;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Builds and caches each region's summary. Ingest and positioning commands
- * refresh every region after they run, so pages only ever read. A page that
- * finds no summary builds one, so a fresh install still works.
+ * Builds and caches each region's summary. The scheduled regions:refresh
+ * rewrites the summaries of regions an ingest changed, so pages only ever
+ * read. A page that finds no summary builds one, so a fresh install still works.
  */
 class RegionSummaries
 {
     private const KEY_PREFIX = 'region-summary';
 
-    public function __construct(private RiverOverviewService $overviews, private NavigationMenus $menus)
+    public function __construct(private RiverOverviewService $overviews)
     {
     }
 
@@ -42,17 +41,6 @@ class RegionSummaries
         Cache::forever($this->keyFor($region), $summary);
 
         return $summary;
-    }
-
-    /**
-     * @return Collection<int, RegionSummary>
-     */
-    public function refreshAll(): Collection
-    {
-        // Ingest and positioning are when rivers, beaches and lakes appear, so the menus are rebuilt with the summaries.
-        $this->menus->flush();
-
-        return Region::query()->orderBy('name')->get()->map(fn (Region $region) => $this->refresh($region));
     }
 
     public function build(Region $region): RegionSummary

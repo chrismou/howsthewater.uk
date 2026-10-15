@@ -47,7 +47,7 @@ class IngestGauges extends Command
         }
 
         $result = $syncReadings->handle();
-        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
+
         $changed->markAll();
 
         $this->info(sprintf('Stored %d readings across %d stations.', $result['readings'], $result['stations']));

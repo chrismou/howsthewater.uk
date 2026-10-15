@@ -68,10 +68,9 @@ task('artisan:rivers:positions', artisan('rivers:positions', ['skipIfNoEnv']))
 task('artisan:regions:refresh', artisan('regions:refresh --all', ['skipIfNoEnv']))
     ->desc('Rebuild cached conditions, summaries and menus so the new release starts warm');
 
-// Run migrate before cache clear to prevent errors on first run where DB cache clears before DB exists
 after('artisan:migrate', 'artisan:db:seed');
 after('artisan:db:seed', 'artisan:rivers:centrelines');
 after('artisan:rivers:centrelines', 'artisan:rivers:positions');
-after('artisan:rivers:positions', 'artisan:cache:clear');
-// cache:clear empties every cached page fact, so rebuild them before the release goes live.
-after('artisan:cache:clear', 'artisan:regions:refresh');
+// Cache keys carry a hash of the cached classes, so the new release warms its own entries before it goes live while
+// the old release keeps serving from its own. No cache:clear, which would leave the old release cold meanwhile.
+after('artisan:rivers:positions', 'artisan:regions:refresh');

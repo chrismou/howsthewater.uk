@@ -15,5 +15,6 @@ Schedule::command('ingest:bathing-waters')->hourly()->withoutOverlapping();
 Schedule::command('ingest:bathing-waters --history')->weeklyOn(1, '04:20');
 
 // Last, so it runs after the quarter hour's ingests in the same scheduler pass (due tasks run one after another, in
-// the order registered here): one rebuild of whatever they marked changed, instead of one per ingest.
-Schedule::command('regions:refresh')->everyFifteenMinutes()->withoutOverlapping();
+// the order registered here): one rebuild of whatever they marked changed, instead of one per ingest. The overlap lock
+// expires after 30 minutes, so a killed run cannot leave pages unrefreshed for the default 24 hours.
+Schedule::command('regions:refresh')->everyFifteenMinutes()->withoutOverlapping(30);

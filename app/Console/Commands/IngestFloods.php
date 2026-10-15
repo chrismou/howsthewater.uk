@@ -35,7 +35,7 @@ class IngestFloods extends Command
         }
 
         $result = $syncWarnings->handle();
-        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
+
         $changed->markAll();
 
         $this->info(sprintf('%d flood alerts and warnings in force for our spots.', $result['warnings']));

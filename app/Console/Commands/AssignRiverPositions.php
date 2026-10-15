@@ -35,8 +35,6 @@ class AssignRiverPositions extends Command
         $linked = $linkRainfall->handle();
         $this->info(sprintf('%d spots linked to a rain gauge.', $linked['spots']));
 
-        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
-
         $changed->markAll();
 
         return self::SUCCESS;

@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\Cache;
 use ReflectionClass;
 
 /**
- * Caches computed spot conditions between ingest runs. Every key carries a
- * version number, so flushing is a single increment that works on any
- * cache store; stale entries simply expire.
+ * Caches computed spot, beach and lake conditions between ingest runs. The
+ * scheduled regions:refresh writes over each entry, so visitors never wait
+ * on a rebuild. Every key carries a version number, so flushing everything is
+ * a single increment that works on any cache store; stale entries simply expire.
  *
  * Keys also carry a hash of the cached classes' source, so a deploy that
  * changes their shape never reads objects written by the previous release

@@ -24,7 +24,7 @@ class IngestOverflows extends Command
             River::query()->each(fn (River $river) => $assign->handle($river));
             $this->line("{$result['monitors_added']} new monitors positioned.");
         }
-        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
+
         $changed->markAll();
 
         $this->info(sprintf(

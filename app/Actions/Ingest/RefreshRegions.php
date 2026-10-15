@@ -45,18 +45,19 @@ class RefreshRegions
         Spot::query()
             ->published()
             ->onMainRiver()
+            ->with(['river' => fn ($query) => $query->withoutCentreline(), 'river.region', 'gaugeStation', 'rainfallStation'])
             ->whereHas('river', fn ($query) => $query->whereIn('region_id', $regions->modelKeys()))
             ->each(function (Spot $spot) use (&$counts) {
                 $this->spots->refresh($spot);
                 $counts['spots']++;
             });
 
-        BathingWater::query()->beaches()->whereIn('region_id', $regions->modelKeys())->each(function (BathingWater $beach) use (&$counts) {
+        BathingWater::query()->beaches()->with('rainfallStation')->whereIn('region_id', $regions->modelKeys())->each(function (BathingWater $beach) use (&$counts) {
             $this->waterBodies->refreshBeach($beach);
             $counts['beaches']++;
         });
 
-        Lake::query()->whereIn('region_id', $regions->modelKeys())->each(function (Lake $lake) use (&$counts) {
+        Lake::query()->with(['gaugeStation', 'rainfallStation', 'bathingWaters'])->whereIn('region_id', $regions->modelKeys())->each(function (Lake $lake) use (&$counts) {
             $this->waterBodies->refreshLake($lake);
             $counts['lakes']++;
         });

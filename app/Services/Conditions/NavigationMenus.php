@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * The Rivers, Beaches and Lakes menus as plain arrays, built once and
- * cached, since every page renders them. RegionSummaries clears the cache
- * after each ingest and positioning run, so seeded places appear at once.
+ * cached, since every page renders them. The scheduled regions:refresh
+ * rebuilds them in place, so seeded places appear within a quarter hour.
  */
 class NavigationMenus
 {
@@ -25,11 +25,6 @@ class NavigationMenus
     public function all(): array
     {
         return Cache::remember($this->key(), now()->addHours(self::TTL_HOURS), fn () => $this->build());
-    }
-
-    public function flush(): void
-    {
-        Cache::forget($this->key());
     }
 
     /**

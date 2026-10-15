@@ -137,12 +137,12 @@ it('renders the menus from one cached lookup however many regions there are', fu
     expect($menuQueries)->toBeEmpty();
 });
 
-it('rebuilds the menus when region summaries refresh after an ingest', function () {
+it('rebuilds the menus when regions refresh after an ingest', function () {
     [$region] = waterBodies();
     $this->get(route('search'))->assertOk()->assertDontSee('Coniston Water');
 
     Lake::factory()->create(['region_id' => $region->id, 'name' => 'Coniston Water', 'slug' => 'coniston-water']);
-    app(\App\Services\Conditions\RegionSummaries::class)->refreshAll();
+    $this->artisan('regions:refresh --all')->assertSuccessful();
 
     $this->get(route('search'))->assertOk()->assertSee('Coniston Water');
 });

@@ -56,8 +56,7 @@ class IngestBathingWaters extends Command
             $this->error("{$name}: history fetch failed.");
         }
 
-        // Only regions with beaches or lakes are affected; regions:refresh rebuilds them after the ingests.
-
+        // Only regions with beaches or lakes are affected.
         $changed->mark(Region::query()->where(fn ($query) => $query->whereHas('lakes')->orWhereHas('bathingWaters'))->pluck('id'));
 
         return $failed || $backfill['failed'] !== [] ? self::FAILURE : self::SUCCESS;

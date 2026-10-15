@@ -197,7 +197,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Search, feeds and the API are rate limited per IP by the `public` limiter in `AppServiceProvider`.
 - Listings read `RegionSummary` (plain-value `RiverSummary` and `SpotSummary` objects) from `RegionSummaries`. Ingest and
   positioning commands never rebuild caches themselves: they mark the regions they touched with `ChangedRegions`, and
-  `regions:refresh` (scheduled last, every 15 minutes, `--all` on deploy) rewrites those regions' spot, beach and lake
+  `regions:refresh` (scheduled last, every 15 minutes, `--all` on deploy, which never runs `cache:clear`) rewrites those regions' spot, beach and lake
   conditions, summaries and the menus in place, so visitors never hit a cold cache. The region page, live bar and API region endpoint never
   unserialise full conditions. Add listing facts to `SpotSummary::fromConditions()`.
 - `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL), warmed by
@@ -273,6 +273,7 @@ php artisan ingest:floods
 php artisan ingest:bathing-waters
 php artisan rivers:centrelines
 php artisan rivers:positions
+php artisan regions:refresh --all
 ```
 
 ## Frontend

@@ -59,8 +59,6 @@ class IngestRainfall extends Command
             $this->line(sprintf('%d rain gauges never reported and were retired; %d spots now linked to a live one.', $result['retired'], $linked['spots']));
         }
 
-        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
-
         $changed->markAll();
 
         $this->info(sprintf('Stored %d rainfall readings across %d stations.', $readings, $result['stations']));
