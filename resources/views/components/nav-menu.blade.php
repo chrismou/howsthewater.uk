@@ -11,6 +11,12 @@
 @php
     $entries = collect($entries)->values();
     $currentSlug = $entries->contains('slug', $current) ? $current : ($entries->first()['slug'] ?? null);
+
+    // Wide screens lay each region's groups on three equal columns of a fixed-width panel, so names line up from row
+    // to row and the panel never changes width. A group of more than five places spans all three, split into three
+    // lists, or two when any name in the region is too long to fit a third of the panel on one line.
+    $groupSpan = fn (array $items): int => count($items) > 5 ? 3 : 1;
+    $wideGroupColumns = fn (array $entry): int => collect($entry['groups'])->flatten(1)->contains(fn (array $item) => mb_strlen($item['name']) > 18) ? 2 : 3;
 @endphp
 
 @if ($entries->isNotEmpty())
@@ -68,17 +74,21 @@
                     </ul>
                     <div class="w-[34rem] max-w-[calc(100vw-15rem)] p-4">
                         @foreach ($entries as $entry)
-                            <div data-nav-region-panel="{{ $entry['slug'] }}" @if ($entry['slug'] !== $currentSlug) data-nav-region-hidden @endif class="flex flex-wrap gap-x-8 gap-y-4 [&[data-nav-region-hidden]]:hidden">
-                                <div class="basis-full border-b border-line-2 pb-3">
+                            <div data-nav-region-panel="{{ $entry['slug'] }}" @if ($entry['slug'] !== $currentSlug) data-nav-region-hidden @endif
+                                 class="grid grid-flow-row-dense grid-cols-3 gap-x-6 gap-y-4 [&[data-nav-region-hidden]]:hidden">
+                                <div class="col-span-full border-b border-line-2 pb-3">
                                     <a href="{{ $entry['url'] }}" class="font-semibold text-ink hover:underline">{{ $entry['name'] }} overview</a>
                                     <span class="text-xs text-muted"> {{ $entry['blurb'] }}</span>
                                 </div>
                                 @foreach ($entry['groups'] as $heading => $items)
-                                    <div>
+                                    @php($span = $groupSpan($items))
+                                    @php($listColumns = $span === 3 ? $wideGroupColumns($entry) : 1)
+                                    <div style="grid-column: span {{ $span }}">
                                         <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-faint">{{ $heading }}</p>
-                                        <ul class="grid gap-x-6 gap-y-1 {{ count($items) > 5 ? 'grid-cols-2' : '' }}">
+                                        {{-- The same gap as the outer grid, so a three-list group lines up with the columns around it. --}}
+                                        <ul class="grid gap-x-6 gap-y-1" style="grid-template-columns: repeat({{ $listColumns }}, minmax(0, 1fr))">
                                             @foreach ($items as $item)
-                                                <li><a href="{{ $item['url'] }}" class="block whitespace-nowrap py-0.5 hover:text-ink">{{ $item['name'] }}</a></li>
+                                                <li><a href="{{ $item['url'] }}" class="block py-0.5 hover:text-ink">{{ $item['name'] }}</a></li>
                                             @endforeach
                                         </ul>
                                     </div>
