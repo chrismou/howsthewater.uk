@@ -4,25 +4,28 @@
     $rainfall = $conditions->rainfall;
     $timezone = config('app.display_timezone', 'Europe/London');
 
+    // The table renders the most relevant monitors and loads the rest on request: low on a big river system (Goole)
+    // hundreds sit upstream. The map shows every monitor with recent activity plus the nearest quiet ones.
+    $spillsByMonitor = $conditions->spillCountsByMonitor();
+    $monitorsByActivity = $conditions->upstreamMonitorsByActivity();
+    $shownMonitors = $monitorsByActivity->take(\App\Http\Controllers\SpotController::MONITORS_SHOWN);
+    $hiddenMonitorCount = $monitorsByActivity->count() - $shownMonitors->count();
+    $activeMonitorCount = $conditions->activeUpstreamMonitorCount();
+    $mapMonitors = $monitorsByActivity->take($activeMonitorCount + 50);
+
     $mapMarkers = collect([[
         'lat' => $spot->latitude,
         'lng' => $spot->longitude,
         'label' => $spot->name,
         'kind' => 'spot',
         'recency' => $conditions->spillRecency->value,
-    ]])->concat($conditions->upstreamMonitors->map(fn ($summary) => [
+    ]])->concat($mapMonitors->map(fn ($summary) => [
         'lat' => $summary->monitor->latitude,
         'lng' => $summary->monitor->longitude,
         'label' => $summary->monitor->external_id.', '.$summary->river->name.' ('.$summary->status->label().')',
         'kind' => 'monitor',
         'status' => $summary->status->value,
     ]))->values();
-
-
-    // Spills per monitor in the history window, so the table can show which monitors have been active.
-    $spillsByMonitor = $conditions->recentSpillEvents->countBy('overflow_monitor_id');
-    $activeMonitors = $conditions->upstreamMonitors->filter(fn ($summary) => $summary->status !== \App\Enums\OverflowStatus::NotDischarging || $spillsByMonitor->has($summary->monitor->id));
-    $quietMonitors = $conditions->upstreamMonitors->reject(fn ($summary) => $activeMonitors->contains($summary));
 
     $osmUrl = sprintf('https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=15/%s/%s', $spot->latitude, $spot->longitude, $spot->latitude, $spot->longitude);
 @endphp
@@ -157,7 +160,7 @@
     <section class="mt-10">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h2 class="font-display text-lg font-semibold">Upstream storm overflows <x-help term="upstream" /></h2>
-            <span class="text-sm text-muted">Nearest first. Distances follow the water, including tributaries.</span>
+            <span class="text-sm text-muted">Recent spills first, then nearest. Distances follow the water, including tributaries.</span>
         </div>
         @if ($conditions->upstreamMonitors->isEmpty())
             <p class="text-sm text-ink-2">No monitors have been matched upstream of this spot yet.</p>
@@ -175,28 +178,27 @@
                             <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Spills, 30 days</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-line-2">
-                        @foreach ($activeMonitors as $summary)
-                            <x-overflow-row :summary="$summary" :spills="$spillsByMonitor->get($summary->monitor->id, 0)" />
-                        @endforeach
-                        @if ($activeMonitors->isEmpty())
+                    <tbody class="divide-y divide-line-2" data-monitor-rows>
+                        @if ($activeMonitorCount === 0)
                             <tr><td colspan="7" class="px-4 py-3 text-ink-2">No upstream monitor has spilled in the last 30 days.</td></tr>
                         @endif
+                        @foreach ($shownMonitors as $summary)
+                            <x-overflow-row :summary="$summary" :spills="$spillsByMonitor->get($summary->monitor->id, 0)" />
+                        @endforeach
                     </tbody>
-                    @if ($quietMonitors->isNotEmpty())
-                        <tbody class="divide-y divide-line-2" data-quiet-monitors hidden>
-                            @foreach ($quietMonitors as $summary)
-                                <x-overflow-row :summary="$summary" :spills="0" />
-                            @endforeach
-                        </tbody>
-                    @endif
                 </table>
             </div>
-            @if ($quietMonitors->isNotEmpty())
-                <p class="mt-2 text-sm text-muted">
-                    {{ $quietMonitors->count() }} more {{ \Illuminate\Support\Str::plural('monitor', $quietMonitors->count()) }} upstream had no spill in the last 30 days.
-                    <button type="button" data-show-quiet class="font-medium text-accent hover:underline">Show all {{ $conditions->upstreamMonitors->count() }}</button>
-                </p>
+            @if ($hiddenMonitorCount > 0)
+                <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted" data-more-monitors="{{ route('spots.monitors', [$spot->river->region, $spot->river, $spot]) }}">
+                    <span>Showing {{ $shownMonitors->count() }} of {{ $monitorsByActivity->count() }} upstream monitors, those with recent spills first.</span>
+                    <button type="button" data-more-monitors-button class="font-medium text-accent hover:underline">Show the other {{ $hiddenMonitorCount }}</button>
+                    <span data-more-monitors-loading hidden class="inline-flex items-center gap-2 text-accent" role="status">
+                        <svg class="h-4 w-8 overflow-hidden" viewBox="0 0 32 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path class="animate-wave" d="M-16 8 q4 -5 8 0 t8 0 t8 0 t8 0 t8 0 t8 0"/>
+                        </svg>
+                        Loading monitors
+                    </span>
+                </div>
             @endif
         @endif
     </section>

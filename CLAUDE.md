@@ -169,9 +169,14 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
-  the spot, plus everything on tributaries (rivers with a `parent_river_id`) that join at or above the spot,
-  recursively. Distances follow the water. Positions come from projecting lat/lng onto the river centreline
-  (`rivers:centrelines` then `rivers:positions`, which also sets each tributary's `joins_at_metres`).
+  the spot, plus everything on tributaries (rivers with a `parent_river_id`) and on main rivers that flow into it
+  (`flows_into_river_id`, set by `flowsInto:` in `RiverSeeder`, e.g. the Ure into the Ouse) that join at or above the
+  spot, recursively. A main river that flows into another keeps its own pages; river and region monitor counts still
+  stop at main rivers, so nothing is counted twice. Spot pages render the first 10 rows of the overflows table
+  (recent spills first, via `SpotConditions::upstreamMonitorsByActivity()`) and load the rest from `spots.monitors`,
+  since spots low on a big system (Goole) have hundreds upstream. Distances follow the water.
+  Positions come from projecting lat/lng onto the river centreline (`rivers:centrelines` then `rivers:positions`,
+  which also sets each tributary's and inflowing main river's `joins_at_metres`).
 - Beaches and lakes come from the EA designated bathing water register. `BathingWater` holds every site we track:
   beaches (coastal and estuary) belong to the region whose `bathing_water_districts` lists their district, lake sites
   to a seeded `Lake` (`LakeSeeder`, matched by name prefix), and river sites to a spot within 1.5 km, which then shows

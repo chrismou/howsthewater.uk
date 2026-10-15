@@ -34,6 +34,29 @@ it('includes monitors on tributaries that join above the spot, with flow distanc
     expect($summaries[2]->distanceUpstreamMetres)->toBe(16500);
 });
 
+it('includes monitors on a main river that joins above the spot, and its tributaries', function () {
+    $ouse = River::factory()->create(['length_metres' => 100000]);
+    $york = Spot::factory()->create(['river_id' => $ouse->id, 'river_metres' => 30000]);
+
+    $ure = River::factory()->create(['flows_into_river_id' => $ouse->id, 'joins_at_metres' => 0, 'length_metres' => 120000]);
+    $ureMonitor = OverflowMonitor::factory()->create(['river_id' => $ure->id, 'river_metres' => 110000]);
+    $swale = River::factory()->create(['flows_into_river_id' => $ure->id, 'joins_at_metres' => 115000, 'length_metres' => 90000]);
+    $swaleMonitor = OverflowMonitor::factory()->create(['river_id' => $swale->id, 'river_metres' => 85000]);
+
+    $wharfe = River::factory()->create(['flows_into_river_id' => $ouse->id, 'joins_at_metres' => 60000, 'length_metres' => 100000]);
+    OverflowMonitor::factory()->create(['river_id' => $wharfe->id, 'river_metres' => 90000]);
+
+    $summaries = app(UpstreamMonitorFinder::class)->for($york);
+
+    expect($summaries->map(fn ($summary) => $summary->monitor->id)->all())->toBe([$ureMonitor->id, $swaleMonitor->id])
+        // 10km down the Ure, then 30km down the Ouse.
+        ->and($summaries[0]->distanceUpstreamMetres)->toBe(40000)
+        // 5km down the Swale, 5km down the Ure, then 30km down the Ouse.
+        ->and($summaries[1]->distanceUpstreamMetres)->toBe(40000);
+
+    expect($ure->isTributary())->toBeFalse();
+});
+
 it('returns nothing for an unpositioned spot', function () {
     $spot = Spot::factory()->create(['river_metres' => null]);
 

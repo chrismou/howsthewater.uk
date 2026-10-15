@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int|null $region_id
  * @property int|null $parent_river_id
+ * @property int|null $flows_into_river_id
  * @property string $name
  * @property string $slug
  * @property string|null $catchment
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $gauges_discovered_at
  * @property-read Region|null $region
  * @property-read River|null $parent
+ * @property-read River|null $flowsInto
  * @property-read Collection<int, River> $tributaries
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -40,6 +42,7 @@ class River extends Model
     protected $fillable = [
         'region_id',
         'parent_river_id',
+        'flows_into_river_id',
         'name',
         'slug',
         'catchment',
@@ -87,6 +90,26 @@ class River extends Model
     }
 
     /**
+     * The main river this one joins, for a main river that is not the last in its system (the Ure joins the Ouse).
+     *
+     * @return BelongsTo<River, $this>
+     */
+    public function flowsInto(): BelongsTo
+    {
+        return $this->belongsTo(River::class, 'flows_into_river_id');
+    }
+
+    /**
+     * Every river whose water reaches this one directly: its tributaries and any main rivers that join it.
+     *
+     * @return Builder<River>
+     */
+    public function inflowingRivers(): Builder
+    {
+        return River::query()->where(fn (Builder $query) => $query->where('parent_river_id', $this->id)->orWhere('flows_into_river_id', $this->id));
+    }
+
+    /**
      * Rivers that get their own pages, as opposed to tributaries that only
      * contribute monitors.
      *
@@ -108,7 +131,7 @@ class River extends Model
      */
     public function scopeWithoutCentreline(Builder $query): Builder
     {
-        return $query->select(['id', 'region_id', 'parent_river_id', 'name', 'slug', 'catchment', 'aliases', 'mouth_latitude', 'mouth_longitude', 'length_metres', 'joins_at_metres', 'created_at', 'updated_at']);
+        return $query->select(['id', 'region_id', 'parent_river_id', 'flows_into_river_id', 'name', 'slug', 'catchment', 'aliases', 'mouth_latitude', 'mouth_longitude', 'length_metres', 'joins_at_metres', 'created_at', 'updated_at']);
     }
 
     public function isTributary(): bool

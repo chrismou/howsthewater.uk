@@ -4,6 +4,7 @@
     $maxMinutes = max(1, $days->max(fn ($day) => $day->spillMinutes));
     $totalMinutes = $days->sum(fn ($day) => $day->spillMinutes);
     $activeDays = $days->filter(fn ($day) => $day->spillCount > 0)->count();
+    $listedEvents = $events->take(50);
 @endphp
 
 <div class="rounded-lg border border-line bg-surface p-5">
@@ -47,7 +48,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line-2">
-                    @foreach ($events as $event)
+                    @foreach ($listedEvents as $event)
                         <tr>
                             <td class="py-1.5 pr-4 whitespace-nowrap">{{ $event->started_at->timezone(config('app.display_timezone', 'Europe/London'))->format('D j M, H:i') }}</td>
                             <td class="py-1.5 pr-4 whitespace-nowrap">
@@ -63,6 +64,9 @@
                     @endforeach
                 </tbody>
             </table>
+            @if ($events->count() > $listedEvents->count())
+                <p class="mt-2 text-xs text-muted">The latest {{ $listedEvents->count() }} are listed.</p>
+            @endif
         </details>
     @endif
 </div>

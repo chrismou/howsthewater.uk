@@ -11,13 +11,15 @@ class RiverSeeder extends Seeder
 {
     /**
      * Main rivers first, then tributaries (which reference their parent by
-     * slug). Tributaries only contribute monitors; they get no pages. Names
+     * slug). Tributaries only contribute monitors; they get no pages. A main
+     * river that joins another names it as flows_into, so its overflows
+     * count upstream of that river's spots while it keeps its own pages. Names
      * must match OS Open Rivers; aliases are the receiving watercourse names
      * the overflow feed and the Environment Agency use. Main rivers carry an
      * approximate mouth so same-named rivers elsewhere in Britain are ignored.
      * Keyed by region slug; slugs only need to be unique within a region.
      *
-     * @return array<string, array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>>
+     * @return array<string, array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>>
      */
     public static function rivers(): array
     {
@@ -29,13 +31,13 @@ class RiverSeeder extends Seeder
     }
 
     /**
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
      */
     private static function yorkshire(): array
     {
         return [
             // Wharfe
-            self::main('River Wharfe', 'Yorkshire Ouse', [53.8415, -1.1295]),
+            self::main('River Wharfe', 'Yorkshire Ouse', [53.8415, -1.1295], flowsInto: 'ouse'),
             self::tributary('River Washburn', 'wharfe'),
             self::tributary('Kex Beck', 'wharfe'),
             self::tributary('Weeton Beck', 'wharfe'),
@@ -45,7 +47,7 @@ class RiverSeeder extends Seeder
             self::tributary('Cock Beck', 'wharfe'),
 
             // Aire
-            self::main('River Aire', 'Yorkshire Ouse', [53.7217, -0.8950]),
+            self::main('River Aire', 'Yorkshire Ouse', [53.7217, -0.8950], flowsInto: 'ouse'),
             self::tributary('Eller Beck', 'aire'),
             self::tributary('Silsden Beck', 'aire'),
             self::tributary('River Worth', 'aire'),
@@ -59,7 +61,7 @@ class RiverSeeder extends Seeder
             self::tributary('Wyke Beck', 'aire'),
 
             // Calder
-            self::main('River Calder', 'Yorkshire Ouse', [53.7215, -1.3595]),
+            self::main('River Calder', 'Yorkshire Ouse', [53.7215, -1.3595], flowsInto: 'aire'),
             self::tributary('Walsden Water', 'calder'),
             self::tributary('Hebden Water', 'calder'),
             self::tributary('River Ryburn', 'calder'),
@@ -71,7 +73,7 @@ class RiverSeeder extends Seeder
             self::tributary('Fenay Beck', 'colne'),
 
             // Don
-            self::main('River Don', 'Yorkshire Ouse', [53.674, -0.980]),
+            self::main('River Don', 'Yorkshire Ouse', [53.674, -0.980], flowsInto: 'ouse'),
             self::tributary('Ewden Beck', 'don'),
             self::tributary('River Loxley', 'don'),
             self::tributary('River Rivelin', 'loxley'),
@@ -89,12 +91,12 @@ class RiverSeeder extends Seeder
             self::tributary('River Went', 'don'),
 
             // Nidd
-            self::main('River Nidd', 'Yorkshire Ouse', [54.0205, -1.2185]),
+            self::main('River Nidd', 'Yorkshire Ouse', [54.0205, -1.2185], flowsInto: 'ouse'),
             self::tributary('Oak Beck', 'nidd'),
             self::tributary('Crimple Beck', 'nidd', ['River Crimple', 'Crimple Beck Or River Crimple']),
 
             // Ure
-            self::main('River Ure', 'Yorkshire Ouse', [54.039, -1.276]),
+            self::main('River Ure', 'Yorkshire Ouse', [54.039, -1.276], flowsInto: 'ouse'),
             self::tributary('River Bain', 'ure'),
             self::tributary('River Cover', 'ure'),
             self::tributary('River Burn', 'ure'),
@@ -103,14 +105,14 @@ class RiverSeeder extends Seeder
             self::tributary('Bishop Monkton Beck', 'ure'),
 
             // Swale
-            self::main('River Swale', 'Yorkshire Ouse', [54.089, -1.323]),
+            self::main('River Swale', 'Yorkshire Ouse', [54.089, -1.323], flowsInto: 'ure'),
             self::tributary('Skeeby Beck', 'swale'),
             self::tributary('Bedale Beck', 'swale'),
             self::tributary('River Wiske', 'swale'),
             self::tributary('Cod Beck', 'swale'),
 
             // Derwent
-            self::main('River Derwent', 'Yorkshire Ouse', [53.749, -0.969]),
+            self::main('River Derwent', 'Yorkshire Ouse', [53.749, -0.969], flowsInto: 'ouse'),
             self::tributary('River Hertford', 'derwent'),
             self::tributary('Thornton Beck', 'derwent'),
             self::tributary('River Rye', 'derwent'),
@@ -144,7 +146,7 @@ class RiverSeeder extends Seeder
      * that join above Teddington. Rivers joining below it (the Lee, Brent,
      * Wandle, Roding) only affect tidal water, so they are left out.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
      */
     private static function thamesValley(): array
     {
@@ -182,7 +184,7 @@ class RiverSeeder extends Seeder
      * monitors, each with its tributaries. Mouths are at the head of each
      * estuary, as the tidal reaches are not walkable river.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
      */
     private static function northWest(): array
     {
@@ -227,11 +229,12 @@ class RiverSeeder extends Seeder
     /**
      * @param  array{0: float, 1: float}  $mouth  Approximate [lat, lng] of the mouth
      * @param  array<int, string>  $extraAliases
-     * @return array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth: array{0: float, 1: float}}
+     * @param  string|null  $flowsInto  Slug of the main river this one joins, if any
+     * @return array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth: array{0: float, 1: float}, flows_into: string|null}
      */
-    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = []): array
+    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = [], ?string $flowsInto = null): array
     {
-        return ['name' => $name, 'slug' => self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...$extraAliases], 'mouth' => $mouth];
+        return ['name' => $name, 'slug' => self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...$extraAliases], 'mouth' => $mouth, 'flows_into' => $flowsInto];
     }
 
     /**
@@ -258,14 +261,14 @@ class RiverSeeder extends Seeder
     }
 
     /**
-     * @param  array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string}>  $rivers
+     * @param  array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>  $rivers
      */
     private function seedRegion(Region $region, array $rivers): void
     {
         foreach ($rivers as $river) {
             $parentSlug = $river['parent'] ?? null;
             $mouth = $river['mouth'] ?? [null, null];
-            unset($river['parent'], $river['mouth']);
+            unset($river['parent'], $river['mouth'], $river['flows_into']);
 
             $parent = $parentSlug === null ? null : $region->rivers()->where('slug', $parentSlug)->firstOrFail();
 
@@ -283,6 +286,13 @@ class RiverSeeder extends Seeder
                 'mouth_latitude' => $mouth[0],
                 'mouth_longitude' => $mouth[1],
             ])->save();
+        }
+
+        // Rivers a main river flows into can be listed after it (the Ouse comes after the Ure), so link them once all exist.
+        foreach ($rivers as $river) {
+            $flowsInto = isset($river['flows_into']) ? $region->rivers()->where('slug', $river['flows_into'])->firstOrFail() : null;
+
+            $region->rivers()->where('slug', $river['slug'])->update(['flows_into_river_id' => $flowsInto?->id]);
         }
     }
 }

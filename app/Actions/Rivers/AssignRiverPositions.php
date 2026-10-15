@@ -82,11 +82,11 @@ class AssignRiverPositions
     }
 
     /**
-     * Records where a tributary's mouth meets its parent river.
+     * Records where a tributary's mouth meets its parent river, or a main river's meets the river it flows into.
      */
     private function assignJoinPoint(River $river): void
     {
-        $parent = $river->parent;
+        $parent = $river->parent ?? $river->flowsInto;
         $mouth = $river->mouth();
 
         if ($parent === null || $mouth === null || ! $parent->hasCentreline()) {

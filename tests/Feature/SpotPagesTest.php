@@ -218,7 +218,7 @@ it('rejects unknown glossary terms', function () {
     expect(fn () => new Help('nonsense'))->toThrow(InvalidArgumentException::class);
 });
 
-it('lists active upstream monitors with duration and spill counts, and tucks quiet ones away', function () {
+it('lists active upstream monitors before quiet ones, with duration and spill counts', function () {
     [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
     $active = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000]);
     $quiet = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 40000]);
@@ -227,10 +227,30 @@ it('lists active upstream monitors with duration and spill counts, and tucks qui
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
         ->assertSeeInOrder([$active->external_id, '45 min', $quiet->external_id])
-        ->assertSee('1 more monitor upstream had no spill in the last 30 days')
-        ->assertSee('data-quiet-monitors hidden', false)
+        ->assertDontSee('data-more-monitors', false)
         ->assertSee('Copy link')
         ->assertSee('openstreetmap.org/?mlat=');
+});
+
+it('renders the first 10 upstream monitors and loads the rest on request', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    $active = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 100]);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $active->id, 'started_at' => now()->subDays(2), 'ended_at' => now()->subDays(2)->addHour()]);
+    $nearest = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 49000]);
+    $furthest = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 200]);
+    OverflowMonitor::factory()->count(27)->sequence(fn ($sequence) => ['river_metres' => 40000 - $sequence->index * 100])->create(['river_id' => $river->id]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee('Showing 10 of 30 upstream monitors')
+        ->assertSee('Show the other 20')
+        ->assertSeeInOrder(['data-monitor-rows', $active->external_id, $nearest->external_id, 'data-more-monitors'], false);
+
+    $this->get(route('spots.monitors', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee($furthest->external_id)
+        ->assertDontSee($active->external_id)
+        ->assertDontSee('<html', false);
 });
 
 it('shows the region page with river strips, catchment tables and the right now panel', function () {

@@ -54,6 +54,15 @@
 
     /* Map water */
     --color-water: #e9f0f3;
+
+    /* A wave rolling along, for loading indicators */
+    --animate-wave: wave 1s linear infinite;
+
+    @keyframes wave {
+        to {
+            transform: translateX(16px);
+        }
+    }
 }
 
 @layer base {

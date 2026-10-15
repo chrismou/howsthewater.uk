@@ -29,13 +29,14 @@ Route::scopeBindings()->group(function () {
     Route::get('/{region}/lakes', [LakeController::class, 'index'])->name('lakes.index');
     Route::get('/{region}/lakes/{lake}', [LakeController::class, 'show'])->name('lakes.show');
 
-    // Feeds come before the spot route, which would otherwise take "feed" as a spot slug (and a beach or lake feed
-    // as a spot on a river called "beaches" or "lakes").
+    // Feeds and the spot's extra overflow rows come before the spot route, which would otherwise take "feed" as a spot
+    // slug (and a beach or lake feed as a spot on a river called "beaches" or "lakes").
     Route::middleware(['throttle:public', 'cache.headers:public;max_age=300'])->group(function () {
         Route::get('/{region}/beaches/{beach}/feed', [FeedController::class, 'beach'])->name('beaches.feed');
         Route::get('/{region}/lakes/{lake}/feed', [FeedController::class, 'lake'])->name('lakes.feed');
         Route::get('/{region}/{river}/feed', [FeedController::class, 'river'])->name('rivers.feed');
         Route::get('/{region}/{river}/{spot}/feed', [FeedController::class, 'spot'])->name('spots.feed');
+        Route::get('/{region}/{river}/{spot}/monitors', [SpotController::class, 'monitors'])->name('spots.monitors');
     });
 
     Route::get('/{region}/{river}', [RiverController::class, 'show'])->name('rivers.show');

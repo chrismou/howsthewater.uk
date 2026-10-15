@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\OverflowStatus;
 use App\Enums\SpillRecency;
 use App\Models\SpillEvent;
 use App\Models\Spot;
@@ -39,6 +40,48 @@ final readonly class SpotConditions
         public Collection $floodWarnings,
         public ?BathingWaterSummary $bathingWater = null,
     ) {
+    }
+
+    /**
+     * Spills each upstream monitor recorded in the history window, by monitor id.
+     *
+     * @return Collection<int, int>
+     */
+    public function spillCountsByMonitor(): Collection
+    {
+        return $this->recentSpillEvents->countBy('overflow_monitor_id');
+    }
+
+    /**
+     * Upstream monitors for the overflows table: those discharging, offline or
+     * with a spill in the history window first, then the quiet ones, each
+     * nearest first.
+     *
+     * @return Collection<int, UpstreamMonitorSummary>
+     */
+    public function upstreamMonitorsByActivity(): Collection
+    {
+        [$active, $quiet] = $this->upstreamMonitors->partition($this->activeMonitorTest());
+
+        return $active->concat($quiet)->values();
+    }
+
+    /**
+     * How many upstream monitors are discharging, offline or spilled in the history window.
+     */
+    public function activeUpstreamMonitorCount(): int
+    {
+        return $this->upstreamMonitors->filter($this->activeMonitorTest())->count();
+    }
+
+    /**
+     * @return callable(UpstreamMonitorSummary): bool
+     */
+    private function activeMonitorTest(): callable
+    {
+        $spillCounts = $this->spillCountsByMonitor();
+
+        return fn (UpstreamMonitorSummary $summary): bool => $summary->status !== OverflowStatus::NotDischarging || $spillCounts->has($summary->monitor->id);
     }
 
     /**

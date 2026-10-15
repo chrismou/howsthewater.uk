@@ -51,6 +51,19 @@ it('records where a tributary joins its parent river', function () {
     expect($tributary->fresh()->joins_at_metres)->toBeBetween(15000, 19000);
 });
 
+it('records where a main river joins the river it flows into', function () {
+    $ouse = River::factory()->withCentreline()->create();
+    $ure = River::factory()->create([
+        'flows_into_river_id' => $ouse->id,
+        'centreline' => [[53.950, -1.750], [53.900, -1.750], [53.851, -1.701]],
+        'length_metres' => 9000,
+    ]);
+
+    app(AssignRiverPositions::class)->handle($ure);
+
+    expect($ure->fresh()->joins_at_metres)->toBeBetween(15000, 19000);
+});
+
 it('positions monitors on unnamed tributaries of the river with extra slack', function () {
     $river = River::factory()->withCentreline()->create(['name' => 'River Test', 'aliases' => ['River Test']]);
 

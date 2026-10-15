@@ -10,8 +10,9 @@ use Illuminate\Support\Collection;
 
 /**
  * Finds every storm overflow monitor whose discharge flows past a spot:
- * monitors higher up the same river, plus everything on tributaries that
- * join above the spot, recursively. Distances follow the water.
+ * monitors higher up the same river, plus everything on tributaries and
+ * other main rivers that join above the spot, recursively. Distances
+ * follow the water.
  */
 class UpstreamMonitorFinder
 {
@@ -52,18 +53,18 @@ class UpstreamMonitorFinder
                 latestEvent: $monitor->spillEvents->first(),
             ));
 
-        $tributaries = $river->tributaries()
+        $inflows = $river->inflowingRivers()
             ->withoutCentreline()
             ->whereNotNull('joins_at_metres')
             ->whereNotNull('length_metres')
             ->where('joins_at_metres', '<=', $belowMetres)
             ->get();
 
-        foreach ($tributaries as $tributary) {
+        foreach ($inflows as $inflow) {
             $monitors = $monitors->concat($this->collect(
-                $tributary,
-                $tributary->length_metres,
-                $offsetMetres + ($belowMetres - $tributary->joins_at_metres),
+                $inflow,
+                $inflow->length_metres,
+                $offsetMetres + ($belowMetres - $inflow->joins_at_metres),
             ));
         }
 
