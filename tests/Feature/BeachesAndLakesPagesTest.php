@@ -95,6 +95,27 @@ it('shows the bathing water record on a spot that is a designated bathing water'
         ->assertJsonPath('data.bathing_water.name', 'Wharfe at Cromwheel, Ilkley');
 });
 
+it('counts beaches and lakes on the home page and leaves out places it has none of', function () {
+    waterBodies();
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('bathing water results for 1 beach and 1 lake.')
+        ->assertDontSee('river spot')
+        ->assertSee('Bathing water results');
+});
+
+it('titles beaches and lakes the way people search for them', function () {
+    [$region, $beach, $lake] = waterBodies();
+    $bay = BathingWater::factory()->create(['region_id' => $region->id, 'name' => "Robin Hood's Bay", 'slug' => 'robin-hoods-bay']);
+
+    $this->get(route('beaches.show', [$region, $beach]))->assertOk()
+        ->assertSee('<title>Blackpool North beach: water quality and swimming - ', false)
+        ->assertSee('"name":"Beaches","item":"'.route('beaches.index', $region).'"', false);
+    $this->get(route('beaches.show', [$region, $bay]))->assertOk()->assertSee("Robin Hood&#039;s Bay: water quality and swimming", false);
+    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSee('<title>Windermere: swimming, water quality and lake level - ', false);
+});
+
 it('finds beaches and lakes in search and lists them in the sitemap', function () {
     [$region, $beach, $lake] = waterBodies();
 

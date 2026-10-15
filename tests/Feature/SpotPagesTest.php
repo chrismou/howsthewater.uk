@@ -33,7 +33,7 @@ it('introduces the site and its regions on the home page', function () {
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee("What's the river doing right now?", false)
+        ->assertSee("How's your local river, beach or lake looking today?", false)
         ->assertSee('How to read it')
         ->assertSee('What this site does not do')
         ->assertSee('View Yorkshire')
@@ -281,7 +281,7 @@ it('describes pages for sharing and search engines', function () {
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: spills and river level - ', false)
+        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: swimming, river level and spills - ', false)
         ->assertSee('<meta property="og:url" content="'.route('spots.show', [$region, $river, $spot]).'"', false)
         ->assertSee('og-image.png')
         ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
@@ -315,6 +315,14 @@ it('shows a helpful 404 page in the site layout', function () {
         ->assertSee('data-live-bar', false);
 });
 
+it('describes where a spot sits in the site as breadcrumb structured data', function () {
+    [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley'], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()
+        ->assertSee('"@type":"BreadcrumbList"', false)
+        ->assertSeeInOrder(['"name":"Home"', '"name":"Yorkshire"', '"name":"River Wharfe"', '"name":"Otley","item":"'.route('spots.show', [$region, $river, $spot]).'"'], false);
+});
+
 it('credits the water companies that cover the regions', function () {
     spotWithUrl(['river_metres' => null]);
     Region::factory()->create(['name' => 'North East', 'slug' => 'north-east', 'overflow_feeds' => ['northumbrian_water']]);
@@ -323,7 +331,7 @@ it('credits the water companies that cover the regions', function () {
         ->assertOk()
         ->assertSee('Northumbrian Water and Yorkshire Water storm overflow data')
         ->assertSee('Northumbrian Water and Yorkshire Water monitors report')
-        ->assertSee('rivers in Yorkshire and North East');
+        ->assertSee('beaches and lakes in Yorkshire and North East');
 });
 
 it('totals every region on the home page and keeps the first region added as the default elsewhere', function () {
@@ -380,7 +388,7 @@ it('shows no flood warning blocks when none are in force', function () {
 
     $this->get(route('regions.show', $region))->assertOk()->assertDontSee('id="flood-warnings"', false)->assertDontSee('in force')
         ->assertDontSee('<span class="hidden sm:inline"><span class="font-mono font-semibold">', false);
-    $this->get(route('home'))->assertOk()->assertSee('recent rainfall and flood warnings for')->assertDontSee('role="alert"', false);
+    $this->get(route('home'))->assertOk()->assertSee('flood warnings and bathing water results for')->assertDontSee('role="alert"', false);
     $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertDontSee('aria-label="Flood warnings"', false);
 });
 

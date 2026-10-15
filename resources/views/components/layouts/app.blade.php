@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null])
+@props(['title' => null, 'description' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => []])
 
 @php
     // The live bar shows the summary a page passes (the home page passes every region combined), else the page's
@@ -37,6 +37,19 @@
     <meta name="twitter:title" content="{{ $pageTitle }}">
     <meta name="twitter:description" content="{{ $pageDescription }}">
     <meta name="twitter:image" content="{{ asset('og-image.png') }}">
+    @if ($breadcrumbs !== [])
+        {{-- The page's trail as structured data, so search results show it in place of the bare URL. --}}
+        @php
+            $breadcrumbList = [
+                '@context' => 'https://schema.org',
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => collect([['Home', route('home')], ...$breadcrumbs])
+                    ->map(fn (array $crumb, int $index) => ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $crumb[0], 'item' => $crumb[1]])
+                    ->all(),
+            ];
+        @endphp
+        <script type="application/ld+json">{!! json_encode($breadcrumbList, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+    @endif
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">

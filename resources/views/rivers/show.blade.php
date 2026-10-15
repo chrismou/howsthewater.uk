@@ -9,8 +9,9 @@
     ])->values();
 @endphp
 
-<x-layouts.app :region="$overview->river->region" :feed="route('rivers.feed', [$overview->river->region, $overview->river])" :title="$overview->river->name.' spills and levels'"
-               :description="'Upstream storm overflow spills and river levels for spots along the '.$overview->river->name.', source to mouth.'">
+<x-layouts.app :region="$overview->river->region" :feed="route('rivers.feed', [$overview->river->region, $overview->river])" :title="'Swimming spots on the '.$overview->river->name.': levels and spills'"
+               :description="'Upstream storm overflow spills, river levels and rainfall for every swimming, paddling and fishing spot on the '.$overview->river->name.', source to mouth.'"
+               :breadcrumbs="[[$overview->river->region->name, route('regions.show', $overview->river->region)], [$overview->river->name, url()->current()]]">
     <div class="mb-6">
         <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">All regions</a> <span class="mx-1">/</span> <a href="{{ route('regions.show', $overview->river->region) }}" class="hover:underline">{{ $overview->river->region->name }}</a></p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">{{ $overview->river->name }}</h1>

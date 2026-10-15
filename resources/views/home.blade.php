@@ -2,14 +2,18 @@
     $timezone = config('app.display_timezone', 'Europe/London');
     $allRegions = \App\Data\RegionSummary::combine($regions);
     $totalSpots = $allRegions->spots()->count();
-    $totalRivers = $allRegions->rivers->count();
     $medianRain = $allRegions->medianRainfallLast24HoursMillimetres();
     $regionNames = $regions->pluck('name')->join(', ', ' and ');
+    $placeCounts = collect([
+        $totalSpots.' river '.\Illuminate\Support\Str::plural('spot', $totalSpots) => $totalSpots,
+        $totalBeaches.' '.\Illuminate\Support\Str::plural('beach', $totalBeaches) => $totalBeaches,
+        $totalLakes.' '.\Illuminate\Support\Str::plural('lake', $totalLakes) => $totalLakes,
+    ])->filter()->keys()->join(', ', ' and ');
     $companyNames = \App\Models\Region::query()->orderBy('name')->get()->flatMap->waterCompanies()->unique()->join(', ', ' and ') ?: 'Water company';
 @endphp
 
-<x-layouts.app :title="'Upstream spills, river levels and rainfall for rivers in '.$regionNames"
-               :description="'Live storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on rivers in '.$regionNames.', read from the public monitors every 15 minutes.'"
+<x-layouts.app :title="'Storm overflows, river levels and bathing water results in '.$regionNames"
+               :description="'Live storm overflow spills, river levels, rainfall and bathing water results for swimming, paddling and fishing spots, beaches and lakes in '.$regionNames.', read from the public monitors every 15 minutes.'"
                :live-summary="$allRegions">
     <x-slot:hero>
         <section class="relative overflow-hidden border-b border-line bg-surface">
@@ -26,12 +30,12 @@
             <div class="relative mx-auto grid max-w-5xl gap-8 px-4 pt-8 pb-12 sm:py-14 lg:grid-cols-12 lg:py-16">
                 <div class="flex flex-col gap-5 lg:col-span-7">
                     <p class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $regionNames ?: 'Rivers' }}, updated every 15 minutes</p>
-                    <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">What's the river doing right now?</h1>
+                    <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">How's your local river, beach or lake looking today?</h1>
                     <p class="max-w-xl text-lg text-ink-2">
-                        Find details of storm overflows, spills upstream, river levels, recent rainfall and flood warnings for {{ $totalSpots }} swimming, paddling and fishing spots on {{ $totalRivers }} rivers. Pulled straight from the public monitors.
+                        Storm overflow spills, river levels, rainfall, flood warnings and bathing water results for {{ $placeCounts }}. Pulled straight from the public monitors.
                     </p>
                     <form action="{{ route('search') }}" method="get" role="search" class="flex max-w-xl flex-col gap-2 sm:flex-row">
-                        <label for="hero-search" class="sr-only">Search spots and rivers</label>
+                        <label for="hero-search" class="sr-only">Search spots, rivers, beaches and lakes</label>
                         <input id="hero-search" type="search" name="q" placeholder="Try {{ $featured->pluck('name')->take(2)->join(' or ') }}"
                                class="min-h-12 flex-1 rounded-lg border border-line bg-surface px-4 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent">
                         <button type="submit" class="inline-flex min-h-12 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-surface hover:bg-accent-strong">Search</button>
@@ -99,7 +103,7 @@
         <div class="flex flex-col gap-3 lg:col-span-4 lg:row-start-1">
             <div class="h-[3px] w-14 rounded bg-accent"></div>
             <h2 class="font-display text-3xl font-semibold tracking-tight">How to read it</h2>
-            <p class="text-ink-2">Every spot page shows the same three readings, plus any flood warning in force. Together they tell you whether the river is likely to be carrying sewage, running high, or about to.</p>
+            <p class="text-ink-2">River spot pages show all three readings, plus any flood warning in force. Together they tell you whether the river is likely to be carrying sewage, running high, or about to. Beach and lake pages show overflows nearby, rainfall and their bathing water results.</p>
         </div>
         <ol class="divide-y divide-line border-y border-line lg:col-span-8 lg:col-start-5 lg:row-span-2 lg:row-start-1">
             <li class="grid grid-cols-[2.75rem_1fr] gap-3 py-6 sm:grid-cols-[4.5rem_1fr] sm:gap-4">
@@ -107,6 +111,7 @@
                 <div class="flex flex-col gap-2">
                     <h3 class="font-display text-xl font-semibold">Storm overflows upstream <x-help term="spill" /></h3>
                     <p class="text-ink-2">{{ $companyNames }} monitors report every overflow that is discharging. We trace every monitor upstream of a spot, tributaries included, and summarise the last 48 hours and 30 days.</p>
+                    <p class="text-sm text-muted">The sea and lakes have no upstream, so beaches and lakes list every overflow within 3 km instead. <x-help term="nearby_overflows" /></p>
                     <div class="flex flex-wrap gap-1.5">
                         <x-spill-badge :recency="\App\Enums\SpillRecency::DischargingNow" />
                         <x-spill-badge :recency="\App\Enums\SpillRecency::Within24Hours" />
@@ -133,13 +138,24 @@
             </li>
         </ol>
         {{-- After the readings on phones; under the intro in the left column on wide screens. --}}
-        <div class="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5 lg:col-span-4 lg:row-start-2 lg:self-start">
-            <h3 class="font-display text-lg font-semibold">Flood alerts and warnings <x-help term="flood_warning" /></h3>
-            <p class="text-sm text-ink-2">When the Environment Agency has a flood alert or warning in force for a spot's stretch of river, the spot page shows it in their own words, with a link to the latest on GOV.UK.</p>
-            <div class="flex flex-wrap gap-1.5">
-                <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::SevereFloodWarning" class="py-0.5" />
-                <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodWarning" class="py-0.5" />
-                <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodAlert" class="py-0.5" />
+        <div class="flex flex-col divide-y divide-line-2 rounded-lg border border-line bg-surface lg:col-span-4 lg:row-start-2 lg:self-start">
+            <div class="flex flex-col gap-2 p-5">
+                <h3 class="font-display text-lg font-semibold">Flood alerts and warnings <x-help term="flood_warning" /></h3>
+                <p class="text-sm text-ink-2">Shown in the Environment Agency's own words when one is in force for a spot's stretch of river.</p>
+                <div class="flex flex-wrap gap-1.5">
+                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::SevereFloodWarning" class="py-0.5" />
+                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodWarning" class="py-0.5" />
+                    <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::FloodAlert" class="py-0.5" />
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 p-5">
+                <h3 class="font-display text-lg font-semibold">Bathing water results <x-help term="bathing_classification" /></h3>
+                <p class="text-sm text-ink-2">For designated beaches, lakes and river sites: the yearly classification, recent sample counts and, in season, the daily pollution risk forecast.</p>
+                <div class="flex flex-wrap gap-1.5">
+                    @foreach ([\App\Enums\BathingWaterClassification::Excellent, \App\Enums\BathingWaterClassification::Sufficient, \App\Enums\BathingWaterClassification::Poor] as $classification)
+                        <x-classification-pill :site="(object) ['classification' => $classification, 'classification_year' => null]" />
+                    @endforeach
+                </div>
             </div>
         </div>
     </section>

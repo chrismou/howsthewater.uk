@@ -23,8 +23,9 @@
     ]))->values();
 @endphp
 
-<x-layouts.app :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': bathing water, level and nearby overflows'"
-               :description="'Environment Agency bathing water results, lake level and storm overflows near '.$lake->name.'.'">
+<x-layouts.app :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
+               :description="'Environment Agency bathing water results, lake level, rainfall and storm overflows nearby for swimming and paddling at '.$lake->name.'.'"
+               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Lakes', route('lakes.index', $region)], [$lake->name, url()->current()]]">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm text-muted">

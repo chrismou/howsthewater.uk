@@ -25,8 +25,9 @@
     };
 @endphp
 
-<x-layouts.app :title="$summary->name.' rivers: spills, levels and rainfall'"
-               :description="'Storm overflow spills, river levels and rainfall for every spot on '.$summary->name.'\'s rivers, listed source to mouth.'"
+<x-layouts.app :title="'River swimming in '.$summary->name.': spills, levels and rainfall'"
+               :description="'Storm overflow spills, river levels and rainfall for swimming, paddling and fishing spots on '.$summary->name.'\'s rivers, listed source to mouth.'"
+               :breadcrumbs="[[$summary->name, url()->current()]]"
                :region="$region">
     <div class="mb-6">
         <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">All regions</a> <span class="mx-1">/</span> {{ $summary->name }}</p>

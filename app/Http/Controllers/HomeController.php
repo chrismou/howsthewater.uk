@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Data\RegionSummary;
 use App\Data\RiverSummary;
 use App\Data\SpotSummary;
+use App\Models\BathingWater;
+use App\Models\Lake;
 use App\Models\Region;
 use App\Services\Conditions\RegionSummaries;
 use Illuminate\Support\Collection;
@@ -20,6 +22,8 @@ class HomeController extends Controller
         return view('home', [
             'regions' => $regions,
             'featured' => $this->featuredSpots($regions),
+            'totalBeaches' => BathingWater::query()->beaches()->whereNotNull('region_id')->count(),
+            'totalLakes' => Lake::query()->count(),
         ]);
     }
 

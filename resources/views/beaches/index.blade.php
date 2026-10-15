@@ -1,5 +1,6 @@
-<x-layouts.app :region="$region" :title="$region->name.' beaches'"
-               :description="'Bathing water classifications, samples and nearby storm overflows for every designated beach in '.$region->name.'.'">
+<x-layouts.app :region="$region" :title="$region->name.' beaches: water quality and swimming'"
+               :description="'Bathing water classifications, sample results and nearby storm overflows for swimming at every designated beach in '.$region->name.'.'"
+               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Beaches', url()->current()]]">
     <div class="mb-6">
         <p class="text-sm text-muted">
             <a href="{{ route('home') }}" class="hover:underline">All regions</a>

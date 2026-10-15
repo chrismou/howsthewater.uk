@@ -152,6 +152,15 @@ class BathingWater extends Model
     }
 
     /**
+     * The name as people search for a beach: "Formby beach", but never
+     * "Robin Hood's Bay beach" or "Walney West Shore beach".
+     */
+    public function beachSearchName(): string
+    {
+        return preg_match('/\b(beach|bay|sands?|shore)$/i', $this->name) === 1 ? $this->name : $this->name.' beach';
+    }
+
+    /**
      * Whether today falls in the bathing season, when the EA samples weekly
      * and publishes daily pollution risk forecasts. The season dates are UK
      * calendar dates, so today is taken in UK time, not UTC.

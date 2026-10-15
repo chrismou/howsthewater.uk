@@ -27,8 +27,9 @@
     $osmUrl = sprintf('https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=15/%s/%s', $spot->latitude, $spot->longitude, $spot->latitude, $spot->longitude);
 @endphp
 
-<x-layouts.app :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$spot->name.', '.$spot->river->name.': spills and river level'"
-               :description="'Storm overflow spills upstream of '.$spot->name.' on the '.$spot->river->name.', plus the current river level and trend.'">
+<x-layouts.app :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$spot->name.', '.$spot->river->name.': swimming, river level and spills'"
+               :description="'Upstream storm overflow spills, river level and rainfall for swimming, paddling and fishing at '.$spot->name.' on the '.$spot->river->name.', updated every 15 minutes.'"
+               :breadcrumbs="[[$spot->river->region->name, route('regions.show', $spot->river->region)], [$spot->river->name, route('rivers.show', [$spot->river->region, $spot->river])], [$spot->name, url()->current()]]">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm text-muted">
