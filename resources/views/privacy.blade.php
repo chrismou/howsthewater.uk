@@ -31,7 +31,7 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">Your rights</h2>
-                <p>You can ask for a copy of personal data held about you, ask for it to be deleted, or object to its use. Get in touch through <a href="https://mou.me" rel="noopener" class="text-accent hover:underline">mou.me</a>. If you are unhappy with the answer, you can complain to the <a href="https://ico.org.uk/make-a-complaint/" rel="noopener" class="text-accent hover:underline">Information Commissioner's Office</a>.</p>
+                <p>You can ask for a copy of personal data held about you, ask for it to be deleted, or object to its use. <a href="https://mou.me/contact" rel="noopener" class="text-accent hover:underline">Get in touch</a>. If you are unhappy with the answer, you can complain to the <a href="https://ico.org.uk/make-a-complaint/" rel="noopener" class="text-accent hover:underline">Information Commissioner's Office</a>.</p>
             </section>
 
             <section class="grid gap-3">
