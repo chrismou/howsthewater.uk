@@ -7,6 +7,7 @@
     $liveRegion = $region ?? $allRegions->sortBy('id')->first();
     $liveSummary ??= $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
     $menus = app(\App\Services\Conditions\NavigationMenus::class)->all();
+    $analyticsId = app()->isProduction() ? config('services.google_analytics.measurement_id') : null;
 @endphp
     <!DOCTYPE html>
 <html lang="en-GB" class="h-full">
@@ -113,9 +114,15 @@
             <p class="flex gap-4 whitespace-nowrap">
                 <a href="{{ route('terms') }}" class="underline hover:text-ink">Terms of use</a>
                 <a href="{{ route('privacy') }}" class="underline hover:text-ink">Privacy</a>
+                @if ($analyticsId)
+                    <a href="#" data-cookie-settings class="underline hover:text-ink">Cookie settings</a>
+                @endif
             </p>
         </div>
     </div>
 </footer>
+@if ($analyticsId)
+    <x-cookie-banner :measurement-id="$analyticsId"/>
+@endif
 </body>
 </html>

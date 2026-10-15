@@ -1,3 +1,4 @@
+import { initAnalyticsConsent } from './analytics';
 import { initMaps } from './map';
 import { initNavMenus } from './nav';
 import { initShareControls } from './share';
@@ -11,3 +12,4 @@ initNavMenus();
 initThemeToggle();
 initTooltips();
 initShareControls();
+initAnalyticsConsent();

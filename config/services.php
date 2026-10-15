@@ -37,6 +37,11 @@ return [
 
     'user_agent' => env('HTTP_USER_AGENT', 'howsthewater.uk (hello@howsthewater.uk)'),
 
+    // Google Analytics only loads in production, and only once a visitor accepts analytics cookies.
+    'google_analytics' => [
+        'measurement_id' => env('GOOGLE_ANALYTICS_ID', 'G-Q41SRJTMLE'),
+    ],
+
     // Stream publishes one ArcGIS feature service per water company, all with the same fields.
     // Regions list the keys they need in `overflow_feeds`; only those feeds are polled.
     'stream' => [

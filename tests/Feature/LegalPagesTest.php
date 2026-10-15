@@ -21,6 +21,20 @@ it('credits each data source under its own licence in the footer and links the l
         ->assertSee(route('terms'));
 });
 
+it('offers the analytics consent banner only in production', function () {
+    Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+    config(['services.google_analytics.measurement_id' => 'G-TEST123']);
+
+    $this->get(route('home'))->assertOk()->assertDontSee('data-cookie-banner', false)->assertDontSee('G-TEST123');
+
+    app()->detectEnvironment(fn () => 'production');
+
+    $this->get(route('home'))->assertOk()
+        ->assertSee('data-measurement-id="G-TEST123"', false)
+        ->assertSee('Cookie settings')
+        ->assertDontSee('googletagmanager.com');
+});
+
 it('lists the legal pages in the sitemap', function () {
     $this->get(route('sitemap'))->assertOk()->assertSee(route('privacy'))->assertSee(route('terms'));
 });
