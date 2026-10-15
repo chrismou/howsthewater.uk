@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East). The site
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands). The site
 reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -167,8 +167,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   pieces too far apart to join), the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
   Utilities, mouths at the head of each estuary), and the North East's Tyne (with the North and South Tyne flowing
   into it), Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Till (Northumbrian Water). The Tweed is left out until
-  Scottish Water's overflows are supported, since most of its overflows are in Scotland. Main rivers and their
-  tributaries are seeded
+  Scottish Water's overflows are supported, since most of its overflows are in Scotland. The Midlands has Severn
+  Trent's rivers: the Trent, with the Soar and the Peak District's Derwent, Wye, Dove and Manifold flowing into it, and
+  the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn (Hafren Dyfrdwy) are not on
+  Stream, so they do not count yet. Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
@@ -254,7 +256,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   seeds from the set of links whose mouth is nearest the parent centreline (tributaries) or the seeded `mouth_latitude`
   and `mouth_longitude` (main rivers), then joins other fragments within 4 km to bridge reservoirs. Within each set of
   connected links the main stem runs from the flow sink nearest the parent or hint to the node furthest from it along
-  the links, ignoring recorded flow directions, which OS often draws backwards in braided reaches. Seed parents before
+  the links, ignoring recorded flow directions, which OS often draws backwards in braided reaches. Rivers that rise
+  in Wales carry their Welsh name first (`Afon Hafren`, alternative `River Severn`), so links are matched on
+  `watercourse_name` or `watercourse_name_alternative`. Seed parents before
   tributaries; `rivers:centrelines` orders them that way. It only fetches rivers without a centreline, so a fix that
   should reach an existing river needs a migration that clears its `centreline` (deploys then refetch it).
 - The Environment Agency also names rivers nationally, so `SyncGaugeStations` drops stations more than 2 km from the

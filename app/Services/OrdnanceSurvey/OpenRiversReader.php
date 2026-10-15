@@ -47,9 +47,10 @@ class OpenRiversReader
         $pdo = new PDO('sqlite:'.$this->geoPackagePath, options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 
         $statement = $pdo->prepare(
-            'SELECT id, geometry, flow_direction, start_node, end_node FROM watercourse_link WHERE watercourse_name = :name'
+            'SELECT id, geometry, flow_direction, start_node, end_node FROM watercourse_link WHERE watercourse_name = :name OR watercourse_name_alternative = :alternative'
         );
-        $statement->execute(['name' => $watercourseName]);
+        // Rivers that rise in Wales carry their Welsh name first, even in England ("Afon Hafren", alternative "River Severn").
+        $statement->execute(['name' => $watercourseName, 'alternative' => $watercourseName]);
 
         $links = [];
 

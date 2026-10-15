@@ -23,17 +23,17 @@ function geoPackageLineString(array $points): string
 }
 
 /**
- * @param  array<int, array{name: string, start: string, end: string, points: array<int, array{0: float, 1: float}>}>  $links
+ * @param  array<int, array{name: string, alternative?: string, start: string, end: string, points: array<int, array{0: float, 1: float}>}>  $links
  */
 function openRiversFixture(array $links): string
 {
     $path = tempnam(sys_get_temp_dir(), 'oprvrs').'.gpkg';
     $pdo = new PDO('sqlite:'.$path);
-    $pdo->exec('CREATE TABLE watercourse_link (id TEXT, geometry BLOB, flow_direction TEXT, start_node TEXT, end_node TEXT, watercourse_name TEXT)');
-    $insert = $pdo->prepare('INSERT INTO watercourse_link VALUES (?, ?, ?, ?, ?, ?)');
+    $pdo->exec('CREATE TABLE watercourse_link (id TEXT, geometry BLOB, flow_direction TEXT, start_node TEXT, end_node TEXT, watercourse_name TEXT, watercourse_name_alternative TEXT)');
+    $insert = $pdo->prepare('INSERT INTO watercourse_link VALUES (?, ?, ?, ?, ?, ?, ?)');
 
     foreach ($links as $index => $link) {
-        $insert->execute(["link-{$index}", geoPackageLineString($link['points']), 'in direction', $link['start'], $link['end'], $link['name']]);
+        $insert->execute(["link-{$index}", geoPackageLineString($link['points']), 'in direction', $link['start'], $link['end'], $link['name'], $link['alternative'] ?? null]);
     }
 
     return $path;
@@ -49,6 +49,15 @@ it('chains the links of a named watercourse from source to mouth', function () {
 
     expect($centreline)->toHaveCount(3)
         ->and($centreline[0][1])->toBeLessThan($centreline[2][1]);
+});
+
+it('finds a river by its alternative name when OS lists the Welsh name first', function () {
+    $path = openRiversFixture([
+        ['name' => 'Afon Hafren', 'alternative' => 'River Severn', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [401000, 450000]]],
+        ['name' => 'Afon Hafren', 'alternative' => 'River Severn', 'start' => 'b', 'end' => 'c', 'points' => [[401000, 450000], [402000, 450000]]],
+    ]);
+
+    expect((new OpenRiversReader($path))->riverCentreline('River Severn'))->toHaveCount(3);
 });
 
 it('picks the same-named watercourse whose mouth is nearest the parent river', function () {

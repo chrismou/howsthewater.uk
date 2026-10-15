@@ -28,6 +28,97 @@ class SpotSeeder extends Seeder
             'thames-valley' => self::thamesValley(),
             'north-west' => self::northWest(),
             'north-east' => self::northEast(),
+            'midlands' => self::midlands(),
+        ];
+    }
+
+    /**
+     * Spots on Severn Trent's rivers, snapped onto the OS centreline.
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function midlands(): array
+    {
+        return [
+            'derwent' => [
+                ['name' => 'Hathersage', 'latitude' => 53.3218, 'longitude' => -1.6506, 'description' => 'Leadmill Bridge and the riverside below the village.'],
+                ['name' => 'Grindleford', 'latitude' => 53.3022, 'longitude' => -1.6377, 'description' => 'Grindleford bridge, at the foot of Padley Gorge.'],
+                ['name' => 'Froggatt', 'latitude' => 53.2908, 'longitude' => -1.6367, 'description' => 'The old bridge and the meadows below Froggatt Edge.'],
+                ['name' => 'Calver', 'latitude' => 53.2702, 'longitude' => -1.6298, 'description' => 'Calver bridge and the weir by the mill.'],
+                ['name' => 'Chatsworth', 'latitude' => 53.2264, 'longitude' => -1.6144, 'description' => 'The park reach below Chatsworth House.'],
+                ['name' => 'Rowsley', 'latitude' => 53.1894, 'longitude' => -1.6166, 'description' => 'Where the Wye joins, by the village bridge.'],
+                ['name' => 'Matlock', 'latitude' => 53.1379, 'longitude' => -1.5562, 'description' => 'Hall Leys Park and the town bridge.'],
+                ['name' => 'Matlock Bath', 'latitude' => 53.1215, 'longitude' => -1.5600, 'description' => 'The gorge below High Tor.'],
+                ['name' => 'Cromford', 'latitude' => 53.1106, 'longitude' => -1.5546, 'description' => 'Cromford bridge, by the mills.'],
+                ['name' => 'Whatstandwell', 'latitude' => 53.0840, 'longitude' => -1.5069, 'description' => 'Whatstandwell bridge and the canal towpath.'],
+                ['name' => 'Belper', 'latitude' => 53.0211, 'longitude' => -1.4892, 'description' => 'River Gardens below the North Mill.'],
+                ['name' => 'Duffield', 'latitude' => 52.9896, 'longitude' => -1.4853, 'description' => 'Duffield bridge, where the Ecclesbourne joins.'],
+                ['name' => 'Darley Abbey', 'latitude' => 52.9400, 'longitude' => -1.4737, 'description' => 'The weir and mills above Derby.'],
+            ],
+            'wye' => [
+                ['name' => 'Chee Dale', 'latitude' => 53.2570, 'longitude' => -1.8065, 'description' => 'Stepping stones under the limestone cliffs.'],
+                ['name' => 'Millers Dale', 'latitude' => 53.2560, 'longitude' => -1.7916, 'description' => 'Below the viaducts on the Monsal Trail.'],
+                ['name' => 'Monsal Dale', 'latitude' => 53.2389, 'longitude' => -1.7331, 'description' => 'The weir below Monsal Head viaduct.'],
+                ['name' => 'Ashford in the Water', 'latitude' => 53.2234, 'longitude' => -1.7093, 'description' => 'Sheepwash Bridge and the village.'],
+                ['name' => 'Bakewell', 'latitude' => 53.2145, 'longitude' => -1.6728, 'description' => 'The medieval bridge and riverside meadows.'],
+                ['name' => 'Haddon Hall', 'latitude' => 53.1933, 'longitude' => -1.6511, 'description' => 'The reach below Haddon Hall.'],
+            ],
+            'dove' => [
+                ['name' => 'Beresford Dale', 'latitude' => 53.1331, 'longitude' => -1.8134, 'description' => 'The upper dale below Hartington.'],
+                ['name' => 'Milldale', 'latitude' => 53.0900, 'longitude' => -1.7929, 'description' => 'Viator\'s Bridge in the hamlet.'],
+                ['name' => 'Dovedale Stepping Stones', 'latitude' => 53.0604, 'longitude' => -1.7783, 'description' => 'The stepping stones below Thorpe Cloud.'],
+                ['name' => 'Hanging Bridge', 'latitude' => 53.0098, 'longitude' => -1.7655, 'description' => 'Below the bridge at Mayfield, near Ashbourne.'],
+                ['name' => 'Rocester', 'latitude' => 52.9523, 'longitude' => -1.8323, 'description' => 'Below the village, where the Churnet joins.'],
+                ['name' => 'Tutbury', 'latitude' => 52.8616, 'longitude' => -1.6799, 'description' => 'The riverside below Tutbury castle.'],
+            ],
+            'manifold' => [
+                ['name' => 'Wetton Mill', 'latitude' => 53.1202, 'longitude' => -1.8577, 'description' => 'The tearoom reach, where the river often runs underground in summer.'],
+                ['name' => 'Ilam', 'latitude' => 53.0525, 'longitude' => -1.8024, 'description' => 'Ilam Park, just above where the Manifold joins the Dove.'],
+            ],
+            'trent' => [
+                ['name' => 'Great Haywood', 'latitude' => 52.7999, 'longitude' => -2.0075, 'description' => 'Essex Bridge at Shugborough, where the Sow joins.'],
+                ['name' => 'Alrewas', 'latitude' => 52.7364, 'longitude' => -1.7497, 'description' => 'The village reach by the canal.'],
+                ['name' => 'Burton upon Trent', 'latitude' => 52.8074, 'longitude' => -1.6238, 'description' => 'The Washlands between the town bridges.'],
+                ['name' => 'Swarkestone', 'latitude' => 52.8529, 'longitude' => -1.4527, 'description' => 'Swarkestone Bridge and its causeway.'],
+                ['name' => 'Shardlow', 'latitude' => 52.8656, 'longitude' => -1.3464, 'description' => 'The village reach, where the Derwent joins.'],
+                ['name' => 'Attenborough', 'latitude' => 52.8953, 'longitude' => -1.2298, 'description' => 'The nature reserve lakes and riverside.'],
+                ['name' => 'Trent Bridge, Nottingham', 'latitude' => 52.9361, 'longitude' => -1.1379, 'description' => 'Victoria Embankment by Trent Bridge.'],
+                ['name' => 'Holme Pierrepont', 'latitude' => 52.9479, 'longitude' => -1.0880, 'description' => 'Beside the National Water Sports Centre.'],
+                ['name' => 'Gunthorpe', 'latitude' => 52.9863, 'longitude' => -0.9872, 'description' => 'Gunthorpe lock and bridge.'],
+                ['name' => 'Newark', 'latitude' => 53.0785, 'longitude' => -0.8126, 'description' => 'The castle reach and town lock.'],
+                ['name' => 'Gainsborough', 'latitude' => 53.4004, 'longitude' => -0.7822, 'description' => 'The riverside walk, on the tidal Trent.'],
+            ],
+            'soar' => [
+                ['name' => 'Leicester', 'latitude' => 52.6320, 'longitude' => -1.1422, 'description' => 'Castle Gardens on the Soar.'],
+                ['name' => 'Barrow upon Soar', 'latitude' => 52.7517, 'longitude' => -1.1529, 'description' => 'The village reach and lock.'],
+                ['name' => 'Zouch', 'latitude' => 52.8062, 'longitude' => -1.2456, 'description' => 'Zouch lock and the cut.'],
+            ],
+            'severn' => [
+                ['name' => 'Shrewsbury', 'latitude' => 52.7099, 'longitude' => -2.7592, 'description' => 'The Quarry park reach, below the town walls.'],
+                ['name' => 'Atcham', 'latitude' => 52.6786, 'longitude' => -2.6813, 'description' => 'The old bridge by Attingham Park.'],
+                ['name' => 'Cressage', 'latitude' => 52.6403, 'longitude' => -2.5994, 'description' => 'Cressage bridge and the riverside.'],
+                ['name' => 'Ironbridge', 'latitude' => 52.6273, 'longitude' => -2.4858, 'description' => 'Below the Iron Bridge in the gorge.'],
+                ['name' => 'Bridgnorth', 'latitude' => 52.5340, 'longitude' => -2.4158, 'description' => 'The riverside below the high town.'],
+                ['name' => 'Hampton Loade', 'latitude' => 52.4678, 'longitude' => -2.3767, 'description' => 'The ferry crossing and Severn Valley Railway halt.'],
+                ['name' => 'Bewdley', 'latitude' => 52.3766, 'longitude' => -2.3140, 'description' => 'The riverside below Telford\'s bridge.'],
+                ['name' => 'Stourport-on-Severn', 'latitude' => 52.3365, 'longitude' => -2.2812, 'description' => 'The riverside by the canal basins.'],
+                ['name' => 'Worcester', 'latitude' => 52.1911, 'longitude' => -2.2259, 'description' => 'The cathedral reach and Diglis.'],
+                ['name' => 'Upton upon Severn', 'latitude' => 52.0641, 'longitude' => -2.2136, 'description' => 'The riverside by the town bridge.'],
+            ],
+            'teme' => [
+                ['name' => 'Leintwardine', 'latitude' => 52.3592, 'longitude' => -2.8761, 'description' => 'The village bridge, where the Clun joins.'],
+                ['name' => 'Ludlow', 'latitude' => 52.3662, 'longitude' => -2.7256, 'description' => 'Dinham Bridge below the castle, a designated bathing water.'],
+                ['name' => 'Tenbury Wells', 'latitude' => 52.3124, 'longitude' => -2.5968, 'description' => 'The town bridge and riverside.'],
+                ['name' => 'Knightwick', 'latitude' => 52.2013, 'longitude' => -2.3919, 'description' => 'Below the bridge at Knightwick.'],
+            ],
+            'avon' => [
+                ['name' => 'Warwick', 'latitude' => 52.2793, 'longitude' => -1.5831, 'description' => 'St Nicholas Park, below the castle.'],
+                ['name' => 'Stratford-upon-Avon', 'latitude' => 52.1899, 'longitude' => -1.7038, 'description' => 'The riverside gardens by the theatre.'],
+                ['name' => 'Bidford-on-Avon', 'latitude' => 52.1637, 'longitude' => -1.8583, 'description' => 'The medieval bridge and riverside.'],
+                ['name' => 'Evesham', 'latitude' => 52.0913, 'longitude' => -1.9433, 'description' => 'Abbey Park and the riverside.'],
+                ['name' => 'Pershore', 'latitude' => 52.1079, 'longitude' => -2.0706, 'description' => 'The old bridge and riverside meadows.'],
+                ['name' => 'Tewkesbury', 'latitude' => 51.9983, 'longitude' => -2.1554, 'description' => 'Where the Avon meets the Severn, by the abbey.'],
+            ],
         ];
     }
 

@@ -25,6 +25,9 @@ class LakeSeeder extends Seeder
                 ['name' => 'Ullswater', 'latitude' => 54.5800, 'longitude' => -2.8800, 'description' => 'The second largest lake in the Lake District.', 'gauge_reference' => '761595'],
                 ['name' => 'Bassenthwaite Lake', 'latitude' => 54.6550, 'longitude' => -3.2200, 'description' => 'The Derwent flows through it below Derwent Water.', 'gauge_reference' => '751020'],
             ],
+            'midlands' => [
+                ['name' => 'Colwick Country Park', 'latitude' => 52.9452, 'longitude' => -1.0982, 'description' => 'A former gravel pit lake beside the Trent in Nottingham.', 'gauge_reference' => null],
+            ],
             'thames-valley' => [
                 ['name' => 'Cotswold Country Park', 'latitude' => 51.6610, 'longitude' => -1.9609, 'description' => 'A former gravel pit lake near Cricklade with a sand beach.', 'gauge_reference' => null],
                 ['name' => 'Frensham Great Pond', 'latitude' => 51.1573, 'longitude' => -0.7918, 'description' => 'Heathland pond with a sandy shore near Farnham.', 'gauge_reference' => null],

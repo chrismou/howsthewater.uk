@@ -28,6 +28,7 @@ class RiverSeeder extends Seeder
             'thames-valley' => self::thamesValley(),
             'north-west' => self::northWest(),
             'north-east' => self::northEast(),
+            'midlands' => self::midlands(),
         ];
     }
 
@@ -283,6 +284,79 @@ class RiverSeeder extends Seeder
             self::tributary('River Breamish', 'till'),
             self::tributary('Wooler Water', 'till'),
             self::tributary('River Glen', 'till'),
+        ];
+    }
+
+    /**
+     * Severn Trent's rivers: the Peak District rivers and the Soar flowing
+     * into the Trent, and the Teme and Warwickshire Avon into the Severn.
+     * OS names the Severn and Teme in Welsh first; the reader matches their
+     * English names as alternatives. Overflows on the Welsh upper Severn
+     * belong to Hafren Dyfrdwy, which is not on Stream, so they do not
+     * count yet.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     */
+    private static function midlands(): array
+    {
+        return [
+            // Trent
+            self::main('River Trent', 'Trent', [53.7000, -0.6900], ['River Trent Via Beckvalley Cul']),
+            self::tributary('River Tame', 'trent'),
+            self::tributary('River Rea', 'tame'),
+            self::tributary('River Cole', 'tame'),
+            self::tributary('Ford Brook', 'tame'),
+            self::tributary('River Anker', 'tame'),
+            self::tributary('River Blythe', 'tame', ['River Blythe (Trib)']),
+            self::tributary('River Sow', 'trent'),
+            self::tributary('River Penk', 'sow', ['River Penk/Wergs Brook']),
+            self::tributary('River Erewash', 'trent'),
+            self::tributary('River Leen', 'trent'),
+            self::tributary('River Devon', 'trent'),
+            self::tributary('River Idle', 'trent'),
+            self::tributary('River Maun', 'idle'),
+            self::tributary('River Meden', 'idle'),
+            self::tributary('River Poulter', 'idle'),
+            self::tributary('River Ryton', 'idle'),
+            self::main('River Soar', 'Trent', [52.8640, -1.2620], ['River Soar Or Tribs', 'Various Sites River Soar'], flowsInto: 'trent'),
+            self::tributary('River Wreake', 'soar', ['River Wreake (Eye) Trib']),
+            self::tributary('River Sence', 'soar', ['River Sence (Soar)']),
+
+            // Peak District rivers, all flowing into the Trent
+            self::main('River Derwent', 'Peak District', [52.8700, -1.3700], flowsInto: 'trent'),
+            self::tributary('River Noe', 'derwent'),
+            self::tributary('River Amber', 'derwent'),
+            self::tributary('River Ecclesbourne', 'derwent'),
+            self::tributary('Markeaton Brook', 'derwent'),
+            self::main('River Wye', 'Peak District', [53.1880, -1.6160], flowsInto: 'derwent'),
+            self::tributary('River Lathkill', 'wye'),
+            self::tributary('River Bradford', 'lathkill'),
+            self::main('River Dove', 'Peak District', [52.8300, -1.5800], flowsInto: 'trent'),
+            self::tributary('River Churnet', 'dove'),
+            self::tributary('River Tean', 'dove'),
+            self::tributary('Henmore Brook', 'dove'),
+            self::main('River Manifold', 'Peak District', [53.0480, -1.7830], flowsInto: 'dove'),
+            self::tributary('River Hamps', 'manifold'),
+
+            // Severn
+            self::main('River Severn', 'Severn', [51.8700, -2.2700]),
+            self::tributary('River Tern', 'severn'),
+            self::tributary('River Roden', 'tern'),
+            self::tributary('Rea Brook', 'severn'),
+            self::tributary('River Stour', 'severn'),
+            self::tributary('Smestow Brook', 'stour'),
+            self::main('River Teme', 'Severn', [52.1700, -2.2200], flowsInto: 'severn'),
+            self::tributary('River Clun', 'teme'),
+            self::tributary('River Onny', 'teme'),
+            self::tributary('River Corve', 'teme'),
+            self::main('River Avon', 'Severn', [51.9930, -2.1600], flowsInto: 'severn'),
+            self::tributary('River Leam', 'avon'),
+            self::tributary('River Arrow', 'avon'),
+            self::tributary('River Alne', 'arrow'),
+            self::tributary('River Isbourne', 'avon'),
+            self::tributary('River Swift', 'avon'),
+            self::tributary('River Sowe', 'avon'),
+            self::tributary('River Stour', 'avon', slug: 'stour-avon'),
         ];
     }
 

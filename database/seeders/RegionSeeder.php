@@ -34,5 +34,10 @@ class RegionSeeder extends Seeder
             'overflow_feeds' => ['northumbrian_water'],
             'bathing_water_districts' => ['Northumberland', 'North Tyneside', 'South Tyneside', 'Sunderland', 'County Durham', 'Hartlepool', 'Redcar and Cleveland'],
         ]);
+        Region::query()->updateOrCreate(['slug' => 'midlands'], [
+            'name' => 'Midlands',
+            'overflow_feeds' => ['severn_trent'],
+            'bathing_water_districts' => [],
+        ]);
     }
 }

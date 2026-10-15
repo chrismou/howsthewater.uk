@@ -1,7 +1,7 @@
 # How's the Water?
 
 [howsthewater.uk](https://howsthewater.uk) shows upstream storm overflow spills and river levels for popular swimming,
-paddling and fishing spots on rivers in Yorkshire, the Thames Valley, the North West and the North East. Pick a spot and it tells you which sewage overflows upstream have
+paddling and fishing spots on rivers in Yorkshire, the Thames Valley, the North West, the North East and the Midlands. Pick a spot and it tells you which sewage overflows upstream have
 discharged recently, whether any are discharging now, and what the nearest river gauge is reading.
 
 It reports what the monitors say. It does not say whether the water is safe or clean, and all copy on the site should
@@ -9,7 +9,7 @@ keep that distinction.
 
 ## What it does
 
-- Polls the water companies' near real-time storm overflow feeds (Yorkshire Water, Thames Water, United Utilities and Northumbrian Water, via
+- Polls the water companies' near real-time storm overflow feeds (Yorkshire Water, Thames Water, United Utilities, Northumbrian Water and Severn Trent, via
   the Stream open data hub) every 15 minutes and builds
   a spill history, since the feed only exposes each monitor's latest event.
 - Polls Environment Agency river level gauges every 15 minutes.
@@ -34,7 +34,8 @@ Waters, Mole and others). The North West has the Ribble, Lune, Kent, Eden and Cu
 hold United Utilities monitors (the Lancashire Calder with Pendle Water, the Darwen and Blakewater, the Wenning, two
 Gretas, the Eamont, Irthing, Petteril and Caldew and others). The North East has the Tyne, with the North and South
 Tyne flowing into it, the Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Till. The Tweed waits for Scottish Water's
-overflows, since most of its own are in Scotland. A main river that joins another (the Ure into the Ouse, the North
+overflows, since most of its own are in Scotland. The Midlands has the Trent, with the Soar and the Peak District's
+Derwent, Wye, Dove and Manifold flowing into it, and the Severn with the Teme and Warwickshire Avon. A main river that joins another (the Ure into the Ouse, the North
 Tyne into the Tyne) keeps its own pages, and its overflows count upstream of the river it joins. Each main river carries the named
 tributaries that hold water company monitors (the Colne, Holme, Rother, Dearne, Sheaf, Loxley, Rye, Foss, Skell and around fifty becks and
 brooks). Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances
