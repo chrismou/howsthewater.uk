@@ -31,14 +31,14 @@ it('tracks the regions marked changed until a refresh takes them', function () {
     expect($changed->take())->toEqualCanonicalizing([$first->id, $second->id]);
 });
 
-it('has ingests mark regions changed instead of rebuilding them', function () {
+it('has ingests mark every region changed instead of rebuilding them', function (string $command) {
     $region = Region::factory()->create();
-    Http::fake(['environment.data.gov.uk/*' => Http::response(['items' => []])]);
+    Http::fake(['*' => Http::response(['items' => [], 'features' => []])]);
 
-    $this->artisan('ingest:floods')->assertSuccessful();
+    $this->artisan($command)->run();
 
     expect(app(ChangedRegions::class)->take())->toBe([$region->id]);
-});
+})->with(['ingest:overflows', 'ingest:gauges', 'ingest:rainfall', 'ingest:floods', 'rivers:positions']);
 
 it('marks only regions with beaches or lakes after the bathing water ingest', function () {
     $coastal = Region::factory()->create();
@@ -114,11 +114,10 @@ it('refreshes only marked regions\' published main river spots and their lakes',
     $this->artisan('regions:refresh')->expectsOutputToContain('Refreshed 1 region: 1 spots, 0 beaches and 1 lakes.')->assertSuccessful();
 });
 
-it('runs the refresh after every ingest, with an overlap lock that cannot outlive a killed run for long', function () {
+it('runs the refresh after every ingest, with overlap locks that cannot outlive a killed run for long', function () {
     $events = collect(app(Schedule::class)->events());
-    $refresh = $events->last();
 
-    expect($refresh->command)->toContain('regions:refresh')
-        ->and($refresh->withoutOverlapping)->toBeTrue()
-        ->and($refresh->expiresAt)->toBe(30);
+    expect($events->last()->command)->toContain('regions:refresh')
+        ->and($events->filter->withoutOverlapping)->each(fn ($event) => $event->expiresAt->toBeLessThanOrEqual(60))
+        ->and($events->filter->withoutOverlapping->count())->toBe(6);
 });

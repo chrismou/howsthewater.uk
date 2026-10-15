@@ -2,19 +2,19 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-// Weekly re-checks sit off the minutes their frequent runs use, since the overlap lock is per command string.
-Schedule::command('ingest:overflows')->everyFifteenMinutes()->withoutOverlapping();
-Schedule::command('ingest:gauges')->everyFifteenMinutes()->withoutOverlapping();
+// Weekly re-checks sit off the minutes their frequent runs use, since the overlap lock is per command string. Locks
+// expire after 30 minutes (an hour for the hourly run), so a killed run cannot stop a feed for the default 24 hours.
+Schedule::command('ingest:overflows')->everyFifteenMinutes()->withoutOverlapping(30);
+Schedule::command('ingest:gauges')->everyFifteenMinutes()->withoutOverlapping(30);
 Schedule::command('ingest:gauges --stations')->weeklyOn(1, '03:05');
 Schedule::command('rivers:positions')->dailyAt('03:30');
-Schedule::command('ingest:rainfall')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::command('ingest:rainfall')->everyFifteenMinutes()->withoutOverlapping(30);
 Schedule::command('ingest:rainfall --stations')->weeklyOn(1, '03:20');
-Schedule::command('ingest:floods')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::command('ingest:floods')->everyFifteenMinutes()->withoutOverlapping(30);
 Schedule::command('ingest:floods --areas')->weeklyOn(1, '03:50');
-Schedule::command('ingest:bathing-waters')->hourly()->withoutOverlapping();
+Schedule::command('ingest:bathing-waters')->hourly()->withoutOverlapping(60);
 Schedule::command('ingest:bathing-waters --history')->weeklyOn(1, '04:20');
 
 // Last, so it runs after the quarter hour's ingests in the same scheduler pass (due tasks run one after another, in
-// the order registered here): one rebuild of whatever they marked changed, instead of one per ingest. The overlap lock
-// expires after 30 minutes, so a killed run cannot leave pages unrefreshed for the default 24 hours.
+// the order registered here): one rebuild of whatever they marked changed, instead of one per ingest.
 Schedule::command('regions:refresh')->everyFifteenMinutes()->withoutOverlapping(30);
