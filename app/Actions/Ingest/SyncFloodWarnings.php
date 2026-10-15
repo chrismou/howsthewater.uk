@@ -6,6 +6,7 @@ use App\Data\FloodWarningData;
 use App\Models\FloodArea;
 use App\Models\FloodWarning;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
+use Illuminate\Support\Collection;
 
 /**
  * Replaces the stored warnings with those in force now for the flood areas
@@ -20,11 +21,12 @@ class SyncFloodWarnings
     }
 
     /**
+     * @param  Collection<int, FloodWarningData>|null  $feed  The national feed, if already fetched
      * @return array{warnings: int}
      */
-    public function handle(): array
+    public function handle(?Collection $feed = null): array
     {
-        $inForce = $this->client->floodWarnings()
+        $inForce = ($feed ?? $this->client->floodWarnings())
             ->filter(fn (FloodWarningData $warning) => $warning->isInForce())
             ->keyBy('floodAreaCode');
 

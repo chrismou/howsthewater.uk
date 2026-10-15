@@ -6,6 +6,7 @@ use Database\Factories\FloodAreaFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
@@ -19,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $label
  * @property string|null $description
  * @property string|null $river_or_sea
+ * @property string|null $county
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read FloodWarning|null $warning
@@ -33,12 +35,19 @@ class FloodArea extends Model
         'label',
         'description',
         'river_or_sea',
+        'county',
     ];
 
     /** @return BelongsToMany<Spot, $this> */
     public function spots(): BelongsToMany
     {
         return $this->belongsToMany(Spot::class);
+    }
+
+    /** @return HasMany<FloodWarningEvent, $this> */
+    public function warningEvents(): HasMany
+    {
+        return $this->hasMany(FloodWarningEvent::class);
     }
 
     /** @return HasOne<FloodWarning, $this> */

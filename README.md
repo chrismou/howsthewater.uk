@@ -93,7 +93,7 @@ Run these once, in this order:
 php artisan ingest:overflows          # all monitors and their latest spill events
 php artisan ingest:gauges --stations  # discover gauges on each river, backfill 7 days of readings
 php artisan ingest:rainfall --stations # find rain gauges near spots, beaches and lakes, link the nearest, backfill 7 days
-php artisan ingest:floods             # link spots to EA flood areas (slow: one request per spot), fetch warnings
+php artisan ingest:floods             # link spots to EA flood areas (slow: one request per spot), fetch warnings and record their history
 php artisan ingest:bathing-waters     # beaches, lakes and their bathing water history (a couple of minutes)
 php artisan rivers:centrelines        # as above
 php artisan rivers:positions          # place monitors, gauges and spots along each river
@@ -116,7 +116,7 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 | `ingest:gauges --stations` | Weekly, Monday 03:05 | Re-check every river for new or renamed gauge stations |
 | `ingest:rainfall` | Every 15 minutes | Fetch new rainfall totals, and find rain gauges for any spot, beach or lake never searched |
 | `ingest:rainfall --stations` | Weekly, Monday 03:20 | Refresh the rain gauges near spots and relink each spot to the nearest |
-| `ingest:floods` | Every 15 minutes | Fetch the flood alerts and warnings in force, and link any spot never searched to its flood areas |
+| `ingest:floods` | Every 15 minutes | Fetch the flood alerts and warnings in force, record the history of every warning in England, and link any spot never searched to its flood areas |
 | `ingest:floods --areas` | Weekly, Monday 03:50 | Re-check the flood areas covering every spot |
 | `ingest:bathing-waters` | Hourly | Refresh bathing water classifications, samples and forecasts; backfill history for new sites; link lakes to their level gauge |
 | `ingest:bathing-waters --history` | Weekly, Monday 04:20 | Refetch sample and classification history for every bathing water |

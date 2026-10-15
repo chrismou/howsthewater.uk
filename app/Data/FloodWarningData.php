@@ -18,6 +18,10 @@ final readonly class FloodWarningData
         public ?string $message,
         public ?Carbon $raisedAt,
         public ?Carbon $messageChangedAt,
+        public ?Carbon $severityChangedAt = null,
+        public ?string $areaLabel = null,
+        public ?string $riverOrSea = null,
+        public ?string $county = null,
     ) {
     }
 
@@ -34,6 +38,10 @@ final readonly class FloodWarningData
             message: $message === '' ? null : $message,
             raisedAt: self::time($item['timeRaised'] ?? null),
             messageChangedAt: self::time($item['timeMessageChanged'] ?? null),
+            severityChangedAt: self::time($item['timeSeverityChanged'] ?? null),
+            areaLabel: self::text($item['description'] ?? null),
+            riverOrSea: self::text($item['floodArea']['riverOrSea'] ?? null),
+            county: self::text($item['floodArea']['county'] ?? null),
         );
     }
 
@@ -44,6 +52,11 @@ final readonly class FloodWarningData
     public function isInForce(): bool
     {
         return $this->severity !== null;
+    }
+
+    private static function text(mixed $value): ?string
+    {
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     private static function time(mixed $value): ?Carbon

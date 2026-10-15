@@ -233,7 +233,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - Flood alerts and warnings: the same API's `/id/floods`, `ingest:floods`. `SyncFloodAreas` links each spot to the flood
   areas whose outline comes within 1 km and whose `riverOrSea` names the spot's river (`River::matchesWatercourse()`).
   The whole national feed is read every 15 minutes and `flood_warnings` is replaced with what is in force for linked
-  areas (severity 1-3; level 4 "no longer in force" is dropped). EA flood times carry no offset and are UK local time.
+  areas (severity 1-3; level 4 "no longer in force" is dropped). The same read feeds `RecordFloodWarningHistory`, which
+  keeps `flood_warning_events` for every area in England (creating `flood_areas` rows for areas no spot uses): one row
+  per area and severity, closed when the EA lifts it, changes its severity or it drops out of the feed. It is the only
+  flood history; the feed keeps none, so it cannot be backfilled. EA flood times carry no offset and are UK local time.
   `FloodWarningSummary::isStale()` flags a warning no poll has confirmed for 6 hours. The area search is slow (a few
   seconds per spot), so it only runs for spots with a null `flood_areas_searched_at`, or all spots with `--areas`.
 - River centrelines: OS Open Rivers GeoPackage at `OS_OPEN_RIVERS_PATH` (default `storage/app/private/oprvrs_gb.gpkg`,

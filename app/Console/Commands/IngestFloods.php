@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Ingest\RecordFloodWarningHistory;
 use App\Actions\Ingest\SyncFloodAreas;
 use App\Actions\Ingest\SyncFloodWarnings;
 use App\Services\Conditions\ChangedRegions;
+use App\Services\EnvironmentAgency\FloodMonitoringClient;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -16,8 +18,13 @@ class IngestFloods extends Command
 
     protected $description = 'Fetch the flood alerts and warnings in force from the Environment Agency';
 
-    public function handle(SyncFloodAreas $syncAreas, SyncFloodWarnings $syncWarnings, ChangedRegions $changed): int
-    {
+    public function handle(
+        FloodMonitoringClient $client,
+        SyncFloodAreas $syncAreas,
+        SyncFloodWarnings $syncWarnings,
+        RecordFloodWarningHistory $history,
+        ChangedRegions $changed,
+    ): int {
         $failed = false;
 
         // Every run links spots never searched (a newly seeded region); --areas re-checks them all.
@@ -34,11 +41,19 @@ class IngestFloods extends Command
             Log::error("Flood area search failed: {$exception->getMessage()}");
         }
 
-        $result = $syncWarnings->handle();
+        // One read of the national feed serves both the warnings in force for our spots and the history of all of them.
+        $feed = $client->floodWarnings();
+        $result = $syncWarnings->handle($feed);
+        $recorded = $history->handle($feed);
 
         $changed->markAll();
 
-        $this->info(sprintf('%d flood alerts and warnings in force for our spots.', $result['warnings']));
+        $this->info(sprintf(
+            '%d flood alerts and warnings in force for our spots; history: %d opened, %d closed.',
+            $result['warnings'],
+            $recorded['opened'],
+            $recorded['closed'],
+        ));
 
         return $failed ? self::FAILURE : self::SUCCESS;
     }
