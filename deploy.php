@@ -31,7 +31,6 @@ set('writable_mode', 'chmod');
 set('writable_chmod_mode', '2770');
 // The Laravel recipe turns this on, but deploy cannot chmod files www-data owns inside storage
 set('writable_recursive', false);
-
 set('remote_user', getenv('DEPLOY_USER'));
 
 // Hosts
