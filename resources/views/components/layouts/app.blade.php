@@ -100,16 +100,20 @@
 <footer class="border-t border-line bg-surface">
     <div class="mx-auto max-w-5xl px-4 py-6 text-xs leading-relaxed text-muted">
         <p>
-            Near real-time, unvalidated data. Contains Environment Agency data from the real-time data API (Beta) and
-            {{ $allRegions->flatMap->waterCompanies()->unique()->join(', ', ' and ') }} storm overflow data (via Stream), Open Government Licence v3.0. River centrelines from
-            Ordnance Survey Open Rivers, OGL v3.0. Map tiles © OpenStreetMap contributors.
+            Near real-time, unvalidated data. This uses Environment Agency flood and river level data from the real-time data API (Beta)
+            and Environment Agency bathing water data, Open Government Licence v3.0.
+            {{ $allRegions->flatMap->waterCompanies()->unique()->join(', ', ' and ') }} storm overflow data via Stream, CC BY 4.0.
+            River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
             <a href="{{ route('home') }}#limits" class="underline hover:text-ink">What this site does not do</a>.
+            Seen a mistake? <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">Let us know on GitHub</a>.
         </p>
-        {{-- Phones: credit and mistake link side by side, "crafted in Leeds" centred below. Wider: one row, mistake link on the right. --}}
-        <div class="mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-line-2 pt-4 sm:justify-start">
-            <p class="whitespace-nowrap">© {{ now()->year }} <a href="https://mou.me" rel="noopener" class="underline hover:text-ink">Chris Chrisostomou</a></p>
-            <p class="whitespace-nowrap sm:order-last sm:ml-auto">Seen a mistake? <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">Let us know<span class="hidden sm:inline"> on GitHub</span></a></p>
-            <p class="basis-full whitespace-nowrap text-center sm:basis-auto sm:text-left pb-0">Lovingly crafted in Leeds <svg class="inline h-3.5 w-3.5 -translate-y-px align-middle text-alert" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="love"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.2 4.4 2.5h2c.8-1.3 2.3-2.5 4.4-2.5 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21z"/></svg></p>
+        {{-- Phones: credit and legal links stacked and centred. Wider: one row, legal links on the right. --}}
+        <div class="mt-4 flex flex-col items-center gap-2 border-t border-line-2 pt-4 text-center sm:flex-row sm:items-baseline sm:justify-between sm:text-left">
+            <p>Lovingly crafted in Leeds <svg class="inline h-3.5 w-3.5 -translate-y-px align-middle text-alert" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="love"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.2 4.4 2.5h2c.8-1.3 2.3-2.5 4.4-2.5 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21z"/></svg> by <a href="https://mou.me" rel="noopener" class="underline hover:text-ink">Chris Chrisostomou</a> <span class="whitespace-nowrap">© {{ now()->year }}</span></p>
+            <p class="flex gap-4 whitespace-nowrap">
+                <a href="{{ route('terms') }}" class="underline hover:text-ink">Terms of use</a>
+                <a href="{{ route('privacy') }}" class="underline hover:text-ink">Privacy</a>
+            </p>
         </div>
     </div>
 </footer>

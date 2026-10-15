@@ -15,6 +15,10 @@ Route::get('/', HomeController::class)->name('home');
 Route::get('/search', SearchController::class)->name('search')->middleware('throttle:public');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap')->middleware('cache.headers:public;max_age=3600');
 
+// These come before the region route, which would otherwise take them as region slugs.
+Route::view('/privacy', 'privacy')->name('privacy');
+Route::view('/terms', 'terms')->name('terms');
+
 // Rivers and spots are scoped to their region, since names repeat across Britain.
 Route::scopeBindings()->group(function () {
     Route::get('/{region}', [RegionController::class, 'show'])->name('regions.show');
