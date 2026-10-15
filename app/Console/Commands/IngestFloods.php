@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\Log;
 
 class IngestFloods extends Command
 {
-    protected $signature = 'ingest:floods {--areas : Refresh the flood areas covering every spot, not just spots never searched}';
+    protected $signature = 'ingest:floods
+        {--areas : Refresh the flood areas covering every spot, not just spots never searched}
+        {--quick : Skip the slow flood area search, for development; a later run picks the spots up}';
 
     protected $description = 'Fetch the flood alerts and warnings in force from the Environment Agency';
 
@@ -27,18 +29,10 @@ class IngestFloods extends Command
     ): int {
         $failed = false;
 
-        // Every run links spots never searched (a newly seeded region); --areas re-checks them all.
-        // Spots are marked searched one at a time, so a failure part way through resumes on the next run.
-        try {
-            $areas = $syncAreas->handle(onlyUnsearched: ! $this->option('areas'));
-
-            if ($areas['spots'] > 0 || $this->option('areas')) {
-                $this->line(sprintf('%d spots linked to %d flood areas.', $areas['spots'], $areas['areas']));
-            }
-        } catch (ConnectionException|RequestException $exception) {
-            $failed = true;
-            $this->error("Flood area search failed, {$exception->getMessage()}");
-            Log::error("Flood area search failed: {$exception->getMessage()}");
+        if ($this->option('quick')) {
+            $this->line('Skipped the flood area search (--quick).');
+        } else {
+            $failed = ! $this->linkFloodAreas($syncAreas);
         }
 
         // One read of the national feed serves both the warnings in force for our spots and the history of all of them.
@@ -56,5 +50,27 @@ class IngestFloods extends Command
         ));
 
         return $failed ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * Links spots never searched (a newly seeded region) to the flood areas around them; --areas re-checks them all.
+     * Spots are marked searched one at a time, so a failure part way through resumes on the next run.
+     */
+    private function linkFloodAreas(SyncFloodAreas $syncAreas): bool
+    {
+        try {
+            $areas = $syncAreas->handle(onlyUnsearched: ! $this->option('areas'));
+
+            if ($areas['spots'] > 0 || $this->option('areas')) {
+                $this->line(sprintf('%d spots linked to %d flood areas.', $areas['spots'], $areas['areas']));
+            }
+
+            return true;
+        } catch (ConnectionException|RequestException $exception) {
+            $this->error("Flood area search failed, {$exception->getMessage()}");
+            Log::error("Flood area search failed: {$exception->getMessage()}");
+
+            return false;
+        }
     }
 }

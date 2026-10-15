@@ -136,6 +136,16 @@ it('links new spots and syncs warnings from the scheduled command', function () 
     expect($spot->floodAreas()->sole()->warning->severity_level)->toBe(FloodSeverity::FloodAlert);
 });
 
+it('skips the flood area search with --quick but still syncs warnings', function () {
+    $spot = Spot::factory()->create();
+    Http::fake(['environment.data.gov.uk/*' => Http::response(['items' => []])]);
+
+    $this->artisan('ingest:floods --quick')->expectsOutputToContain('Skipped the flood area search')->assertSuccessful();
+
+    expect($spot->fresh()->flood_areas_searched_at)->toBeNull();
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'floodAreas'));
+});
+
 it('still syncs warnings and logs an error when the flood area search fails', function () {
     Spot::factory()->create();
     Log::spy();

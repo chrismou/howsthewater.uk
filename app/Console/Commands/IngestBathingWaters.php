@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\Log;
 
 class IngestBathingWaters extends Command
 {
-    protected $signature = 'ingest:bathing-waters {--history : Refetch sample and classification history for every site, not just sites never fetched}';
+    protected $signature = 'ingest:bathing-waters
+        {--history : Refetch sample and classification history for every site, not just sites never fetched}
+        {--quick : Skip the slow history backfill, for development; a later run fetches it}';
 
     protected $description = 'Fetch bathing water classifications, samples and pollution forecasts from the Environment Agency';
 
@@ -46,7 +48,12 @@ class IngestBathingWaters extends Command
             Log::error("Bathing water register request failed: {$reason}");
         }
 
-        $backfill = $history->handle(onlyNeverFetched: ! $this->option('history'));
+        if ($this->option('quick')) {
+            $this->line('Skipped the history backfill (--quick).');
+            $backfill = ['sites' => 0, 'samples' => 0, 'failed' => []];
+        } else {
+            $backfill = $history->handle(onlyNeverFetched: ! $this->option('history'));
+        }
 
         if ($backfill['sites'] > 0 || $backfill['failed'] !== []) {
             $this->line(sprintf('History fetched for %d bathing waters, %d samples.', $backfill['sites'], $backfill['samples']));

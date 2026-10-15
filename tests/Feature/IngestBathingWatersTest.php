@@ -93,6 +93,18 @@ it('tracks beaches in a region, lake sites on a lake and river sites on a spot, 
         ->and(BathingWater::query()->where('name', 'like', 'Wharfe%')->value('spot_id'))->toBe($spot->id);
 });
 
+it('skips the history backfill with --quick, leaving it for a later run', function () {
+    Region::factory()->create(['slug' => 'yorkshire', 'bathing_water_districts' => ['North Yorkshire']]);
+    fakeBathingWaterApi([bathingWaterItem('uke0000-01000', 'Scarborough South Bay', 'CoastalBathingWater', ['North Yorkshire'], 54.28, -0.40)]);
+
+    $this->artisan('ingest:bathing-waters --quick')->expectsOutputToContain('Skipped the history backfill')->assertSuccessful();
+
+    $beach = BathingWater::query()->sole();
+
+    expect($beach->history_fetched_at)->toBeNull()
+        ->and($beach->classifications()->count())->toBe(0);
+});
+
 it('links lakes to their level gauge', function () {
     $lake = Lake::factory()->create(['gauge_reference' => '735225']);
     fakeBathingWaterApi([]);

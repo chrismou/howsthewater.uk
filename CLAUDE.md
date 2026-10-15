@@ -286,6 +286,10 @@ php artisan rivers:positions
 php artisan regions:refresh --all
 ```
 
+When adding a region locally, pass `--quick` to `ingest:floods` and `ingest:bathing-waters`: it skips the slow flood
+area search and bathing water history backfill, which the scheduled runs on live fill in. Refresh local data by
+replacing the local database with a copy of live rather than backfilling.
+
 ## Frontend
 
 - Blade + Tailwind 4 + Leaflet. Components live in `resources/views/components`; the layout is `components/layouts/app`.
