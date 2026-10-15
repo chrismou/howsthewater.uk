@@ -81,6 +81,23 @@ class ConditionsCache
     }
 
     /**
+     * Overwrites a spot's cached conditions in place, so a refresh replaces
+     * entries without visitors ever meeting an empty cache.
+     */
+    public function putSpot(Spot $spot, SpotConditions $conditions): void
+    {
+        Cache::put($this->keyFor($spot), $conditions, now()->addMinutes(self::TTL_MINUTES));
+    }
+
+    /**
+     * Overwrites a named entry, as putSpot() does for spots.
+     */
+    public function put(string $name, mixed $value): void
+    {
+        Cache::put($this->keyForName($name), $value, now()->addMinutes(self::TTL_MINUTES));
+    }
+
+    /**
      * Like remember() for several entries, fetching every cached one in a
      * single round trip and building only the misses.
      *

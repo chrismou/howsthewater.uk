@@ -13,3 +13,7 @@ Schedule::command('ingest:floods')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('ingest:floods --areas')->weeklyOn(1, '03:50');
 Schedule::command('ingest:bathing-waters')->hourly()->withoutOverlapping();
 Schedule::command('ingest:bathing-waters --history')->weeklyOn(1, '04:20');
+
+// Last, so it runs after the quarter hour's ingests in the same scheduler pass (due tasks run one after another, in
+// the order registered here): one rebuild of whatever they marked changed, instead of one per ingest.
+Schedule::command('regions:refresh')->everyFifteenMinutes()->withoutOverlapping();

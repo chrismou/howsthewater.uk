@@ -120,6 +120,7 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 | `ingest:floods --areas` | Weekly, Monday 03:50 | Re-check the flood areas covering every spot |
 | `ingest:bathing-waters` | Hourly | Refresh bathing water classifications, samples and forecasts; backfill history for new sites; link lakes to their level gauge |
 | `ingest:bathing-waters --history` | Weekly, Monday 04:20 | Refetch sample and classification history for every bathing water |
+| `regions:refresh` | Every 15 minutes, after the ingests | Rebuild cached conditions, summaries and menus for regions an ingest changed, in place |
 | `rivers:positions` | Daily, 03:30 | Position any newly added monitors, gauges or spots |
 
 `rivers:centrelines` only needs running when a river is added or the OS data is updated.

@@ -50,6 +50,14 @@ class SpotConditionsService
     }
 
     /**
+     * Rebuilds conditions and writes them over the cached entry.
+     */
+    public function refresh(Spot $spot): SpotConditions
+    {
+        return tap($this->build($spot), fn (SpotConditions $conditions) => $this->cache->putSpot($spot, $conditions));
+    }
+
+    /**
      * Computes conditions from the database, bypassing the cache.
      */
     public function build(Spot $spot): SpotConditions

@@ -5,8 +5,8 @@ namespace App\Console\Commands;
 use App\Actions\Ingest\SyncBathingWaterHistory;
 use App\Actions\Ingest\SyncBathingWaters;
 use App\Actions\Ingest\SyncLakeGauges;
-use App\Services\Conditions\ConditionsCache;
-use App\Services\Conditions\RegionSummaries;
+use App\Models\Region;
+use App\Services\Conditions\ChangedRegions;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -18,7 +18,7 @@ class IngestBathingWaters extends Command
 
     protected $description = 'Fetch bathing water classifications, samples and pollution forecasts from the Environment Agency';
 
-    public function handle(SyncBathingWaters $sync, SyncBathingWaterHistory $history, SyncLakeGauges $lakeGauges, ConditionsCache $cache, RegionSummaries $summaries): int
+    public function handle(SyncBathingWaters $sync, SyncBathingWaterHistory $history, SyncLakeGauges $lakeGauges, ChangedRegions $changed): int
     {
         $failed = false;
 
@@ -56,8 +56,9 @@ class IngestBathingWaters extends Command
             $this->error("{$name}: history fetch failed.");
         }
 
-        $cache->flush();
-        $summaries->refreshAll();
+        // Only regions with beaches or lakes are affected; regions:refresh rebuilds them after the ingests.
+
+        $changed->mark(Region::query()->where(fn ($query) => $query->whereHas('lakes')->orWhereHas('bathingWaters'))->pluck('id'));
 
         return $failed || $backfill['failed'] !== [] ? self::FAILURE : self::SUCCESS;
     }

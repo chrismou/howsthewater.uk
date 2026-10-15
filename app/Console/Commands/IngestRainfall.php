@@ -8,8 +8,7 @@ use App\Actions\Rivers\LinkNearestRainfallStations;
 use App\Models\BathingWater;
 use App\Models\Lake;
 use App\Models\Spot;
-use App\Services\Conditions\ConditionsCache;
-use App\Services\Conditions\RegionSummaries;
+use App\Services\Conditions\ChangedRegions;
 use Illuminate\Console\Command;
 
 class IngestRainfall extends Command
@@ -29,8 +28,7 @@ class IngestRainfall extends Command
         SyncRainfallStations $syncStations,
         LinkNearestRainfallStations $link,
         SyncRainfallReadings $syncReadings,
-        ConditionsCache $cache,
-        RegionSummaries $summaries,
+        ChangedRegions $changed,
     ): int {
         // Every run catches up when a spot, beach or lake has never been searched (a newly seeded region, or a beach
         // the bathing water ingest just added); --stations always searches.
@@ -61,8 +59,9 @@ class IngestRainfall extends Command
             $this->line(sprintf('%d rain gauges never reported and were retired; %d spots now linked to a live one.', $result['retired'], $linked['spots']));
         }
 
-        $cache->flush();
-        $summaries->refreshAll();
+        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
+
+        $changed->markAll();
 
         $this->info(sprintf('Stored %d rainfall readings across %d stations.', $readings, $result['stations']));
 

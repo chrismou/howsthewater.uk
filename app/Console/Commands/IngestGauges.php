@@ -6,8 +6,7 @@ use App\Actions\Ingest\SyncGaugeReadings;
 use App\Actions\Ingest\SyncGaugeStations;
 use App\Actions\Rivers\AssignRiverPositions;
 use App\Models\River;
-use App\Services\Conditions\ConditionsCache;
-use App\Services\Conditions\RegionSummaries;
+use App\Services\Conditions\ChangedRegions;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -19,7 +18,7 @@ class IngestGauges extends Command
 
     protected $description = 'Fetch new river level readings from the Environment Agency';
 
-    public function handle(SyncGaugeStations $syncStations, SyncGaugeReadings $syncReadings, AssignRiverPositions $assign, ConditionsCache $cache, RegionSummaries $summaries): int
+    public function handle(SyncGaugeStations $syncStations, SyncGaugeReadings $syncReadings, AssignRiverPositions $assign, ChangedRegions $changed): int
     {
         $failed = [];
 
@@ -48,8 +47,8 @@ class IngestGauges extends Command
         }
 
         $result = $syncReadings->handle();
-        $cache->flush();
-        $summaries->refreshAll();
+        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
+        $changed->markAll();
 
         $this->info(sprintf('Stored %d readings across %d stations.', $result['readings'], $result['stations']));
 

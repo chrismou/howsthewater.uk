@@ -192,14 +192,16 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `scopeBindings()`, because river and spot names repeat across Britain; slugs are unique per region and per river.
   Build links with `route('spots.show', [$region, $river, $spot])` and eager-load `river.region` wherever spots are
   listed. The header's Rivers, Beaches and Lakes menus come from `NavigationMenus`: plain arrays built once
-  (rivers grouped by `catchment` via `Region::riversByCatchment()`, beaches by district), cached and cleared by
-  `RegionSummaries::refreshAll()`, so pages never query per region for the menus. The search box queries `/search`.
+  (rivers grouped by `catchment` via `Region::riversByCatchment()`, beaches by district), cached and rebuilt in
+  place by `regions:refresh`, so pages never query per region for the menus. The search box queries `/search`.
   Search, feeds and the API are rate limited per IP by the `public` limiter in `AppServiceProvider`.
-- Listings read `RegionSummary` (plain-value `RiverSummary` and `SpotSummary` objects) from `RegionSummaries`, which
-  ingest and positioning commands refresh after every run; the region page, live bar and API region endpoint never
+- Listings read `RegionSummary` (plain-value `RiverSummary` and `SpotSummary` objects) from `RegionSummaries`. Ingest and
+  positioning commands never rebuild caches themselves: they mark the regions they touched with `ChangedRegions`, and
+  `regions:refresh` (scheduled last, every 15 minutes, `--all` on deploy) rewrites those regions' spot, beach and lake
+  conditions, summaries and the menus in place, so visitors never hit a cold cache. The region page, live bar and API region endpoint never
   unserialise full conditions. Add listing facts to `SpotSummary::fromConditions()`.
-- `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL). Ingest and
-  positioning commands call `flush()`. The cache stores objects, so any new class reachable from `SpotConditions`
+- `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL), warmed by
+  `regions:refresh`; `flush()` remains for clearing everything. The cache stores objects, so any new class reachable from `SpotConditions`
   must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Keys also
   carry a hash of those classes' source, so a deploy that changes their shape never reads the old release's entries.
   Use `build()` in tests that change data between calls. Rivers inside cached conditions are loaded with

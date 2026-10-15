@@ -4,8 +4,7 @@ namespace App\Console\Commands;
 
 use App\Actions\Ingest\SyncFloodAreas;
 use App\Actions\Ingest\SyncFloodWarnings;
-use App\Services\Conditions\ConditionsCache;
-use App\Services\Conditions\RegionSummaries;
+use App\Services\Conditions\ChangedRegions;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -17,7 +16,7 @@ class IngestFloods extends Command
 
     protected $description = 'Fetch the flood alerts and warnings in force from the Environment Agency';
 
-    public function handle(SyncFloodAreas $syncAreas, SyncFloodWarnings $syncWarnings, ConditionsCache $cache, RegionSummaries $summaries): int
+    public function handle(SyncFloodAreas $syncAreas, SyncFloodWarnings $syncWarnings, ChangedRegions $changed): int
     {
         $failed = false;
 
@@ -36,8 +35,8 @@ class IngestFloods extends Command
         }
 
         $result = $syncWarnings->handle();
-        $cache->flush();
-        $summaries->refreshAll();
+        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
+        $changed->markAll();
 
         $this->info(sprintf('%d flood alerts and warnings in force for our spots.', $result['warnings']));
 

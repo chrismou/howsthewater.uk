@@ -33,6 +33,14 @@ class NavigationMenus
     }
 
     /**
+     * Rebuilds the menus in place, so no page has to build them.
+     */
+    public function refresh(): void
+    {
+        Cache::put($this->key(), $this->build(), now()->addHours(self::TTL_HOURS));
+    }
+
+    /**
      * Each menu lists regions with something in it; each entry carries the
      * region's slug and name, its overview link and its places grouped
      * under headings (catchment, district or simply "Lakes").

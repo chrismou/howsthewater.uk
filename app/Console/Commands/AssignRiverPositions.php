@@ -5,8 +5,7 @@ namespace App\Console\Commands;
 use App\Actions\Rivers\AssignRiverPositions as AssignRiverPositionsAction;
 use App\Actions\Rivers\LinkNearestRainfallStations;
 use App\Models\River;
-use App\Services\Conditions\ConditionsCache;
-use App\Services\Conditions\RegionSummaries;
+use App\Services\Conditions\ChangedRegions;
 use Illuminate\Console\Command;
 
 class AssignRiverPositions extends Command
@@ -15,7 +14,7 @@ class AssignRiverPositions extends Command
 
     protected $description = 'Position overflow monitors, gauges and spots along each river centreline';
 
-    public function handle(AssignRiverPositionsAction $assign, LinkNearestRainfallStations $linkRainfall, ConditionsCache $cache, RegionSummaries $summaries): int
+    public function handle(AssignRiverPositionsAction $assign, LinkNearestRainfallStations $linkRainfall, ChangedRegions $changed): int
     {
         $rivers = River::query()
             ->when($this->argument('river'), fn ($query, $slug) => $query->where('slug', $slug))
@@ -36,8 +35,9 @@ class AssignRiverPositions extends Command
         $linked = $linkRainfall->handle();
         $this->info(sprintf('%d spots linked to a rain gauge.', $linked['spots']));
 
-        $cache->flush();
-        $summaries->refreshAll();
+        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
+
+        $changed->markAll();
 
         return self::SUCCESS;
     }

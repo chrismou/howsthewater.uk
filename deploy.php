@@ -65,9 +65,13 @@ task('artisan:rivers:centrelines', artisan('rivers:centrelines', ['skipIfNoEnv',
     ->desc('Import centrelines for rivers that do not have one yet');
 task('artisan:rivers:positions', artisan('rivers:positions', ['skipIfNoEnv']))
     ->desc('Position monitors, gauges and spots along each river');
+task('artisan:regions:refresh', artisan('regions:refresh --all', ['skipIfNoEnv']))
+    ->desc('Rebuild cached conditions, summaries and menus so the new release starts warm');
 
 // Run migrate before cache clear to prevent errors on first run where DB cache clears before DB exists
 after('artisan:migrate', 'artisan:db:seed');
 after('artisan:db:seed', 'artisan:rivers:centrelines');
 after('artisan:rivers:centrelines', 'artisan:rivers:positions');
 after('artisan:rivers:positions', 'artisan:cache:clear');
+// cache:clear empties every cached page fact, so rebuild them before the release goes live.
+after('artisan:cache:clear', 'artisan:regions:refresh');

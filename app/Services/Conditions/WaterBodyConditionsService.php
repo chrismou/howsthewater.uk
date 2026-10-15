@@ -78,6 +78,22 @@ class WaterBodyConditionsService
     }
 
     /**
+     * Rebuilds a beach's conditions and writes them over the cached entry.
+     */
+    public function refreshBeach(BathingWater $beach): BeachConditions
+    {
+        return tap($this->buildBeach($beach), fn (BeachConditions $conditions) => $this->cache->put("beach:{$beach->id}", $conditions));
+    }
+
+    /**
+     * Rebuilds a lake's conditions and writes them over the cached entry.
+     */
+    public function refreshLake(Lake $lake): LakeConditions
+    {
+        return tap($this->buildLake($lake), fn (LakeConditions $conditions) => $this->cache->put("lake:{$lake->id}", $conditions));
+    }
+
+    /**
      * Computes beach conditions from the database, bypassing the cache.
      */
     public function buildBeach(BathingWater $beach): BeachConditions

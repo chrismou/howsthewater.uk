@@ -5,8 +5,7 @@ namespace App\Console\Commands;
 use App\Actions\Ingest\SyncOverflowMonitors;
 use App\Actions\Rivers\AssignRiverPositions;
 use App\Models\River;
-use App\Services\Conditions\ConditionsCache;
-use App\Services\Conditions\RegionSummaries;
+use App\Services\Conditions\ChangedRegions;
 use Illuminate\Console\Command;
 
 class IngestOverflows extends Command
@@ -15,7 +14,7 @@ class IngestOverflows extends Command
 
     protected $description = 'Fetch current storm overflow status and record spill events';
 
-    public function handle(SyncOverflowMonitors $sync, AssignRiverPositions $assign, ConditionsCache $cache, RegionSummaries $summaries): int
+    public function handle(SyncOverflowMonitors $sync, AssignRiverPositions $assign, ChangedRegions $changed): int
     {
         $result = $sync->handle();
 
@@ -25,8 +24,8 @@ class IngestOverflows extends Command
             River::query()->each(fn (River $river) => $assign->handle($river));
             $this->line("{$result['monitors_added']} new monitors positioned.");
         }
-        $cache->flush();
-        $summaries->refreshAll();
+        // The scheduled regions:refresh rebuilds what visitors read, once, after every ingest has run.
+        $changed->markAll();
 
         $this->info(sprintf(
             'Synced %d monitors from %d %s (%d events opened, %d closed).',
