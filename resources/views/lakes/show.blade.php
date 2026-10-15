@@ -95,6 +95,9 @@
         <aside class="lg:col-span-2">
             <h2 class="font-display mb-3 text-lg font-semibold">Lake level <x-help term="level" /></h2>
             <x-level-card :level="$level" empty="No Environment Agency gauge reads this lake's level." />
+
+            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Rainfall <x-help term="rainfall" /></h2>
+            <x-rainfall-card :rainfall="$conditions->rainfall" place="this lake" note="Rain across the lake's catchment may differ." />
         </aside>
     </div>
 

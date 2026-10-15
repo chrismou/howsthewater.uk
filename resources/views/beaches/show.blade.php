@@ -119,6 +119,8 @@
                 </div>
             </section>
 
+            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Rainfall <x-help term="rainfall" /></h2>
+            <x-rainfall-card :rainfall="$conditions->rainfall" place="this beach" note="Heavy rain inland can reach the sea through rivers and overflows." />
         </aside>
 
             @if ($beach->description)

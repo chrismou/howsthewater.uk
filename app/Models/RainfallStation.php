@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Geo\Coordinates;
 use Database\Factories\RainfallStationFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -64,5 +65,28 @@ class RainfallStation extends Model
     public function spots(): HasMany
     {
         return $this->hasMany(Spot::class);
+    }
+
+    /** @return HasMany<Lake, $this> */
+    public function lakes(): HasMany
+    {
+        return $this->hasMany(Lake::class);
+    }
+
+    /** @return HasMany<BathingWater, $this> */
+    public function bathingWaters(): HasMany
+    {
+        return $this->hasMany(BathingWater::class);
+    }
+
+    /**
+     * Gauges linked to anything we show rainfall for.
+     *
+     * @param  Builder<RainfallStation>  $query
+     * @return Builder<RainfallStation>
+     */
+    public function scopeInUse(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $query) => $query->whereHas('spots')->orWhereHas('lakes')->orWhereHas('bathingWaters'));
     }
 }

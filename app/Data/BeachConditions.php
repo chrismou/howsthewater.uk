@@ -11,6 +11,7 @@ final readonly class BeachConditions
     public function __construct(
         public BathingWaterSummary $bathingWater,
         public NearbyOverflows $overflows,
+        public ?RainfallSummary $rainfall = null,
     ) {
     }
 }

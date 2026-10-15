@@ -8,7 +8,7 @@ use App\Services\EnvironmentAgency\FloodMonitoringClient;
 use Illuminate\Support\Carbon;
 
 /**
- * Fetches new 15 minute rainfall totals for every rain gauge a spot uses,
+ * Fetches new 15 minute rainfall totals for every rain gauge a spot, beach or lake uses,
  * picking up from the last stored reading so repeated runs stay cheap.
  * A gauge that has never returned a reading is retired so spots can be
  * relinked to one that does.
@@ -29,7 +29,7 @@ class SyncRainfallReadings
         $stations = RainfallStation::query()
             ->where('is_active', true)
             ->whereNotNull('measure_id')
-            ->whereHas('spots')
+            ->inUse()
             ->get();
 
         $inserted = 0;

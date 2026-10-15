@@ -23,8 +23,11 @@ use Illuminate\Support\Carbon;
  * @property float $longitude
  * @property string|null $gauge_reference
  * @property int|null $gauge_station_id
+ * @property int|null $rainfall_station_id
+ * @property Carbon|null $rain_gauges_searched_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read RainfallStation|null $rainfallStation
  * @property-read Region $region
  * @property-read GaugeStation|null $gaugeStation
  * @property-read Collection<int, BathingWater> $bathingWaters
@@ -43,6 +46,8 @@ class Lake extends Model
         'longitude',
         'gauge_reference',
         'gauge_station_id',
+        'rainfall_station_id',
+        'rain_gauges_searched_at',
     ];
 
     protected function casts(): array
@@ -50,6 +55,7 @@ class Lake extends Model
         return [
             'latitude' => 'float',
             'longitude' => 'float',
+            'rain_gauges_searched_at' => 'datetime',
         ];
     }
 
@@ -68,6 +74,12 @@ class Lake extends Model
     public function gaugeStation(): BelongsTo
     {
         return $this->belongsTo(GaugeStation::class);
+    }
+
+    /** @return BelongsTo<RainfallStation, $this> */
+    public function rainfallStation(): BelongsTo
+    {
+        return $this->belongsTo(RainfallStation::class);
     }
 
     /** @return HasMany<BathingWater, $this> */

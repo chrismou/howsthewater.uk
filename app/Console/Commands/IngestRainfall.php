@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Actions\Ingest\SyncRainfallReadings;
 use App\Actions\Ingest\SyncRainfallStations;
 use App\Actions\Rivers\LinkNearestRainfallStations;
+use App\Models\BathingWater;
+use App\Models\Lake;
 use App\Models\Spot;
 use App\Services\Conditions\ConditionsCache;
 use App\Services\Conditions\RegionSummaries;
@@ -30,14 +32,19 @@ class IngestRainfall extends Command
         ConditionsCache $cache,
         RegionSummaries $summaries,
     ): int {
-        // Every run catches up when a spot has never been searched (a newly seeded region); --stations always searches.
-        $hasUnsearchedSpots = Spot::query()->published()->whereNull('rain_gauges_searched_at')->exists();
+        // Every run catches up when a spot, beach or lake has never been searched (a newly seeded region, or a beach
+        // the bathing water ingest just added); --stations always searches.
+        $hasUnsearchedPlaces = Spot::query()->published()->whereNull('rain_gauges_searched_at')->exists()
+            || BathingWater::query()->beaches()->whereNull('rain_gauges_searched_at')->exists()
+            || Lake::query()->whereNull('rain_gauges_searched_at')->exists();
 
-        if ($this->option('stations') || $hasUnsearchedSpots) {
+        if ($this->option('stations') || $hasUnsearchedPlaces) {
             $stations = $syncStations->handle();
             $linked = $link->handle();
             Spot::query()->published()->update(['rain_gauges_searched_at' => now()]);
-            $this->line(sprintf('%d rain gauges near spots, %d spots linked to one.', $stations['stations'], $linked['spots']));
+            BathingWater::query()->beaches()->update(['rain_gauges_searched_at' => now()]);
+            Lake::query()->update(['rain_gauges_searched_at' => now()]);
+            $this->line(sprintf('%d rain gauges near spots, beaches and lakes; linked %d spots, %d beaches and %d lakes.', $stations['stations'], $linked['spots'], $linked['beaches'], $linked['lakes']));
         }
 
         $readings = 0;

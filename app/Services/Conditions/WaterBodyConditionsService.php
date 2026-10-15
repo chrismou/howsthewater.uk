@@ -7,10 +7,12 @@ use App\Data\BeachConditions;
 use App\Data\LakeConditions;
 use App\Data\NearbyMonitorSummary;
 use App\Data\NearbyOverflows;
+use App\Data\RainfallSummary;
 use App\Enums\OverflowStatus;
 use App\Enums\SpillRecency;
 use App\Models\BathingWater;
 use App\Models\Lake;
+use App\Models\RainfallStation;
 use App\Models\SpillEvent;
 use Illuminate\Support\Collection;
 
@@ -34,6 +36,7 @@ class WaterBodyConditionsService
         private NearbyMonitorFinder $monitors,
         private SpillHistoryService $spillHistory,
         private LevelSummariser $levelSummariser,
+        private RainfallSummariser $rainfallSummariser,
         private ConditionsCache $cache,
     ) {
     }
@@ -82,6 +85,7 @@ class WaterBodyConditionsService
         return new BeachConditions(
             bathingWater: $this->summarise($beach),
             overflows: $this->overflowsNear([[$beach->latitude, $beach->longitude]]),
+            rainfall: $this->rainfallAt($beach->rainfallStation, $beach->latitude, $beach->longitude),
         );
     }
 
@@ -92,7 +96,7 @@ class WaterBodyConditionsService
      */
     public function buildLake(Lake $lake): LakeConditions
     {
-        $lake->loadMissing(['gaugeStation', 'bathingWaters']);
+        $lake->loadMissing(['gaugeStation', 'rainfallStation', 'bathingWaters']);
 
         $points = [[$lake->latitude, $lake->longitude], ...$lake->bathingWaters->map(fn (BathingWater $site) => [$site->latitude, $site->longitude])->all()];
 
@@ -101,6 +105,7 @@ class WaterBodyConditionsService
             bathingWaters: $lake->bathingWaters->map(fn (BathingWater $site) => $this->summarise($site))->values(),
             level: $lake->gaugeStation !== null ? $this->levelSummariser->summarise($lake->gaugeStation) : null,
             overflows: $this->overflowsNear($points),
+            rainfall: $this->rainfallAt($lake->rainfallStation, $lake->latitude, $lake->longitude),
         );
     }
 
@@ -114,6 +119,11 @@ class WaterBodyConditionsService
             recentSamples: $bathingWater->samples()->limit(self::RECENT_SAMPLES)->get(),
             classifications: $bathingWater->classifications()->get(),
         );
+    }
+
+    private function rainfallAt(?RainfallStation $station, float $latitude, float $longitude): ?RainfallSummary
+    {
+        return $station === null ? null : $this->rainfallSummariser->summariseAt($latitude, $longitude, $station);
     }
 
     /**

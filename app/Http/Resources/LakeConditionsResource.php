@@ -32,6 +32,7 @@ class LakeConditionsResource extends JsonResource
             ],
             'bathing_waters' => BathingWaterResource::collection($this->bathingWaters),
             'nearby_overflows' => new NearbyOverflowsResource($this->overflows),
+            'rainfall' => $this->rainfall === null ? null : new RainfallResource($this->rainfall),
         ];
     }
 }

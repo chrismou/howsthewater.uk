@@ -22,6 +22,7 @@ class BeachConditionsResource extends JsonResource
             'slug' => $beach->slug,
             'bathing_water' => new BathingWaterResource($this->bathingWater),
             'nearby_overflows' => new NearbyOverflowsResource($this->overflows),
+            'rainfall' => $this->rainfall === null ? null : new RainfallResource($this->rainfall),
         ];
     }
 }

@@ -19,6 +19,7 @@ final readonly class LakeConditions
         public Collection $bathingWaters,
         public ?LevelSummary $level,
         public NearbyOverflows $overflows,
+        public ?RainfallSummary $rainfall = null,
     ) {
     }
 }

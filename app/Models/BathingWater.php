@@ -40,8 +40,11 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $season_starts_on
  * @property Carbon|null $season_ends_on
  * @property Carbon|null $history_fetched_at
+ * @property int|null $rainfall_station_id
+ * @property Carbon|null $rain_gauges_searched_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read RainfallStation|null $rainfallStation
  * @property-read Region|null $region
  * @property-read Lake|null $lake
  * @property-read Spot|null $spot
@@ -75,6 +78,8 @@ class BathingWater extends Model
         'season_starts_on',
         'season_ends_on',
         'history_fetched_at',
+        'rainfall_station_id',
+        'rain_gauges_searched_at',
     ];
 
     protected function casts(): array
@@ -90,6 +95,7 @@ class BathingWater extends Model
             'season_starts_on' => 'date',
             'season_ends_on' => 'date',
             'history_fetched_at' => 'datetime',
+            'rain_gauges_searched_at' => 'datetime',
         ];
     }
 
@@ -114,6 +120,12 @@ class BathingWater extends Model
     public function spot(): BelongsTo
     {
         return $this->belongsTo(Spot::class);
+    }
+
+    /** @return BelongsTo<RainfallStation, $this> */
+    public function rainfallStation(): BelongsTo
+    {
+        return $this->belongsTo(RainfallStation::class);
     }
 
     /** @return HasMany<BathingWaterSample, $this> */

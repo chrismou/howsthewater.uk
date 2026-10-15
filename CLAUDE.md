@@ -222,8 +222,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   company (`YWS`, `NWL`, `UUP`...) so feeds share one table. South West Water and Scottish Water use other fields.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
-- Rainfall: the same API's tipping bucket rain gauges, `ingest:rainfall`. Each spot links to the nearest gauge within
-  20 km (`LinkNearestRainfallStations`, also run by `rivers:positions`); totals are sums of 15 minute readings.
+- Rainfall: the same API's tipping bucket rain gauges, `ingest:rainfall`. Each spot, beach and lake links to the
+  nearest gauge within 20 km (`LinkNearestRainfallStations`, also run by `rivers:positions`); gauge discovery searches
+  around all three per region, readings are fetched for any gauge `inUse()`, and totals are sums of 15 minute readings.
+  Spots, beaches and lakes each record `rain_gauges_searched_at`, so new ones are picked up by the next run.
 - Flood alerts and warnings: the same API's `/id/floods`, `ingest:floods`. `SyncFloodAreas` links each spot to the flood
   areas whose outline comes within 1 km and whose `riverOrSea` names the spot's river (`River::matchesWatercourse()`).
   The whole national feed is read every 15 minutes and `flood_warnings` is replaced with what is in force for linked

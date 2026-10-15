@@ -55,7 +55,7 @@ it('links each spot to the nearest rain gauge within range', function () {
     $spot = Spot::factory()->create(['latitude' => 53.90, 'longitude' => -1.80]);
     $remote = Spot::factory()->create(['latitude' => 54.40, 'longitude' => -0.60]);
 
-    expect(app(LinkNearestRainfallStations::class)->handle())->toBe(['spots' => 1])
+    expect(app(LinkNearestRainfallStations::class)->handle())->toBe(['spots' => 1, 'beaches' => 0, 'lakes' => 0])
         ->and($spot->fresh()->rainfallStation->is($near))->toBeTrue()
         ->and($remote->fresh()->rainfall_station_id)->toBeNull();
 });
@@ -118,10 +118,43 @@ it('searches for rain gauges during a normal ingest only while a spot has never 
         'environment.data.gov.uk/*' => Http::response(['items' => [['dateTime' => now()->subMinutes(15)->toIso8601String(), 'value' => 0.4]]]),
     ]);
 
-    $this->artisan('ingest:rainfall')->expectsOutputToContain('1 rain gauges near spots, 1 spots linked to one.')->assertSuccessful();
+    $this->artisan('ingest:rainfall')->expectsOutputToContain('1 rain gauges near spots, beaches and lakes; linked 1 spots, 0 beaches and 0 lakes.')->assertSuccessful();
 
     expect($spot->fresh()->rain_gauges_searched_at)->not->toBeNull()
         ->and($spot->fresh()->rainfall_station_id)->not->toBeNull();
 
     $this->artisan('ingest:rainfall')->doesntExpectOutputToContain('rain gauges near spots')->assertSuccessful();
+});
+
+it('finds rain gauges near beaches and lakes and links each to the nearest', function () {
+    $region = Region::factory()->create();
+    $beach = \App\Models\BathingWater::factory()->create(['region_id' => $region->id, 'latitude' => 54.28, 'longitude' => -0.40]);
+    $lake = \App\Models\Lake::factory()->create(['region_id' => $region->id, 'latitude' => 54.36, 'longitude' => -2.94]);
+
+    Http::fake([
+        'environment.data.gov.uk/flood-monitoring/id/measures/*' => Http::response(['items' => [['dateTime' => now()->subMinutes(15)->toIso8601String(), 'value' => 0.4]]]),
+        'environment.data.gov.uk/*' => Http::response(['items' => [
+            environmentAgencyRainfallItem('2001', 54.29, -0.41),
+            environmentAgencyRainfallItem('2002', 54.37, -2.95),
+        ]]),
+    ]);
+
+    $this->artisan('ingest:rainfall')->assertSuccessful();
+
+    expect($beach->fresh()->rainfallStation->external_id)->toBe('2001')
+        ->and($lake->fresh()->rainfallStation->external_id)->toBe('2002')
+        ->and($beach->fresh()->rain_gauges_searched_at)->not->toBeNull()
+        ->and(\App\Models\RainfallStation::query()->inUse()->count())->toBe(2);
+});
+
+it('shows rainfall on beach and lake pages and in the API', function () {
+    $region = Region::factory()->create();
+    $station = RainfallStation::factory()->create(['latitude' => 54.29, 'longitude' => -0.41]);
+    \App\Models\RainfallReading::factory()->create(['rainfall_station_id' => $station->id, 'measured_at' => now()->subHour(), 'millimetres' => 4.2]);
+    $beach = \App\Models\BathingWater::factory()->create(['region_id' => $region->id, 'latitude' => 54.28, 'longitude' => -0.40, 'rainfall_station_id' => $station->id]);
+    $lake = \App\Models\Lake::factory()->create(['region_id' => $region->id, 'rainfall_station_id' => $station->id]);
+
+    $this->get(route('beaches.show', [$region, $beach]))->assertOk()->assertSeeInOrder(['Rainfall', '4.2 mm', 'from this beach']);
+    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSeeInOrder(['Rainfall', '4.2 mm', 'from this lake']);
+    $this->getJson(route('api.v1.beaches.show', [$region, $beach]))->assertOk()->assertJsonPath('data.rainfall.last_24_hours_mm', 4.2);
 });
