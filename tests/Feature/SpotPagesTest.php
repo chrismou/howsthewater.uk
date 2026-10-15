@@ -263,7 +263,7 @@ it('shows the region page with river strips, catchment tables and the right now 
         ->assertSee('Every river, source to mouth')
         ->assertSee('Yorkshire Ouse')
         ->assertSee('Right now')
-        ->assertSeeInOrder(['Discharging now', 'Otley'])
+        ->assertSeeInOrder(['Spots with sewage reported upstream now', 'Otley'])
         ->assertSee('/yorkshire/wharfe/otley')
         ->assertSee('data-map-centrelines', false);
 });

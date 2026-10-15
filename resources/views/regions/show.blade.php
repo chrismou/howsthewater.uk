@@ -117,8 +117,9 @@
             </p>
             <div class="mt-4 divide-y divide-line-2 rounded-lg border border-line bg-surface">
                 <div class="px-4 py-4">
-                    <div class="flex items-baseline justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wide {{ $discharging->isNotEmpty() ? 'text-alert' : 'text-muted' }}">Discharging now</span>
+                    <div class="flex items-baseline justify-between gap-3">
+                        {{-- Counts spots, not overflows: one overflow is upstream of every spot below it. --}}
+                        <span class="text-xs font-semibold uppercase tracking-wide {{ $discharging->isNotEmpty() ? 'text-alert' : 'text-muted' }}">Spots with sewage reported upstream now</span>
                         <span class="font-mono text-lg font-semibold {{ $discharging->isNotEmpty() ? 'text-alert' : '' }}">{{ $discharging->count() }}</span>
                     </div>
                     @forelse ($discharging as $spot)
