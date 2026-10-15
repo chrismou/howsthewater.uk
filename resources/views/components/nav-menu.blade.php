@@ -14,9 +14,11 @@
 
     // Wide screens lay each region's groups on three equal columns of a fixed-width panel, so names line up from row
     // to row and the panel never changes width. A group of more than five places spans all three, split into three
-    // lists, or two when any name in the region is too long to fit a third of the panel on one line.
+    // lists. Only when every group in a region is that big, so nothing else shares the grid, does it use two lists
+    // instead if any name is too long to fit a third of the panel on one line.
     $groupSpan = fn (array $items): int => count($items) > 5 ? 3 : 1;
-    $wideGroupColumns = fn (array $entry): int => collect($entry['groups'])->flatten(1)->contains(fn (array $item) => mb_strlen($item['name']) > 18) ? 2 : 3;
+    $wideGroupColumns = fn (array $entry): int => collect($entry['groups'])->every(fn (array $items) => $groupSpan($items) === 3)
+        && collect($entry['groups'])->flatten(1)->contains(fn (array $item) => mb_strlen($item['name']) > 18) ? 2 : 3;
 @endphp
 
 @if ($entries->isNotEmpty())
