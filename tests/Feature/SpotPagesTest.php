@@ -310,7 +310,7 @@ it('describes pages for sharing and search engines', function () {
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: swimming, river level and spills - ', false)
+        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: swimming, river level and spills - How&#039;s the Water?">', false)
         ->assertSee('<meta property="og:url" content="'.route('spots.show', [$region, $river, $spot]).'"', false)
         ->assertSee('og-image.png')
         ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
@@ -360,7 +360,7 @@ it('credits the water companies that cover the regions', function () {
         ->assertOk()
         ->assertSee('Northumbrian Water and Yorkshire Water storm overflow data')
         ->assertSee('Northumbrian Water and Yorkshire Water monitors report')
-        ->assertSee('beaches and lakes in Yorkshire and North East');
+        ->assertSee('Yorkshire and North East, updated every 15 minutes');
 });
 
 it('totals every region on the home page and keeps the first region added as the default elsewhere', function () {

@@ -22,7 +22,7 @@
 @endphp
 
 <x-layouts.app :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$beach->beachSearchName().': water quality and swimming'"
-               :description="$beach->agency->label().' bathing water classification, sample results and pollution risk forecast for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
+               :description="$beach->agency->label().($beach->agency === \App\Enums\Agency::Sepa ? ' classification and sample results' : ' classification, samples and pollution forecasts').' for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
                :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Beaches', route('beaches.index', $region)], [$beach->name, url()->current()]]">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -37,6 +37,8 @@
             <p class="mt-1 text-ink-2">
                 {{ collect([$beach->district, $beach->kind === \App\Enums\BathingWaterKind::Estuary ? 'estuary bathing water' : null, $beach->sewerage_undertaker ? 'sewerage by '.$beach->sewerage_undertaker : null])->filter()->join(' · ') }}
             </p>
+            <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$overflows->monitors" :where="'within '.($overflows->radiusMetres / 1000).' km of '.$beach->name"
+                             :discharging-now="$overflows->dischargingNowCount" :spills-last48-hours="$overflows->spillsLast48HoursCount" :updated-at="$overflows->dataUpdatedAt" />
         </div>
         <x-place-actions :latitude="$beach->latitude" :longitude="$beach->longitude" :label="$beach->name" :feed="route('beaches.feed', [$region, $beach])" />
     </div>

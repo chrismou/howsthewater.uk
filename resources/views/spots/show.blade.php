@@ -31,7 +31,7 @@
 @endphp
 
 <x-layouts.app :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$spot->name.', '.$spot->river->name.': swimming, river level and spills'"
-               :description="'Upstream storm overflow spills, river level and rainfall for swimming, paddling and fishing at '.$spot->name.' on the '.$spot->river->name.', updated every 15 minutes.'"
+               :description="'Live upstream storm overflow spills, river level and rainfall for swimming, paddling and fishing at '.$spot->name.' on the '.$spot->river->name.'.'"
                :breadcrumbs="[[$spot->river->region->name, route('regions.show', $spot->river->region)], [$spot->river->name, route('rivers.show', [$spot->river->region, $spot->river])], [$spot->name, url()->current()]]">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -46,9 +46,11 @@
             <p class="mt-1 text-ink-2">
                 @if ($spot->description){{ $spot->description }} @endif
                 @if ($spot->river_metres !== null)
-                    <span class="text-muted">{{ number_format($spot->river_metres / 1000) }} km from the source, {{ $conditions->upstreamMonitors->count() }} {{ \Illuminate\Support\Str::plural('monitor', $conditions->upstreamMonitors->count()) }} upstream.</span>
+                    <span class="text-muted">{{ number_format($spot->river_metres / 1000) }} km from the source.</span>
                 @endif
             </p>
+            <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$conditions->upstreamMonitors" :where="'upstream of '.$spot->name.' on the '.$spot->river->name"
+                             :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" />
         </div>
         <div class="flex flex-wrap gap-2">
             <button type="button" data-copy-link="{{ url()->current() }}"

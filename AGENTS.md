@@ -347,6 +347,19 @@ replacing the local database with a copy of live rather than backfilling.
   each term's text goes once into a hidden glossary at the end of the page, and `tooltip.js` shows it in one shared
   panel kept on screen, so headings never contain the explanations.
 
+## SEO
+
+- Every page title ends with " - How's the Water?", which the layout appends to the `:title` a page passes. The 60
+  character limit applies to that unique part, not the site name: search results show about 60 characters, so if they
+  cut a title it is the site name that goes, never the place or topic. Meta descriptions stay within 160 characters.
+- Never list every region (or every company, river or place) in a site-wide title or description: they grow with each
+  region added. Say "England and Scotland" or describe the coverage instead; the home page hero lists the regions.
+- When adding a region, page type or new place names, check the longest titles and descriptions it produces.
+  `PageMetadataTest` checks the home, search, about and legal pages with many long region names, and place pages with
+  long place names; extend it for any new page type.
+- Spot, beach and lake pages carry one dated sentence (`components/dated-summary`) naming the place, the time of the
+  monitor data and its source. `/about` explains the sources and methods; keep it in step with Data sources below.
+
 ## Quality
 
 - Run `vendor/bin/pint --dirty --format agent`, `php artisan test --compact` and `vendor/bin/phpstan analyse` before

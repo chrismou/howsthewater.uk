@@ -16,6 +16,7 @@ Route::get('/search', SearchController::class)->name('search')->middleware('thro
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap')->middleware('cache.headers:public;max_age=3600');
 
 // These come before the region route, which would otherwise take them as region slugs.
+Route::view('/about', 'about')->name('about');
 Route::view('/privacy', 'privacy')->name('privacy');
 Route::view('/terms', 'terms')->name('terms');
 

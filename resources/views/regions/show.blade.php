@@ -25,7 +25,7 @@
     };
 @endphp
 
-<x-layouts.app :title="'River swimming in '.$summary->name.': spills, levels and rainfall'"
+<x-layouts.app :title="$summary->name.' rivers: swimming, levels and spills'"
                :description="'Storm overflow spills, river levels and rainfall for swimming, paddling and fishing spots on '.$summary->name.'\'s rivers, listed source to mouth.'"
                :breadcrumbs="[[$summary->name, url()->current()]]"
                :region="$region">

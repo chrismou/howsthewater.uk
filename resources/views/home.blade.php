@@ -12,8 +12,8 @@
     $companyNames = \App\Models\Region::query()->orderBy('name')->get()->flatMap->waterCompanies()->unique()->join(', ', ' and ') ?: 'Water company';
 @endphp
 
-<x-layouts.app :title="'Storm overflows, river levels and bathing water results in '.$regionNames"
-               :description="'Live storm overflow spills, river levels, rainfall and bathing water results for swimming, paddling and fishing spots, beaches and lakes in '.$regionNames.', read from the public monitors every 15 minutes.'"
+<x-layouts.app title="Storm overflows, river levels and bathing water results"
+               description="Live storm overflow spills, river levels and bathing water results for swimming, paddling and fishing on rivers, beaches and lakes in England and Scotland."
                :live-summary="$allRegions">
     <x-slot:hero>
         <section class="relative overflow-hidden border-b border-line bg-surface">

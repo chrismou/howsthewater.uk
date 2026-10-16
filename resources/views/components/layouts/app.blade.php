@@ -18,8 +18,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @php
+        // Every title ends with the site name. The page's own part comes first and stays within 60 characters (see the
+        // SEO section of CLAUDE.md), so if search results cut the title short they only lose the site name.
         $pageTitle = ($title ? $title.' - ' : '').config('app.name');
-        $pageDescription = $description ?? 'Storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots on rivers in '.$allRegions->pluck('name')->join(', ', ' and ').', read from the public monitors every 15 minutes.';
+        $pageDescription = $description ?? 'Storm overflow spills, river levels and bathing water results for swimming, paddling and fishing on rivers, beaches and lakes, updated every 15 minutes.';
     @endphp
     <title>{{ $pageTitle }}</title>
     <meta name="description" content="{{ $pageDescription }}">
@@ -126,7 +128,7 @@
                 Overflow data from Scottish Water.
             @endif
             River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
-            <a href="{{ route('home') }}#limits" class="underline hover:text-ink">What this site does not do</a>.
+            <a href="{{ route('about') }}" class="underline hover:text-ink">About the data and how it works</a>.
             Seen a mistake? <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">Let us know on GitHub</a>.
         </p>
         {{-- Phones: credit and legal links stacked and centred. Wider: one row, legal links on the right. --}}

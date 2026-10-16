@@ -133,10 +133,10 @@ it('titles beaches and lakes the way people search for them', function () {
     $bay = BathingWater::factory()->create(['region_id' => $region->id, 'name' => "Robin Hood's Bay", 'slug' => 'robin-hoods-bay']);
 
     $this->get(route('beaches.show', [$region, $beach]))->assertOk()
-        ->assertSee('<title>Blackpool North beach: water quality and swimming - ', false)
+        ->assertSee('<title>Blackpool North beach: water quality and swimming - How&#039;s the Water?</title>', false)
         ->assertSee('"name":"Beaches","item":"'.route('beaches.index', $region).'"', false);
     $this->get(route('beaches.show', [$region, $bay]))->assertOk()->assertSee("Robin Hood&#039;s Bay: water quality and swimming", false);
-    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSee('<title>Windermere: swimming, water quality and lake level - ', false);
+    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSee('<title>Windermere: swimming, water quality and lake level - How&#039;s the Water?</title>', false);
 });
 
 it('finds beaches and lakes in search and lists them in the sitemap', function () {
