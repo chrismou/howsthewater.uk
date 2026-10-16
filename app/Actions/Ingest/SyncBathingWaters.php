@@ -21,7 +21,8 @@ use Illuminate\Support\Str;
  * sites we cover up to date: beaches in a region's districts, lake sites
  * on a seeded lake, and river sites on one of our spots. Each run stores
  * the latest sample, so sample history builds up between history fetches.
- * Scotland's sites come from SEPA's map service, without samples.
+ * Scotland's sites come from SEPA's map service, without samples, which
+ * SyncSepaBathingWaterSamples reads from each site's results page.
  */
 class SyncBathingWaters
 {

@@ -14,6 +14,8 @@ Schedule::command('ingest:floods')->everyFifteenMinutes()->withoutOverlapping(30
 Schedule::command('ingest:floods --areas')->weeklyOn(1, '03:50');
 Schedule::command('ingest:bathing-waters')->hourly()->withoutOverlapping(60);
 Schedule::command('ingest:bathing-waters --history')->weeklyOn(1, '04:20');
+// Every minute, so its one read per turn keeps an even pace; most runs find it is not yet due and exit.
+Schedule::command('ingest:sepa-bathing-samples')->everyMinute()->withoutOverlapping(5);
 
 // Last, so it runs after the quarter hour's ingests in the same scheduler pass (due tasks run one after another, in
 // the order registered here): one rebuild of whatever they marked changed, instead of one per ingest.

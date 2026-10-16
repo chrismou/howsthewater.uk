@@ -113,6 +113,9 @@
                     @else
                         <p class="text-sm text-ink-2">Not enough samples yet to show a history.</p>
                     @endif
+                    @if ($summary->hasSamplesHere() && ! $beach->description)
+                        <p class="mt-3 text-xs text-muted">From the <a href="{{ $summary->url() }}" rel="noopener" target="_blank" class="underline hover:text-ink">{{ $summary->urlLabel() }}</a>.</p>
+                    @endif
                     @if ($summary->classifications->isNotEmpty())
                         <p class="mt-4 text-xs uppercase tracking-wide text-muted">Classifications</p>
                         <ul class="mt-2 flex flex-wrap gap-1.5">

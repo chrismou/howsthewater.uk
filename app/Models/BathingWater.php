@@ -43,6 +43,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $season_starts_on
  * @property Carbon|null $season_ends_on
  * @property Carbon|null $history_fetched_at
+ * @property Carbon|null $samples_checked_at
+ * @property Carbon|null $samples_retry_at
  * @property int|null $rainfall_station_id
  * @property Carbon|null $rain_gauges_searched_at
  * @property Carbon|null $created_at
@@ -83,6 +85,8 @@ class BathingWater extends Model
         'season_starts_on',
         'season_ends_on',
         'history_fetched_at',
+        'samples_checked_at',
+        'samples_retry_at',
         'rainfall_station_id',
         'rain_gauges_searched_at',
     ];
@@ -101,6 +105,8 @@ class BathingWater extends Model
             'season_starts_on' => 'date',
             'season_ends_on' => 'date',
             'history_fetched_at' => 'datetime',
+            'samples_checked_at' => 'datetime',
+            'samples_retry_at' => 'datetime',
             'rain_gauges_searched_at' => 'datetime',
         ];
     }

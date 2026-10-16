@@ -94,10 +94,15 @@ return [
     ],
 
     // SEPA's time series API (Scottish river levels and rainfall; anonymous use is capped at 5,000 credits a day) and
-    // its open map service for Scottish bathing waters.
+    // its open map service for Scottish bathing waters. Samples are read from each site's results page only while
+    // switched on, one site at a time at an even pace that reads every site once per interval_days.
     'sepa' => [
         'timeseries_url' => env('SEPA_TIMESERIES_URL', 'https://timeseries.sepa.org.uk/KiWIS/KiWIS'),
         'bathing_waters_url' => env('SEPA_BATHING_WATERS_URL', 'https://map.sepa.org.uk/server/rest/services/Open/Environmental_Monitoring/MapServer'),
+        'bathing_samples' => [
+            'enabled' => (bool) env('SEPA_BATHING_SAMPLES', false),
+            'interval_days' => (float) env('SEPA_BATHING_SAMPLES_INTERVAL_DAYS', 7),
+        ],
     ],
 
     'ordnance_survey' => [

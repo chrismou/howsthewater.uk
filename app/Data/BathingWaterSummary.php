@@ -62,10 +62,11 @@ final readonly class BathingWaterSummary
     }
 
     /**
-     * SEPA's samples are only on its own results pages, so Scottish sites carry none here.
+     * SEPA's samples are only on its own results pages, so a Scottish site
+     * carries them here once that page has been read.
      */
     public function hasSamplesHere(): bool
     {
-        return $this->bathingWater->agency === Agency::EnvironmentAgency;
+        return $this->bathingWater->agency === Agency::EnvironmentAgency || $this->bathingWater->samples_checked_at !== null;
     }
 }

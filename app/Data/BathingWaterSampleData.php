@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Support\Carbon;
 
 final readonly class BathingWaterSampleData
@@ -39,6 +40,47 @@ final readonly class BathingWaterSampleData
             enterococci: isset($item['intestinalEnterococciCount']) ? (int) $item['intestinalEnterococciCount'] : null,
             enterococciQualifier: self::qualifier($item['intestinalEnterococciQualifier'] ?? null),
         );
+    }
+
+    /**
+     * A row of a SEPA results page: a date such as "18 May 2026" and counts
+     * such as "<10" or "620". SEPA gives no time, so the sample is placed at
+     * the start of that UK day.
+     */
+    public static function fromSepa(string $date, string $eColi, string $enterococci): ?self
+    {
+        try {
+            $sampledAt = Carbon::createFromFormat('!d F Y', trim($date), self::SOURCE_TIMEZONE);
+        } catch (InvalidFormatException) {
+            return null;
+        }
+
+        if ($sampledAt === null) {
+            return null;
+        }
+
+        [$eColiCount, $eColiQualifier] = self::sepaCount($eColi);
+        [$enterococciCount, $enterococciQualifier] = self::sepaCount($enterococci);
+
+        return new self(
+            sampledAt: $sampledAt->utc(),
+            eColi: $eColiCount,
+            eColiQualifier: $eColiQualifier,
+            enterococci: $enterococciCount,
+            enterococciQualifier: $enterococciQualifier,
+        );
+    }
+
+    /**
+     * @return array{0: int|null, 1: string|null}
+     */
+    private static function sepaCount(string $text): array
+    {
+        if (preg_match('/^\s*([<>]?)\s*([\d,]+)\s*$/', $text, $match) !== 1) {
+            return [null, null];
+        }
+
+        return [(int) str_replace(',', '', $match[2]), $match[1] === '' ? null : $match[1]];
     }
 
     private static function qualifier(mixed $value): ?string

@@ -177,7 +177,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Cart), the Dunbartonshire Leven, the Ayrshire rivers (Irvine, Ayr, Doon), the Fife Eden, the Angus North and South
   Esk, and the Nith, Annan and Galloway Dee (slug `dee-galloway`). Many share names with English
   or other Scottish rivers, so each main river's mouth hint matters. Scotland has SEPA levels, rainfall and bathing
-  waters but no flood warnings yet. Main rivers and their tributaries are seeded
+  waters (with samples while switched on) but no flood warnings yet. Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
@@ -191,7 +191,15 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   which also sets each tributary's and inflowing main river's `joins_at_metres`).
 - Beaches and lakes come from the EA designated bathing water register, and in Scotland from SEPA's open map service
   (`Sepa\BathingWaterClient`, `SyncBathingWaters::handleSepa()`): location, classification and a link to SEPA's
-  results page (`profile_url`), but no samples or forecasts, which SEPA only publishes on its own pages. The reader
+  results page (`profile_url`). SEPA publishes samples only on those HTML pages, so `ingest:sepa-bathing-samples`
+  (`SyncSepaBathingWaterSamples`, `Sepa\BathingWaterResultsClient`) reads them one site at a time, only while
+  `SEPA_BATHING_SAMPLES` is on and from 15 May to 30 September: every site once per
+  `SEPA_BATHING_SAMPLES_INTERVAL_DAYS` (default 7, never under 1), at an even pace (90 sites over 7 days is one request
+  every 112 minutes), longest unread first. It runs every minute and exits until the next turn is due. A 403 or 429
+  pauses all reads for a day, any other failure for an hour, and the failing site waits a day (`samples_retry_at`).
+  Timing reads to each site's expected next result was simulated and did no better than even rotation, as SEPA's
+  sampling dates are too irregular (extra rounds two days apart, gaps of 8 to 13 days). There are no Scottish
+  forecasts. The reader
   gives each Scottish site its council area (the Scotland region's `bathing_water_districts`) and names the loch for
   the three inland sites (`lakeName`, since Luss Bay does not start with Loch Lomond). Bathing waters carry an
   `agency`; the EA history backfill skips SEPA sites. `BathingWater` holds every site we track:
