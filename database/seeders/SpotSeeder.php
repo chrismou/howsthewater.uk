@@ -29,6 +29,178 @@ class SpotSeeder extends Seeder
             'north-west' => self::northWest(),
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
+            'scotland' => self::scotland(),
+        ];
+    }
+
+    /**
+     * Spots on Scottish Water's rivers, snapped onto the OS centreline.
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function scotland(): array
+    {
+        return [
+            'tay' => [
+                ['name' => 'Kenmore', 'latitude' => 56.5865, 'longitude' => -3.9975, 'description' => 'Where the Tay leaves Loch Tay, below the village bridge.'],
+                ['name' => 'Aberfeldy', 'latitude' => 56.6247, 'longitude' => -3.8628, 'description' => 'Wade\'s Bridge and the riverside below the town.'],
+                ['name' => 'Grandtully', 'latitude' => 56.6545, 'longitude' => -3.7797, 'description' => 'The rapids by the bridge, well known to paddlers.'],
+                ['name' => 'Dunkeld', 'latitude' => 56.5640, 'longitude' => -3.5872, 'description' => 'Telford\'s bridge and the shingle below the cathedral.'],
+                ['name' => 'Caputh', 'latitude' => 56.5397, 'longitude' => -3.4937, 'description' => 'The bridge at Caputh, between Dunkeld and Stanley.'],
+                ['name' => 'Stanley', 'latitude' => 56.4786, 'longitude' => -3.4457, 'description' => 'Below Stanley Mills and the Campsie Linn rapids.'],
+                ['name' => 'Perth', 'latitude' => 56.4054, 'longitude' => -3.4284, 'description' => 'The North Inch, above the town bridges.'],
+            ],
+            'tummel' => [
+                ['name' => 'Pitlochry', 'latitude' => 56.6985, 'longitude' => -3.7323, 'description' => 'Below the dam and the Port-na-craig suspension bridge.'],
+            ],
+            'garry' => [
+                ['name' => 'Blair Atholl', 'latitude' => 56.7627, 'longitude' => -3.8488, 'description' => 'The Garry by the village, below the falls of Bruar.'],
+                ['name' => 'Killiecrankie', 'latitude' => 56.7420, 'longitude' => -3.7731, 'description' => 'The gorge below the Pass of Killiecrankie.'],
+            ],
+            'braan' => [
+                ['name' => 'The Hermitage', 'latitude' => 56.5594, 'longitude' => -3.6092, 'description' => 'The Black Linn falls below Ossian\'s Hall.'],
+            ],
+            'earn' => [
+                ['name' => 'Comrie', 'latitude' => 56.3735, 'longitude' => -3.9878, 'description' => 'Below the village bridge, where the Lednock joins.'],
+                ['name' => 'Crieff', 'latitude' => 56.3652, 'longitude' => -3.8507, 'description' => 'Bridgend and the meadows below the town.'],
+                ['name' => 'Bridge of Earn', 'latitude' => 56.3513, 'longitude' => -3.4051, 'description' => 'The old bridge piers below the village.'],
+            ],
+            'spey' => [
+                ['name' => 'Newtonmore', 'latitude' => 57.0556, 'longitude' => -4.1179, 'description' => 'The Spey below the village, by the golf course.'],
+                ['name' => 'Kingussie', 'latitude' => 57.0753, 'longitude' => -4.0475, 'description' => 'Below the town, across the Insh Marshes.'],
+                ['name' => 'Aviemore', 'latitude' => 57.1892, 'longitude' => -3.8255, 'description' => 'The riverside path below the village.'],
+                ['name' => 'Boat of Garten', 'latitude' => 57.2491, 'longitude' => -3.7478, 'description' => 'The bridge and the old ferry crossing.'],
+                ['name' => 'Nethy Bridge', 'latitude' => 57.2814, 'longitude' => -3.6633, 'description' => 'Broomhill bridge, near Nethy Bridge.'],
+                ['name' => 'Grantown-on-Spey', 'latitude' => 57.3194, 'longitude' => -3.5995, 'description' => 'The old Spey bridge and Anagach woods.'],
+                ['name' => 'Aberlour', 'latitude' => 57.4730, 'longitude' => -3.2231, 'description' => 'The Alice Littler park and the footbridge.'],
+                ['name' => 'Craigellachie', 'latitude' => 57.4910, 'longitude' => -3.1877, 'description' => 'Telford\'s bridge below the village.'],
+                ['name' => 'Fochabers', 'latitude' => 57.6157, 'longitude' => -3.1052, 'description' => 'The Spey bridge by the village.'],
+            ],
+            'ness' => [
+                ['name' => 'Ness Islands', 'latitude' => 57.4654, 'longitude' => -4.2308, 'description' => 'The islands and footbridges above the city.'],
+                ['name' => 'Inverness', 'latitude' => 57.4791, 'longitude' => -4.2298, 'description' => 'The riverside by the castle and the Greig Street bridge.'],
+            ],
+            'dee' => [
+                ['name' => 'Linn of Dee', 'latitude' => 56.9884, 'longitude' => -3.5452, 'description' => 'The narrow gorge and the bridge above Braemar.'],
+                ['name' => 'Braemar', 'latitude' => 57.0070, 'longitude' => -3.4113, 'description' => 'The Dee below the village, by the Invercauld bridge.'],
+                ['name' => 'Ballater', 'latitude' => 57.0464, 'longitude' => -3.0370, 'description' => 'The bridge and the shingle below the village.'],
+                ['name' => 'Aboyne', 'latitude' => 57.0715, 'longitude' => -2.7827, 'description' => 'The bridge and the green below the village.'],
+                ['name' => 'Potarch', 'latitude' => 57.0610, 'longitude' => -2.6438, 'description' => 'Potarch bridge, by the hotel.'],
+                ['name' => 'Banchory', 'latitude' => 57.0477, 'longitude' => -2.4952, 'description' => 'The bridge and the riverside below the town.'],
+                ['name' => 'Crathes', 'latitude' => 57.0546, 'longitude' => -2.4258, 'description' => 'Below Crathes castle.'],
+                ['name' => 'Peterculter', 'latitude' => 57.0920, 'longitude' => -2.2609, 'description' => 'The riverside below the village.'],
+                ['name' => 'Cults', 'latitude' => 57.1146, 'longitude' => -2.1709, 'description' => 'The Deeside Way above the city.'],
+                ['name' => 'Duthie Park', 'latitude' => 57.1339, 'longitude' => -2.0960, 'description' => 'The riverside by the park in Aberdeen.'],
+            ],
+            'don' => [
+                ['name' => 'Alford', 'latitude' => 57.2431, 'longitude' => -2.7117, 'description' => 'The bridge below the village.'],
+                ['name' => 'Monymusk', 'latitude' => 57.2292, 'longitude' => -2.5147, 'description' => 'The riverside below the village.'],
+                ['name' => 'Kemnay', 'latitude' => 57.2352, 'longitude' => -2.4499, 'description' => 'The Don below the village.'],
+                ['name' => 'Kintore', 'latitude' => 57.2397, 'longitude' => -2.3414, 'description' => 'Below the town, by the Inverurie road.'],
+                ['name' => 'Inverurie', 'latitude' => 57.2756, 'longitude' => -2.3708, 'description' => 'Where the Urie joins, below the town.'],
+                ['name' => 'Dyce', 'latitude' => 57.1997, 'longitude' => -2.1718, 'description' => 'The riverside walk by Dyce.'],
+                ['name' => 'Seaton Park', 'latitude' => 57.1723, 'longitude' => -2.1049, 'description' => 'The park below the cathedral in Aberdeen.'],
+            ],
+            'forth' => [
+                ['name' => 'Aberfoyle', 'latitude' => 56.1773, 'longitude' => -4.3827, 'description' => 'The bridge below the village.'],
+                ['name' => 'Stirling', 'latitude' => 56.1272, 'longitude' => -3.9356, 'description' => 'The old bridge below the castle.'],
+            ],
+            'teith' => [
+                ['name' => 'Callander', 'latitude' => 56.2425, 'longitude' => -4.2150, 'description' => 'The meadows by the town bridge.'],
+                ['name' => 'Doune', 'latitude' => 56.1864, 'longitude' => -4.0592, 'description' => 'Below Doune castle.'],
+            ],
+            'allan-water' => [
+                ['name' => 'Dunblane', 'latitude' => 56.1869, 'longitude' => -3.9649, 'description' => 'The riverside below the cathedral.'],
+                ['name' => 'Bridge of Allan', 'latitude' => 56.1543, 'longitude' => -3.9508, 'description' => 'The village bridge and the riverside walk.'],
+            ],
+            'devon' => [
+                ['name' => 'Rumbling Bridge', 'latitude' => 56.1798, 'longitude' => -3.5854, 'description' => 'The gorge and the double bridge.'],
+                ['name' => 'Dollar', 'latitude' => 56.1540, 'longitude' => -3.6723, 'description' => 'The riverside below the town.'],
+                ['name' => 'Tillicoultry', 'latitude' => 56.1481, 'longitude' => -3.7386, 'description' => 'Below the town, at the Devon Way.'],
+            ],
+            'water-of-leith' => [
+                ['name' => 'Balerno', 'latitude' => 55.8861, 'longitude' => -3.3378, 'description' => 'The walkway below the village.'],
+                ['name' => 'Colinton Dell', 'latitude' => 55.9082, 'longitude' => -3.2557, 'description' => 'The wooded dell and the old railway path.'],
+                ['name' => 'Dean Village', 'latitude' => 55.9520, 'longitude' => -3.2170, 'description' => 'Below the Dean Bridge, by the old mills.'],
+                ['name' => 'Stockbridge', 'latitude' => 55.9576, 'longitude' => -3.2091, 'description' => 'Below the bridge and St Bernard\'s Well.'],
+            ],
+            'almond' => [
+                ['name' => 'Livingston', 'latitude' => 55.8856, 'longitude' => -3.5190, 'description' => 'The riverside park in Livingston.'],
+                ['name' => 'Almondell', 'latitude' => 55.9023, 'longitude' => -3.4628, 'description' => 'The country park by the aqueduct.'],
+                ['name' => 'Cramond', 'latitude' => 55.9761, 'longitude' => -3.3024, 'description' => 'The falls and the old mill above the village.'],
+            ],
+            'esk' => [
+                ['name' => 'Musselburgh', 'latitude' => 55.9417, 'longitude' => -3.0564, 'description' => 'The old bridge and the riverside in the town.'],
+            ],
+            'tyne' => [
+                ['name' => 'Haddington', 'latitude' => 55.9565, 'longitude' => -2.7741, 'description' => 'The Nungate bridge below the town.'],
+                ['name' => 'East Linton', 'latitude' => 55.9852, 'longitude' => -2.6545, 'description' => 'Linn Rocks and the old bridge.'],
+            ],
+            'clyde' => [
+                ['name' => 'Falls of Clyde', 'latitude' => 55.6598, 'longitude' => -3.7807, 'description' => 'The gorge below New Lanark.'],
+                ['name' => 'Kirkfieldbank', 'latitude' => 55.6759, 'longitude' => -3.8050, 'description' => 'The bridges below Lanark.'],
+                ['name' => 'Crossford', 'latitude' => 55.6962, 'longitude' => -3.8670, 'description' => 'The village bridge, where the Nethan joins.'],
+                ['name' => 'Strathclyde Park', 'latitude' => 55.7892, 'longitude' => -4.0327, 'description' => 'The river by the park, at Hamilton.'],
+                ['name' => 'Bothwell Castle', 'latitude' => 55.8081, 'longitude' => -4.0927, 'description' => 'The bend below Bothwell Castle.'],
+                ['name' => 'Cambuslang', 'latitude' => 55.8285, 'longitude' => -4.1525, 'description' => 'The Clyde Walkway at Cambuslang.'],
+                ['name' => 'Glasgow Green', 'latitude' => 55.8485, 'longitude' => -4.2376, 'description' => 'Below the tidal weir in Glasgow.'],
+            ],
+            'kelvin' => [
+                ['name' => 'Kirkintilloch', 'latitude' => 55.9433, 'longitude' => -4.1628, 'description' => 'The riverside below the town.'],
+                ['name' => 'Dawsholm', 'latitude' => 55.8928, 'longitude' => -4.3028, 'description' => 'Dawsholm park and the Kelvin Walkway.'],
+                ['name' => 'Kelvingrove', 'latitude' => 55.8691, 'longitude' => -4.2856, 'description' => 'The river below Kelvingrove park.'],
+            ],
+            'white-cart-water' => [
+                ['name' => 'Linn Park', 'latitude' => 55.8020, 'longitude' => -4.2644, 'description' => 'The waterfalls in Linn Park.'],
+                ['name' => 'Pollok Country Park', 'latitude' => 55.8261, 'longitude' => -4.3129, 'description' => 'The weir by Pollok House.'],
+            ],
+            'leven' => [
+                ['name' => 'Balloch', 'latitude' => 56.0030, 'longitude' => -4.5817, 'description' => 'Where the Leven leaves Loch Lomond.'],
+            ],
+            'irvine' => [
+                ['name' => 'Galston', 'latitude' => 55.6030, 'longitude' => -4.3844, 'description' => 'The riverside below the town.'],
+                ['name' => 'Irvine', 'latitude' => 55.6133, 'longitude' => -4.6700, 'description' => 'The riverside by the town centre.'],
+            ],
+            'ayr' => [
+                ['name' => 'Catrine', 'latitude' => 55.5031, 'longitude' => -4.3310, 'description' => 'Below the village weir.'],
+                ['name' => 'Ayr', 'latitude' => 55.4624, 'longitude' => -4.6264, 'description' => 'The Auld Brig in the town.'],
+            ],
+            'doon' => [
+                ['name' => 'Brig o\' Doon', 'latitude' => 55.4279, 'longitude' => -4.6394, 'description' => 'The old bridge at Alloway.'],
+            ],
+            'nith' => [
+                ['name' => 'Sanquhar', 'latitude' => 55.3636, 'longitude' => -3.9282, 'description' => 'The riverside below the town.'],
+                ['name' => 'Thornhill', 'latitude' => 55.2403, 'longitude' => -3.7776, 'description' => 'The bridge below the village.'],
+                ['name' => 'Dumfries', 'latitude' => 55.0675, 'longitude' => -3.6148, 'description' => 'The Whitesands by the caul.'],
+            ],
+            'annan' => [
+                ['name' => 'Moffat', 'latitude' => 55.3276, 'longitude' => -3.4439, 'description' => 'The riverside below the town.'],
+                ['name' => 'Annan', 'latitude' => 54.9888, 'longitude' => -3.2657, 'description' => 'The bridge in the town.'],
+            ],
+            'findhorn' => [
+                ['name' => 'Dulsie Bridge', 'latitude' => 57.4376, 'longitude' => -3.8331, 'description' => 'The gorge below the old bridge.'],
+                ['name' => 'Randolph\'s Leap', 'latitude' => 57.5194, 'longitude' => -3.6844, 'description' => 'The narrow gorge and pools near Logie.'],
+                ['name' => 'Forres', 'latitude' => 57.6143, 'longitude' => -3.6329, 'description' => 'The Findhorn bridge below the town.'],
+            ],
+            'lossie' => [
+                ['name' => 'Elgin', 'latitude' => 57.6526, 'longitude' => -3.3149, 'description' => 'The riverside below Cooper Park.'],
+            ],
+            'eden' => [
+                ['name' => 'Cupar', 'latitude' => 56.3190, 'longitude' => -3.0085, 'description' => 'The riverside in the town.'],
+                ['name' => 'Guardbridge', 'latitude' => 56.3616, 'longitude' => -2.8887, 'description' => 'The old bridge at the head of the estuary.'],
+            ],
+            'south-esk' => [
+                ['name' => 'Brechin', 'latitude' => 56.7262, 'longitude' => -2.6547, 'description' => 'The bridge below Brechin castle.'],
+                ['name' => 'Bridge of Dun', 'latitude' => 56.7163, 'longitude' => -2.5499, 'description' => 'The old bridge above Montrose Basin.'],
+            ],
+            'north-esk' => [
+                ['name' => 'Gannochy Bridge', 'latitude' => 56.8163, 'longitude' => -2.6498, 'description' => 'The Rocks of Solitude gorge above Edzell.'],
+                ['name' => 'Marykirk', 'latitude' => 56.7817, 'longitude' => -2.5214, 'description' => 'The bridge below the village.'],
+            ],
+            'dee-galloway' => [
+                ['name' => 'Threave', 'latitude' => 54.9385, 'longitude' => -3.9698, 'description' => 'The river around Threave castle island.'],
+                ['name' => 'Tongland', 'latitude' => 54.8579, 'longitude' => -4.0383, 'description' => 'Below the bridge at Tongland.'],
+            ],
         ];
     }
 

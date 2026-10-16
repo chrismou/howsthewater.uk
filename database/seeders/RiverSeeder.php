@@ -29,6 +29,7 @@ class RiverSeeder extends Seeder
             'north-west' => self::northWest(),
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
+            'scotland' => self::scotland(),
         ];
     }
 
@@ -377,14 +378,116 @@ class RiverSeeder extends Seeder
     }
 
     /**
+     * Scottish Water's rivers. Several share names with English rivers (Don,
+     * Tyne, Esk, Eden, Leven) or other Scottish ones (Dee, Esk, Almond, Garry, Isla),
+     * so each main river's mouth picks the right one, and monitors only join
+     * a river within reach of its centreline. Rivers with spots are main
+     * rivers flowing into the river they join, so they keep their own pages.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     */
+    private static function scotland(): array
+    {
+        return [
+            // Tay
+            self::main('River Tay', 'Tay', [56.3550, -3.3300]),
+            self::tributary('Craigie Burn', 'tay'),
+            self::tributary('River Isla', 'tay'),
+            self::tributary('River Ericht', 'isla'),
+            self::tributary('Alyth Burn', 'isla'),
+            self::main('River Tummel', 'Tay', [56.6520, -3.6600], flowsInto: 'tay'),
+            self::main('River Garry', 'Tay', [56.7060, -3.7720], flowsInto: 'tummel'),
+            self::main('River Braan', 'Tay', [56.5620, -3.5880], flowsInto: 'tay'),
+            self::main('River Earn', 'Tay', [56.3550, -3.3100], flowsInto: 'tay'),
+
+            // Spey and Ness
+            self::main('River Spey', 'Highlands and Moray', [57.6670, -3.0980]),
+            self::tributary('River Dulnain', 'spey'),
+            self::tributary('River Nethy', 'spey'),
+            self::main('River Ness', 'Highlands and Moray', [57.4930, -4.2320]),
+            self::main('River Findhorn', 'Highlands and Moray', [57.6400, -3.6000]),
+            self::main('River Lossie', 'Highlands and Moray', [57.7200, -3.2800]),
+            self::tributary('Lhanbryd Burn', 'lossie'),
+
+            // Dee and Don
+            self::main('River Dee', 'Aberdeenshire', [57.1420, -2.0700]),
+            self::tributary('Water of Feugh', 'dee'),
+            self::main('River Don', 'Aberdeenshire', [57.1760, -2.0830]),
+
+            // Forth
+            self::main('River Forth', 'Forth', [56.1100, -3.7900]),
+            self::tributary('Bannock Burn', 'forth'),
+            self::main('River Teith', 'Forth', [56.1530, -3.9590], flowsInto: 'forth'),
+            self::main('Allan Water', 'Forth', [56.1350, -3.9420], flowsInto: 'forth'),
+            self::main('River Devon', 'Forth', [56.1180, -3.8130], flowsInto: 'forth'),
+
+            // Lothian
+            self::main('Water of Leith', 'Lothian', [55.9770, -3.1700]),
+            self::main('River Almond', 'Lothian', [55.9780, -3.3020]),
+            self::tributary('Brox Burn', 'almond'),
+            self::tributary('Breich Water', 'almond'),
+            self::tributary('Niddry Burn', 'almond'),
+            self::main('River Esk', 'Lothian', [55.9470, -3.0580]),
+            self::tributary('River North Esk', 'esk', slug: 'north-esk-lothian'),
+            self::tributary('River South Esk', 'esk', slug: 'south-esk-lothian'),
+            self::main('River Tyne', 'Lothian', [56.0050, -2.5850]),
+            self::tributary('Gifford Water', 'tyne'),
+
+            // Clyde
+            self::main('River Clyde', 'Clyde', [55.9600, -4.7800], ['Clyde Estuary']),
+            self::tributary('Douglas Water', 'clyde'),
+            self::tributary('Mouse Water', 'clyde'),
+            self::tributary('River Nethan', 'clyde'),
+            self::tributary('Avon Water', 'clyde'),
+            self::tributary('Cadzow Burn', 'clyde'),
+            self::tributary('South Calder Water', 'clyde', ['Unknown tributary of South Calder']),
+            self::tributary('North Calder Water', 'clyde'),
+            self::tributary('Rotten Calder', 'clyde', ['Rotten Calder Water']),
+            self::tributary('Tollcross Burn', 'clyde'),
+            self::main('River Kelvin', 'Clyde', [55.8690, -4.3100], flowsInto: 'clyde'),
+            self::tributary('Luggie Water', 'kelvin'),
+            self::tributary('Allander Water', 'kelvin'),
+            self::main('White Cart Water', 'Clyde', [55.8870, -4.4300], ['White Cart Estuary'], flowsInto: 'clyde'),
+            self::tributary('Black Cart Water', 'white-cart-water'),
+            self::tributary('Levern Water', 'white-cart-water'),
+            self::tributary('Auldhouse Burn', 'white-cart-water'),
+            self::main('River Leven', 'Clyde', [55.9380, -4.5660]),
+
+            // Ayrshire
+            self::main('River Irvine', 'Ayrshire', [55.6050, -4.6900]),
+            self::tributary('River Garnock', 'irvine'),
+            self::tributary('Annick Water', 'irvine'),
+            self::tributary('Kilmarnock Water', 'irvine'),
+            self::tributary('Carmel Water', 'irvine'),
+            self::main('River Ayr', 'Ayrshire', [55.4690, -4.6370]),
+            self::tributary('Lugar Water', 'ayr'),
+            self::main('River Doon', 'Ayrshire', [55.4320, -4.6480]),
+
+            // Fife and Angus
+            self::main('River Eden', 'Fife and Angus', [56.3600, -2.8800], ['Eden Estuary']),
+            self::tributary('Lady Burn', 'eden'),
+            self::tributary('Freuchie Burn', 'eden'),
+            self::main('River South Esk', 'Fife and Angus', [56.7050, -2.4700], ['South Esk Estuary']),
+            self::main('River North Esk', 'Fife and Angus', [56.7550, -2.4300]),
+            self::tributary('Luther Water', 'north-esk'),
+
+            // Dumfries and Galloway
+            self::main('River Nith', 'Dumfries and Galloway', [55.0000, -3.5700]),
+            self::main('River Annan', 'Dumfries and Galloway', [54.9750, -3.2620]),
+            self::main('River Dee', 'Dumfries and Galloway', [54.8300, -4.0500], slug: 'dee-galloway'),
+        ];
+    }
+
+    /**
      * @param  array{0: float, 1: float}  $mouth  Approximate [lat, lng] of the mouth
      * @param  array<int, string>  $extraAliases
      * @param  string|null  $flowsInto  Slug of the main river this one joins, if any
+     * @param  string|null  $slug  For a river whose name another in the region already uses (the Galloway Dee)
      * @return array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth: array{0: float, 1: float}, flows_into: string|null}
      */
-    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = [], ?string $flowsInto = null): array
+    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = [], ?string $flowsInto = null, ?string $slug = null): array
     {
-        return ['name' => $name, 'slug' => self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...$extraAliases], 'mouth' => $mouth, 'flows_into' => $flowsInto];
+        return ['name' => $name, 'slug' => $slug ?? self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...$extraAliases], 'mouth' => $mouth, 'flows_into' => $flowsInto];
     }
 
     /**

@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands). The site
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands, Scotland). The site
 reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -171,7 +171,13 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   SEPA levels and rainfall but no flood warnings yet). The Midlands has Severn
   Trent's rivers: the Trent, with the Soar and the Peak District's Derwent, Wye, Dove and Manifold flowing into it, and
   the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn (Hafren Dyfrdwy) are not on
-  Stream, so they do not count yet. Main rivers and their tributaries are seeded
+  Stream, so they do not count yet. Scotland has Scottish Water's rivers, grouped by catchment: the Tay (with the
+  Tummel, Garry, Braan and Earn flowing into it), Spey, Ness, Findhorn, Lossie, Dee, Don, Forth (with the Teith, Allan
+  Water and Devon), the Lothian rivers (Water of Leith, Almond, Esk, Tyne), the Clyde (with the Kelvin and White
+  Cart), the Dunbartonshire Leven, the Ayrshire rivers (Irvine, Ayr, Doon), the Fife Eden, the Angus North and South
+  Esk, and the Nith, Annan and Galloway Dee (slug `dee-galloway`). Many share names with English
+  or other Scottish rivers, so each main river's mouth hint matters. Scotland has SEPA levels and rainfall but no
+  flood warnings or bathing waters yet. Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than

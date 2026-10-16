@@ -39,5 +39,11 @@ class RegionSeeder extends Seeder
             'overflow_feeds' => ['severn_trent'],
             'bathing_water_districts' => [],
         ]);
+        // The EA bathing water register stops at the border, so Scotland has no districts.
+        Region::query()->updateOrCreate(['slug' => 'scotland'], [
+            'name' => 'Scotland',
+            'overflow_feeds' => ['scottish_water'],
+            'bathing_water_districts' => [],
+        ]);
     }
 }
