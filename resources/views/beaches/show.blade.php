@@ -23,11 +23,12 @@
 
 <x-layouts.app :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$beach->beachSearchName().': water quality and swimming'"
                :description="$beach->agency->label().($beach->agency === \App\Enums\Agency::Sepa ? ' classification and sample results' : ' classification, samples and pollution forecasts').' for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
-               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Beaches', route('beaches.index', $region)], [$beach->name, url()->current()]]">
+               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Beaches', route('beaches.index', $region)], [$beach->name, url()->current()]]"
+               :structured-data="app(\App\Services\StructuredData::class)->beach($beach, $region)">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm text-muted">
-                <a href="{{ route('home') }}" class="hover:underline">All regions</a>
+                <a href="{{ route('hubs.beaches') }}" class="hover:underline">All beaches</a>
                 <span class="mx-1">/</span>
                 <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
                 <span class="mx-1">/</span>

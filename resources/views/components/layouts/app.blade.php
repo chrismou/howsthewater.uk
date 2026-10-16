@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => []])
+@props(['title' => null, 'description' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => [], 'structuredData' => []])
 
 @php
     // The live bar shows the summary a page passes (the home page passes every region combined), else the page's
@@ -55,6 +55,14 @@
         @endphp
         <script type="application/ld+json">{!! json_encode($breadcrumbList, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
     @endif
+    {{-- What the page describes, in schema.org terms (see App\Services\StructuredData): facts the page states, never a rating of the water. --}}
+    @php
+        // Built here rather than in an echo, where Blade would read the "@context" key as a directive.
+        $structuredDataJson = array_map(fn (array $item) => json_encode(['@context' => 'https://schema.org', ...$item], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG), $structuredData);
+    @endphp
+    @foreach ($structuredDataJson as $json)
+        <script type="application/ld+json">{!! $json !!}</script>
+    @endforeach
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">

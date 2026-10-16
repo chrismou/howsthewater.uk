@@ -25,11 +25,12 @@
 
 <x-layouts.app :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
                :description="'Bathing water results, lake level, rainfall and storm overflows nearby for swimming and paddling at '.$lake->name.'.'"
-               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Lakes', route('lakes.index', $region)], [$lake->name, url()->current()]]">
+               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Lakes', route('lakes.index', $region)], [$lake->name, url()->current()]]"
+               :structured-data="app(\App\Services\StructuredData::class)->lake($lake, $region)">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm text-muted">
-                <a href="{{ route('home') }}" class="hover:underline">All regions</a>
+                <a href="{{ route('hubs.lakes') }}" class="hover:underline">All lakes</a>
                 <span class="mx-1">/</span>
                 <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
                 <span class="mx-1">/</span>

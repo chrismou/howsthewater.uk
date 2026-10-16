@@ -28,9 +28,10 @@
 <x-layouts.app :title="$summary->name.' rivers: swimming, levels and spills'"
                :description="'Storm overflow spills, river levels and rainfall for swimming, paddling and fishing spots on '.$summary->name.'\'s rivers, listed source to mouth.'"
                :breadcrumbs="[[$summary->name, url()->current()]]"
-               :region="$region">
+               :region="$region"
+               :structured-data="app(\App\Services\StructuredData::class)->itemList($summary->name.' rivers', $summary->rivers->map(fn ($river) => [$river->name, route('rivers.show', [$summary->slug, $river->slug])]))">
     <div class="mb-6">
-        <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">All regions</a> <span class="mx-1">/</span> {{ $summary->name }}</p>
+        <p class="text-sm text-muted"><a href="{{ route('hubs.rivers') }}" class="hover:underline">All rivers</a> <span class="mx-1">/</span> {{ $summary->name }}</p>
         <div class="mt-1 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
             <div class="max-w-2xl">
                 <h1 class="font-display text-4xl font-semibold tracking-tight">{{ $summary->name }}</h1>

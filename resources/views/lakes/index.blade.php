@@ -1,9 +1,10 @@
 <x-layouts.app :region="$region" :title="$region->name.' lakes: swimming and water quality'"
                :description="'Bathing water results, lake levels and nearby storm overflows for swimming and paddling at lakes in '.$region->name.'.'"
-               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Lakes', url()->current()]]">
+               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Lakes', url()->current()]]"
+               :structured-data="app(\App\Services\StructuredData::class)->itemList($region->name.' lakes', $lakes->map(fn ($conditions) => [$conditions->lake->name, route('lakes.show', [$region, $conditions->lake])]))">
     <div class="mb-6">
         <p class="text-sm text-muted">
-            <a href="{{ route('home') }}" class="hover:underline">All regions</a>
+            <a href="{{ route('hubs.lakes') }}" class="hover:underline">All lakes</a>
             <span class="mx-1">/</span>
             <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
         </p>

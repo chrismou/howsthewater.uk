@@ -367,6 +367,13 @@ replacing the local database with a copy of live rather than backfilling.
   long place names; extend it for any new page type.
 - Spot, beach and lake pages carry one dated sentence (`components/dated-summary`) naming the place, the time of the
   monitor data and its source. `/about` explains the sources and methods; keep it in step with Data sources below.
+- Pages describe themselves as schema.org JSON-LD through the layout's `structuredData` (built by
+  `App\Services\StructuredData`) beside the `BreadcrumbList`: `WebSite` and `Organization` on the home page, a `Place`
+  (on its `RiverBodyOfWater`) per spot, `Beach` and `LakeBodyOfWater` with coordinates, and an `ItemList` on listing
+  pages. State only what the page does; never add ratings, reviews or anything implying the water is safe. Build JSON-LD
+  arrays in `@php`, not inside `{!! !!}`, where Blade reads the "@context" key as a directive.
+- Breadcrumb JSON-LD follows the URL (Home, region, river or Beaches, place). The visible trail's first link goes to
+  the matching hub (All rivers, All beaches, All lakes) rather than the home page.
 
 ## Quality
 

@@ -21,9 +21,10 @@
     ][$type];
 @endphp
 
-<x-layouts.app :title="$copy['title']" :description="$copy['description']" :breadcrumbs="[[$copy['heading'], url()->current()]]">
+<x-layouts.app :title="$copy['title']" :description="$copy['description']" :breadcrumbs="[[$copy['heading'], url()->current()]]"
+               :structured-data="app(\App\Services\StructuredData::class)->itemList($copy['heading'], $regions->map(fn ($region) => [$region->name, $type === 'rivers' ? route('regions.show', $region->slug) : route($type.'.index', $region->slug)]))">
     <div class="mb-8 max-w-2xl">
-        <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">All regions</a></p>
+        <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">Home</a></p>
         <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $copy['heading'] }}</h1>
         <p class="mt-2 text-ink-2">{{ $copy['intro'] }}</p>
     </div>
