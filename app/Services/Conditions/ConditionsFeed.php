@@ -204,7 +204,7 @@ class ConditionsFeed
         if ($event->ended_at !== null) {
             $items[] = new FeedItem(
                 guid: "spill-{$event->id}-end",
-                title: $this->xmlText("Storm overflow {$monitor->external_id} stopped discharging after {$this->duration($event->durationMinutes())}"),
+                title: $this->xmlText("Storm overflow {$monitor->external_id} stopped discharging after {$event->durationLabel()}"),
                 description: $this->xmlText('The water company monitor reported this storm overflow stopped discharging at '.$event->ended_at->timezone($this->timezone())->format('j M, H:i').'.'),
                 link: $link,
                 publishedAt: $event->ended_at,
@@ -240,21 +240,6 @@ class ConditionsFeed
     private function xmlText(string $text): string
     {
         return (string) preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u', '', $text);
-    }
-
-    private function duration(int $minutes): string
-    {
-        if ($minutes < 60) {
-            return "{$minutes} min";
-        }
-
-        if ($minutes < 24 * 60) {
-            return sprintf('%d h %d min', intdiv($minutes, 60), $minutes % 60);
-        }
-
-        $days = intdiv($minutes, 24 * 60);
-
-        return sprintf('%d %s %d h', $days, $days === 1 ? 'day' : 'days', intdiv($minutes % (24 * 60), 60));
     }
 
     private function timezone(): string

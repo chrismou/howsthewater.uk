@@ -24,7 +24,14 @@
         @else
             <span class="text-ink-2">Not discharging</span>
         @endif
-        <span class="block text-xs text-muted sm:hidden">Last spill {{ $event ? $event->started_at->diffForHumans() : 'none recorded' }} · {{ $spills }} in 30 days</span>
+        <span class="block text-xs text-muted sm:hidden">
+            @if ($event)
+                Last spill started {{ $event->started_at->diffForHumans() }}, {{ $event->isOngoing() ? 'ongoing' : 'lasted '.$event->durationLabel() }}
+            @else
+                No spill recorded
+            @endif
+            · {{ $spills }} in 30 days
+        </span>
     </td>
     <td class="hidden whitespace-nowrap px-4 py-2.5 text-ink-2 sm:table-cell">{{ $event ? $event->started_at->diffForHumans() : 'None recorded' }}</td>
     <td class="hidden whitespace-nowrap px-4 py-2.5 font-mono tabular-nums sm:table-cell">
@@ -33,7 +40,7 @@
         @elseif ($event->isOngoing())
             <span class="font-medium text-alert">ongoing</span>
         @else
-            {{ $event->durationMinutes() }} min
+            {{ $event->durationLabel() }}
         @endif
     </td>
     <td class="hidden whitespace-nowrap px-4 py-2.5 font-mono tabular-nums sm:table-cell">{{ $spills }}</td>

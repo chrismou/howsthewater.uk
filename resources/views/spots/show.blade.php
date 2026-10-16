@@ -173,8 +173,8 @@
                             <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Watercourse</th>
                             <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Upstream</th>
                             <th class="px-4 py-2.5 font-medium">Status</th>
-                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Last spill</th>
-                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Duration</th>
+                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Last spill started</th>
+                            <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Lasted</th>
                             <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Spills, 30 days</th>
                         </tr>
                     </thead>

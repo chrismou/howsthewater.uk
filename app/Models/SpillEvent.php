@@ -53,4 +53,29 @@ class SpillEvent extends Model
 
         return (int) $this->started_at->diffInMinutes($end);
     }
+
+    /**
+     * How long the spill lasted (or has lasted so far), e.g. "under 1 min",
+     * "20 min", "6 h 10 min" or "2 days 3 h".
+     */
+    public function durationLabel(?Carbon $asOf = null): string
+    {
+        $minutes = $this->durationMinutes($asOf);
+
+        if ($minutes < 1) {
+            return 'under 1 min';
+        }
+
+        if ($minutes < 60) {
+            return "{$minutes} min";
+        }
+
+        if ($minutes < 24 * 60) {
+            return sprintf('%d h %d min', intdiv($minutes, 60), $minutes % 60);
+        }
+
+        $days = intdiv($minutes, 24 * 60);
+
+        return sprintf('%d %s %d h', $days, $days === 1 ? 'day' : 'days', intdiv($minutes % (24 * 60), 60));
+    }
 }

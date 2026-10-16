@@ -55,7 +55,7 @@
                                 @if ($event->isOngoing())
                                     <span class="font-medium text-alert">Ongoing</span>
                                 @else
-                                    {{ $event->durationMinutes() }} min
+                                    {{ $event->durationLabel() }}
                                 @endif
                             </td>
                             <td class="py-1.5 pr-4 font-mono text-xs">{{ $event->overflowMonitor->external_id }}</td>

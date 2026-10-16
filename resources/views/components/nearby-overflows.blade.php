@@ -23,13 +23,15 @@
                         <th class="px-4 py-2.5 font-medium">Monitor</th>
                         <th class="px-4 py-2.5 font-medium">Distance</th>
                         <th class="px-4 py-2.5 font-medium">Status</th>
-                        <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Last spill</th>
+                        <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Last spill started</th>
+                        <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Lasted</th>
                         <th class="hidden px-4 py-2.5 font-medium sm:table-cell">Spills, 30 days</th>
                     </tr>
                 </thead>
                 @foreach (['active' => $active, 'quiet' => $quiet] as $group => $monitors)
                     <tbody class="divide-y divide-line-2" @if ($group === 'quiet' && $active->isNotEmpty()) data-quiet-monitors hidden @endif>
                         @foreach ($monitors as $summary)
+                            @php($event = $summary->latestEvent)
                             <tr>
                                 <td class="px-4 py-2.5">
                                     <span class="font-mono text-xs">{{ $summary->monitor->external_id }}</span>
@@ -44,8 +46,25 @@
                                     @else
                                         <span class="text-ink-2">Not discharging</span>
                                     @endif
+                                    <span class="block text-xs text-muted sm:hidden">
+                                        @if ($event)
+                                            Last spill started {{ $event->started_at->diffForHumans() }}, {{ $event->isOngoing() ? 'ongoing' : 'lasted '.$event->durationLabel() }}
+                                        @else
+                                            No spill recorded
+                                        @endif
+                                        · {{ $spillCounts->get($summary->monitor->id, 0) }} in 30 days
+                                    </span>
                                 </td>
-                                <td class="hidden whitespace-nowrap px-4 py-2.5 text-ink-2 sm:table-cell">{{ $summary->latestEvent ? $summary->latestEvent->started_at->diffForHumans() : 'None recorded' }}</td>
+                                <td class="hidden whitespace-nowrap px-4 py-2.5 text-ink-2 sm:table-cell">{{ $event ? $event->started_at->diffForHumans() : 'None recorded' }}</td>
+                                <td class="hidden whitespace-nowrap px-4 py-2.5 font-mono tabular-nums sm:table-cell">
+                                    @if ($event === null)
+                                        <span class="text-muted">-</span>
+                                    @elseif ($event->isOngoing())
+                                        <span class="font-medium text-alert">ongoing</span>
+                                    @else
+                                        {{ $event->durationLabel() }}
+                                    @endif
+                                </td>
                                 <td class="hidden px-4 py-2.5 font-mono tabular-nums sm:table-cell">{{ $spillCounts->get($summary->monitor->id, 0) }}</td>
                             </tr>
                         @endforeach

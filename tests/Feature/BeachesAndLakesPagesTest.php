@@ -8,6 +8,7 @@ use App\Models\Lake;
 use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
+use App\Models\SpillEvent;
 use App\Models\Spot;
 use Illuminate\Support\Facades\DB;
 
@@ -38,6 +39,19 @@ it('shows a beach with its classification, latest sample and nearby overflows', 
         ->assertSeeInOrder(['E. coli', '310'])
         ->assertSee('Storm overflows within 3 km')
         ->assertSee('UUP00001');
+});
+
+it('shows when each nearby overflow last started spilling and how long it lasted', function () {
+    [$region, $beach] = waterBodies();
+    $monitor = OverflowMonitor::query()->where('external_id', 'UUP00001')->sole();
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours(11), 'ended_at' => now()->subHours(11)->addMinutes(370)]);
+
+    $this->get(route('beaches.show', [$region, $beach]))
+        ->assertOk()
+        ->assertSee('Last spill started')
+        ->assertSee('11 hours ago')
+        ->assertSee('6 h 10 min')
+        ->assertSee('lasted 6 h 10 min');
 });
 
 it('lists a region\'s beaches and lakes, and 404s regions with none', function () {
