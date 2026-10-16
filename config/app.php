@@ -15,6 +15,9 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // Where data providers can reach us; it is sent in the user agent of every API request.
+    'contact_email' => env('CONTACT_EMAIL', 'howsthewater@mou.me'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

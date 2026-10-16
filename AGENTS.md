@@ -281,7 +281,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `rain_gauges_searched_at` and `flood_areas_searched_at`; the 15-minute `ingest:gauges`, `ingest:rainfall` and
   `ingest:floods` search anything still null, and `ingest:overflows` positions monitors it sees for the first time.
   `--stations` (and `--areas` for floods) re-checks everything (weekly).
-- No API keys are needed. Map tiles are OpenStreetMap.
+- No API keys are needed. Every request sends a user agent with `CONTACT_EMAIL` (`app.contact_email`), so providers can reach us. Map tiles are OpenStreetMap.
 - Bathing waters: the EA register at `environment.data.gov.uk/doc/bathing-water.json`, `ingest:bathing-waters` (hourly).
   One request returns every site's latest classification, sample and pollution risk forecast; each run stores the
   latest sample, and sample and classification history is backfilled per site on first sight (and weekly with

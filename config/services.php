@@ -35,7 +35,7 @@ return [
         ],
     ],
 
-    'user_agent' => env('HTTP_USER_AGENT', 'howsthewater.uk (hello@howsthewater.uk)'),
+    'user_agent' => env('HTTP_USER_AGENT', 'howsthewater.uk ('.env('CONTACT_EMAIL', 'howsthewater@mou.me').')'),
 
     // Google Analytics only loads in production, and only once a visitor accepts analytics cookies.
     'google_analytics' => [
