@@ -38,7 +38,7 @@ it('keeps the home and site-wide titles and descriptions short however many regi
     foreach ([route('home'), route('hubs.rivers'), route('hubs.beaches'), route('hubs.lakes'), route('search'), route('about'), route('privacy'), route('terms')] as $url) {
         $metadata = pageMetadata($this->get($url));
 
-        expect(mb_strlen(Str::beforeLast($metadata['title'], " - How's the Water?")))->toBeLessThanOrEqual(60, "Title of {$url}: {$metadata['title']}")
+        expect(mb_strlen(Str::beforeLast($metadata['title'], ' - '.config('app.name'))))->toBeLessThanOrEqual(60, "Title of {$url}: {$metadata['title']}")
             ->and(mb_strlen($metadata['description']))->toBeLessThanOrEqual(160, "Description of {$url}: {$metadata['description']}");
     }
 });
@@ -67,10 +67,10 @@ it('keeps place descriptions short for long names, and ends every title with the
         $metadata = pageMetadata($this->get($url));
 
         expect(mb_strlen($metadata['description']))->toBeLessThanOrEqual(160, "Description of {$url}: {$metadata['description']}")
-            ->and($metadata['title'])->toEndWith(" - How's the Water?");
+            ->and($metadata['title'])->toEndWith(' - '.config('app.name'));
     }
 
-    expect(pageMetadata($this->get(route('spots.show', [$region, $river, $short])))['title'])->toBe("Alston, River South Tyne: swimming, river level and spills - How's the Water?")
+    expect(pageMetadata($this->get(route('spots.show', [$region, $river, $short])))['title'])->toBe('Alston, River South Tyne: swimming, river level and spills - '.config('app.name'))
         ->and(pageMetadata($this->get(route('beaches.show', [$region, $scottish])))['description'])->toStartWith('SEPA classification and sample results');
 });
 

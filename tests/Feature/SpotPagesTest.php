@@ -304,7 +304,7 @@ it('describes pages for sharing and search engines', function () {
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: swimming, river level and spills - How&#039;s the Water?">', false)
+        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: swimming, river level and spills - '.e(config('app.name')).'">', false)
         ->assertSee('<meta property="og:url" content="'.route('spots.show', [$region, $river, $spot]).'"', false)
         ->assertSee('og-image.png')
         ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
