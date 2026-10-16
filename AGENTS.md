@@ -340,6 +340,9 @@ replacing the local database with a copy of live rather than backfilling.
 ## Frontend
 
 - Blade + Tailwind 4 + Leaflet. Components live in `resources/views/components`; the layout is `components/layouts/app`.
+- Fonts (Instrument Sans, Bricolage Grotesque, IBM Plex Mono) are self-hosted by the Laravel Vite font plugin
+  (`vite.config.js`, downloaded from Bunny at build time) and loaded by `@fonts` in the layout, with font-display: swap
+  and preloads only for the faces on screen first. No font request leaves the site.
 - Build data for `data-*` attributes in a `@php` block and output with `{{ json_encode(...) }}`. Multi-line `@json(...)`
   inside attributes breaks the Blade compiler.
 - Use a plain hyphen for dashes in any user-facing text.

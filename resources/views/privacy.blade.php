@@ -1,6 +1,6 @@
 <x-layouts.app title="Privacy" description="What How's the Water records about visitors, why, and for how long.">
     <article class="max-w-2xl">
-        <p class="text-sm text-muted">Last updated 15 October 2026</p>
+        <p class="text-sm text-muted">Last updated 16 October 2026</p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">Privacy</h1>
 
         <div class="mt-6 grid gap-8 leading-relaxed text-ink-2">
@@ -21,7 +21,7 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">Other services your browser contacts</h2>
-                <p>Fonts load from <a href="https://bunny.net/privacy" rel="noopener" class="text-accent hover:underline">Bunny Fonts</a> and maps load tiles from <a href="https://osmfoundation.org/wiki/Privacy_Policy" rel="noopener" class="text-accent hover:underline">OpenStreetMap</a>. Your browser fetches these directly, so those services see your IP address under their own privacy policies.</p>
+                <p>Maps load tiles from <a href="https://osmfoundation.org/wiki/Privacy_Policy" rel="noopener" class="text-accent hover:underline">OpenStreetMap</a>. Your browser fetches these directly, so OpenStreetMap sees your IP address under its own privacy policy. Fonts are served from this site.</p>
             </section>
 
             <section class="grid gap-3">

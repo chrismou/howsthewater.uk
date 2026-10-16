@@ -58,8 +58,8 @@
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,600,700|ibm-plex-mono:500|instrument-sans:400,500,600,700" rel="stylesheet">
+    {{-- Self-hosted fonts (see vite.config.js): preloads for the faces on screen first, then font-display: swap faces. --}}
+    @fonts
     {{-- Apply the remembered theme before first paint so dark mode never flashes light. Light is the default. --}}
     <script>try {
             if (localStorage.getItem('theme') === 'dark') {
