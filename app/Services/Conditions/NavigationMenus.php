@@ -89,28 +89,30 @@ class NavigationMenus
     }
 
     /**
-     * Every menu's places as compact JSON for the page to embed, keyed by
-     * menu and region slug: [[heading, [[name, path], ...]], ...]. Paths
-     * are relative to keep it small (about a tenth of the same lists as
-     * HTML); nav.js builds the lists from it when a menu first opens.
+     * Every menu as compact JSON for the page to embed: per menu, its regions
+     * with their slug, name, overview path and blurb, and their places as
+     * [[heading, [[name, path], ...]], ...]. Paths are relative to keep it
+     * small; nav.js builds each menu from it when it first opens.
      */
-    public function placesJson(): string
+    public function menusJson(): string
     {
-        $places = [];
+        $menus = [];
 
         foreach ($this->all() as $menu => $entries) {
-            $places[$menu] = [];
+            $menus[$menu] = [];
 
             foreach ($entries as $entry) {
-                $places[$menu][$entry['slug']] = [];
+                $groups = [];
 
                 foreach ($entry['groups'] as $heading => $items) {
-                    $places[$menu][$entry['slug']][] = [(string) $heading, array_map(fn (array $item) => [$item['name'], $this->path($item['url'])], $items)];
+                    $groups[] = [(string) $heading, array_map(fn (array $item) => [$item['name'], $this->path($item['url'])], $items)];
                 }
+
+                $menus[$menu][] = ['slug' => $entry['slug'], 'name' => $entry['name'], 'url' => $this->path($entry['url']), 'blurb' => $entry['blurb'], 'groups' => $groups];
             }
         }
 
-        return (string) json_encode($places, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
+        return (string) json_encode($menus, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
     }
 
     private function path(string $url): string

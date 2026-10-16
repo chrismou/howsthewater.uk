@@ -70,7 +70,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-full flex flex-col bg-ground text-ink antialiased">
-<header class="border-b border-line bg-surface">
+<header class="border-b border-line bg-surface" data-nav-current="{{ $liveRegion?->slug }}">
     {{-- Phones: logo, menu and theme toggle on one row, search below. Wider: one row with search and toggle on the right. --}}
     <div class="relative mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
         <a href="{{ route('home') }}" class="order-1 font-display text-lg font-semibold tracking-tight">
@@ -79,9 +79,13 @@
 
         {{-- Phones: the menus get their own row under the logo; wider screens keep them beside it. --}}
         <nav class="order-4 flex w-full items-center gap-x-5 sm:order-2 sm:w-auto" aria-label="Main">
-            <x-nav-menu label="Rivers" menu="rivers" :entries="$menus['rivers']" :current="$liveRegion?->slug" />
-            <x-nav-menu label="Beaches" menu="beaches" :entries="$menus['beaches']" :current="$liveRegion?->slug" />
-            <x-nav-menu label="Lakes" menu="lakes" :entries="$menus['lakes']" :current="$liveRegion?->slug" />
+            <x-nav-menu label="Rivers" menu="rivers" :url="route('hubs.rivers')" />
+            @if ($menus['beaches'] !== [])
+                <x-nav-menu label="Beaches" menu="beaches" :url="route('hubs.beaches')" />
+            @endif
+            @if ($menus['lakes'] !== [])
+                <x-nav-menu label="Lakes" menu="lakes" :url="route('hubs.lakes')" />
+            @endif
         </nav>
 
         <form action="{{ route('search') }}" method="get" role="search" class="order-5 w-full sm:order-3 sm:ml-auto sm:w-auto">
@@ -147,8 +151,8 @@
 @if ($analyticsId)
     <x-cookie-banner :measurement-id="$analyticsId"/>
 @endif
-{{-- The places in the Rivers, Beaches and Lakes menus, which nav.js lists when a menu first opens. --}}
-<script type="application/json" id="nav-menus">{!! app(\App\Services\Conditions\NavigationMenus::class)->placesJson() !!}</script>
+{{-- The regions and places in the Rivers, Beaches and Lakes menus, which nav.js builds when a menu first opens. --}}
+<script type="application/json" id="nav-menus">{!! app(\App\Services\Conditions\NavigationMenus::class)->menusJson() !!}</script>
 {{-- Explanations for the page's help buttons (each button's aria-describedby), shown in the panel below by tooltip.js. --}}
 <div hidden>@stack('help-glossary')</div>
 <div data-help-panel role="tooltip" aria-hidden="true" hidden

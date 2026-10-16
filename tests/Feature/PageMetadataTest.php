@@ -35,7 +35,7 @@ it('keeps the home and site-wide titles and descriptions short however many regi
         River::factory()->create(['region_id' => Region::factory()->create(['name' => $name, 'slug' => Str::slug($name)])->id]);
     }
 
-    foreach ([route('home'), route('search'), route('about'), route('privacy'), route('terms')] as $url) {
+    foreach ([route('home'), route('hubs.rivers'), route('hubs.beaches'), route('hubs.lakes'), route('search'), route('about'), route('privacy'), route('terms')] as $url) {
         $metadata = pageMetadata($this->get($url));
 
         expect(mb_strlen(Str::beforeLast($metadata['title'], " - How's the Water?")))->toBeLessThanOrEqual(60, "Title of {$url}: {$metadata['title']}")

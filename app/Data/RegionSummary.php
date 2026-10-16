@@ -16,6 +16,8 @@ final readonly class RegionSummary
     /**
      * @param  string|null  $slug  Null for the combined summary of every region
      * @param  Collection<int, RiverSummary>  $rivers  In seed order, which runs through the catchments
+     * @param  Collection<int, WaterBodySummary>  $beaches  By name
+     * @param  Collection<int, WaterBodySummary>  $lakes  By name
      */
     public function __construct(
         public ?string $slug,
@@ -27,6 +29,8 @@ final readonly class RegionSummary
         public int $rainGaugeCount,
         public ?Carbon $dataUpdatedAt,
         public Carbon $generatedAt,
+        public Collection $beaches = new Collection(),
+        public Collection $lakes = new Collection(),
     ) {
     }
 
@@ -48,6 +52,8 @@ final readonly class RegionSummary
             rainGaugeCount: $summaries->sum('rainGaugeCount'),
             dataUpdatedAt: $summaries->max('dataUpdatedAt'),
             generatedAt: $summaries->min('generatedAt') ?? now(),
+            beaches: $summaries->flatMap(fn (RegionSummary $summary) => $summary->beaches)->values(),
+            lakes: $summaries->flatMap(fn (RegionSummary $summary) => $summary->lakes)->values(),
         );
     }
 

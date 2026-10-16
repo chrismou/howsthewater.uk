@@ -14,6 +14,7 @@ use App\Data\SpillHistoryDay;
 use App\Data\SpotConditions;
 use App\Data\SpotSummary;
 use App\Data\UpstreamMonitorSummary;
+use App\Data\WaterBodySummary;
 use App\Enums\BathingWaterClassification;
 use App\Enums\BathingWaterKind;
 use App\Enums\FloodSeverity;
@@ -186,6 +187,7 @@ return [
         SpotConditions::class,
         SpotSummary::class,
         UpstreamMonitorSummary::class,
+        WaterBodySummary::class,
         BathingWaterClassification::class,
         BathingWaterKind::class,
         FloodSeverity::class,

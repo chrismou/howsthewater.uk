@@ -109,14 +109,8 @@ it('opens the rivers menu on the current region, or the first region added elsew
     $thames = Region::factory()->create(['name' => 'Thames Valley', 'slug' => 'thames-valley']);
     River::factory()->create(['region_id' => $thames->id, 'name' => 'River Thames', 'slug' => 'thames']);
 
-    $this->get(route('regions.show', $thames))
-        ->assertOk()
-        ->assertSee('data-nav-region-tab="thames-valley" data-selected="true"', false)
-        ->assertSee('data-nav-region-tab="yorkshire" data-selected="false"', false);
-
-    $this->get(route('home'))
-        ->assertOk()
-        ->assertSee('data-nav-region-tab="yorkshire" data-selected="true"', false);
+    $this->get(route('regions.show', $thames))->assertOk()->assertSee('data-nav-current="thames-valley"', false);
+    $this->get(route('home'))->assertOk()->assertSee('data-nav-current="yorkshire"', false);
 });
 
 it('lists rivers by catchment in the region menu', function () {

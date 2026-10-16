@@ -173,24 +173,7 @@
         </div>
         <div class="grid gap-5 lg:grid-cols-2">
             @foreach ($regions as $region)
-                @php
-                    $markers = $region->spots()->map(fn ($spot) => ['lat' => $spot->latitude, 'lng' => $spot->longitude, 'label' => $spot->name, 'kind' => 'spot', 'recency' => $spot->spillRecency->value])->values();
-                @endphp
-                <a href="{{ route('regions.show', $region->slug) }}" class="flex flex-col overflow-hidden rounded-lg border border-line bg-surface transition hover:border-muted hover:shadow-sm">
-                    <div class="h-56 border-b border-line bg-water" data-map data-map-static data-map-markers="{{ json_encode($markers) }}"></div>
-                    <div class="flex flex-1 flex-col gap-4 p-6">
-                        <span class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">Region</span>
-                        <h3 class="font-display text-3xl font-semibold tracking-tight">{{ $region->name }}</h3>
-                        <p class="text-sm text-ink-2">{{ $region->riversByCatchment()->keys()->join(', ', ' and ') }}. {{ $region->rivers->count() }} {{ \Illuminate\Support\Str::plural('river', $region->rivers->count()) }}, source to mouth.</p>
-                        <dl class="grid grid-cols-2 gap-x-5 gap-y-3 text-sm">
-                            <div><dt class="text-muted">Rivers</dt><dd class="font-mono text-xl font-semibold tabular-nums">{{ $region->rivers->count() }}</dd></div>
-                            <div><dt class="text-muted">Spots</dt><dd class="font-mono text-xl font-semibold tabular-nums">{{ $region->spots()->count() }}</dd></div>
-                            <div><dt class="text-muted">Discharging now</dt><dd class="font-mono text-xl font-semibold tabular-nums {{ $region->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $region->dischargingNowCount() }}</dd></div>
-                            <div><dt class="text-muted">Spill in last 24h</dt><dd class="font-mono text-xl font-semibold tabular-nums {{ $region->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $region->spotsWithSpillLast24HoursCount() }} <span class="font-sans text-sm font-normal text-muted">spots</span></dd></div>
-                        </dl>
-                        <span class="mt-auto inline-flex self-start rounded-lg border border-line px-4 py-2 text-sm font-semibold">View {{ $region->name }}</span>
-                    </div>
-                </a>
+                <x-region-card :summary="$region" />
             @endforeach
         </div>
     </section>

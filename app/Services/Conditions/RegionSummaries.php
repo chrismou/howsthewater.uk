@@ -2,8 +2,11 @@
 
 namespace App\Services\Conditions;
 
+use App\Data\BeachConditions;
+use App\Data\LakeConditions;
 use App\Data\RegionSummary;
 use App\Data\RiverSummary;
+use App\Data\WaterBodySummary;
 use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
 use App\Models\RainfallStation;
@@ -19,7 +22,7 @@ class RegionSummaries
 {
     private const KEY_PREFIX = 'region-summary';
 
-    public function __construct(private RiverOverviewService $overviews)
+    public function __construct(private RiverOverviewService $overviews, private WaterBodyConditionsService $waterBodies)
     {
     }
 
@@ -58,6 +61,8 @@ class RegionSummaries
             rainGaugeCount: RainfallStation::query()->where('is_active', true)->whereHas('spots', fn ($query) => $query->whereIn('river_id', $riverIds))->count(),
             dataUpdatedAt: $rivers->flatMap(fn (RiverSummary $river) => $river->spots)->max('dataUpdatedAt'),
             generatedAt: now(),
+            beaches: $this->waterBodies->forBeaches($region->beaches()->orderBy('name')->get())->map(fn (BeachConditions $conditions) => WaterBodySummary::fromBeach($conditions))->values(),
+            lakes: $this->waterBodies->forLakes($region->lakes()->orderBy('name')->get())->map(fn (LakeConditions $conditions) => WaterBodySummary::fromLake($conditions))->values(),
         );
     }
 

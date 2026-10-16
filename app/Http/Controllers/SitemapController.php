@@ -29,6 +29,7 @@ class SitemapController extends Controller
                 ->map(fn (BathingWater $beach) => ['loc' => route('beaches.show', [$beach->region, $beach]), 'changefreq' => 'daily', 'priority' => '0.7', 'lastmod' => $beach->updated_at]))
             ->concat(Lake::query()->with('region')->orderBy('name')->get()
                 ->map(fn (Lake $lake) => ['loc' => route('lakes.show', [$lake->region, $lake]), 'changefreq' => 'hourly', 'priority' => '0.7', 'lastmod' => $lake->updated_at]))
+            ->concat(collect(['hubs.rivers', 'hubs.beaches', 'hubs.lakes'])->map(fn (string $hub) => ['loc' => route($hub), 'changefreq' => 'hourly', 'priority' => '0.8', 'lastmod' => null]))
             ->push(['loc' => route('about'), 'changefreq' => 'monthly', 'priority' => '0.5', 'lastmod' => null])
             ->concat(collect(['terms', 'privacy'])->map(fn (string $page) => ['loc' => route($page), 'changefreq' => 'yearly', 'priority' => '0.1', 'lastmod' => null]));
 

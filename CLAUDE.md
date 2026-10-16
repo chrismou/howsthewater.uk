@@ -209,9 +209,14 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `ConditionsCache::remember()`): the bathing water record plus `NearbyOverflows`, every monitor within 3 km by
   straight-line distance, since the sea and lakes have no upstream. Use `SpillRecency::nearbyLabel()` there, never the
   "upstream" wording. Beach and lake routes sit before the river routes, which would otherwise take "beaches" or
-  "lakes" as a river slug. The Rivers, Beaches and Lakes menus all render through `components/nav-menu`, which renders only each region's
-  overview link; the places come from `NavigationMenus::placesJson()`, embedded once per page as `#nav-menus`, and
-  `nav.js` lists them when a menu first opens, so the header stays small and the content comes early in the HTML.
+  "lakes" as a river slug. The Rivers, Beaches and Lakes menus all render through `components/nav-menu` as plain links to `/rivers`,
+  `/beaches` and `/lakes` (`PlaceHubController`), which list every region with that kind of place as cards
+  (`components/region-card`, also used on the home page), so the menus work without JavaScript. The regions and places
+  come from `NavigationMenus::menusJson()`, embedded once per page as `#nav-menus`, and `nav.js` builds each menu from it
+  when it first opens, so the header stays small and the content comes early in the HTML. The hub routes, `/about`,
+  `/privacy`, `/terms` and `/search` sit before `/{region}`, so `Region::RESERVED_SLUGS` lists them and saving a region
+  with one throws. `RegionSummary` carries each region's beaches and lakes as plain `WaterBodySummary` values for the
+  Beaches and Lakes hubs.
 - RSS feeds for each spot, river, beach and lake (`spots.feed`, `rivers.feed`, `beaches.feed`, `lakes.feed`, at
   `.../feed`) come from `ConditionsFeed`: one item when an upstream (or, for beaches and lakes, nearby) overflow starts,
   one when it stops, one per flood warning in force, and for bathing waters one per sample and one per increased

@@ -4,6 +4,7 @@ use App\Http\Controllers\BeachController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LakeController;
+use App\Http\Controllers\PlaceHubController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\RiverController;
 use App\Http\Controllers\SearchController;
@@ -16,6 +17,10 @@ Route::get('/search', SearchController::class)->name('search')->middleware('thro
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap')->middleware('cache.headers:public;max_age=3600');
 
 // These come before the region route, which would otherwise take them as region slugs.
+// Region::RESERVED_SLUGS lists these slugs, which no region may take.
+Route::get('/rivers', [PlaceHubController::class, 'rivers'])->name('hubs.rivers');
+Route::get('/beaches', [PlaceHubController::class, 'beaches'])->name('hubs.beaches');
+Route::get('/lakes', [PlaceHubController::class, 'lakes'])->name('hubs.lakes');
 Route::view('/about', 'about')->name('about');
 Route::view('/privacy', 'privacy')->name('privacy');
 Route::view('/terms', 'terms')->name('terms');

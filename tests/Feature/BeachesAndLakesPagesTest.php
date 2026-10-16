@@ -84,21 +84,22 @@ it('scopes beaches and lakes to their region', function () {
 });
 
 it('adds Beaches and Lakes menus that list only regions with some', function () {
-    [$region] = waterBodies();
+    waterBodies();
     Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
 
     $html = $this->get(route('home'))
         ->assertOk()
-        ->assertSeeInOrder(['data-nav-menu="beaches"', 'data-nav-region-tab="north-west"', 'data-nav-menu="lakes"', 'data-nav-region-tab="north-west"'], false)
-        ->assertDontSee('data-nav-region-tab="yorkshire"', false)
+        ->assertSeeInOrder(['data-nav-menu="beaches"', 'href="'.route('hubs.beaches').'"', 'data-nav-menu="lakes"', 'href="'.route('hubs.lakes').'"'], false)
         ->getContent();
 
-    // The places themselves are listed from the page's JSON when a menu opens, not written into the header.
+    // The regions and places are built from the page's JSON when a menu opens, not written into the header.
     preg_match('/<script type="application\/json" id="nav-menus">(.*?)<\/script>/s', $html, $match);
-    $places = json_decode($match[1], true);
+    $menus = json_decode($match[1], true);
 
-    expect($places['beaches'])->toBe(['north-west' => [['Blackpool', [['Blackpool North', '/north-west/beaches/blackpool-north']]]]])
-        ->and($places['lakes'])->toBe(['north-west' => [['Lakes', [['Windermere', '/north-west/lakes/windermere']]]]])
+    expect(collect($menus['beaches'])->pluck('slug')->all())->toBe(['north-west'])
+        ->and($menus['beaches'][0]['url'])->toBe('/north-west/beaches')
+        ->and($menus['beaches'][0]['groups'])->toBe([['Blackpool', [['Blackpool North', '/north-west/beaches/blackpool-north']]]])
+        ->and($menus['lakes'][0]['groups'])->toBe([['Lakes', [['Windermere', '/north-west/lakes/windermere']]]])
         ->and(str_contains(Str::before($html, '<main'), 'Blackpool North'))->toBeFalse();
 });
 

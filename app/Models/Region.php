@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection as SupportCollection;
+use InvalidArgumentException;
 
 /**
  * A region groups the rivers we cover and scopes their URLs, since river
@@ -31,12 +32,27 @@ class Region extends Model
     /** @use HasFactory<RegionFactory> */
     use HasFactory;
 
+    /**
+     * Top-level pages whose routes sit before /{region}, so a region with
+     * one of these slugs could never be reached.
+     */
+    public const RESERVED_SLUGS = ['rivers', 'beaches', 'lakes', 'about', 'privacy', 'terms', 'search'];
+
     protected $fillable = [
         'name',
         'slug',
         'overflow_feeds',
         'bathing_water_districts',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Region $region) {
+            if (in_array($region->slug, self::RESERVED_SLUGS, true)) {
+                throw new InvalidArgumentException("The region slug [{$region->slug}] is taken by a top-level page.");
+            }
+        });
+    }
 
     protected function casts(): array
     {
