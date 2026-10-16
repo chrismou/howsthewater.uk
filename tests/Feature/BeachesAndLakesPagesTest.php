@@ -11,6 +11,7 @@ use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * @return array{0: Region, 1: BathingWater, 2: Lake}
@@ -86,11 +87,19 @@ it('adds Beaches and Lakes menus that list only regions with some', function () 
     [$region] = waterBodies();
     Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
 
-    $this->get(route('home'))
+    $html = $this->get(route('home'))
         ->assertOk()
-        ->assertSeeInOrder(['Beaches', 'data-nav-region-tab="north-west"', 'Blackpool', 'Blackpool North'], false)
-        ->assertSeeInOrder(['Lakes', 'data-nav-region-tab="north-west"', 'Windermere'], false)
-        ->assertSee(route('beaches.show', [$region, 'blackpool-north']));
+        ->assertSeeInOrder(['data-nav-menu="beaches"', 'data-nav-region-tab="north-west"', 'data-nav-menu="lakes"', 'data-nav-region-tab="north-west"'], false)
+        ->assertDontSee('data-nav-region-tab="yorkshire"', false)
+        ->getContent();
+
+    // The places themselves are listed from the page's JSON when a menu opens, not written into the header.
+    preg_match('/<script type="application\/json" id="nav-menus">(.*?)<\/script>/s', $html, $match);
+    $places = json_decode($match[1], true);
+
+    expect($places['beaches'])->toBe(['north-west' => [['Blackpool', [['Blackpool North', '/north-west/beaches/blackpool-north']]]]])
+        ->and($places['lakes'])->toBe(['north-west' => [['Lakes', [['Windermere', '/north-west/lakes/windermere']]]]])
+        ->and(str_contains(Str::before($html, '<main'), 'Blackpool North'))->toBeFalse();
 });
 
 it('shows the bathing water record on a spot that is a designated bathing water', function () {

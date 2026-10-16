@@ -1,62 +1,87 @@
 /**
- * Help tooltips open on hover and focus through CSS alone. This adds a
- * click or tap toggle for touch screens, closes an open tooltip when the
- * page is clicked elsewhere or Escape is pressed, and keeps the panel on
- * screen when the button sits near the right edge.
+ * Help buttons ("?") show their explanation in one shared panel: on hover
+ * with a mouse, on keyboard focus, and on tap for touch screens. The text
+ * comes from the hidden glossary at the end of the page. The panel is
+ * fixed to the viewport and placed under the button (above it when there
+ * is no room below), shifted sideways so it never leaves the screen.
  */
-export function initTooltips() {
-    const tips = Array.from(document.querySelectorAll('[data-tooltip]'));
+const EDGE = 16;
+const GAP = 8;
 
-    if (tips.length === 0) {
+export function initTooltips() {
+    const panel = document.querySelector('[data-help-panel]');
+    const buttons = Array.from(document.querySelectorAll('[data-help]'));
+
+    if (!panel || buttons.length === 0) {
         return;
     }
 
-    const closeAll = (except = null) => {
-        tips.forEach((tip) => {
-            if (tip !== except) {
-                tip.removeAttribute('data-open');
-            }
-        });
+    // The open button, and whether a click or tap opened it (then it stays open until dismissed, not on mouse out).
+    let current = null;
+    let pinned = false;
+
+    const place = () => {
+        if (!current) {
+            return;
+        }
+
+        const button = current.getBoundingClientRect();
+        const width = panel.offsetWidth;
+        const height = panel.offsetHeight;
+        const left = Math.min(Math.max(button.left, EDGE), window.innerWidth - EDGE - width);
+        const below = button.bottom + GAP;
+        const top = below + height > window.innerHeight - EDGE && button.top - GAP - height >= EDGE ? button.top - GAP - height : below;
+
+        panel.style.transform = `translate(${Math.max(left, EDGE)}px, ${top}px)`;
     };
 
-    tips.forEach((tip) => {
-        const button = tip.querySelector('[data-tooltip-button]');
-        const panel = tip.querySelector('[role="tooltip"]');
+    const show = (button, pin = false) => {
+        const text = document.getElementById(button.getAttribute('aria-describedby'));
 
+        if (!text) {
+            return;
+        }
+
+        current?.removeAttribute('data-open');
+        current = button;
+        pinned = pin;
+        button.setAttribute('data-open', '');
+        panel.textContent = text.textContent.trim();
+        panel.hidden = false;
+        place();
+    };
+
+    const hide = () => {
+        current?.removeAttribute('data-open');
+        current = null;
+        pinned = false;
+        panel.hidden = true;
+    };
+
+    buttons.forEach((button) => {
         button.addEventListener('click', (event) => {
             event.preventDefault();
-            const open = tip.hasAttribute('data-open');
-            closeAll();
-
-            if (!open) {
-                tip.setAttribute('data-open', '');
-            }
+            current === button && pinned ? hide() : show(button, true);
         });
-
-        // Flip the panel to end at the button when it would otherwise overflow the viewport.
-        const keepOnScreen = () => {
-            panel.classList.remove('right-0', 'left-0');
-            panel.classList.add('left-0');
-
-            if (tip.getBoundingClientRect().left + panel.offsetWidth > window.innerWidth - 16) {
-                panel.classList.replace('left-0', 'right-0');
-            }
-        };
-
-        tip.addEventListener('mouseenter', keepOnScreen);
-        button.addEventListener('focus', keepOnScreen);
-        button.addEventListener('click', keepOnScreen);
+        // Keyboard focus only: a tap also focuses the button, and its click handles that.
+        button.addEventListener('focus', () => button.matches(':focus-visible') && show(button));
+        button.addEventListener('blur', () => current === button && !pinned && hide());
+        button.addEventListener('pointerenter', (event) => event.pointerType === 'mouse' && current !== button && show(button));
+        button.addEventListener('pointerleave', (event) => event.pointerType === 'mouse' && current === button && !pinned && hide());
     });
 
     document.addEventListener('click', (event) => {
-        if (!tips.some((tip) => tip.contains(event.target))) {
-            closeAll();
+        if (current && !current.contains(event.target)) {
+            hide();
         }
     });
 
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
-            closeAll();
+            hide();
         }
     });
+
+    window.addEventListener('scroll', place, { passive: true });
+    window.addEventListener('resize', place);
 }

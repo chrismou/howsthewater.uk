@@ -20,7 +20,7 @@ class NavigationMenus
     private const TTL_HOURS = 6;
 
     /**
-     * @return array{rivers: list<array<string, mixed>>, beaches: list<array<string, mixed>>, lakes: list<array<string, mixed>>}
+     * @return array{rivers: list<array{slug: string, name: string, url: string, blurb: string, groups: array<string, list<array{name: string, url: string}>>}>, beaches: list<array{slug: string, name: string, url: string, blurb: string, groups: array<string, list<array{name: string, url: string}>>}>, lakes: list<array{slug: string, name: string, url: string, blurb: string, groups: array<string, list<array{name: string, url: string}>>}>}
      */
     public function all(): array
     {
@@ -40,7 +40,7 @@ class NavigationMenus
      * region's slug and name, its overview link and its places grouped
      * under headings (catchment, district or simply "Lakes").
      *
-     * @return array{rivers: list<array<string, mixed>>, beaches: list<array<string, mixed>>, lakes: list<array<string, mixed>>}
+     * @return array{rivers: list<array{slug: string, name: string, url: string, blurb: string, groups: array<string, list<array{name: string, url: string}>>}>, beaches: list<array{slug: string, name: string, url: string, blurb: string, groups: array<string, list<array{name: string, url: string}>>}>, lakes: list<array{slug: string, name: string, url: string, blurb: string, groups: array<string, list<array{name: string, url: string}>>}>}
      */
     public function build(): array
     {
@@ -86,6 +86,36 @@ class NavigationMenus
         }
 
         return $menus;
+    }
+
+    /**
+     * Every menu's places as compact JSON for the page to embed, keyed by
+     * menu and region slug: [[heading, [[name, path], ...]], ...]. Paths
+     * are relative to keep it small (about a tenth of the same lists as
+     * HTML); nav.js builds the lists from it when a menu first opens.
+     */
+    public function placesJson(): string
+    {
+        $places = [];
+
+        foreach ($this->all() as $menu => $entries) {
+            $places[$menu] = [];
+
+            foreach ($entries as $entry) {
+                $places[$menu][$entry['slug']] = [];
+
+                foreach ($entry['groups'] as $heading => $items) {
+                    $places[$menu][$entry['slug']][] = [(string) $heading, array_map(fn (array $item) => [$item['name'], $this->path($item['url'])], $items)];
+                }
+            }
+        }
+
+        return (string) json_encode($places, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
+    }
+
+    private function path(string $url): string
+    {
+        return (string) (parse_url($url, PHP_URL_PATH) ?? '/');
     }
 
     private function key(): string

@@ -207,11 +207,20 @@ it('explains the data with help tooltips on the spot page', function () {
     [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
     OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000]);
 
-    $this->get(route('spots.show', [$region, $river, $spot]))
+    $html = $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
         ->assertSee('What does discharging now mean?')
         ->assertSee('Which monitors count as upstream?')
-        ->assertSee('role="tooltip"', false);
+        ->assertSee('aria-describedby="help-upstream"', false)
+        ->assertSee('role="tooltip"', false)
+        ->getContent();
+
+    // Each explanation is written once, in the glossary at the end of the page, never inside a heading.
+    preg_match_all('/<h[1-6][^>]*>.*?<\/h[1-6]>/s', $html, $headings);
+
+    expect(substr_count($html, 'id="help-upstream"'))->toBe(1)
+        ->and(substr_count($html, Help::glossary()['upstream']['text']))->toBe(1)
+        ->and(collect($headings[0])->filter(fn (string $heading) => str_contains($heading, 'Every storm overflow monitor whose discharge')))->toBeEmpty();
 });
 
 it('rejects unknown glossary terms', function () {

@@ -3,26 +3,22 @@
     (the current one first selected) and that region's places on the right, switched by nav.js. Narrow screens get a
     full-width accordion under the header.
 
-    entries: one per region from NavigationMenus, each ['slug', 'name', 'url' => overview link, 'blurb',
-    'groups' => [heading => [['name' => ..., 'url' => ...], ...]]]. current: the slug of the region to open on.
+    Only the regions and their overview links are rendered here, so the menu works without JavaScript and every page's
+    header stays small. The places themselves come from the page's nav-menus JSON (see the layout), which nav.js turns
+    into each region's lists the first time the menu opens.
+
+    menu: the key into that JSON (rivers, beaches or lakes). entries: one per region from NavigationMenus, each
+    ['slug', 'name', 'url' => overview link, 'blurb', 'groups']. current: the slug of the region to open on.
 --}}
-@props(['label', 'entries', 'current' => null])
+@props(['label', 'menu', 'entries', 'current' => null])
 
 @php
     $entries = collect($entries)->values();
     $currentSlug = $entries->contains('slug', $current) ? $current : ($entries->first()['slug'] ?? null);
-
-    // Wide screens lay each region's groups on three equal columns of a fixed-width panel, so names line up from row
-    // to row and the panel never changes width. A group of more than five places spans all three, split into three
-    // lists. Only when every group in a region is that big, so nothing else shares the grid, does it use two lists
-    // instead if any name is too long to fit a third of the panel on one line.
-    $groupSpan = fn (array $items): int => count($items) > 5 ? 3 : 1;
-    $wideGroupColumns = fn (array $entry): int => collect($entry['groups'])->every(fn (array $items) => $groupSpan($items) === 3)
-        && collect($entry['groups'])->flatten(1)->contains(fn (array $item) => mb_strlen($item['name']) > 18) ? 2 : 3;
 @endphp
 
 @if ($entries->isNotEmpty())
-    <details class="sm:relative" data-nav-menu>
+    <details class="sm:relative" data-nav-menu="{{ $menu }}">
         <summary class="flex cursor-pointer list-none items-center gap-1 text-sm font-medium text-ink [&::-webkit-details-marker]:hidden">
             {{ $label }}
             <svg class="h-4 w-4 text-faint" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -45,16 +41,7 @@
                             </summary>
                             <div class="flex flex-col gap-3 px-4 pb-4">
                                 <a href="{{ $entry['url'] }}" class="font-medium text-accent hover:underline">{{ $entry['name'] }} overview →</a>
-                                @foreach ($entry['groups'] as $heading => $items)
-                                    <div>
-                                        <p class="mb-1 text-xs font-medium uppercase tracking-wide text-faint">{{ $heading }}</p>
-                                        <ul class="grid grid-cols-2 gap-x-4 gap-y-1">
-                                            @foreach ($items as $item)
-                                                <li><a href="{{ $item['url'] }}" class="block py-0.5 hover:text-ink">{{ $item['name'] }}</a></li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                @endforeach
+                                <div class="contents" data-nav-groups="{{ $entry['slug'] }}" data-nav-layout="narrow"></div>
                             </div>
                         </details>
                     @endforeach
@@ -82,19 +69,7 @@
                                     <a href="{{ $entry['url'] }}" class="font-semibold text-ink hover:underline">{{ $entry['name'] }} overview</a>
                                     <span class="text-xs text-muted"> {{ $entry['blurb'] }}</span>
                                 </div>
-                                @foreach ($entry['groups'] as $heading => $items)
-                                    @php($span = $groupSpan($items))
-                                    @php($listColumns = $span === 3 ? $wideGroupColumns($entry) : 1)
-                                    <div style="grid-column: span {{ $span }}">
-                                        <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-faint">{{ $heading }}</p>
-                                        {{-- The same gap as the outer grid, so a three-list group lines up with the columns around it. --}}
-                                        <ul class="grid gap-x-6 gap-y-1" style="grid-template-columns: repeat({{ $listColumns }}, minmax(0, 1fr))">
-                                            @foreach ($items as $item)
-                                                <li><a href="{{ $item['url'] }}" class="block py-0.5 hover:text-ink">{{ $item['name'] }}</a></li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                @endforeach
+                                <div class="contents" data-nav-groups="{{ $entry['slug'] }}" data-nav-layout="wide"></div>
                             </div>
                         @endforeach
                     </div>

@@ -2,6 +2,8 @@
  * Region menus are <details> elements, so they open on click or keyboard
  * without JavaScript. On devices with a pointer that hovers, they also
  * open on hover, and any open menu closes on a click elsewhere or Escape.
+ * The page carries only each region's overview link; the places are listed
+ * from the page's nav-menus JSON the first time a menu opens.
  */
 export function initNavMenus() {
     const menus = Array.from(document.querySelectorAll('[data-nav-menu]'));
@@ -20,9 +22,12 @@ export function initNavMenus() {
 
     const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
+    const places = readPlaces();
+
     menus.forEach((menu) => {
         menu.addEventListener('toggle', () => {
             if (menu.open) {
+                listPlaces(menu, places[menu.dataset.navMenu] ?? {});
                 closeAll(menu);
             }
         });
@@ -82,4 +87,71 @@ function initRegionTabs(menu, canHover) {
             }
         });
     });
+}
+
+/**
+ * @returns {Record<string, Record<string, Array<[string, Array<[string, string]>]>>>}
+ */
+function readPlaces() {
+    try {
+        return JSON.parse(document.getElementById('nav-menus')?.textContent || '{}');
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Fills each region's place lists, once per menu. Narrow screens list each
+ * group in two columns. Wide screens lay groups on a three-column grid: a
+ * group of more than five places spans all three, split into three lists,
+ * or two when every group is that big and a name would not fit a third.
+ */
+function listPlaces(menu, regions) {
+    if (menu.hasAttribute('data-nav-listed')) {
+        return;
+    }
+
+    menu.setAttribute('data-nav-listed', '');
+
+    menu.querySelectorAll('[data-nav-groups]').forEach((container) => {
+        const groups = regions[container.dataset.navGroups] ?? [];
+        const wide = container.dataset.navLayout === 'wide';
+        const span = (items) => (items.length > 5 ? 3 : 1);
+        const wideColumns = groups.every(([, items]) => span(items) === 3) && groups.some(([, items]) => items.some(([name]) => name.length > 18)) ? 2 : 3;
+
+        container.replaceChildren(...groups.map(([heading, items]) => {
+            const group = document.createElement('div');
+            const title = element('p', wide ? 'mb-1.5 text-xs font-medium uppercase tracking-wide text-faint' : 'mb-1 text-xs font-medium uppercase tracking-wide text-faint', heading);
+            const list = element('ul', wide ? 'grid gap-x-6 gap-y-1' : 'grid grid-cols-2 gap-x-4 gap-y-1');
+
+            if (wide) {
+                group.style.gridColumn = `span ${span(items)}`;
+                list.style.gridTemplateColumns = `repeat(${span(items) === 3 ? wideColumns : 1}, minmax(0, 1fr))`;
+            }
+
+            list.replaceChildren(...items.map(([name, path]) => {
+                const link = element('a', 'block py-0.5 hover:text-ink', name);
+                link.href = path;
+                const item = document.createElement('li');
+                item.append(link);
+
+                return item;
+            }));
+
+            group.append(title, list);
+
+            return group;
+        }));
+    });
+}
+
+function element(tag, className, text = null) {
+    const node = document.createElement(tag);
+    node.className = className;
+
+    if (text !== null) {
+        node.textContent = text;
+    }
+
+    return node;
 }
