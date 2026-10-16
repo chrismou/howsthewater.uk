@@ -167,8 +167,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   pieces too far apart to join), the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
   Utilities, mouths at the head of each estuary), and the North East's Tyne (with the North and South Tyne flowing
   into it), Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Tweed, with the Till flowing into the Tweed (Northumbrian
-  Water, plus Scottish Water for the Tweed, which runs mostly through Scotland; its Scottish stretch has overflows but
-  no SEPA levels, rainfall or flood warnings yet). The Midlands has Severn
+  Water, plus Scottish Water for the Tweed, which runs mostly through Scotland; its Scottish stretch has overflows and
+  SEPA levels and rainfall but no flood warnings yet). The Midlands has Severn
   Trent's rivers: the Trent, with the Soar and the Peak District's Derwent, Wye, Dove and Manifold flowing into it, and
   the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn (Hafren Dyfrdwy) are not on
   Stream, so they do not count yet. Main rivers and their tributaries are seeded
@@ -241,7 +241,15 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   share one table. The footer credits Stream feeds and Scottish Water separately. South West Water uses other fields.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
-- Rainfall: the same API's tipping bucket rain gauges, `ingest:rainfall`. Each spot, beach and lake links to the
+- Scottish levels and rainfall: SEPA's time series API (KiWIS, `Sepa\TimeSeriesClient`, OGL, no key). Gauges and rain
+  gauges carry a `network` (`GaugeNetwork`), external IDs are prefixed `SEPA`, and `measure_id` is the KiWIS series id.
+  Anonymous use is capped at 5,000 credits a day (1 per list request, 1 per 1,000 values), so the national station
+  lists are read once per run, SEPA gauges are matched to a river by its SEPA name ("Tweed", "Ettrick Water") within
+  2 km of the centreline (skipping border gauges the Environment Agency also publishes, such as Norham), and
+  readings for up to date gauges share one request. The typical range is SEPA's normal
+  range, the median annual minimum to median annual maximum. A SEPA failure is logged and the Environment Agency
+  gauges still sync.
+- Rainfall: the Environment Agency API's tipping bucket rain gauges (and SEPA's), `ingest:rainfall`. Each spot, beach and lake links to the
   nearest gauge within 20 km (`LinkNearestRainfallStations`, also run by `rivers:positions`); gauge discovery searches
   around all three per region, readings are fetched for any gauge `inUse()`, and totals are sums of 15 minute readings.
   Spots, beaches and lakes each record `rain_gauges_searched_at`, so new ones are picked up by the next run.

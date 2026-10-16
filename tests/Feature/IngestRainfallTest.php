@@ -44,7 +44,7 @@ it('stores rain gauges near a spot and skips the rest', function () {
         ->and(RainfallStation::query()->pluck('external_id')->all())->toBe(['1001'])
         ->and(RainfallStation::query()->first()->measure_id)->toBe('1001-rainfall-tipping_bucket_raingauge-t-15_min-mm');
 
-    Http::assertSent(fn ($request) => $request['parameter'] === 'rainfall' && $request['dist'] >= 15);
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'environment.data.gov.uk') && $request['parameter'] === 'rainfall' && $request['dist'] >= 15);
 });
 
 it('links each spot to the nearest rain gauge within range', function () {
@@ -106,8 +106,8 @@ it('searches for rain gauges once per region rather than one circle around every
 
     expect(app(SyncRainfallStations::class)->handle())->toBe(['stations' => 2]);
 
-    Http::assertSentCount(2);
-    Http::assertSent(fn ($request) => $request['dist'] < 60);
+    expect(Http::recorded(fn ($request) => str_contains($request->url(), 'environment.data.gov.uk')))->toHaveCount(2);
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'environment.data.gov.uk') && $request['dist'] < 60);
 });
 
 it('searches for rain gauges during a normal ingest only while a spot has never been searched', function () {

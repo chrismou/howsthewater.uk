@@ -38,7 +38,7 @@ class Help extends Component
         ],
         'level' => [
             'label' => 'How is the river level measured?',
-            'text' => 'The Environment Agency gauge nearest this spot reads the water level every 15 minutes. Most gauges report the height above their own zero mark, so compare it with the typical range rather than other rivers.',
+            'text' => 'The Environment Agency gauge (SEPA in Scotland) nearest this spot reads the water level every 15 minutes. Most gauges report the height above their own zero mark, so compare it with the typical range rather than other rivers.',
         ],
         'typical_range' => [
             'label' => 'What is the typical range?',
@@ -54,7 +54,7 @@ class Help extends Component
         ],
         'rainfall' => [
             'label' => 'Where is rainfall measured?',
-            'text' => 'Totals from the Environment Agency rain gauge nearest this spot, summed from its 15 minute readings. Rain further up the catchment may differ, and heavy rain is what triggers overflows.',
+            'text' => 'Totals from the Environment Agency rain gauge (SEPA in Scotland) nearest this spot, summed from its 15 minute readings. Rain further up the catchment may differ, and heavy rain is what triggers overflows.',
         ],
         'flood_warning' => [
             'label' => 'Where do flood warnings come from?',

@@ -1,6 +1,6 @@
 <x-layouts.app title="Terms of use" description="The terms for using How's the Water and the data it shows.">
     <article class="max-w-2xl">
-        <p class="text-sm text-muted">Last updated 15 October 2026</p>
+        <p class="text-sm text-muted">Last updated 16 October 2026</p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">Terms of use</h1>
 
         <div class="mt-6 grid gap-8 leading-relaxed text-ink-2">
@@ -17,9 +17,9 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">The data</h2>
-                <p>Data comes from the Environment Agency, the water companies and Ordnance Survey. It is near real-time and unvalidated, and it can be late, missing or wrong. Neither the data nor the site comes with any
+                <p>Data comes from the Environment Agency, SEPA (the Scottish Environment Protection Agency), the water companies and Ordnance Survey. It is near real-time and unvalidated, and it can be late, missing or wrong. Neither the data nor the site comes with any
                     guarantee of accuracy or availability, and the site may change or stop at any time.</p>
-                <p>The Environment Agency and the water companies do not endorse this site, and nothing here should suggest they do.</p>
+                <p>The Environment Agency, SEPA and the water companies do not endorse this site, and nothing here should suggest they do.</p>
             </section>
 
             <section class="grid gap-3">
@@ -28,6 +28,8 @@
                 <ul class="grid gap-2">
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Environment Agency flood, river level, rainfall and bathing water data: <a
                                 href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="noopener" class="text-accent hover:underline">Open Government Licence v3.0</a>.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span>SEPA river level and rainfall data: <a
+                                href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="noopener" class="text-accent hover:underline">Open Government Licence v3.0</a>, crediting SEPA as the owner of the data.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data published by the water companies through Stream: <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener"
                                 class="text-accent hover:underline">CC BY 4.0</a>.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data from Scottish Water: published by Scottish Water for reuse, crediting Scottish Water as the source.</span></li>

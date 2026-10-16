@@ -24,4 +24,15 @@ final readonly class GaugeReadingData
             value: (float) (is_array($value) ? reset($value) : $value),
         );
     }
+
+    /**
+     * @param  array{0: string, 1: int|float|string}  $row  A [timestamp, value] row from SEPA's time series API
+     */
+    public static function fromSepa(array $row): self
+    {
+        return new self(
+            measuredAt: Carbon::parse($row[0])->utc(),
+            value: (float) $row[1],
+        );
+    }
 }

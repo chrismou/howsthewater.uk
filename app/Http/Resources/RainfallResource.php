@@ -19,6 +19,7 @@ class RainfallResource extends JsonResource
         return [
             'station' => [
                 'id' => $this->station->external_id,
+                'network' => $this->station->network->value,
                 'grid_reference' => $this->station->grid_reference,
                 'latitude' => $this->station->latitude,
                 'longitude' => $this->station->longitude,

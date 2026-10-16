@@ -2,6 +2,9 @@
 
 namespace App\Data;
 
+use App\Enums\GaugeNetwork;
+use Illuminate\Support\Carbon;
+
 final readonly class GaugeStationData
 {
     public function __construct(
@@ -16,7 +19,37 @@ final readonly class GaugeStationData
         public ?float $typicalRangeLow,
         public ?float $typicalRangeHigh,
         public bool $isActive,
+        public GaugeNetwork $network = GaugeNetwork::EnvironmentAgency,
     ) {
+    }
+
+    /**
+     * @param  array{station_name: string, station_no: string, station_latitude: string, station_longitude: string, river_name: ?string, ts_id: string, ts_unitsymbol: ?string, to: ?string}  $series  A station's 15 minute stage series from SEPA's time series API, with its river
+     */
+    public static function fromSepa(array $series): self
+    {
+        return new self(
+            externalId: 'SEPA'.$series['station_no'],
+            label: $series['station_name'],
+            riverName: $series['river_name'] === '' ? null : $series['river_name'],
+            town: null,
+            latitude: (float) $series['station_latitude'],
+            longitude: (float) $series['station_longitude'],
+            measureId: $series['ts_id'],
+            unit: $series['ts_unitsymbol'] === null || $series['ts_unitsymbol'] === '' ? 'm' : $series['ts_unitsymbol'],
+            typicalRangeLow: null,
+            typicalRangeHigh: null,
+            isActive: self::sepaSeriesIsLive($series['to']),
+            network: GaugeNetwork::Sepa,
+        );
+    }
+
+    /**
+     * SEPA keeps closed gauges in its lists, so a series with no reading in the last 30 days counts as inactive.
+     */
+    public static function sepaSeriesIsLive(?string $lastReadingAt): bool
+    {
+        return $lastReadingAt !== null && $lastReadingAt !== '' && Carbon::parse($lastReadingAt)->isAfter(now()->subDays(30));
     }
 
     /**

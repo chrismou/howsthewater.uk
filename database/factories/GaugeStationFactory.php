@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\GaugeNetwork;
 use App\Models\GaugeStation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -20,6 +21,19 @@ class GaugeStationFactory extends Factory
             'unit' => 'mAOD',
             'typical_range_low' => 23.6,
             'typical_range_high' => 24.1,
+        ]);
+    }
+
+    /**
+     * A SEPA gauge, whose measure is a KiWIS time series id.
+     */
+    public function sepa(): static
+    {
+        return $this->state(fn () => [
+            'external_id' => fake()->unique()->numerify('SEPA#####'),
+            'network' => GaugeNetwork::Sepa,
+            'measure_id' => fake()->unique()->numerify('5####010'),
+            'unit' => 'm',
         ]);
     }
 

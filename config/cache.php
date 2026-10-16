@@ -17,6 +17,7 @@ use App\Data\UpstreamMonitorSummary;
 use App\Enums\BathingWaterClassification;
 use App\Enums\BathingWaterKind;
 use App\Enums\FloodSeverity;
+use App\Enums\GaugeNetwork;
 use App\Enums\LevelTrend;
 use App\Enums\OverflowStatus;
 use App\Enums\PollutionRisk;
@@ -188,6 +189,7 @@ return [
         BathingWaterClassification::class,
         BathingWaterKind::class,
         FloodSeverity::class,
+        GaugeNetwork::class,
         LevelTrend::class,
         OverflowStatus::class,
         PollutionRisk::class,

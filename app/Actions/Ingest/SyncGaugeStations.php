@@ -2,14 +2,23 @@
 
 namespace App\Actions\Ingest;
 
+use App\Data\GaugeStationData;
+use App\Enums\GaugeNetwork;
 use App\Models\GaugeStation;
 use App\Models\River;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
+use App\Services\Geo\Coordinates;
 use App\Services\Geo\PolylineProjector;
+use App\Services\Sepa\TimeSeriesClient;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 /**
- * Discovers Environment Agency level gauges on each river we cover and
- * keeps their metadata current.
+ * Discovers level gauges on each river we cover and keeps their metadata
+ * current: Environment Agency gauges in England, SEPA gauges in Scotland.
  */
 class SyncGaugeStations
 {
@@ -20,7 +29,16 @@ class SyncGaugeStations
      */
     private const MAX_OFFSET_METRES = 2000;
 
-    public function __construct(private FloodMonitoringClient $client)
+    /**
+     * Border gauges such as Norham on the Tweed are published by both
+     * agencies; the Environment Agency copy is kept and SEPA's skipped.
+     */
+    private const SHARED_GAUGE_METRES = 200;
+
+    /** SEPA is down for the whole run once its station list fails, so the failure is logged once. */
+    private bool $sepaFailed = false;
+
+    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa)
     {
     }
 
@@ -38,27 +56,98 @@ class SyncGaugeStations
                     continue;
                 }
 
-                GaugeStation::query()->updateOrCreate(
-                    ['external_id' => $data->externalId],
-                    [
-                        'river_id' => $river->id,
-                        'label' => $data->label,
-                        'river_name' => $data->riverName,
-                        'town' => $data->town,
-                        'latitude' => $data->latitude,
-                        'longitude' => $data->longitude,
-                        'measure_id' => $data->measureId,
-                        'unit' => $data->unit,
-                        'typical_range_low' => $data->typicalRangeLow,
-                        'typical_range_high' => $data->typicalRangeHigh,
-                        'is_active' => $data->isActive,
-                    ],
-                );
-
+                $this->store($river, $data);
                 $count++;
             }
         }
 
+        $environmentAgencyGauges = GaugeStation::query()->where('river_id', $river->id)->where('network', GaugeNetwork::EnvironmentAgency)->get();
+
+        $sepaStations = $this->sepaStationsOn($river)
+            ->filter(fn (GaugeStationData $data) => $projector === null || $projector->project($data->latitude, $data->longitude)->offsetMetres <= self::MAX_OFFSET_METRES)
+            ->reject(fn (GaugeStationData $data) => $environmentAgencyGauges->contains(
+                fn (GaugeStation $gauge) => Coordinates::distanceMetres($gauge->latitude, $gauge->longitude, $data->latitude, $data->longitude) <= self::SHARED_GAUGE_METRES,
+            ))
+            ->values();
+        $ranges = $this->sepaTypicalRanges($sepaStations);
+
+        foreach ($sepaStations as $data) {
+            $this->store($river, $data, $ranges[$data->externalId] ?? null);
+            $count++;
+        }
+
         return ['stations' => $count];
+    }
+
+    /**
+     * SEPA gauges whose river name matches this river. SEPA names rivers
+     * without the "River" prefix ("Tweed", "Teviot") but keeps "Water".
+     *
+     * @return Collection<int, GaugeStationData>
+     */
+    private function sepaStationsOn(River $river): Collection
+    {
+        if ($this->sepaFailed) {
+            return collect();
+        }
+
+        try {
+            return $this->sepa->levelStations()
+                ->filter(fn (GaugeStationData $data) => $data->riverName !== null
+                    && ($river->matchesWatercourse($data->riverName) || $river->matchesWatercourse('River '.$data->riverName)));
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            $this->sepaFailed = true;
+            Log::error("SEPA gauge discovery failed: {$exception->getMessage()}");
+
+            return collect();
+        }
+    }
+
+    /**
+     * A failure here only costs the typical range, so the gauges are still stored.
+     *
+     * @param  Collection<int, GaugeStationData>  $stations
+     * @return array<string, array{low: float, high: float}>
+     */
+    private function sepaTypicalRanges(Collection $stations): array
+    {
+        if ($stations->isEmpty()) {
+            return [];
+        }
+
+        try {
+            return $this->sepa->typicalRanges($stations);
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            Log::error("SEPA typical ranges failed: {$exception->getMessage()}");
+
+            return [];
+        }
+    }
+
+    /**
+     * @param  array{low: float, high: float}|null  $sepaRange  SEPA's normal range, which its station list does not carry
+     */
+    private function store(River $river, GaugeStationData $data, ?array $sepaRange = null): void
+    {
+        $attributes = [
+            'network' => $data->network,
+            'river_id' => $river->id,
+            'label' => $data->label,
+            'river_name' => $data->riverName,
+            'town' => $data->town,
+            'latitude' => $data->latitude,
+            'longitude' => $data->longitude,
+            'measure_id' => $data->measureId,
+            'unit' => $data->unit,
+            'is_active' => $data->isActive,
+        ];
+
+        // A SEPA gauge whose range lookup failed keeps the range it already has.
+        if ($data->network === GaugeNetwork::EnvironmentAgency || $sepaRange !== null) {
+            $attributes['typical_range_low'] = $sepaRange['low'] ?? $data->typicalRangeLow;
+            $attributes['typical_range_high'] = $sepaRange['high'] ?? $data->typicalRangeHigh;
+        }
+
+        GaugeStation::query()->updateOrCreate(['external_id' => $data->externalId], $attributes);
     }
 }

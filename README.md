@@ -12,7 +12,7 @@ keep that distinction.
 - Polls the water companies' near real-time storm overflow feeds (Yorkshire Water, Thames Water, United Utilities, Northumbrian Water and Severn Trent via
   the Stream open data hub, and Scottish Water from its own API) every 15 minutes and builds
   a spill history, since the feed only exposes each monitor's latest event.
-- Polls Environment Agency river level gauges every 15 minutes.
+- Polls river level and rain gauges every 15 minutes: the Environment Agency's in England and SEPA's in Scotland.
 - Polls the Environment Agency's flood alerts and warnings every 15 minutes and shows any in force for a flood area
   covering a spot on its page, in the live bar and on the home and region pages, with a link to GOV.UK.
 - Positions every monitor, gauge and spot along the river centreline (from OS Open Rivers), so "upstream" means
@@ -34,7 +34,7 @@ Waters, Mole and others). The North West has the Ribble, Lune, Kent, Eden and Cu
 hold United Utilities monitors (the Lancashire Calder with Pendle Water, the Darwen and Blakewater, the Wenning, two
 Gretas, the Eamont, Irthing, Petteril and Caldew and others). The North East has the Tyne, with the North and South
 Tyne flowing into it, the Wear, Tees, Coquet, Aln, Wansbeck, Blyth and the Tweed, with the Till flowing into it. The
-Tweed's overflows come from Scottish Water as well as Northumbrian Water. The Midlands has the Trent, with the Soar and the Peak District's
+Tweed's overflows come from Scottish Water as well as Northumbrian Water, and its Scottish levels and rainfall from SEPA. The Midlands has the Trent, with the Soar and the Peak District's
 Derwent, Wye, Dove and Manifold flowing into it, and the Severn with the Teme and Warwickshire Avon. A main river that joins another (the Ure into the Ouse, the North
 Tyne into the Tyne) keeps its own pages, and its overflows count upstream of the river it joins. Each main river carries the named
 tributaries that hold water company monitors (the Colne, Holme, Rother, Dearne, Sheaf, Loxley, Rye, Foss, Skell and around fifty becks and
@@ -53,6 +53,7 @@ All open data, no API keys required.
 | Stream storm overflow activity, one ArcGIS feature service per water company | Overflow status and spill events | CC BY 4.0 |
 | Scottish Water near real-time overflow event monitoring API | Overflow status and spill events in Scotland | Open reuse, credit Scottish Water |
 | Environment Agency real-time flood monitoring API | Gauge stations and 15-minute level readings | OGL v3 |
+| SEPA time series API (KiWIS) | Scottish level and rain gauges and their 15-minute readings | OGL v3 |
 | OS Open Rivers (GeoPackage download) | River centrelines for upstream positioning | OGL v3 |
 | OpenStreetMap | Map tiles, and a fallback centreline source via Overpass | ODbL |
 

@@ -10,11 +10,16 @@ use App\Models\RainfallStation;
 use App\Models\Spot;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
 use App\Services\Geo\Coordinates;
+use App\Services\Sepa\TimeSeriesClient;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 /**
- * Discovers Environment Agency rain gauges near the places we show rainfall
- * for: spots, beaches and lakes. One search covers each region's places,
+ * Discovers Environment Agency and SEPA rain gauges near the places we show
+ * rainfall for: spots, beaches and lakes. One search covers each region's places,
  * and only gauges close enough to be linked to one are stored, so readings
  * are not fetched for the whole country. Searching per region keeps each
  * circle small; one circle around every region would span England and hit
@@ -22,7 +27,7 @@ use Illuminate\Support\Collection;
  */
 class SyncRainfallStations
 {
-    public function __construct(private FloodMonitoringClient $client)
+    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa)
     {
     }
 
@@ -31,16 +36,20 @@ class SyncRainfallStations
      */
     public function handle(): array
     {
-        $stations = $this->placesByRegion()
+        $places = $this->placesByRegion();
+
+        $stations = $places
             ->flatMap(fn (Collection $points) => $this->client->rainfallStationsNear(...$this->searchCircle($points))
                 ->filter(fn (RainfallStationData $station) => $station->measureId !== null)
                 ->filter(fn (RainfallStationData $station) => $this->isNearAnyPlace($station, $points)))
+            ->concat($this->sepaStationsNear($places->flatten(1)))
             ->unique(fn (RainfallStationData $station) => $station->externalId);
 
         foreach ($stations as $data) {
             RainfallStation::query()->updateOrCreate(
                 ['external_id' => $data->externalId],
                 [
+                    'network' => $data->network,
                     'label' => $data->label,
                     'grid_reference' => $data->gridReference,
                     'latitude' => $data->latitude,
@@ -52,6 +61,31 @@ class SyncRainfallStations
         }
 
         return ['stations' => $stations->count()];
+    }
+
+    /**
+     * SEPA lists every Scottish rain gauge in one request, so its gauges are
+     * filtered against every place at once. A failure is logged and the
+     * Environment Agency gauges are still stored.
+     *
+     * @param  Collection<int, array{0: float, 1: float}>  $points
+     * @return Collection<int, RainfallStationData>
+     */
+    private function sepaStationsNear(Collection $points): Collection
+    {
+        if ($points->isEmpty()) {
+            return collect();
+        }
+
+        try {
+            return $this->sepa->rainfallStations()
+                ->filter(fn (RainfallStationData $station) => $this->isNearAnyPlace($station, $points))
+                ->values();
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            Log::error("SEPA rain gauge discovery failed: {$exception->getMessage()}");
+
+            return collect();
+        }
     }
 
     /**

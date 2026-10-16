@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\GaugeNetwork;
 use App\Services\Geo\Coordinates;
 use Database\Factories\RainfallStationFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,12 +12,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * An Environment Agency tipping bucket rain gauge. Spots link to the
+ * An Environment Agency or SEPA tipping bucket rain gauge. Spots link to the
  * nearest one, so rainfall is context for the spot's surroundings rather
  * than a catchment total.
  *
  * @property int $id
  * @property string $external_id
+ * @property GaugeNetwork $network
  * @property string $label
  * @property string|null $grid_reference
  * @property float $latitude
@@ -33,6 +35,7 @@ class RainfallStation extends Model
 
     protected $fillable = [
         'external_id',
+        'network',
         'label',
         'grid_reference',
         'latitude',
@@ -44,6 +47,7 @@ class RainfallStation extends Model
     protected function casts(): array
     {
         return [
+            'network' => GaugeNetwork::class,
             'latitude' => 'float',
             'longitude' => 'float',
             'is_active' => 'boolean',

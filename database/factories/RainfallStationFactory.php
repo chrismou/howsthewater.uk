@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\GaugeNetwork;
 use App\Models\RainfallStation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -10,6 +11,19 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class RainfallStationFactory extends Factory
 {
+    /**
+     * A SEPA rain gauge, whose measure is a KiWIS time series id.
+     */
+    public function sepa(): static
+    {
+        return $this->state(fn () => [
+            'external_id' => fake()->unique()->numerify('SEPA#####'),
+            'network' => GaugeNetwork::Sepa,
+            'grid_reference' => null,
+            'measure_id' => fake()->unique()->numerify('6####010'),
+        ]);
+    }
+
     public function definition(): array
     {
         $reference = fake()->unique()->numerify('####');

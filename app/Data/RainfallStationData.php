@@ -2,6 +2,8 @@
 
 namespace App\Data;
 
+use App\Enums\GaugeNetwork;
+
 final readonly class RainfallStationData
 {
     public function __construct(
@@ -12,7 +14,25 @@ final readonly class RainfallStationData
         public float $longitude,
         public ?string $measureId,
         public bool $isActive,
+        public GaugeNetwork $network = GaugeNetwork::EnvironmentAgency,
     ) {
+    }
+
+    /**
+     * @param  array{station_name: string, station_no: string, station_latitude: string, station_longitude: string, ts_id: string, to: ?string}  $series  A gauge's 15 minute rainfall total series from SEPA's time series API
+     */
+    public static function fromSepa(array $series): self
+    {
+        return new self(
+            externalId: 'SEPA'.$series['station_no'],
+            label: $series['station_name'],
+            gridReference: null,
+            latitude: (float) $series['station_latitude'],
+            longitude: (float) $series['station_longitude'],
+            measureId: $series['ts_id'],
+            isActive: GaugeStationData::sepaSeriesIsLive($series['to']),
+            network: GaugeNetwork::Sepa,
+        );
     }
 
     /**

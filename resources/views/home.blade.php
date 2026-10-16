@@ -124,7 +124,7 @@
                 <span class="font-mono text-2xl text-accent sm:text-3xl">02</span>
                 <div class="flex flex-col gap-2">
                     <h3 class="font-display text-xl font-semibold">River level and trend <x-help term="level" /></h3>
-                    <p class="text-ink-2">Environment Agency gauges read the river every 15 minutes. The latest reading, the change over 3 hours and where it sits in the gauge's typical range. High and rising means fast, cold water.</p>
+                    <p class="text-ink-2">Environment Agency and SEPA gauges read the river every 15 minutes. The latest reading, the change over 3 hours and where it sits in the gauge's typical range. High and rising means fast, cold water.</p>
                     <p class="flex items-baseline gap-3"><span class="font-mono text-2xl font-semibold tabular-nums">0.43 m</span><span class="text-sm text-muted">↑ rising · within typical range <x-help term="typical_range" /></span></p>
                 </div>
             </li>

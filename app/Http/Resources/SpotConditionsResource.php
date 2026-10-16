@@ -36,6 +36,7 @@ class SpotConditionsResource extends JsonResource
             'level' => $this->level === null ? null : [
                 'station' => [
                     'id' => $this->level->station->external_id,
+                    'network' => $this->level->station->network->value,
                     'label' => $this->level->station->label,
                     'unit' => $this->level->station->unitLabel(),
                     'typical_range_low' => $this->level->station->typical_range_low,
