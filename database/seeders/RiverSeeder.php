@@ -229,12 +229,13 @@ class RiverSeeder extends Seeder
     }
 
     /**
-     * The rivers Northumbrian Water monitors, from the Tees to the Till.
+     * The rivers Northumbrian Water monitors, from the Tees to the Tweed.
      * The North and South Tyne flow into the Tyne, so their overflows count
-     * for Tyne spots. The Till joins the Tweed, which is left out until
-     * Scottish Water's overflows are supported, as most of them are in
-     * Scotland. Tributaries that join below the tidal limit (the Derwent,
-     * Team, Ouse Burn and Don on the Tyne) still count on the river page.
+     * for Tyne spots, and the Till flows into the Tweed. The Tweed runs
+     * mostly through Scotland, so its overflows come from Scottish Water's
+     * feed as well as Northumbrian Water's. Tributaries that join below the
+     * tidal limit (the Derwent, Team, Ouse Burn and Don on the Tyne) still
+     * count on the river page.
      *
      * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
      */
@@ -279,11 +280,26 @@ class RiverSeeder extends Seeder
             self::main('River Blyth', 'Northumberland Coast', [55.1300, -1.5100]),
             self::tributary('River Pont', 'blyth'),
 
-            // Till, which joins the Tweed at Twizel
-            self::main('River Till', 'Tweed', [55.6860, -2.2140]),
+            // Tweed, with the Till flowing into it at Twizel
+            self::main('River Tweed', 'Tweed', [55.7660, -2.0050]),
+            self::tributary('Biggar Water', 'tweed'),
+            self::tributary('Lyne Water', 'tweed'),
+            self::tributary('Eddleston Water', 'tweed'),
+            self::tributary('Ettrick Water', 'tweed'),
+            self::tributary('Yarrow Water', 'ettrick-water'),
+            self::tributary('Leader Water', 'tweed'),
+            self::tributary('River Teviot', 'tweed', ['Teviot Water']),
+            self::tributary('Jed Water', 'teviot'),
+            self::tributary('Ale Water', 'teviot'),
+            self::tributary('Eden Water', 'tweed'),
+            self::tributary('Leet Water', 'tweed'),
+            self::tributary('Whiteadder Water', 'tweed'),
+            self::tributary('Blackadder Water', 'whiteadder-water'),
+            self::main('River Till', 'Tweed', [55.6860, -2.2140], flowsInto: 'tweed'),
             self::tributary('River Breamish', 'till'),
             self::tributary('Wooler Water', 'till'),
             self::tributary('River Glen', 'till'),
+            self::tributary('Bowmont Water', 'glen'),
         ];
     }
 

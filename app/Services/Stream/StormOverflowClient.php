@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Http;
  * Reads near real-time storm overflow activity from the Stream water data
  * ArcGIS feature services published by each water company.
  */
-class StormOverflowClient
+class StormOverflowClient implements OverflowFeedReader
 {
     private const PAGE_SIZE = 2000;
 

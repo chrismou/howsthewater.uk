@@ -31,7 +31,7 @@ class RegionSeeder extends Seeder
         ]);
         Region::query()->updateOrCreate(['slug' => 'north-east'], [
             'name' => 'North East',
-            'overflow_feeds' => ['northumbrian_water'],
+            'overflow_feeds' => ['northumbrian_water', 'scottish_water'],
             'bathing_water_districts' => ['Northumberland', 'North Tyneside', 'South Tyneside', 'Sunderland', 'County Durham', 'Hartlepool', 'Redcar and Cleveland'],
         ]);
         Region::query()->updateOrCreate(['slug' => 'midlands'], [

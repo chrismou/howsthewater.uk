@@ -191,3 +191,47 @@ it('positions monitors the first time it sees them', function () {
 
     $this->artisan('ingest:overflows')->doesntExpectOutputToContain('new monitors positioned')->assertSuccessful();
 });
+
+function scottishWaterRecord(array $overrides = []): array
+{
+    return array_merge([
+        'ASSET_ID' => 'CSO000007',
+        'OVERFLOW_STATUS_DESCRIPTION' => 'NO - No Overflows',
+        'OVERFLOW_START_DATETIME' => '2026-10-15T09:20:00.000Z',
+        'OVERFLOW_END_DATETIME' => '2026-10-15T09:30:00.000Z',
+        'RECEIVING_WATER' => 'River Tweed',
+        'DISCHARGE_OVERFLOW_LOCATION_LATITUDE' => '55.6',
+        'DISCHARGE_OVERFLOW_LOCATION_LONGITUDE' => '-2.4',
+        'LAST_TRANSMITTED_DATETIME' => '2026-10-15T18:10:00.000Z',
+    ], $overrides);
+}
+
+it('reads Scottish Water\'s own API into the same monitors and spill events', function () {
+    Region::factory()->create(['overflow_feeds' => ['scottish_water']]);
+    Http::fake([
+        'services-eu1.arcgis.com/*' => Http::response(['features' => []]),
+        'api.scottishwater.co.uk/*' => Http::response(['last_updated' => 1792098080801, 'results' => [
+            scottishWaterRecord(),
+            scottishWaterRecord(['ASSET_ID' => 'CSO000008', 'OVERFLOW_STATUS_DESCRIPTION' => 'OF - Overflowing', 'OVERFLOW_START_DATETIME' => '2026-10-14T23:00:00.000Z', 'OVERFLOW_END_DATETIME' => '']),
+            scottishWaterRecord(['ASSET_ID' => 'CSO000009', 'OVERFLOW_STATUS_DESCRIPTION' => 'RO - Recent Overflow']),
+            scottishWaterRecord(['ASSET_ID' => 'CSO000010', 'OVERFLOW_STATUS_DESCRIPTION' => 'DA - No Data Available', 'RECEIVING_WATER' => 'Un-named watercourse']),
+        ]]),
+    ]);
+
+    $result = app(SyncOverflowMonitors::class)->handle();
+
+    expect($result['feeds'])->toBe(2)->and($result['failed'])->toBe([]);
+
+    $monitors = OverflowMonitor::query()->where('company', 'Scottish Water')->get()->keyBy('external_id');
+
+    expect($monitors->keys()->sort()->values()->all())->toBe(['SWCSO000007', 'SWCSO000008', 'SWCSO000009', 'SWCSO000010'])
+        ->and($monitors['SWCSO000007']->status)->toBe(OverflowStatus::NotDischarging)
+        ->and($monitors['SWCSO000007']->receiving_watercourse)->toBe('River Tweed')
+        ->and($monitors['SWCSO000008']->status)->toBe(OverflowStatus::Discharging)
+        ->and($monitors['SWCSO000008']->spillEvents()->sole()->ended_at)->toBeNull()
+        ->and($monitors['SWCSO000009']->status)->toBe(OverflowStatus::NotDischarging)
+        ->and($monitors['SWCSO000009']->spillEvents()->sole()->ended_at->toIso8601String())->toBe('2026-10-15T09:30:00+00:00')
+        ->and($monitors['SWCSO000010']->status)->toBe(OverflowStatus::Offline)
+        ->and($monitors['SWCSO000010']->receiving_watercourse)->toBeNull()
+        ->and($monitors['SWCSO000007']->source_updated_at->getTimestampMs())->toBe(1792098080000);
+});

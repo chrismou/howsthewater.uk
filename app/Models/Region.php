@@ -18,7 +18,7 @@ use Illuminate\Support\Collection as SupportCollection;
  * @property int $id
  * @property string $name
  * @property string $slug
- * @property array<int, string>|null $overflow_feeds Keys of services.stream.feeds
+ * @property array<int, string>|null $overflow_feeds Keys of services.overflow_feeds
  * @property array<int, string>|null $bathing_water_districts Districts whose coastal bathing waters belong here
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -50,7 +50,7 @@ class Region extends Model
      * The storm overflow feeds every region needs, keyed by config key, so
      * ingest polls only the water companies we actually cover.
      *
-     * @return array<string, array{name: string, url: string}>
+     * @return array<string, array{name: string, driver: string, url: string}>
      */
     public static function overflowFeeds(): array
     {
@@ -66,21 +66,31 @@ class Region extends Model
      */
     public function waterCompanies(): array
     {
-        return array_column(Arr::only(self::feedConfig(), $this->overflow_feeds ?? []), 'name');
+        return array_column($this->overflowFeedConfig(), 'name');
     }
 
     /**
-     * The configured feeds, skipping any entry without a name and URL.
+     * The overflow feeds covering this region, keyed by config key.
      *
-     * @return array<string, array{name: string, url: string}>
+     * @return array<string, array{name: string, driver: string, url: string}>
+     */
+    public function overflowFeedConfig(): array
+    {
+        return Arr::only(self::feedConfig(), $this->overflow_feeds ?? []);
+    }
+
+    /**
+     * The configured feeds, skipping any entry without a name and URL. A feed without a driver is a Stream feed.
+     *
+     * @return array<string, array{name: string, driver: string, url: string}>
      */
     private static function feedConfig(): array
     {
         $feeds = [];
 
-        foreach (config()->array('services.stream.feeds') as $key => $feed) {
+        foreach (config()->array('services.overflow_feeds') as $key => $feed) {
             if (is_string($key) && is_array($feed) && is_string($feed['name'] ?? null) && is_string($feed['url'] ?? null)) {
-                $feeds[$key] = ['name' => $feed['name'], 'url' => $feed['url']];
+                $feeds[$key] = ['name' => $feed['name'], 'driver' => is_string($feed['driver'] ?? null) ? $feed['driver'] : 'stream', 'url' => $feed['url']];
             }
         }
 

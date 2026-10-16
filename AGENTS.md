@@ -166,8 +166,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Esk, Hull) and the Thames (source to Teddington, mouth hint in central London because the tidal Thames is split into
   pieces too far apart to join), the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
   Utilities, mouths at the head of each estuary), and the North East's Tyne (with the North and South Tyne flowing
-  into it), Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Till (Northumbrian Water). The Tweed is left out until
-  Scottish Water's overflows are supported, since most of its overflows are in Scotland. The Midlands has Severn
+  into it), Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Tweed, with the Till flowing into the Tweed (Northumbrian
+  Water, plus Scottish Water for the Tweed, which runs mostly through Scotland; its Scottish stretch has overflows but
+  no SEPA levels, rainfall or flood warnings yet). The Midlands has Severn
   Trent's rivers: the Trent, with the Soar and the Peak District's Derwent, Wye, Dove and Manifold flowing into it, and
   the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn (Hafren Dyfrdwy) are not on
   Stream, so they do not count yet. Main rivers and their tributaries are seeded
@@ -219,8 +220,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Use `build()` in tests that change data between calls. Rivers inside cached conditions are loaded with
   `withoutCentreline()` (or a slim clone of the bound river), so pages take the centreline for their map from the
   route-bound river, never from `$conditions->spot->river`.
-- Gauges carry a `unit` (`m` for stage above the gauge datum, `mAOD` for height above sea level). Spots prefer `m`
-  gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
+- Gauges carry a `unit` (`m` for stage above the gauge datum, `mAOD` for height above sea level). Spots link the nearest gauge within 25 km
+  along the river (none beyond that, rather than a reading far away) and prefer `m` gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
 - Stale data: `SpotConditions::overflowDataIsStale()` and `LevelSummary::isStale()` compare the feed timestamp or latest
   reading against `STALE_AFTER_HOURS` (6) at read time, so cached conditions still go stale on schedule. Show the
   warning and the neutral badge wherever a spill status or level is printed; the API exposes `data_stale` and
@@ -230,10 +231,14 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 
 ## Data sources
 
-- Storm overflows: Stream publishes one ArcGIS feature service per water company, all with the same fields, listed in
-  `services.stream.feeds`. Each region names the feeds it needs in `overflow_feeds`, and `ingest:overflows` polls only
-  those, every 15 minutes. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by
-  company (`YWS`, `NWL`, `UUP`...) so feeds share one table. South West Water and Scottish Water use other fields.
+- Storm overflows: one feed per water company, listed in `services.overflow_feeds`, each with a `driver`. Stream
+  publishes an ArcGIS feature service per English company, all with the same fields (`stream`, `StormOverflowClient`);
+  Scottish Water publishes its own hourly API (`scottish_water`, `ScottishWater\OverflowEventClient`). Each driver
+  implements `OverflowFeedReader` and maps its records into `OverflowMonitorData`, so the sync and everything after it
+  never see the source format; a new company with other fields needs only a new reader. Each region names the feeds
+  it needs in `overflow_feeds`, and `ingest:overflows` polls only those, every 15 minutes. A failing feed is logged
+  and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
+  share one table. The footer credits Stream feeds and Scottish Water separately. South West Water uses other fields.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
 - Rainfall: the same API's tipping bucket rain gauges, `ingest:rainfall`. Each spot, beach and lake links to the
@@ -254,7 +259,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Names repeat (becks across Yorkshire; Calder, Don, Derwent, Ouse and Esk across Britain; two River Gretas in the North
   West, the Keswick one seeded as `greta-keswick`), so `OpenRiversReader`
   seeds from the set of links whose mouth is nearest the parent centreline (tributaries) or the seeded `mouth_latitude`
-  and `mouth_longitude` (main rivers), then joins other fragments within 4 km to bridge reservoirs. Within each set of
+  and `mouth_longitude` (main rivers), then joins other fragments within 4 km to bridge reservoirs, always the nearest
+  first (OS splits the Tweed into dozens of pieces). Within each set of
   connected links the main stem runs from the flow sink nearest the parent or hint to the node furthest from it along
   the links, ignoring recorded flow directions, which OS often draws backwards in braided reaches. Rivers that rise
   in Wales carry their Welsh name first (`Afon Hafren`, alternative `River Severn`), so links are matched on

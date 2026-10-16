@@ -37,6 +37,19 @@ it('positions matching monitors, gauges and spots along the centreline and links
     expect(app(UpstreamMonitorFinder::class)->for($spot)->map(fn ($summary) => $summary->monitor->id)->all())->toBe([$upstreamMonitor->id]);
 });
 
+it('links no gauge to a spot more than 25 km along the river from every gauge', function () {
+    $river = River::factory()->withCentreline()->create();
+    GaugeStation::factory()->create(['river_id' => $river->id, 'latitude' => 53.950, 'longitude' => -1.900]);
+    $nearSpot = Spot::factory()->create(['river_id' => $river->id, 'latitude' => 53.900, 'longitude' => -1.800]);
+    $farSpot = Spot::factory()->create(['river_id' => $river->id, 'latitude' => 53.800, 'longitude' => -1.600]);
+
+    app(AssignRiverPositions::class)->handle($river);
+
+    expect($nearSpot->fresh()->gauge_station_id)->not->toBeNull()
+        ->and($farSpot->fresh()->river_metres)->toBeGreaterThan(25000)
+        ->and($farSpot->fresh()->gauge_station_id)->toBeNull();
+});
+
 it('records where a tributary joins its parent river', function () {
     $parent = River::factory()->withCentreline()->create();
     $tributary = River::factory()->create([

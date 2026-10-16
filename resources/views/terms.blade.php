@@ -30,6 +30,7 @@
                                 href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="noopener" class="text-accent hover:underline">Open Government Licence v3.0</a>.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data published by the water companies through Stream: <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener"
                                 class="text-accent hover:underline">CC BY 4.0</a>.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data from Scottish Water: published by Scottish Water for reuse, crediting Scottish Water as the source.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>River centrelines from OS Open Rivers: Open Government Licence v3.0, contains OS data © Crown copyright and database right.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Map tiles: © OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" rel="noopener"
                                 class="text-accent hover:underline">ODbL</a>.</span></li>

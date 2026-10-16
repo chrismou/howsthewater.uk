@@ -7,6 +7,9 @@
     $liveRegion = $region ?? $allRegions->sortBy('id')->first();
     $liveSummary ??= $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
     $menus = app(\App\Services\Conditions\NavigationMenus::class)->all();
+    // Overflow data is credited per source: the English companies via Stream, Scottish Water from its own API.
+    $overflowFeeds = collect($allRegions->reduce(fn (array $feeds, $region) => $feeds + $region->overflowFeedConfig(), []));
+    $streamCompanies = $overflowFeeds->where('driver', 'stream')->pluck('name')->unique()->join(', ', ' and ');
     $analyticsId = app()->isProduction() ? config('services.google_analytics.measurement_id') : null;
 @endphp
     <!DOCTYPE html>
@@ -116,7 +119,12 @@
         <p>
             Near real-time, unvalidated data. This uses Environment Agency flood and river level data from the real-time data API (Beta)
             and Environment Agency bathing water data, Open Government Licence v3.0.
-            {{ $allRegions->flatMap->waterCompanies()->unique()->join(', ', ' and ') }} storm overflow data via Stream, CC BY 4.0.
+            @if ($streamCompanies !== '')
+                {{ $streamCompanies }} storm overflow data via Stream, CC BY 4.0.
+            @endif
+            @if ($overflowFeeds->contains('driver', 'scottish_water'))
+                Overflow data from Scottish Water.
+            @endif
             River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
             <a href="{{ route('home') }}#limits" class="underline hover:text-ink">What this site does not do</a>.
             Seen a mistake? <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">Let us know on GitHub</a>.

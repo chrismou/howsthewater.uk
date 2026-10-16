@@ -40,6 +40,52 @@ final readonly class OverflowMonitorData
         );
     }
 
+    /**
+     * Scottish Water reports each monitor's latest overflow and a status code:
+     * OF overflowing, RO a recent overflow, NO none and DA no data. Its asset
+     * ids carry no company prefix, so one is added to keep them apart from
+     * the English feeds. Feed freshness comes from the response, as each
+     * monitor transmits on its own schedule.
+     *
+     * @param  array<string, mixed>  $record  One result from the near real-time API
+     */
+    public static function fromScottishWater(array $record, ?Carbon $feedUpdatedAt): self
+    {
+        $status = match (substr((string) ($record['OVERFLOW_STATUS_DESCRIPTION'] ?? ''), 0, 2)) {
+            'OF' => OverflowStatus::Discharging,
+            'RO', 'NO' => OverflowStatus::NotDischarging,
+            default => OverflowStatus::Offline,
+        };
+        $latestEventStartedAt = self::fromIsoString($record['OVERFLOW_START_DATETIME'] ?? null);
+        $latestEventEndedAt = self::fromIsoString($record['OVERFLOW_END_DATETIME'] ?? null);
+
+        return new self(
+            externalId: 'SW'.$record['ASSET_ID'],
+            company: 'Scottish Water',
+            receivingWatercourse: self::cleanWatercourse($record['RECEIVING_WATER'] ?? null),
+            latitude: (float) $record['DISCHARGE_OVERFLOW_LOCATION_LATITUDE'],
+            longitude: (float) $record['DISCHARGE_OVERFLOW_LOCATION_LONGITUDE'],
+            status: $status,
+            statusStartedAt: match ($status) {
+                OverflowStatus::Discharging => $latestEventStartedAt,
+                OverflowStatus::NotDischarging => $latestEventEndedAt,
+                OverflowStatus::Offline => self::fromIsoString($record['LAST_TRANSMITTED_DATETIME'] ?? null),
+            },
+            latestEventStartedAt: $latestEventStartedAt,
+            latestEventEndedAt: $latestEventEndedAt,
+            sourceUpdatedAt: $feedUpdatedAt,
+        );
+    }
+
+    private static function fromIsoString(mixed $value): ?Carbon
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return Carbon::parse($value)->utc();
+    }
+
     private static function fromEpochMillis(mixed $value): ?Carbon
     {
         if ($value === null || $value === '') {
@@ -57,6 +103,6 @@ final readonly class OverflowMonitorData
 
         $trimmed = trim($value);
 
-        return $trimmed === '' || $trimmed === '#N/A' ? null : $trimmed;
+        return $trimmed === '' || $trimmed === '#N/A' || strcasecmp($trimmed, 'Un-named watercourse') === 0 ? null : $trimmed;
     }
 }

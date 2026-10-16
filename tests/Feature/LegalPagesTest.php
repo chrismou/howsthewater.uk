@@ -44,6 +44,15 @@ it('sets no cookies and stores no session for visitors', function () {
     $this->assertDatabaseCount('sessions', 0);
 });
 
+it('credits Stream companies and Scottish Water separately in the footer', function () {
+    Region::factory()->create(['name' => 'North East', 'slug' => 'north-east', 'overflow_feeds' => ['northumbrian_water', 'scottish_water']]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Northumbrian Water storm overflow data via Stream, CC BY 4.0.')
+        ->assertSee('Overflow data from Scottish Water.');
+});
+
 it('lists the legal pages in the sitemap', function () {
     $this->get(route('sitemap'))->assertOk()->assertSee(route('privacy'))->assertSee(route('terms'));
 });

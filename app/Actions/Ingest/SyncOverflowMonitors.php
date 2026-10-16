@@ -7,6 +7,8 @@ use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\SpillEvent;
+use App\Services\ScottishWater\OverflowEventClient;
+use App\Services\Stream\OverflowFeedReader;
 use App\Services\Stream\StormOverflowClient;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
@@ -20,7 +22,7 @@ use Throwable;
  */
 class SyncOverflowMonitors
 {
-    public function __construct(private StormOverflowClient $client)
+    public function __construct(private StormOverflowClient $stream, private OverflowEventClient $scottishWater)
     {
     }
 
@@ -37,7 +39,7 @@ class SyncOverflowMonitors
 
         foreach (Region::overflowFeeds() as $key => $feed) {
             try {
-                $result = $this->sync($this->client->all($feed['url']));
+                $result = $this->sync($this->readerFor($feed['driver'])->all($feed['url']));
             } catch (Throwable $exception) {
                 Log::error("Storm overflow feed {$key} failed: {$exception->getMessage()}");
                 $totals['failed'][] = $feed['name'];
@@ -53,6 +55,17 @@ class SyncOverflowMonitors
         }
 
         return $totals;
+    }
+
+    /**
+     * Stream feeds share one set of fields; Scottish Water publishes its own API.
+     */
+    private function readerFor(string $driver): OverflowFeedReader
+    {
+        return match ($driver) {
+            'scottish_water' => $this->scottishWater,
+            default => $this->stream,
+        };
     }
 
     /**

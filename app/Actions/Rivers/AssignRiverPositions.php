@@ -36,6 +36,13 @@ class AssignRiverPositions
     private const MAX_PREFERRED_GAUGE_DISTANCE_METRES = 10000;
 
     /**
+     * How far along the river a gauge may be at all. Beyond this a spot gets
+     * no gauge rather than one reading water tens of kilometres away (the
+     * Scottish Tweed has no EA gauges above Kelso).
+     */
+    private const MAX_GAUGE_DISTANCE_METRES = 25000;
+
+    /**
      * @return array{monitors: int, gauges: int, spots: int}
      */
     public function handle(River $river): array
@@ -128,7 +135,9 @@ class AssignRiverPositions
             ->each(function (Spot $spot) use ($projector, $gauges, &$count) {
                 $projection = $projector->project($spot->latitude, $spot->longitude);
 
-                $byDistance = $gauges->sortBy(fn (GaugeStation $gauge) => abs($gauge->river_metres - $projection->distanceAlongMetres));
+                $byDistance = $gauges
+                    ->filter(fn (GaugeStation $gauge) => abs($gauge->river_metres - $projection->distanceAlongMetres) <= self::MAX_GAUGE_DISTANCE_METRES)
+                    ->sortBy(fn (GaugeStation $gauge) => abs($gauge->river_metres - $projection->distanceAlongMetres));
 
                 // Prefer a gauge reading stage above its own datum, but only if one is reasonably close; a sea level
                 // gauge beside the spot says more about the river there than a metres gauge far upstream.

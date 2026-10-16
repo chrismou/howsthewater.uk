@@ -60,6 +60,20 @@ it('finds a river by its alternative name when OS lists the Welsh name first', f
     expect((new OpenRiversReader($path))->riverCentreline('River Severn'))->toHaveCount(3);
 });
 
+it('joins the nearest piece first so a river broken into many pieces is not cut short', function () {
+    $path = openRiversFixture([
+        // Listed out of order: the piece furthest upstream comes first.
+        ['name' => 'River Test', 'start' => 'e', 'end' => 'f', 'points' => [[404000, 450000], [406500, 450000]]],
+        ['name' => 'River Test', 'start' => 'c', 'end' => 'd', 'points' => [[407000, 450000], [409500, 450000]]],
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[410000, 450000], [412000, 450000]]],
+    ]);
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('River Test', mouthHint: BritishNationalGrid::toLatLng(412000, 450000));
+
+    expect($centreline)->toHaveCount(6)
+        ->and($centreline[0])->toEqualWithDelta(BritishNationalGrid::toLatLng(404000, 450000), 0.0001);
+});
+
 it('picks the same-named watercourse whose mouth is nearest the parent river', function () {
     $path = openRiversFixture([
         // A beck of the same name 50 km north, which must be ignored.

@@ -196,6 +196,17 @@ class SpotSeeder extends Seeder
                 ['name' => 'Plessey Woods', 'latitude' => 55.1087, 'longitude' => -1.6366, 'description' => 'Hartford Bridge and the country park.'],
                 ['name' => 'Humford Mill', 'latitude' => 55.1151, 'longitude' => -1.6088, 'description' => 'The weir and riverside below Bedlington.'],
             ],
+            'tweed' => [
+                ['name' => 'Peebles', 'latitude' => 55.6500, 'longitude' => -3.1894, 'description' => 'The town reach by Tweed Bridge and Hay Lodge Park.'],
+                ['name' => 'Innerleithen', 'latitude' => 55.6144, 'longitude' => -3.0565, 'description' => 'The riverside below the town, where the Leithen Water joins.'],
+                ['name' => 'Walkerburn', 'latitude' => 55.6227, 'longitude' => -3.0103, 'description' => 'The village reach on the Tweed Valley path.'],
+                ['name' => 'Melrose', 'latitude' => 55.6032, 'longitude' => -2.7211, 'description' => 'The chain bridge at Gattonside, below the abbey.'],
+                ['name' => 'Dryburgh', 'latitude' => 55.5793, 'longitude' => -2.6514, 'description' => 'The suspension bridge by Dryburgh Abbey.'],
+                ['name' => 'Kelso', 'latitude' => 55.5960, 'longitude' => -2.4347, 'description' => 'Below Rennie\'s bridge, where the Teviot joins.'],
+                ['name' => 'Coldstream', 'latitude' => 55.6492, 'longitude' => -2.2454, 'description' => 'Below Coldstream Bridge, on the border.'],
+                ['name' => 'Norham', 'latitude' => 55.7229, 'longitude' => -2.1623, 'description' => 'The reach below Norham castle.'],
+                ['name' => 'Paxton', 'latitude' => 55.7535, 'longitude' => -2.1076, 'description' => 'Union Chain Bridge, the oldest suspension bridge still carrying traffic.'],
+            ],
             'till' => [
                 ['name' => 'Chatton', 'latitude' => 55.5451, 'longitude' => -1.9093, 'description' => 'Riverside below the village.'],
                 ['name' => 'Ford', 'latitude' => 55.6304, 'longitude' => -2.0979, 'description' => 'Ford bridge and the riverside below the village.'],

@@ -107,7 +107,10 @@ class OpenRiversReader
 
     /**
      * Extends the seed chain upstream and downstream with any other chain
-     * that ends or starts close enough to count as the same river.
+     * that ends or starts close enough to count as the same river. The
+     * nearest is always joined first: a river broken into many short pieces
+     * (the Tweed has dozens) would otherwise pick up a piece further up
+     * before the one in between, and stop short.
      *
      * @param  array<int, array<int, array{0: float, 1: float}>>  $chains
      * @return array<int, array{0: float, 1: float}>
@@ -117,25 +120,27 @@ class OpenRiversReader
         $chain = $chains[$seedIndex];
         unset($chains[$seedIndex]);
 
-        do {
-            $joined = false;
+        while ($chains !== []) {
+            $source = $chain[0];
+            $mouth = end($chain);
+            $nearest = null;
 
             foreach ($chains as $index => $candidate) {
-                $source = $chain[0];
-                $mouth = end($chain);
-
-                if ($this->distance(end($candidate), $source) <= self::GAP_METRES) {
-                    $chain = [...$candidate, ...$chain];
-                } elseif ($this->distance($candidate[0], $mouth) <= self::GAP_METRES) {
-                    $chain = [...$chain, ...$candidate];
-                } else {
-                    continue;
+                foreach (['upstream' => $this->distance(end($candidate), $source), 'downstream' => $this->distance($candidate[0], $mouth)] as $side => $distance) {
+                    if ($distance <= self::GAP_METRES && ($nearest === null || $distance < $nearest['distance'])) {
+                        $nearest = ['index' => $index, 'side' => $side, 'distance' => $distance];
+                    }
                 }
-
-                unset($chains[$index]);
-                $joined = true;
             }
-        } while ($joined && $chains !== []);
+
+            if ($nearest === null) {
+                break;
+            }
+
+            $candidate = $chains[$nearest['index']];
+            $chain = $nearest['side'] === 'upstream' ? [...$candidate, ...$chain] : [...$chain, ...$candidate];
+            unset($chains[$nearest['index']]);
+        }
 
         return array_values($chain);
     }
