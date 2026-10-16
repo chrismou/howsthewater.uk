@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\Agency;
 use App\Enums\PollutionRisk;
 use App\Models\BathingWater;
 use App\Models\BathingWaterClassificationRecord;
@@ -10,7 +11,8 @@ use Illuminate\Support\Collection;
 
 /**
  * A designated bathing water's classification, samples and forecast, as
- * the Environment Agency reports them. Shown on beach, lake and spot pages.
+ * the Environment Agency or SEPA reports them. Shown on beach, lake and
+ * spot pages.
  */
 final readonly class BathingWaterSummary
 {
@@ -47,6 +49,23 @@ final readonly class BathingWaterSummary
 
     public function url(): string
     {
-        return 'https://environment.data.gov.uk/bwq/profiles/profile.html?site='.rawurlencode($this->bathingWater->eubwid);
+        return $this->bathingWater->profile_url
+            ?? 'https://environment.data.gov.uk/bwq/profiles/profile.html?site='.rawurlencode($this->bathingWater->eubwid);
+    }
+
+    /**
+     * The link text for url(): the EA's profile, or SEPA's results page.
+     */
+    public function urlLabel(): string
+    {
+        return $this->bathingWater->agency === Agency::Sepa ? 'SEPA results page' : 'Environment Agency profile';
+    }
+
+    /**
+     * SEPA's samples are only on its own results pages, so Scottish sites carry none here.
+     */
+    public function hasSamplesHere(): bool
+    {
+        return $this->bathingWater->agency === Agency::EnvironmentAgency;
     }
 }

@@ -93,9 +93,11 @@ return [
         'bathing_water_url' => env('EA_BATHING_WATER_URL', 'https://environment.data.gov.uk'),
     ],
 
-    // SEPA's time series API: Scottish river levels and rainfall. Anonymous use is capped at 5,000 credits a day.
+    // SEPA's time series API (Scottish river levels and rainfall; anonymous use is capped at 5,000 credits a day) and
+    // its open map service for Scottish bathing waters.
     'sepa' => [
         'timeseries_url' => env('SEPA_TIMESERIES_URL', 'https://timeseries.sepa.org.uk/KiWIS/KiWIS'),
+        'bathing_waters_url' => env('SEPA_BATHING_WATERS_URL', 'https://map.sepa.org.uk/server/rest/services/Open/Environmental_Monitoring/MapServer'),
     ],
 
     'ordnance_survey' => [

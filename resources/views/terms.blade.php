@@ -28,7 +28,7 @@
                 <ul class="grid gap-2">
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Environment Agency flood, river level, rainfall and bathing water data: <a
                                 href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="noopener" class="text-accent hover:underline">Open Government Licence v3.0</a>.</span></li>
-                    <li class="flex gap-3"><span class="text-muted">-</span><span>SEPA river level and rainfall data: <a
+                    <li class="flex gap-3"><span class="text-muted">-</span><span>SEPA river level, rainfall and bathing water data: <a
                                 href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="noopener" class="text-accent hover:underline">Open Government Licence v3.0</a>, crediting SEPA as the owner of the data.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data published by the water companies through Stream: <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener"
                                 class="text-accent hover:underline">CC BY 4.0</a>.</span></li>

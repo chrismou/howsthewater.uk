@@ -62,7 +62,7 @@ class Help extends Component
         ],
         'bathing_classification' => [
             'label' => 'What does the classification mean?',
-            'text' => 'Each designated bathing water is classified every year as Excellent, Good, Sufficient or Poor, from the last four seasons of Environment Agency samples. It describes those samples, not the water on any one day.',
+            'text' => 'Each designated bathing water is classified every year as Excellent, Good, Sufficient or Poor, from the last four seasons of Environment Agency samples (SEPA in Scotland). It describes those samples, not the water on any one day.',
         ],
         'pollution_risk' => [
             'label' => 'What is the pollution risk forecast?',
@@ -70,7 +70,7 @@ class Help extends Component
         ],
         'bathing_samples' => [
             'label' => 'What do the sample counts mean?',
-            'text' => 'Environment Agency samplers test the water about weekly in the season for two bacteria from sewage and animal waste: E. coli and intestinal enterococci, counted per 100 ml. Lower is better. A "<" means below the lowest level the test can measure.',
+            'text' => 'Environment Agency samplers (SEPA in Scotland) test the water about weekly in the season for two bacteria from sewage and animal waste: E. coli and intestinal enterococci, counted per 100 ml. Lower is better. A "<" means below the lowest level the test can measure.',
         ],
         'nearby_overflows' => [
             'label' => 'Which overflows count as nearby?',

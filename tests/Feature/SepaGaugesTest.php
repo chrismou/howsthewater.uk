@@ -4,7 +4,7 @@ use App\Actions\Ingest\SyncGaugeReadings;
 use App\Actions\Ingest\SyncGaugeStations;
 use App\Actions\Ingest\SyncRainfallReadings;
 use App\Actions\Ingest\SyncRainfallStations;
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use App\Models\GaugeStation;
 use App\Models\RainfallStation;
 use App\Models\River;
@@ -61,7 +61,7 @@ it('discovers SEPA level gauges on a river by its SEPA name, with SEPA normal ra
 
     $peebles = GaugeStation::query()->where('external_id', 'SEPA100')->firstOrFail();
 
-    expect($peebles->network)->toBe(GaugeNetwork::Sepa)
+    expect($peebles->network)->toBe(Agency::Sepa)
         ->and($peebles->measure_id)->toBe('55822010')
         ->and($peebles->unit)->toBe('m')
         ->and($peebles->river_id)->toBe($river->id)
@@ -138,7 +138,7 @@ it('stores SEPA rain gauges near a spot and reads them', function () {
     Spot::query()->update(['rainfall_station_id' => $gauge->id]);
 
     expect($gauge->external_id)->toBe('SEPA15007')
-        ->and($gauge->network)->toBe(GaugeNetwork::Sepa)
+        ->and($gauge->network)->toBe(Agency::Sepa)
         ->and(app(SyncRainfallReadings::class)->handle())->toBe(['stations' => 1, 'readings' => 1, 'retired' => 0])
         ->and($gauge->readings()->value('millimetres'))->toBe(1.2);
 });
@@ -176,5 +176,5 @@ it('skips a SEPA gauge that the Environment Agency also publishes', function () 
     ]);
 
     expect(app(SyncGaugeStations::class)->handle($river))->toBe(['stations' => 1])
-        ->and(GaugeStation::query()->where('network', GaugeNetwork::Sepa)->pluck('external_id')->all())->toBe(['SEPA15012']);
+        ->and(GaugeStation::query()->where('network', Agency::Sepa)->pluck('external_id')->all())->toBe(['SEPA15012']);
 });

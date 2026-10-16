@@ -18,7 +18,8 @@ keep that distinction.
 - Positions every monitor, gauge and spot along the river centreline (from OS Open Rivers), so "upstream" means
   further up the same river rather than just nearby.
 - Shows a 30-day history per spot: minutes of upstream spilling per day and the individual events.
-- Covers designated beaches and lakes from the Environment Agency bathing water register: annual classifications,
+- Covers designated beaches and lakes from the Environment Agency bathing water register (and SEPA's map service in
+  Scotland, classifications only, linking to SEPA's results): annual classifications,
   weekly sample counts and daily pollution risk forecasts in the bathing season, lake levels, and storm overflows
   within 3 km. River spots that are themselves designated bathing waters show the same record.
 - Offers an RSS feed per spot and river (`/yorkshire/wharfe/otley/feed`, `/yorkshire/wharfe/feed`): overflows upstream
@@ -56,6 +57,7 @@ All open data, no API keys required.
 | Scottish Water near real-time overflow event monitoring API | Overflow status and spill events in Scotland | Open reuse, credit Scottish Water |
 | Environment Agency real-time flood monitoring API | Gauge stations and 15-minute level readings | OGL v3 |
 | SEPA time series API (KiWIS) | Scottish level and rain gauges and their 15-minute readings | OGL v3 |
+| SEPA bathing waters map service (ArcGIS) | Scottish bathing water locations and classifications | OGL v3 |
 | OS Open Rivers (GeoPackage download) | River centrelines for upstream positioning | OGL v3 |
 | OpenStreetMap | Map tiles, and a fallback centreline source via Overpass | ODbL |
 

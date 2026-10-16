@@ -3,7 +3,7 @@
 namespace App\Actions\Ingest;
 
 use App\Data\GaugeReadingData;
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
@@ -42,11 +42,11 @@ class SyncGaugeReadings
 
         $inserted = 0;
 
-        foreach ($stations->where('network', GaugeNetwork::EnvironmentAgency) as $station) {
+        foreach ($stations->where('network', Agency::EnvironmentAgency) as $station) {
             $inserted += $this->syncStation($station);
         }
 
-        $inserted += $this->syncSepaStations($stations->where('network', GaugeNetwork::Sepa));
+        $inserted += $this->syncSepaStations($stations->where('network', Agency::Sepa));
 
         return ['stations' => $stations->count(), 'readings' => $inserted];
     }

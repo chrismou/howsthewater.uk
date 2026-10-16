@@ -10,7 +10,8 @@ class LakeSeeder extends Seeder
 {
     /**
      * Lakes by region slug. Bathing water sites attach to a lake when their
-     * name starts with the lake's (minus a trailing "Ponds"). The gauge is
+     * name starts with the lake's (minus a trailing "Ponds"), or when SEPA's
+     * reader names the loch (Luss Bay is on Loch Lomond). The gauge is
      * the EA flood monitoring station that reads the lake level.
      *
      * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string, gauge_reference: string|null}>>
@@ -27,6 +28,11 @@ class LakeSeeder extends Seeder
             ],
             'midlands' => [
                 ['name' => 'Colwick Country Park', 'latitude' => 52.9452, 'longitude' => -1.0982, 'description' => 'A former gravel pit lake beside the Trent in Nottingham.', 'gauge_reference' => null],
+            ],
+            'scotland' => [
+                ['name' => 'Loch Lomond', 'latitude' => 56.0800, 'longitude' => -4.6000, 'description' => 'The largest loch by area in Britain, with the bathing water at Luss Bay.', 'gauge_reference' => null],
+                ['name' => 'Loch Ness', 'latitude' => 57.3000, 'longitude' => -4.4500, 'description' => 'The long, deep loch of the Great Glen, with the bathing water at Dores.', 'gauge_reference' => null],
+                ['name' => 'Loch Morlich', 'latitude' => 57.1670, 'longitude' => -3.7050, 'description' => 'The Glenmore loch below the Cairngorms, with a sandy beach.', 'gauge_reference' => null],
             ],
             'thames-valley' => [
                 ['name' => 'Cotswold Country Park', 'latitude' => 51.6610, 'longitude' => -1.9609, 'description' => 'A former gravel pit lake near Cricklade with a sand beach.', 'gauge_reference' => null],

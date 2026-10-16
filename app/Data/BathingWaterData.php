@@ -2,14 +2,16 @@
 
 namespace App\Data;
 
+use App\Enums\Agency;
 use App\Enums\BathingWaterClassification;
 use App\Enums\BathingWaterKind;
 use App\Enums\PollutionRisk;
 use Illuminate\Support\Carbon;
 
 /**
- * One site from the EA designated bathing water register, with its latest
- * classification, sample and pollution risk forecast.
+ * One designated bathing water, from the EA register (with its latest
+ * classification, sample and pollution risk forecast) or from SEPA's map
+ * service (location and classification only).
  */
 final readonly class BathingWaterData
 {
@@ -20,6 +22,7 @@ final readonly class BathingWaterData
 
     /**
      * @param  array<int, string>  $districts
+     * @param  string|null  $lakeName  The lake the site is on when its name does not start with it (SEPA's Luss Bay is on Loch Lomond)
      */
     public function __construct(
         public string $eubwid,
@@ -39,7 +42,44 @@ final readonly class BathingWaterData
         public ?Carbon $seasonStartsOn,
         public ?Carbon $seasonEndsOn,
         public ?BathingWaterSampleData $latestSample,
+        public Agency $agency = Agency::EnvironmentAgency,
+        public ?string $profileUrl = null,
+        public ?string $lakeName = null,
     ) {
+    }
+
+    /**
+     * Scotland's bathing season runs from 1 June to 15 September.
+     *
+     * @param  array{bw_id: string, name: string, classification: ?string, year: ?int, url: string, latitude: float, longitude: float, district: string, lake: ?string}  $site  A site read from SEPA's bathing water map layers
+     */
+    public static function fromSepa(array $site): self
+    {
+        parse_str((string) parse_url($site['url'], PHP_URL_QUERY), $query);
+        $location = $query['location'] ?? null;
+
+        return new self(
+            eubwid: $site['bw_id'],
+            samplingPoint: is_string($location) && $location !== '' ? $location : $site['bw_id'],
+            kind: $site['lake'] === null ? BathingWaterKind::Coastal : BathingWaterKind::Lake,
+            name: $site['name'],
+            districts: [$site['district']],
+            sewerageUndertaker: 'Scottish Water',
+            latitude: $site['latitude'],
+            longitude: $site['longitude'],
+            description: null,
+            classification: BathingWaterClassification::tryFrom((string) $site['classification']),
+            classificationYear: $site['year'],
+            riskLevel: null,
+            riskExpiresAt: null,
+            affectedByHeavyRain: false,
+            seasonStartsOn: now()->setDate(now()->year, 6, 1)->startOfDay(),
+            seasonEndsOn: now()->setDate(now()->year, 9, 15)->startOfDay(),
+            latestSample: null,
+            agency: Agency::Sepa,
+            profileUrl: $site['url'],
+            lakeName: $site['lake'],
+        );
     }
 
     /**

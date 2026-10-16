@@ -20,7 +20,7 @@ enum BathingWaterClassification: string
             self::Excellent => 'The cleanest samples over the last four seasons.',
             self::Good => 'Generally good samples over the last four seasons.',
             self::Sufficient => 'Samples met the minimum standard over the last four seasons.',
-            self::Poor => 'Samples failed the minimum standard. The Environment Agency advises against bathing.',
+            self::Poor => 'Samples failed the minimum standard, and the advice is against bathing.',
         };
     }
 }

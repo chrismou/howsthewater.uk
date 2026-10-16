@@ -2,7 +2,7 @@
 
 namespace App\Data;
 
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 
 final readonly class RainfallStationData
 {
@@ -14,7 +14,7 @@ final readonly class RainfallStationData
         public float $longitude,
         public ?string $measureId,
         public bool $isActive,
-        public GaugeNetwork $network = GaugeNetwork::EnvironmentAgency,
+        public Agency $network = Agency::EnvironmentAgency,
     ) {
     }
 
@@ -31,7 +31,7 @@ final readonly class RainfallStationData
             longitude: (float) $series['station_longitude'],
             measureId: $series['ts_id'],
             isActive: GaugeStationData::sepaSeriesIsLive($series['to']),
-            network: GaugeNetwork::Sepa,
+            network: Agency::Sepa,
         );
     }
 

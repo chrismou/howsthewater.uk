@@ -12,6 +12,7 @@ use App\Models\Region;
 use App\Models\Spot;
 use App\Services\EnvironmentAgency\BathingWaterClient;
 use App\Services\Geo\Coordinates;
+use App\Services\Sepa\BathingWaterClient as SepaBathingWaterClient;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -20,6 +21,7 @@ use Illuminate\Support\Str;
  * sites we cover up to date: beaches in a region's districts, lake sites
  * on a seeded lake, and river sites on one of our spots. Each run stores
  * the latest sample, so sample history builds up between history fetches.
+ * Scotland's sites come from SEPA's map service, without samples.
  */
 class SyncBathingWaters
 {
@@ -28,14 +30,35 @@ class SyncBathingWaters
      */
     public const MAX_SPOT_DISTANCE_METRES = 1500;
 
-    public function __construct(private BathingWaterClient $client)
+    public function __construct(private BathingWaterClient $client, private SepaBathingWaterClient $sepa)
     {
     }
 
     /**
+     * The Environment Agency's register for England.
+     *
      * @return array{sites: int, samples: int}
      */
     public function handle(): array
+    {
+        return $this->store($this->client->all());
+    }
+
+    /**
+     * SEPA's bathing waters for Scotland.
+     *
+     * @return array{sites: int, samples: int}
+     */
+    public function handleSepa(): array
+    {
+        return $this->store($this->sepa->all());
+    }
+
+    /**
+     * @param  Collection<int, BathingWaterData>  $register
+     * @return array{sites: int, samples: int}
+     */
+    private function store(Collection $register): array
     {
         $regions = Region::query()->get();
         $lakes = Lake::query()->get();
@@ -44,7 +67,7 @@ class SyncBathingWaters
         $sites = 0;
         $samples = 0;
 
-        foreach ($this->client->all() as $data) {
+        foreach ($register as $data) {
             $placement = $this->placement($data, $regions, $lakes, $spots);
 
             if ($placement === null) {
@@ -53,6 +76,7 @@ class SyncBathingWaters
 
             $bathingWater = BathingWater::query()->updateOrCreate(['eubwid' => $data->eubwid], [
                 ...$placement,
+                'agency' => $data->agency,
                 'sampling_point' => $data->samplingPoint,
                 'kind' => $data->kind,
                 'name' => $data->name,
@@ -62,6 +86,7 @@ class SyncBathingWaters
                 'latitude' => $data->latitude,
                 'longitude' => $data->longitude,
                 'description' => $data->description,
+                'profile_url' => $data->profileUrl,
                 'classification' => $data->classification,
                 'classification_year' => $data->classificationYear,
                 'risk_level' => $data->riskLevel,
@@ -141,7 +166,7 @@ class SyncBathingWaters
         }
 
         if ($data->kind === BathingWaterKind::Lake) {
-            $lake = $lakes->first(fn (Lake $lake) => $lake->matchesBathingWaterName($data->name));
+            $lake = $lakes->first(fn (Lake $lake) => $lake->matchesBathingWaterName($data->lakeName ?? $data->name));
 
             return $lake === null ? null : ['region_id' => $lake->region_id, 'lake_id' => $lake->id, 'spot_id' => null];
         }

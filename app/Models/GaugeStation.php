@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use Database\Factories\GaugeStationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $external_id
- * @property GaugeNetwork $network
+ * @property Agency $network
  * @property int|null $river_id
  * @property string $label
  * @property string|null $river_name
@@ -55,7 +55,7 @@ class GaugeStation extends Model
     protected function casts(): array
     {
         return [
-            'network' => GaugeNetwork::class,
+            'network' => Agency::class,
             'latitude' => 'float',
             'longitude' => 'float',
             'typical_range_low' => 'float',

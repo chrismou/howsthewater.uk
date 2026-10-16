@@ -176,8 +176,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Water and Devon), the Lothian rivers (Water of Leith, Almond, Esk, Tyne), the Clyde (with the Kelvin and White
   Cart), the Dunbartonshire Leven, the Ayrshire rivers (Irvine, Ayr, Doon), the Fife Eden, the Angus North and South
   Esk, and the Nith, Annan and Galloway Dee (slug `dee-galloway`). Many share names with English
-  or other Scottish rivers, so each main river's mouth hint matters. Scotland has SEPA levels and rainfall but no
-  flood warnings or bathing waters yet. Main rivers and their tributaries are seeded
+  or other Scottish rivers, so each main river's mouth hint matters. Scotland has SEPA levels, rainfall and bathing
+  waters but no flood warnings yet. Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
@@ -189,7 +189,12 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   since spots low on a big system (Goole) have hundreds upstream. Distances follow the water.
   Positions come from projecting lat/lng onto the river centreline (`rivers:centrelines` then `rivers:positions`,
   which also sets each tributary's and inflowing main river's `joins_at_metres`).
-- Beaches and lakes come from the EA designated bathing water register. `BathingWater` holds every site we track:
+- Beaches and lakes come from the EA designated bathing water register, and in Scotland from SEPA's open map service
+  (`Sepa\BathingWaterClient`, `SyncBathingWaters::handleSepa()`): location, classification and a link to SEPA's
+  results page (`profile_url`), but no samples or forecasts, which SEPA only publishes on its own pages. The reader
+  gives each Scottish site its council area (the Scotland region's `bathing_water_districts`) and names the loch for
+  the three inland sites (`lakeName`, since Luss Bay does not start with Loch Lomond). Bathing waters carry an
+  `agency`; the EA history backfill skips SEPA sites. `BathingWater` holds every site we track:
   beaches (coastal and estuary) belong to the region whose `bathing_water_districts` lists their district, lake sites
   to a seeded `Lake` (`LakeSeeder`, matched by name prefix), and river sites to a spot within 1.5 km, which then shows
   them. `WaterBodyConditionsService` builds `BeachConditions` and `LakeConditions` (cached through
@@ -248,7 +253,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
 - Scottish levels and rainfall: SEPA's time series API (KiWIS, `Sepa\TimeSeriesClient`, OGL, no key). Gauges and rain
-  gauges carry a `network` (`GaugeNetwork`), external IDs are prefixed `SEPA`, and `measure_id` is the KiWIS series id.
+  gauges carry a `network` (`Agency`), external IDs are prefixed `SEPA`, and `measure_id` is the KiWIS series id.
   Anonymous use is capped at 5,000 credits a day (1 per list request, 1 per 1,000 values), so the national station
   lists are read once per run, SEPA gauges are matched to a river by its SEPA name ("Tweed", "Ettrick Water") within
   2 km of the centreline (skipping border gauges the Environment Agency also publishes, such as Norham), and

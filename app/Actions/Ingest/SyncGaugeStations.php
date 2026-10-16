@@ -3,7 +3,7 @@
 namespace App\Actions\Ingest;
 
 use App\Data\GaugeStationData;
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use App\Models\GaugeStation;
 use App\Models\River;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
@@ -61,7 +61,7 @@ class SyncGaugeStations
             }
         }
 
-        $environmentAgencyGauges = GaugeStation::query()->where('river_id', $river->id)->where('network', GaugeNetwork::EnvironmentAgency)->get();
+        $environmentAgencyGauges = GaugeStation::query()->where('river_id', $river->id)->where('network', Agency::EnvironmentAgency)->get();
 
         $sepaStations = $this->sepaStationsOn($river)
             ->filter(fn (GaugeStationData $data) => $projector === null || $projector->project($data->latitude, $data->longitude)->offsetMetres <= self::MAX_OFFSET_METRES)
@@ -143,7 +143,7 @@ class SyncGaugeStations
         ];
 
         // A SEPA gauge whose range lookup failed keeps the range it already has.
-        if ($data->network === GaugeNetwork::EnvironmentAgency || $sepaRange !== null) {
+        if ($data->network === Agency::EnvironmentAgency || $sepaRange !== null) {
             $attributes['typical_range_low'] = $sepaRange['low'] ?? $data->typicalRangeLow;
             $attributes['typical_range_high'] = $sepaRange['high'] ?? $data->typicalRangeHigh;
         }

@@ -34,7 +34,7 @@ it('shows a beach with its classification, latest sample and nearby overflows', 
         ->assertOk()
         ->assertSee('Blackpool North')
         ->assertSee('Poor')
-        ->assertSee('The Environment Agency advises against bathing.')
+        ->assertSee('Samples failed the minimum standard, and the advice is against bathing.')
         ->assertSeeInOrder(['E. coli', '310'])
         ->assertSee('Storm overflows within 3 km')
         ->assertSee('UUP00001');
@@ -57,7 +57,7 @@ it('shows a lake with its bathing sites', function () {
         ->assertOk()
         ->assertSee('Windermere, Fellfoot')
         ->assertSee('Excellent')
-        ->assertSee('No Environment Agency gauge reads this lake\'s level.');
+        ->assertSee('We don\'t have a level gauge for this lake.');
 });
 
 it('scopes beaches and lakes to their region', function () {

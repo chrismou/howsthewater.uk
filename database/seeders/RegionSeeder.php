@@ -39,11 +39,15 @@ class RegionSeeder extends Seeder
             'overflow_feeds' => ['severn_trent'],
             'bathing_water_districts' => [],
         ]);
-        // The EA bathing water register stops at the border, so Scotland has no districts.
+        // Scottish bathing waters come from SEPA, whose reader gives each its council area ("Scotland" until one is added).
         Region::query()->updateOrCreate(['slug' => 'scotland'], [
             'name' => 'Scotland',
             'overflow_feeds' => ['scottish_water'],
-            'bathing_water_districts' => [],
+            'bathing_water_districts' => [
+                'Aberdeen City', 'Aberdeenshire', 'Angus', 'Argyll and Bute', 'City of Edinburgh', 'Dumfries and Galloway',
+                'Dundee City', 'East Lothian', 'Fife', 'Highland', 'Inverclyde', 'Moray', 'North Ayrshire', 'Scottish Borders',
+                'South Ayrshire', 'Scotland',
+            ],
         ]);
     }
 }

@@ -22,7 +22,7 @@
 @endphp
 
 <x-layouts.app :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$beach->beachSearchName().': water quality and swimming'"
-               :description="'Environment Agency bathing water classification, sample results and pollution risk forecast for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
+               :description="$beach->agency->label().' bathing water classification, sample results and pollution risk forecast for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
                :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Beaches', route('beaches.index', $region)], [$beach->name, url()->current()]]">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -66,6 +66,8 @@
                 <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $latest ? $count($latest->e_coli, $latest->e_coli_qualifier) : '-' }}</dd>
                 @if ($latest)
                     <dd class="text-xs text-muted">per 100 ml, {{ $latest->sampled_at->timezone($timezone)->format('j M Y') }}</dd>
+                @elseif (! $summary->hasSamplesHere())
+                    <dd class="text-xs text-muted">See the <a href="{{ $summary->url() }}" rel="noopener" target="_blank" class="underline hover:text-ink">{{ $summary->urlLabel() }}</a></dd>
                 @endif
             </div>
             <div>
@@ -106,6 +108,8 @@
                 <div class="rounded-lg border border-line bg-surface p-5">
                     @if ($summary->recentSamples->count() > 1)
                         <x-sample-bars :samples="$summary->recentSamples" />
+                    @elseif (! $summary->hasSamplesHere())
+                        <p class="text-sm text-ink-2">SEPA publishes this beach's sample results on its <a href="{{ $summary->url() }}" rel="noopener" target="_blank" class="underline hover:text-ink">results page</a>.</p>
                     @else
                         <p class="text-sm text-ink-2">Not enough samples yet to show a history.</p>
                     @endif
@@ -129,7 +133,7 @@
                     <h2 class="font-display mb-3 text-lg font-semibold">About this beach</h2>
                     <div class="rounded-lg border border-line bg-surface p-5 text-sm text-ink-2">
                         <p>{{ $beach->description }}</p>
-                        <p class="mt-3 text-xs text-muted">From the <a href="{{ $summary->url() }}" rel="noopener" target="_blank" class="underline hover:text-ink">Environment Agency profile</a>.</p>
+                        <p class="mt-3 text-xs text-muted">From the <a href="{{ $summary->url() }}" rel="noopener" target="_blank" class="underline hover:text-ink">{{ $summary->urlLabel() }}</a>.</p>
                     </div>
                 </section>
             @endif

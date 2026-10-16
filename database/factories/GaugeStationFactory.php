@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use App\Models\GaugeStation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -31,7 +31,7 @@ class GaugeStationFactory extends Factory
     {
         return $this->state(fn () => [
             'external_id' => fake()->unique()->numerify('SEPA#####'),
-            'network' => GaugeNetwork::Sepa,
+            'network' => Agency::Sepa,
             'measure_id' => fake()->unique()->numerify('5####010'),
             'unit' => 'm',
         ]);

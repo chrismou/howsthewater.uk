@@ -25,6 +25,8 @@
             E. coli <span class="font-mono">{{ $count($latest->e_coli, $latest->e_coli_qualifier) }}</span>,
             enterococci <span class="font-mono">{{ $count($latest->enterococci, $latest->enterococci_qualifier) }}</span> per 100 ml.
             <x-help term="bathing_samples" />
+        @elseif (! $summary->hasSamplesHere())
+            Sample results are on the <a href="{{ $summary->url() }}" rel="noopener" target="_blank" class="underline hover:text-ink">{{ $summary->urlLabel() }}</a>.
         @else
             No samples yet.
         @endif
@@ -46,7 +48,7 @@
             @endif
             <p class="text-xs text-muted">
                 @if ($site->sewerage_undertaker)Sewerage by {{ $site->sewerage_undertaker }}. @endif
-                <a href="{{ $summary->url() }}" rel="noopener" target="_blank" class="underline hover:text-ink">Environment Agency profile</a>
+                <a href="{{ $summary->url() }}" rel="noopener" target="_blank" class="underline hover:text-ink">{{ $summary->urlLabel() }}</a>
             </p>
         </div>
     </details>

@@ -3,7 +3,7 @@
 namespace App\Actions\Ingest;
 
 use App\Data\GaugeReadingData;
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use App\Models\RainfallReading;
 use App\Models\RainfallStation;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
@@ -44,15 +44,15 @@ class SyncRainfallReadings
         $inserted = 0;
         $retired = 0;
 
-        $sepaReadings = $this->sepaReadings($stations->where('network', GaugeNetwork::Sepa));
+        $sepaReadings = $this->sepaReadings($stations->where('network', Agency::Sepa));
 
         foreach ($stations as $station) {
-            if ($station->network === GaugeNetwork::Sepa && $sepaReadings === null) {
+            if ($station->network === Agency::Sepa && $sepaReadings === null) {
                 continue;
             }
 
             $hadReadings = $station->readings()->exists();
-            $count = $station->network === GaugeNetwork::Sepa
+            $count = $station->network === Agency::Sepa
                 ? $this->store($station, $sepaReadings[(string) $station->measure_id] ?? collect())
                 : $this->syncStation($station);
             $inserted += $count;

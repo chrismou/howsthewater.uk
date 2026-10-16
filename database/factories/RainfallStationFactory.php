@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use App\Models\RainfallStation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +18,7 @@ class RainfallStationFactory extends Factory
     {
         return $this->state(fn () => [
             'external_id' => fake()->unique()->numerify('SEPA#####'),
-            'network' => GaugeNetwork::Sepa,
+            'network' => Agency::Sepa,
             'grid_reference' => null,
             'measure_id' => fake()->unique()->numerify('6####010'),
         ]);

@@ -8,7 +8,7 @@
             <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
         </p>
         <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $region->name }} beaches</h1>
-        <p class="mt-2 text-ink-2">Every designated bathing water on the {{ $region->name }} coast, with its Environment Agency classification and the storm overflows nearby.</p>
+        <p class="mt-2 text-ink-2">Every designated bathing water on the {{ $region->name }} coast, with its classification and the storm overflows nearby.</p>
     </div>
 
     @php

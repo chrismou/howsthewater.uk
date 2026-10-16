@@ -2,7 +2,7 @@
 
 namespace App\Data;
 
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use Illuminate\Support\Carbon;
 
 final readonly class GaugeStationData
@@ -19,7 +19,7 @@ final readonly class GaugeStationData
         public ?float $typicalRangeLow,
         public ?float $typicalRangeHigh,
         public bool $isActive,
-        public GaugeNetwork $network = GaugeNetwork::EnvironmentAgency,
+        public Agency $network = Agency::EnvironmentAgency,
     ) {
     }
 
@@ -40,7 +40,7 @@ final readonly class GaugeStationData
             typicalRangeLow: null,
             typicalRangeHigh: null,
             isActive: self::sepaSeriesIsLive($series['to']),
-            network: GaugeNetwork::Sepa,
+            network: Agency::Sepa,
         );
     }
 

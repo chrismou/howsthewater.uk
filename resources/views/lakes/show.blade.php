@@ -24,7 +24,7 @@
 @endphp
 
 <x-layouts.app :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
-               :description="'Environment Agency bathing water results, lake level, rainfall and storm overflows nearby for swimming and paddling at '.$lake->name.'.'"
+               :description="'Bathing water results, lake level, rainfall and storm overflows nearby for swimming and paddling at '.$lake->name.'.'"
                :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Lakes', route('lakes.index', $region)], [$lake->name, url()->current()]]">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -95,7 +95,7 @@
         </div>
         <aside class="lg:col-span-2">
             <h2 class="font-display mb-3 text-lg font-semibold">Lake level <x-help term="level" /></h2>
-            <x-level-card :level="$level" empty="No Environment Agency gauge reads this lake's level." />
+            <x-level-card :level="$level" empty="We don't have a level gauge for this lake." />
 
             <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Rainfall <x-help term="rainfall" /></h2>
             <x-rainfall-card :rainfall="$conditions->rainfall" place="this lake" note="Rain across the lake's catchment may differ." />
@@ -105,7 +105,7 @@
     <section class="mt-10">
         <h2 class="font-display mb-3 text-lg font-semibold">Designated bathing sites</h2>
         @if ($conditions->bathingWaters->isEmpty())
-            <p class="text-sm text-ink-2">No Environment Agency bathing water results for {{ $lake->name }} yet.</p>
+            <p class="text-sm text-ink-2">No bathing water results for {{ $lake->name }} yet.</p>
         @else
             <div class="grid gap-4 md:grid-cols-2">
                 @foreach ($conditions->bathingWaters as $summary)

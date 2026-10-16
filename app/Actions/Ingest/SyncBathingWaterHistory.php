@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Enums\Agency;
 use App\Models\BathingWater;
 use App\Services\EnvironmentAgency\BathingWaterClient;
 use Illuminate\Http\Client\ConnectionException;
@@ -13,6 +14,7 @@ use Illuminate\Support\Sleep;
  * Backfills each site's recent samples and its yearly classifications.
  * Runs for sites never fetched on every ingest, and for all sites when
  * asked (weekly), since the register only carries the latest of each.
+ * Environment Agency sites only: SEPA publishes no history.
  */
 class SyncBathingWaterHistory
 {
@@ -32,6 +34,7 @@ class SyncBathingWaterHistory
     public function handle(bool $onlyNeverFetched = true): array
     {
         $bathingWaters = BathingWater::query()
+            ->where('agency', Agency::EnvironmentAgency)
             ->when($onlyNeverFetched, fn ($query) => $query->whereNull('history_fetched_at'))
             ->get();
 

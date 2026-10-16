@@ -118,7 +118,7 @@
     <div class="mx-auto max-w-5xl px-4 py-6 text-xs leading-relaxed text-muted">
         <p>
             Near real-time, unvalidated data. This uses Environment Agency flood and river level data from the real-time data API (Beta)
-            and Environment Agency bathing water data, Open Government Licence v3.0. Scottish river level and rainfall data from SEPA, Open Government Licence v3.0.
+            and Environment Agency bathing water data, Open Government Licence v3.0. Scottish river level, rainfall and bathing water data from SEPA, Open Government Licence v3.0.
             @if ($streamCompanies !== '')
                 {{ $streamCompanies }} storm overflow data via Stream, CC BY 4.0.
             @endif

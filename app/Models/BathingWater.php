@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Agency;
 use App\Enums\BathingWaterClassification;
 use App\Enums\BathingWaterKind;
 use App\Enums\PollutionRisk;
@@ -20,6 +21,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property string $eubwid
+ * @property Agency $agency
  * @property string $sampling_point
  * @property int|null $region_id
  * @property int|null $lake_id
@@ -32,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property float $latitude
  * @property float $longitude
  * @property string|null $description
+ * @property string|null $profile_url
  * @property BathingWaterClassification|null $classification
  * @property int|null $classification_year
  * @property PollutionRisk|null $risk_level
@@ -58,6 +61,7 @@ class BathingWater extends Model
 
     protected $fillable = [
         'eubwid',
+        'agency',
         'sampling_point',
         'region_id',
         'lake_id',
@@ -70,6 +74,7 @@ class BathingWater extends Model
         'latitude',
         'longitude',
         'description',
+        'profile_url',
         'classification',
         'classification_year',
         'risk_level',
@@ -85,6 +90,7 @@ class BathingWater extends Model
     protected function casts(): array
     {
         return [
+            'agency' => Agency::class,
             'kind' => BathingWaterKind::class,
             'classification' => BathingWaterClassification::class,
             'risk_level' => PollutionRisk::class,

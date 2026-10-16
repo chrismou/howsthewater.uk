@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\GaugeNetwork;
+use App\Enums\Agency;
 use App\Services\Geo\Coordinates;
 use Database\Factories\RainfallStationFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property string $external_id
- * @property GaugeNetwork $network
+ * @property Agency $network
  * @property string $label
  * @property string|null $grid_reference
  * @property float $latitude
@@ -47,7 +47,7 @@ class RainfallStation extends Model
     protected function casts(): array
     {
         return [
-            'network' => GaugeNetwork::class,
+            'network' => Agency::class,
             'latitude' => 'float',
             'longitude' => 'float',
             'is_active' => 'boolean',
