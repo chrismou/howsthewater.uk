@@ -36,7 +36,6 @@
         ->map(fn (string $topic) => $place.$topic)
         ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $place);
 
-    $osmUrl = sprintf('https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=15/%s/%s', $spot->latitude, $spot->longitude, $spot->latitude, $spot->longitude);
 
     // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
     $breadcrumbs = [['All rivers', route('hubs.rivers')], [$spot->river->region->name, route('regions.show', $spot->river->region)], ['Rivers', route('rivers.index', $spot->river->region)], [$spot->river->name, route('rivers.show', [$spot->river->region, $spot->river])], [$spot->name, route('spots.show', [$spot->river->region, $spot->river, $spot])]];
@@ -59,24 +58,8 @@
             <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$conditions->upstreamMonitors" :where="'upstream of '.$spot->name.' on the '.$spot->river->name"
                              :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" :covered="$covered" :stale="$conditions->overflowDataIsStale()" :level="$level" />
         </div>
-        <div class="flex flex-wrap gap-2">
-            <button type="button" data-copy-link="{{ url()->current() }}"
-                    class="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent"
-                    aria-label="Copy a link to this spot">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5"/></svg>
-                <span data-copy-link-label>Copy link</span>
-            </button>
-            <a href="{{ $osmUrl }}" rel="noopener" target="_blank"
-               class="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>
-                Open in OpenStreetMap
-            </a>
-            <a href="{{ route('spots.feed', [$spot->river->region, $spot->river, $spot]) }}" title="Follow overflows upstream and flood warnings in a feed reader"
-               class="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 11a8 8 0 0 1 8 8"/><path d="M5 5a14 14 0 0 1 14 14"/><circle cx="6" cy="18" r="1.2" fill="currentColor"/></svg>
-                RSS feed
-            </a>
-        </div>
+        <x-place-actions :latitude="$spot->latitude" :longitude="$spot->longitude" :label="$spot->name" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])"
+                         feed-title="Follow overflows upstream and flood warnings in a feed reader" />
     </div>
 
     @if ($conditions->floodWarnings->isNotEmpty())
@@ -142,6 +125,7 @@
         <div class="lg:col-span-3">
             <div
                 class="h-80 w-full rounded-lg border border-line"
+                role="region" aria-label="Map of {{ $spot->name }} on the {{ $spot->river->name }}, with the overflow monitors upstream"
                 data-map
                 data-map-centreline="{{ json_encode($river->centreline ?? []) }}"
                 data-map-markers="{{ json_encode($mapMarkers) }}"

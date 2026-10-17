@@ -17,11 +17,11 @@
 
 {{-- The region's (or every region's) headline numbers, shown under the header on every page so the state of the rivers is one glance away. --}}
 <div class="bg-ink text-ground dark:bg-surface-2 dark:text-ink" data-live-bar>
-    <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 text-xs sm:gap-x-7 sm:text-[13px]">
+    <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-xs sm:gap-x-7 sm:text-[13px]">
         <a href="{{ $summaryUrl }}" class="hidden font-semibold hover:underline sm:inline">{{ $summary->name }}</a>
         @if ($summary->hasOverflowData)
             <span><span class="font-mono font-semibold {{ $discharging > 0 ? 'text-alert' : '' }}">{{ $discharging }}</span> <span class="hidden sm:inline">{{ \Illuminate\Support\Str::plural('overflow', $discharging) }}</span> discharging<span class="hidden sm:inline"> now</span></span>
-            <span><span class="font-mono font-semibold {{ $spill24 > 0 ? 'text-spill' : '' }}">{{ $spill24 }}</span> <span class="sm:hidden">{{ \Illuminate\Support\Str::plural('spill', $spill24) }} in 24h</span><span class="hidden sm:inline">{{ \Illuminate\Support\Str::plural('spot', $spill24) }} with a spill upstream in 24h</span></span>
+            <span><span class="font-mono font-semibold {{ $spill24 > 0 ? 'text-spill' : '' }}">{{ $spill24 }}</span> <span class="sm:hidden">{{ \Illuminate\Support\Str::plural('spot', $spill24) }} with spills, 24h</span><span class="hidden sm:inline">{{ \Illuminate\Support\Str::plural('spot', $spill24) }} with a spill upstream in 24h</span></span>
         @else
             <span>Overflow data not available yet</span>
         @endif

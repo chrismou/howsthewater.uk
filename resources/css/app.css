@@ -110,6 +110,12 @@
         color-scheme: dark;
     }
 
+    /* Tailwind 4 gives buttons the arrow; everything that acts like a button gets the hand, the same as links. */
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+
     /* Leaflet draws its own chrome, so it needs the tokens applied by hand. */
     .dark .leaflet-tile {
         filter: brightness(0.72) saturate(0.7);
@@ -126,4 +132,12 @@
         background: var(--color-surface);
         color: var(--color-ink);
     }
+}
+
+/* Leaflet's own CSS is unlayered, so this sits outside the layers to win: zoom buttons a finger can hit on touch screens. */
+.leaflet-touch .leaflet-bar a.leaflet-control-zoom-in,
+.leaflet-touch .leaflet-bar a.leaflet-control-zoom-out {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
 }

@@ -103,7 +103,7 @@
     {{-- Phones: map, samples, then the description. Wide screens: map and description left, samples right. --}}
     <div class="grid gap-8 lg:grid-cols-5 lg:grid-rows-[auto_1fr]">
         <div class="lg:col-span-3 lg:row-start-1">
-            <div class="h-80 w-full rounded-lg border border-line" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+            <div class="h-80 w-full rounded-lg border border-line" role="region" aria-label="Map of {{ $beach->name }} and the overflow monitors within 3 km" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
             <x-bathing-map-key />
         </div>
 

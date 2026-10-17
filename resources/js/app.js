@@ -1,5 +1,6 @@
 import { initAnalyticsConsent } from './analytics';
 import { initNavMenus } from './nav';
+import { initSearchToggle } from './search';
 import { initShareControls } from './share';
 import { initSparklines } from './sparkline';
 import { initThemeToggle } from './theme';
@@ -11,6 +12,7 @@ if (document.querySelector('[data-map]')) {
 }
 initSparklines();
 initNavMenus();
+initSearchToggle();
 initThemeToggle();
 initTooltips();
 initShareControls();

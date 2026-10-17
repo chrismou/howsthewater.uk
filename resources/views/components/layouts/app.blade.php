@@ -7,6 +7,8 @@
     $liveRegion = $region ?? $allRegions->sortBy('id')->first();
     $liveSummary ??= $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
     $menus = app(\App\Services\Conditions\NavigationMenus::class)->all();
+    // The share image is the same everywhere, so its description is too.
+    $ogImageAlt = "How's the Water? What's the river doing right now? Storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots, every 15 minutes.";
     // Built from the route and its bound models, so /Yorkshire (which the case-insensitive database still finds)
     // names /yorkshire as canonical.
     $currentRoute = request()->route();
@@ -45,11 +47,13 @@
     <meta property="og:image" content="{{ asset('og-image.png') }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ $ogImageAlt }}">
     <meta property="og:locale" content="en_GB">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $pageTitle }}">
     <meta name="twitter:description" content="{{ $pageDescription }}">
     <meta name="twitter:image" content="{{ asset('og-image.png') }}">
+    <meta name="twitter:image:alt" content="{{ $ogImageAlt }}">
     {{--
         The page as one schema.org graph (see App\Services\StructuredData): a WebPage (or AboutPage) node for this URL,
         its trail as a BreadcrumbList, and what the page describes, each with an @id the others refer to. Facts the
@@ -114,8 +118,9 @@
 </head>
 <body class="min-h-full flex flex-col bg-ground text-ink antialiased">
 <header class="border-b border-line bg-surface" data-nav-current="{{ $liveRegion?->slug }}">
-    {{-- Phones: logo, menu and theme toggle on one row, search below. Wider: one row with search and toggle on the right. --}}
-    <div class="relative mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
+    {{-- Phones: logo, search button and theme toggle on one row, the menus below and the search box under them once the
+         button opens it. Wider: one row with search and toggle on the right. --}}
+    <div class="relative mx-auto flex max-w-5xl flex-wrap items-center gap-x-1 px-4 py-1.5 sm:gap-x-6 sm:gap-y-3 sm:py-4">
         <a href="{{ route('home') }}" class="order-1 font-display text-lg font-semibold tracking-tight">
             How's the Water<span class="text-accent">?</span>
         </a>
@@ -131,14 +136,20 @@
             @endif
         </nav>
 
-        <form action="{{ route('search') }}" method="get" role="search" class="order-5 w-full sm:order-3 sm:ml-auto sm:w-auto">
+        {{-- Without JavaScript it goes to the search page, which has its own search box. --}}
+        <a href="{{ route('search') }}" data-search-toggle aria-controls="site-search-form" aria-expanded="false" aria-label="Search"
+           class="order-2 ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-ink hover:text-accent focus:outline-none focus:ring-1 focus:ring-accent sm:hidden">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        </a>
+
+        <form id="site-search-form" data-search-form action="{{ route('search') }}" method="get" role="search" class="order-5 hidden w-full pb-2 sm:order-3 sm:ml-auto sm:block sm:w-auto sm:pb-0">
                 <label for="site-search" class="sr-only">Find a spot or river</label>
                 <input id="site-search" type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}"
                     placeholder="Find a spot or river"
-                    class="w-full rounded-md border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:w-56">
+                    class="h-11 w-full rounded-md border border-line bg-surface px-3 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:h-9 sm:w-56 sm:text-sm">
         </form>
             <button type="button" data-theme-toggle
-                class="order-3 ml-auto inline-flex h-9 w-9 shrink-0 sm:order-4 sm:-ml-4 items-center justify-center rounded-md border border-line bg-surface text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                class="order-3 inline-flex h-11 w-11 shrink-0 sm:order-4 sm:-ml-4 sm:h-9 sm:w-9 items-center justify-center rounded-md border border-line bg-surface text-ink hover:border-muted focus:outline-none focus:ring-1 focus:ring-accent"
                 aria-label="Switch between light and dark mode">
                 <svg class="h-5 w-5 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
                     <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
@@ -176,7 +187,7 @@
             @endif
             River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
             <a href="{{ route('about') }}" class="underline hover:text-ink">About the data and how it works</a>.
-            Seen a mistake? <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">Let us know on GitHub</a>.
+            Seen a mistake? Email <a href="mailto:{{ config('app.contact_email') }}" class="underline hover:text-ink">{{ config('app.contact_email') }}</a> or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">let us know on GitHub</a>.
         </p>
         {{-- Phones: credit and legal links stacked and centred. Wider: one row, legal links on the right. --}}
         <div class="mt-4 flex flex-col items-center gap-2 border-t border-line-2 pt-4 text-center sm:flex-row sm:items-baseline sm:justify-between sm:text-left">

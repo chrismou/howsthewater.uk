@@ -25,7 +25,7 @@
     @endphp
 
     <div class="mb-8">
-        <div class="h-80 w-full rounded-lg border border-line sm:h-[420px]" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+        <div class="h-80 w-full rounded-lg border border-line sm:h-[420px]" role="region" aria-label="Map of the beaches in {{ $region->nameInSentence() }}" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
         <x-bathing-map-key :overflows="false" />
     </div>
 

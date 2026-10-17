@@ -3,17 +3,20 @@
     $overflowFeeds = collect($regions->reduce(fn (array $feeds, $region) => $feeds + $region->overflowFeedConfig(), []));
     $streamCompanies = $overflowFeeds->where('driver', 'stream')->pluck('name')->unique()->sort()->join(', ', ' and ');
     $hasScottishWater = $overflowFeeds->contains('driver', 'scottish_water');
+    // Bump this whenever the page's content changes; it is shown and goes into the page's dateModified.
+    $lastUpdated = \Illuminate\Support\Carbon::parse('2026-10-17', config('app.display_timezone', 'Europe/London'));
+    $contactEmail = config('app.contact_email');
 @endphp
 
-<x-layouts.app page-type="AboutPage" title="About the data and how it works"
+<x-layouts.app page-type="AboutPage" :date-modified="$lastUpdated" title="About the data and how it works"
                description="Where How's the Water gets its storm overflow, river level, rainfall, flood and bathing water data, how often it updates, and what it does not claim.">
     <article class="max-w-2xl">
-        <p class="text-sm text-muted">Last updated 16 October 2026</p>
+        <p class="text-sm text-muted">Last updated <time datetime="{{ $lastUpdated->toDateString() }}">{{ $lastUpdated->format('j F Y') }}</time></p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">About the data and how it works</h1>
 
         <div class="mt-6 grid gap-8 leading-relaxed text-ink-2">
             <section class="grid gap-3">
-                <p>How's the Water brings together public monitoring data for rivers, beaches and lakes in {{ $regions->pluck('name')->join(', ', ' and ') }}, so you can check conditions before a swim, paddle or fishing trip. For each place it shows what the storm overflow monitors upstream or nearby are reporting, the river or lake level, recent rainfall, any flood alerts and, at designated bathing waters, the official results.</p>
+                <p>How's the Water brings together public monitoring data for rivers, beaches and lakes in {{ $regions->map(fn ($region) => $region->nameInSentence())->join(', ', ' and ') }}, so you can check conditions before a swim, paddle or fishing trip. For each place it shows what the storm overflow monitors upstream or nearby are reporting, the river or lake level, recent rainfall, any flood alerts and, at designated bathing waters, the official results.</p>
                 <p>It reports what the monitors say. It never says the water is safe or clean, because nobody measures that in real time.</p>
             </section>
 
@@ -38,7 +41,7 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">How often it updates</h2>
-                <p>Overflows, river levels, rainfall and flood warnings are read every 15 minutes, and the pages are rebuilt straight after. Bathing water records are read every hour. Every page shows when its monitor data was last updated, and says so plainly when a feed has not updated for over six hours, so old figures are never shown as current.</p>
+                <p>Overflows, river levels, rainfall and flood warnings are read every 15 minutes, and the pages are rebuilt straight after. Bathing water records are read every hour. Every page with overflow data shows when it was last updated, and says so plainly when a feed has not updated for over six hours, so old figures are never shown as current.</p>
             </section>
 
             <section class="grid gap-3">
@@ -46,7 +49,8 @@
                 <ul class="grid gap-2">
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Upstream.</strong> For a river spot, every overflow monitor whose discharge flows past it: those higher up the same river, plus everything on the tributaries and rivers that join above it. Distances follow the water, measured along the river centreline.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Nearby.</strong> The sea and lakes have no upstream, so beaches and lakes list every overflow monitor within 3 km in a straight line. Overflows further away, or up rivers that flow in, can still affect the water.</span></li>
-                    <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Discharging now, spills and offline.</strong> A spill is one period an overflow released untreated sewage mixed with rainwater. A monitor that is not reporting counts as offline, never as "no spills", and a place whose monitors are all offline says so.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Discharging now, spills and offline.</strong> A spill is one period an overflow released untreated sewage mixed with rainwater. The monitors are event duration monitors: they record when an overflow starts and stops, not how much it released or what was in it. A monitor that is not reporting counts as offline, never as "no spills", and a place whose monitors are all offline says so.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Why the counts differ from annual returns.</strong> Each recorded event counts as one spill here. The yearly totals water companies report count differently: in England they use the Environment Agency's 12/24 method, where everything in the first 12 hours counts as one spill and each 24 hours after that as another. So a long spill counts once here but several times in the annual returns, and short spills close together count separately here but once there.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Level and rainfall.</strong> Each spot uses the nearest level gauge within 25 km along its river, and the nearest rain gauge within 20 km. The typical range is the band the gauge usually sits in, as published by the Environment Agency or SEPA. Natural Resources Wales does not publish one, so for its gauges it is the band the level sat in 90% of the time over the last year.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Flood warnings.</strong> Shown for a spot when a warning area naming its river comes within 1 km of it.</span></li>
                 </ul>
@@ -56,6 +60,7 @@
                 <h2 class="font-display text-lg font-semibold text-ink">What it does not do</h2>
                 <ul class="grid gap-2">
                     <li class="flex gap-3"><span class="text-muted">-</span><span>It does not say whether water is safe or clean.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span>It does not know how much an overflow released or how dirty it was, only when and for how long it operated.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>It does not know about spills from monitors that are offline, or from anything the water companies do not monitor.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>It does not validate the data. The feeds are near real-time and unchecked, and the agencies and water companies may correct them later.</span></li>
                 </ul>
@@ -63,7 +68,7 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">Who runs it</h2>
-                <p>How's the Water is an independent site built by <a href="https://mou.me" rel="noopener" class="text-accent hover:underline">Chris Chrisostomou</a> in Leeds. It is not connected to any water company or agency. Seen a mistake, or want a river added? <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="text-accent hover:underline">Let us know on GitHub</a>. The <a href="{{ route('terms') }}" class="text-accent hover:underline">terms of use</a> cover reusing the data.</p>
+                <p>How's the Water is an independent site built by <a href="https://mou.me" rel="noopener" class="text-accent hover:underline">Chris Chrisostomou</a> in Leeds. It is not connected to any water company or agency. Seen a mistake, or want a river added? Email <a href="mailto:{{ $contactEmail }}" class="text-accent hover:underline">{{ $contactEmail }}</a>, or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="text-accent hover:underline">open an issue on GitHub</a>. The <a href="{{ route('terms') }}" class="text-accent hover:underline">terms of use</a> cover reusing the data.</p>
             </section>
         </div>
     </article>

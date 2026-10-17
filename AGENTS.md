@@ -394,6 +394,12 @@ replacing the local database with a copy of live rather than backfilling.
   (heading and button in a flex row), never inside it;
   each term's text goes once into a hidden glossary at the end of the page, and `tooltip.js` shows it in one shared
   panel kept on screen, so headings never contain the explanations.
+- Phones keep the header to two rows: the search box sits behind a search button (`search.js`; without JavaScript it
+  links to `/search`, which has its own box on phones). Controls people tap (menus, buttons, the theme toggle) are at
+  least 44px tall on phones; small inline ones (help buttons, breadcrumb links) reach further than they are drawn.
+- Spot, beach and lake pages share `components/place-actions`: share (copy link on desktops; `share.js` switches to the
+  share sheet on touch screens that have one), RSS feed, and open in OpenStreetMap and Google Maps, as a two by two grid
+  on phones.
 
 ## SEO
 
@@ -407,6 +413,8 @@ replacing the local database with a copy of live rather than backfilling.
   long place names; extend it for any new page type.
 - Spot, beach and lake pages carry one dated sentence (`components/dated-summary`) naming the place, the time of the
   monitor data and its source. `/about` explains the sources and methods; keep it in step with Data sources below.
+- `/about` shows a "Last updated" date (`$lastUpdated` at the top of the view), which also goes into its
+  `dateModified`. Bump it whenever the page's content changes.
 - Pages describe themselves as schema.org JSON-LD through the layout's `structuredData` (built by
   `App\Services\StructuredData`) beside the `BreadcrumbList`: `WebSite` and `Organization` on the home page, a `Place`
   (on its `RiverBodyOfWater`) per spot, `Beach` and `LakeBodyOfWater` with coordinates, and an `ItemList` on listing

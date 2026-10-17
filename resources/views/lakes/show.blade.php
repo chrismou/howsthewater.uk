@@ -90,7 +90,7 @@
 
     <div class="grid gap-8 lg:grid-cols-5">
         <div class="lg:col-span-3">
-            <div class="h-80 w-full rounded-lg border border-line" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+            <div class="h-80 w-full rounded-lg border border-line" role="region" aria-label="Map of {{ $lake->name }}, its bathing sites and the overflow monitors within 3 km" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
             <x-bathing-map-key :overflows="$overflows->monitors->isNotEmpty()" :place="$lake->name" />
         </div>
         <aside class="lg:col-span-2">

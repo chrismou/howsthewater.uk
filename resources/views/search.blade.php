@@ -10,8 +10,16 @@
         </h1>
     </div>
 
+    {{-- Phones keep the header's search box behind a button, so the page has its own. --}}
+    <form action="{{ route('search') }}" method="get" role="search" class="mb-6 flex gap-2 sm:hidden">
+        <label for="page-search" class="sr-only">Find a spot or river</label>
+        <input id="page-search" type="search" name="q" value="{{ $query }}" placeholder="Find a spot or river"
+               class="h-11 min-w-0 flex-1 rounded-md border border-line bg-surface px-3 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent">
+        <button type="submit" class="inline-flex h-11 items-center rounded-md bg-accent px-4 text-sm font-semibold text-surface hover:bg-accent-strong">Search</button>
+    </form>
+
     @if ($query === '')
-        <p class="text-ink-2">Type a spot, town or river name into the search box above.</p>
+        <p class="text-ink-2">Search by the name of a spot, town, river, beach or lake.</p>
     @elseif ($spots->isEmpty() && $rivers->isEmpty() && $beaches->isEmpty() && $lakes->isEmpty())
         <p class="text-ink-2">Nothing matched "{{ $query }}". Try the name of a town on the river, or pick a river from the menu.</p>
     @else

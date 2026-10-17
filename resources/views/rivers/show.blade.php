@@ -32,6 +32,7 @@
 
     <div
         class="mb-8 h-80 w-full rounded-lg border border-line"
+        role="region" aria-label="Map of the {{ $overview->river->name }}, its spots and overflow monitors"
         data-map
         data-map-centreline="{{ json_encode($overview->river->centreline ?? []) }}"
         data-map-markers="{{ json_encode($mapMarkers) }}"

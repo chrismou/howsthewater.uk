@@ -6,9 +6,9 @@
 @props(['items'])
 
 @if (count($items) > 1)
-    <nav aria-label="Breadcrumb" {{ $attributes->merge(['class' => 'text-sm text-muted']) }}>
+    <nav aria-label="Breadcrumb" {{ $attributes->merge(['class' => '-my-1.5 text-sm text-muted']) }}>
         @foreach (array_slice($items, 0, -1) as [$name, $url])
-            <a href="{{ $url }}" class="hover:underline">{{ $name }}</a>
+            <a href="{{ $url }}" class="inline-block py-1.5 hover:underline">{{ $name }}</a>
             @if (! $loop->last)
                 <span class="mx-1">/</span>
             @endif

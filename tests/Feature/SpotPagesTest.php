@@ -249,7 +249,8 @@ it('lists active upstream monitors before quiet ones, with duration and spill co
         ->assertSeeInOrder([$active->external_id, '45 min', $quiet->external_id])
         ->assertDontSee('data-more-monitors', false)
         ->assertSee('Copy link')
-        ->assertSee('openstreetmap.org/?mlat=');
+        ->assertSee('openstreetmap.org/?mlat=')
+        ->assertSee('google.com/maps/search/?api=1&amp;query=', false);
 });
 
 it('renders the first 10 upstream monitors and loads the rest on request', function () {
@@ -442,7 +443,7 @@ it('shortens long flood warning spot lists on the home page but not the region p
     $this->get(route('regions.show', $region))->assertOk()->assertDontSee('and 2 more');
 });
 
-it('credits the author and links to GitHub issues in the footer', function () {
+it('credits the author and links to email and GitHub issues in the footer', function () {
     spotWithUrl();
 
     $this->get(route('home'))
@@ -452,7 +453,8 @@ it('credits the author and links to GitHub issues in the footer', function () {
         ->assertSee('aria-label="love"', false)
         ->assertSee('href="https://mou.me"', false)
         ->assertSee('Seen a mistake?')
-        ->assertSee('Let us know on GitHub')
+        ->assertSee('let us know on GitHub')
+        ->assertSee('mailto:'.config('app.contact_email'), false)
         ->assertSee('https://github.com/chrismou/howsthewater.uk/issues');
 });
 

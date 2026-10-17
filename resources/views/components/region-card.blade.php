@@ -51,7 +51,7 @@
 @endphp
 
 <a href="{{ $url }}" {{ $attributes->merge(['class' => 'flex flex-col overflow-hidden rounded-lg border border-line bg-surface transition hover:border-muted hover:shadow-sm']) }}>
-    <div class="h-56 border-b border-line bg-water" data-map data-map-static data-map-markers="{{ json_encode($markers->values()) }}"></div>
+    <div class="h-56 border-b border-line bg-water" aria-hidden="true" data-map data-map-static data-map-markers="{{ json_encode($markers->values()) }}"></div>
     <div class="flex flex-1 flex-col gap-4 p-6">
         <span class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $inRegion ? $summary->name : 'Region' }}</span>
         {{-- On a region's overview the cards sit straight under its H1, so they are H2s; elsewhere they sit under a section heading. --}}

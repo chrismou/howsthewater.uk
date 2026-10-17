@@ -78,6 +78,7 @@
     <div class="relative mb-10">
         <div
             class="w-full rounded-lg border border-line {{ $mapIsTall ? 'h-96 sm:h-[640px]' : 'h-72 sm:h-[420px]' }}"
+            role="region" aria-label="Map of the rivers and spots in {{ $region->nameInSentence() }}"
             data-map
             data-map-centrelines="{{ json_encode($centrelines) }}"
             data-map-markers="{{ json_encode($mapMarkers) }}"

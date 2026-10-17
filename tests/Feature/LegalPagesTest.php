@@ -56,3 +56,29 @@ it('credits Stream companies and Scottish Water separately in the footer', funct
 it('lists the legal pages in the sitemap', function () {
     $this->get(route('sitemap'))->assertOk()->assertSee(route('privacy'))->assertSee(route('terms'));
 });
+
+it('explains what the monitors record and offers an email contact on the about page', function () {
+    Region::factory()->create(['name' => 'North East', 'slug' => 'north-east']);
+    config(['app.contact_email' => 'contact@example.test']);
+
+    $this->get(route('about'))
+        ->assertOk()
+        ->assertSee('in the North East')
+        ->assertSee('not how much it released')
+        ->assertSee('12/24 method')
+        ->assertSee('mailto:contact@example.test', false)
+        ->assertSee('<time datetime="', false)
+        ->assertSee('"dateModified"', false);
+});
+
+it('describes the share image and gives phones a search box on the search page', function () {
+    Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('<meta property="og:image:alt" content="How&#039;s the Water? What&#039;s the river doing right now?', false)
+        ->assertSee('<meta name="twitter:image:alt"', false)
+        ->assertSee('data-search-toggle', false);
+
+    $this->get(route('search'))->assertOk()->assertSee('id="page-search"', false);
+});

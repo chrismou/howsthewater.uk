@@ -30,7 +30,7 @@
                 <path d="M-20 420 C 320 360, 500 500, 740 440 S 1120 340, 1300 420"/>
                 <path d="M-20 470 C 340 410, 520 550, 760 490 S 1140 390, 1300 470"/>
             </svg>
-            <div class="relative mx-auto grid max-w-5xl gap-8 px-4 pt-8 pb-12 sm:py-14 lg:grid-cols-12 lg:py-16">
+            <div class="relative mx-auto grid max-w-5xl gap-8 px-4 pt-6 pb-12 sm:py-14 lg:grid-cols-12 lg:py-16">
                 <div class="flex flex-col gap-5 lg:col-span-7">
                     <p class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $regionNames ?: 'Rivers' }}, updated every 15 minutes</p>
                     <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">How's your local river, beach or lake looking today?</h1>
@@ -47,7 +47,7 @@
                         <div class="flex flex-wrap items-center gap-2 text-sm text-muted">
                             <span>Try:</span>
                             @foreach ($featured as $spot)
-                                <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" class="rounded-full border border-pill-grey-ring bg-pill-grey-bg px-2.5 py-0.5 text-[13px] font-medium text-pill-grey-text hover:border-muted">{{ $spot->name }}</a>
+                                <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" class="rounded-full border border-pill-grey-ring bg-pill-grey-bg px-3 py-1.5 text-[13px] font-medium text-pill-grey-text hover:border-muted">{{ $spot->name }}</a>
                             @endforeach
                         </div>
                     @endif

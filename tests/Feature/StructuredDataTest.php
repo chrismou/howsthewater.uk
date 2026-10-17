@@ -67,8 +67,8 @@ it('lists the places on listing pages, and starts the visible trail at the match
         ->and(structuredData($this->get(route('rivers.index', $region)))['ItemList']['itemListElement'][0]['name'])->toBe('River Tay')
         ->and(structuredData($this->get(route('beaches.index', $region)))['ItemList']['numberOfItems'])->toBe(1);
 
-    $this->get(route('beaches.show', [$region, $beach]))->assertSee('<a href="'.route('hubs.beaches').'" class="hover:underline">All beaches</a>', false);
-    $this->get(route('rivers.index', $region))->assertSee('<a href="'.route('hubs.rivers').'" class="hover:underline">All rivers</a>', false);
+    $this->get(route('beaches.show', [$region, $beach]))->assertSee('<a href="'.route('hubs.beaches').'" class="inline-block py-1.5 hover:underline">All beaches</a>', false);
+    $this->get(route('rivers.index', $region))->assertSee('<a href="'.route('hubs.rivers').'" class="inline-block py-1.5 hover:underline">All rivers</a>', false);
 });
 
 it('joins each page into one graph whose WebPage points at its place, trail and date, with the visible trail matching', function () {

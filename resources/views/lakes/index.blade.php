@@ -22,7 +22,7 @@
         ])->values();
     @endphp
 
-    <div class="mb-8 h-72 w-full rounded-lg border border-line" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+    <div class="mb-8 h-72 w-full rounded-lg border border-line" role="region" aria-label="Map of the lakes in {{ $region->nameInSentence() }}" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
 
     <div class="overflow-x-auto rounded-lg border border-line bg-surface">
         <table class="w-full text-sm">
