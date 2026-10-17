@@ -7,18 +7,27 @@ use App\Data\FloodWarningData;
 use App\Data\GaugeReadingData;
 use App\Data\GaugeStationData;
 use App\Data\RainfallStationData;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Reads river level and rain gauges, their readings, and flood alerts and
  * warnings from the Environment Agency's real-time flood monitoring API
- * (open data, no key required).
+ * (open data, no key required). Readings follow the API's own advice: one
+ * call for every measure's latest reading each run, and a per-measure
+ * "since" query only to fill a gap, since some gauges report in batches.
  */
 class FloodMonitoringClient
 {
+    /** Long enough for the level and rainfall ingests in one scheduler pass to share one read. */
+    private const LATEST_CACHE_SECONDS = 300;
+
     /**
      * @return Collection<int, GaugeStationData>
      */
@@ -81,6 +90,75 @@ class FloodMonitoringClient
         return collect($items)
             ->map(fn (array $item) => RainfallStationData::fromEnvironmentAgency($item))
             ->values();
+    }
+
+    /**
+     * New readings for each measure after its own point in time, keyed by
+     * measure id. Every measure gets its latest reading from the one bulk
+     * call; a measure whose latest reading leaves a gap of more than
+     * $gapMinutes after its point in time (or has none stored) is filled
+     * from its own readings, longest gap first, up to $maxCatchUps. The rest
+     * wait for a later run, and a failing catch-up stops the others.
+     *
+     * @param  array<string, Carbon>  $sinceByMeasure
+     * @return array<string, Collection<int, GaugeReadingData>>
+     */
+    public function readingsSinceInBulk(array $sinceByMeasure, int $gapMinutes, int $maxCatchUps): array
+    {
+        $latest = $this->latestReadings();
+        $readings = [];
+        $gaps = [];
+
+        foreach ($sinceByMeasure as $measureId => $since) {
+            $reading = $latest[(string) $measureId] ?? null;
+            $readings[(string) $measureId] = $reading !== null && $reading->measuredAt->gt($since) ? collect([$reading]) : collect();
+
+            if ($reading !== null && $reading->measuredAt->gt($since->copy()->addMinutes($gapMinutes))) {
+                $gaps[(string) $measureId] = $since->getTimestamp();
+            }
+        }
+
+        asort($gaps);
+
+        foreach (array_slice(array_keys($gaps), 0, $maxCatchUps) as $measureId) {
+            try {
+                $readings[(string) $measureId] = $this->readingsSince((string) $measureId, $sinceByMeasure[$measureId]);
+            } catch (ConnectionException|RequestException $exception) {
+                Log::error("Environment Agency readings catch-up failed: {$exception->getMessage()}");
+
+                break;
+            }
+        }
+
+        return $readings;
+    }
+
+    /**
+     * The latest reading of every measure in England, keyed by measure id,
+     * from one call (about 5,000 readings), read at most once per scheduler pass.
+     *
+     * @return array<string, GaugeReadingData>
+     */
+    public function latestReadings(): array
+    {
+        // Cached as plain values, since the cache only unserialises its allowed classes.
+        $rows = Cache::remember('ea:latest-readings', self::LATEST_CACHE_SECONDS, function () {
+            /** @var array<int, array<string, mixed>> $items */
+            $items = $this->request()
+                ->get($this->url('data/readings'), ['latest' => ''])
+                ->throw()
+                ->json('items', []);
+
+            return collect($items)
+                ->filter(fn (array $item) => is_string($item['measure'] ?? null) && isset($item['dateTime'], $item['value']))
+                ->mapWithKeys(fn (array $item) => [basename($item['measure']) => GaugeReadingData::fromEnvironmentAgency($item)])
+                ->map(fn (GaugeReadingData $reading) => [$reading->measuredAt->toIso8601String(), $reading->value])
+                ->all();
+        });
+
+        return collect($rows)
+            ->map(fn (array $row) => new GaugeReadingData(Carbon::parse($row[0])->utc(), (float) $row[1]))
+            ->all();
     }
 
     /**

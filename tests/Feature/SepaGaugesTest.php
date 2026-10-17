@@ -153,6 +153,7 @@ it('keeps SEPA rain gauges when SEPA cannot be read, and still reads Environment
 
     Http::fake([
         'timeseries.sepa.org.uk/*' => Http::response('Bad gateway', 502),
+        'environment.data.gov.uk/flood-monitoring/data/readings*' => Http::response(environmentAgencyLatestReadings([$environmentAgency->measure_id => 0.4])),
         'environment.data.gov.uk/*' => Http::response(['items' => [['dateTime' => now()->subMinutes(15)->toIso8601String(), 'value' => 0.4]]]),
     ]);
 

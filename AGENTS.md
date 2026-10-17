@@ -282,6 +282,12 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   share one table. The footer credits Stream feeds and Scottish Water separately. South West Water uses other fields.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
+  Readings follow the API's own advice rather than one request per gauge: `FloodMonitoringClient::readingsSinceInBulk()`
+  reads every measure's latest reading in one `data/readings?latest` call (cached 5 minutes, so the level and rainfall
+  ingests share it), and only a gauge with a gap (over an hour for levels, any missed 15 minutes for rainfall, since
+  many rain gauges report hourly in batches) or no readings gets its own `since` query: at most 20 level and 50 rain
+  gauges per run, longest gap first. Crawling every gauge every run (about 870 requests) got the server briefly
+  refused with 403s.
 - Scottish levels and rainfall: SEPA's time series API (KiWIS, `Sepa\TimeSeriesClient`, OGL, no key). Gauges and rain
   gauges carry a `network` (`Agency`), external IDs are prefixed `SEPA`, and `measure_id` is the KiWIS series id.
   Anonymous use is capped at 5,000 credits a day (1 per list request, 1 per 1,000 values), so the national station

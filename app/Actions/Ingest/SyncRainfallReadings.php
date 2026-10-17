@@ -20,22 +20,29 @@ use RuntimeException;
  * Fetches new 15 minute rainfall totals for every rain gauge a spot, beach or lake uses,
  * picking up from the last stored reading so repeated runs stay cheap.
  * A gauge that has never returned a reading is retired so spots can be
- * relinked to one that does. SEPA gauges share requests to stay within
- * its daily credits and NRW gauges share one list of latest readings; when
- * either fails, none of its gauges are retired.
+ * relinked to one that does. Environment Agency and NRW gauges share one
+ * list of latest readings each, filling gaps a few gauges at a time, and
+ * SEPA gauges share requests to stay within its daily credits; when an
+ * agency cannot be read, none of its gauges are retired.
  */
 class SyncRainfallReadings
 {
     private const BACKFILL_DAYS = 7;
 
     /**
-     * Totals are sums of 15 minute readings, so any missed NRW reading is
-     * filled from the gauge's history.
+     * Totals are sums of 15 minute readings, so any missed Environment Agency
+     * or NRW reading is filled from the gauge's own readings.
      */
-    private const NRW_GAP_MINUTES = 15;
+    private const GAP_MINUTES = 15;
 
     /** As in SyncGaugeReadings, so both ingests together stay under NRW's 10 calls a minute. */
     private const NRW_HISTORY_CALLS_PER_RUN = 3;
+
+    /**
+     * Many Environment Agency rain gauges report hourly in batches of four,
+     * so most catch-ups are routine; this many per run keeps up with them.
+     */
+    private const ENVIRONMENT_AGENCY_CATCH_UPS_PER_RUN = 50;
 
     public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa, private RiversAndSeasClient $nrw)
     {
@@ -55,35 +62,21 @@ class SyncRainfallReadings
         $inserted = 0;
         $retired = 0;
 
-        $batched = [
+        $byAgency = [
+            Agency::EnvironmentAgency->value => $this->environmentAgencyReadings($stations->where('network', Agency::EnvironmentAgency)),
             Agency::Sepa->value => $this->sepaReadings($stations->where('network', Agency::Sepa)),
             Agency::NaturalResourcesWales->value => $this->nrwReadings($stations->where('network', Agency::NaturalResourcesWales)),
         ];
 
-        $environmentAgencyFailed = false;
+        foreach ($stations as $station) {
+            $readings = $byAgency[$station->network->value] ?? null;
 
-        // Batched gauges first, so a failing Environment Agency read cannot stop them being stored.
-        foreach ($stations->sortBy(fn (RainfallStation $station) => array_key_exists($station->network->value, $batched) ? 0 : 1) as $station) {
-            $isBatched = array_key_exists($station->network->value, $batched);
-
-            if (($isBatched && $batched[$station->network->value] === null) || (! $isBatched && $environmentAgencyFailed)) {
+            if ($readings === null) {
                 continue;
             }
 
             $hadReadings = $station->readings()->exists();
-
-            try {
-                $count = $isBatched
-                    ? $this->store($station, $batched[$station->network->value][(string) $station->measure_id] ?? collect())
-                    : $this->syncStation($station);
-            } catch (ConnectionException|RequestException $exception) {
-                // Usually the API is down or throttling us: the rest wait for the next run, and none are retired.
-                $environmentAgencyFailed = true;
-                Log::error("Environment Agency rainfall readings failed: {$exception->getMessage()}");
-
-                continue;
-            }
-
+            $count = $this->store($station, $readings[(string) $station->measure_id] ?? collect());
             $inserted += $count;
 
             if (! $hadReadings && $count === 0) {
@@ -95,9 +88,29 @@ class SyncRainfallReadings
         return ['stations' => $stations->count(), 'readings' => $inserted, 'retired' => $retired];
     }
 
-    public function syncStation(RainfallStation $station): int
+    /**
+     * New readings for the Environment Agency gauges keyed by measure id, or null when the API could not be read.
+     *
+     * @param  Collection<int, RainfallStation>  $stations
+     * @return array<string, Collection<int, GaugeReadingData>>|null
+     */
+    private function environmentAgencyReadings(Collection $stations): ?array
     {
-        return $this->store($station, $this->client->readingsSince((string) $station->measure_id, $this->since($station)));
+        if ($stations->isEmpty()) {
+            return [];
+        }
+
+        try {
+            return $this->client->readingsSinceInBulk(
+                $stations->mapWithKeys(fn (RainfallStation $station) => [(string) $station->measure_id => $this->since($station)])->all(),
+                self::GAP_MINUTES,
+                self::ENVIRONMENT_AGENCY_CATCH_UPS_PER_RUN,
+            );
+        } catch (ConnectionException|RequestException $exception) {
+            Log::error("Environment Agency rainfall readings failed: {$exception->getMessage()}");
+
+            return null;
+        }
     }
 
     /**
@@ -141,7 +154,7 @@ class SyncRainfallReadings
         try {
             return $this->nrw->readingsSince(
                 $stations->mapWithKeys(fn (RainfallStation $station) => [(string) $station->measure_id => ['externalId' => $station->external_id, 'since' => $this->since($station)]])->all(),
-                self::NRW_GAP_MINUTES,
+                self::GAP_MINUTES,
                 self::NRW_HISTORY_CALLS_PER_RUN,
             );
         } catch (ConnectionException|RequestException|RuntimeException $exception) {

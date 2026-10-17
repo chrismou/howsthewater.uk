@@ -44,7 +44,19 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * The EA's bulk latest readings response, one reading per measure id.
+ *
+ * @param  array<string, float>  $values  Values keyed by measure id
+ * @return array{items: list<array<string, mixed>>}
+ */
+function environmentAgencyLatestReadings(array $values, ?Carbon\CarbonInterface $at = null): array
 {
-    // ..
+    $at ??= now()->subMinutes(15);
+
+    return ['items' => collect($values)->map(fn (float $value, string $measureId) => [
+        'dateTime' => $at->toIso8601String(),
+        'measure' => "http://environment.data.gov.uk/flood-monitoring/id/measures/{$measureId}",
+        'value' => $value,
+    ])->values()->all()];
 }

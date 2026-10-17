@@ -19,10 +19,10 @@ use RuntimeException;
 
 /**
  * Fetches new level readings for every active gauge, picking up from the
- * last stored reading so repeated runs stay cheap. Environment Agency
- * gauges are read one by one; SEPA gauges share requests to stay within
- * its daily credits, NRW gauges share one list of latest readings, and a
- * SEPA or NRW failure is logged without stopping the rest.
+ * last stored reading so repeated runs stay cheap. Environment Agency and
+ * NRW gauges share one list of latest readings each, filling gaps a few
+ * gauges at a time; SEPA gauges share requests to stay within its daily
+ * credits. A failure at one agency is logged without stopping the rest.
  */
 class SyncGaugeReadings
 {
@@ -40,6 +40,15 @@ class SyncGaugeReadings
      */
     private const NRW_HISTORY_CALLS_PER_RUN = 3;
 
+    /** As for NRW: a missed reading or two hardly changes a level. */
+    private const ENVIRONMENT_AGENCY_GAP_MINUTES = 60;
+
+    /**
+     * Per-gauge catch-ups per run, so new gauges and gaps fill in over a few
+     * runs instead of one request per gauge every run.
+     */
+    private const ENVIRONMENT_AGENCY_CATCH_UPS_PER_RUN = 20;
+
     public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa, private RiversAndSeasClient $nrw)
     {
     }
@@ -54,27 +63,35 @@ class SyncGaugeReadings
             ->whereNotNull('measure_id')
             ->get();
 
-        // The batched agencies go first, so the slow one-by-one Environment Agency reads cannot hold them up.
-        $inserted = $this->syncSepaStations($stations->where('network', Agency::Sepa))
+        $inserted = $this->syncEnvironmentAgencyStations($stations->where('network', Agency::EnvironmentAgency))
+            + $this->syncSepaStations($stations->where('network', Agency::Sepa))
             + $this->syncNrwStations($stations->where('network', Agency::NaturalResourcesWales));
-
-        foreach ($stations->where('network', Agency::EnvironmentAgency) as $station) {
-            // A refused or failed request usually means the API is down or throttling us, so the rest wait for the next run.
-            try {
-                $inserted += $this->syncStation($station);
-            } catch (ConnectionException|RequestException $exception) {
-                Log::error("Environment Agency level readings failed: {$exception->getMessage()}");
-
-                break;
-            }
-        }
 
         return ['stations' => $stations->count(), 'readings' => $inserted];
     }
 
-    public function syncStation(GaugeStation $station): int
+    /**
+     * @param  EloquentCollection<int, GaugeStation>  $stations
+     */
+    private function syncEnvironmentAgencyStations(EloquentCollection $stations): int
     {
-        return $this->store($station, $this->client->readingsSince((string) $station->measure_id, $this->since($station)));
+        if ($stations->isEmpty()) {
+            return 0;
+        }
+
+        try {
+            $readings = $this->client->readingsSinceInBulk(
+                $stations->mapWithKeys(fn (GaugeStation $station) => [(string) $station->measure_id => $this->since($station)])->all(),
+                self::ENVIRONMENT_AGENCY_GAP_MINUTES,
+                self::ENVIRONMENT_AGENCY_CATCH_UPS_PER_RUN,
+            );
+        } catch (ConnectionException|RequestException $exception) {
+            Log::error("Environment Agency level readings failed: {$exception->getMessage()}");
+
+            return 0;
+        }
+
+        return $stations->sum(fn (GaugeStation $station) => $this->store($station, $readings[(string) $station->measure_id] ?? collect()));
     }
 
     /**

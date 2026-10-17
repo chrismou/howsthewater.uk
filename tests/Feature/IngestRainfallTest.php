@@ -66,6 +66,7 @@ it('fetches readings only for rain gauges a spot uses', function () {
     Spot::factory()->create(['rainfall_station_id' => $used->id]);
 
     Http::fake([
+        'environment.data.gov.uk/flood-monitoring/data/readings*' => Http::response(environmentAgencyLatestReadings([$used->measure_id => 1.4])),
         'environment.data.gov.uk/*' => Http::response(['items' => [
             ['dateTime' => now()->subMinutes(30)->toIso8601String(), 'value' => 0.2],
             ['dateTime' => now()->subMinutes(15)->toIso8601String(), 'value' => 1.4],
@@ -75,7 +76,9 @@ it('fetches readings only for rain gauges a spot uses', function () {
     expect(app(SyncRainfallReadings::class)->handle())->toBe(['stations' => 1, 'readings' => 2, 'retired' => 0])
         ->and($used->readings()->pluck('millimetres')->all())->toBe([1.4, 0.2]);
 
-    Http::assertSentCount(1);
+    // One bulk read of every latest reading, then a catch-up for the new gauge only.
+    Http::assertSentCount(2);
+    Http::assertSent(fn ($request) => str_contains($request->url(), "id/measures/{$used->measure_id}/readings"));
 });
 
 it('retires a rain gauge that never reports so the spot can be relinked', function () {
@@ -115,6 +118,7 @@ it('searches for rain gauges during a normal ingest only while a spot has never 
 
     Http::fake([
         'environment.data.gov.uk/*/id/stations*' => Http::response(['items' => [environmentAgencyRainfallItem('1001', 53.91, -1.80)]]),
+        'environment.data.gov.uk/*/data/readings*' => Http::response(environmentAgencyLatestReadings(['1001-rainfall-tipping_bucket_raingauge-t-15_min-mm' => 0.4])),
         'environment.data.gov.uk/*' => Http::response(['items' => [['dateTime' => now()->subMinutes(15)->toIso8601String(), 'value' => 0.4]]]),
     ]);
 
@@ -133,6 +137,7 @@ it('finds rain gauges near beaches and lakes and links each to the nearest', fun
 
     Http::fake([
         'environment.data.gov.uk/flood-monitoring/id/measures/*' => Http::response(['items' => [['dateTime' => now()->subMinutes(15)->toIso8601String(), 'value' => 0.4]]]),
+        'environment.data.gov.uk/flood-monitoring/data/readings*' => Http::response(environmentAgencyLatestReadings(['2001-rainfall-tipping_bucket_raingauge-t-15_min-mm' => 0.4, '2002-rainfall-tipping_bucket_raingauge-t-15_min-mm' => 0.4])),
         'environment.data.gov.uk/*' => Http::response(['items' => [
             environmentAgencyRainfallItem('2001', 54.29, -0.41),
             environmentAgencyRainfallItem('2002', 54.37, -2.95),
