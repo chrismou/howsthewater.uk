@@ -242,6 +242,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   are listed; the spot controllers 404 a spot on a tributary.
 - Rivers belong to a `Region` and URLs are region-scoped (`/{region}/rivers/{river}/{spot}`, API `/api/v1/regions/...`) with
   `scopeBindings()`, because river and spot names repeat across Britain; slugs are unique per region and per river.
+  Rivers and spots used to sit straight under the region (`/{region}/{river}/{spot}`, and their feeds), so those
+  addresses 301 to the new ones (`LegacyRiverRedirectController`, registered last so every other route wins).
   Build links with `route('spots.show', [$region, $river, $spot])` and eager-load `river.region` wherever spots are
   listed. The header's Rivers, Beaches and Lakes menus come from `NavigationMenus`: plain arrays built once
   (rivers grouped by `catchment` via `Region::riversByCatchment()`, beaches by district), cached and rebuilt in

@@ -5,6 +5,7 @@ use App\Models\FloodArea;
 use App\Models\FloodWarning;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
+use App\Models\BathingWater;
 use App\Models\OverflowMonitor;
 use App\Models\RainfallReading;
 use App\Models\RainfallStation;
@@ -61,6 +62,22 @@ it('says river monitor counts include tributaries and offline monitors', functio
         ->assertOk()
         ->assertSeeInOrder(['3 storm overflow monitors on the River Wharfe and its tributaries,', '1 discharging right now and 1 offline.'])
         ->assertDontSee('discharge into');
+});
+
+it('redirects the old river, spot and feed addresses permanently, and 404s ones that never existed', function () {
+    [$region, $river, $spot] = spotWithUrl(['slug' => 'otley'], ['slug' => 'wharfe']);
+    BathingWater::factory()->create(['region_id' => $region->id, 'slug' => 'filey']);
+
+    $this->get('/yorkshire/wharfe')->assertStatus(301)->assertRedirect('/yorkshire/rivers/wharfe');
+    $this->get('/yorkshire/wharfe/otley')->assertStatus(301)->assertRedirect('/yorkshire/rivers/wharfe/otley');
+    $this->get('/yorkshire/wharfe/feed')->assertStatus(301)->assertRedirect('/yorkshire/rivers/wharfe/feed');
+    $this->get('/yorkshire/wharfe/otley/feed')->assertStatus(301)->assertRedirect('/yorkshire/rivers/wharfe/otley/feed');
+
+    $this->get('/yorkshire/rivers')->assertOk();
+    $this->get('/yorkshire/beaches/filey')->assertOk();
+    $this->get('/yorkshire/aire')->assertNotFound();
+    $this->get('/yorkshire/wharfe/ilkley')->assertNotFound();
+    $this->get('/lancashire/wharfe')->assertNotFound();
 });
 
 it('scopes rivers and spots to their region', function () {

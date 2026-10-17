@@ -4,6 +4,7 @@ use App\Http\Controllers\BeachController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LakeController;
+use App\Http\Controllers\LegacyRiverRedirectController;
 use App\Http\Controllers\PlaceHubController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\RiverController;
@@ -49,4 +50,11 @@ Route::scopeBindings()->group(function () {
     Route::get('/{region}/rivers/{river}', [RiverController::class, 'show'])->name('rivers.show');
 
     Route::get('/{region}/rivers/{river}/{spot}', [SpotController::class, 'show'])->name('spots.show');
+
+    // Rivers and spots used to sit straight under the region. These come last, so every route above wins, and an
+    // old address for a river or spot that no longer exists still 404s.
+    Route::get('/{region}/{river}/feed', [LegacyRiverRedirectController::class, 'riverFeed']);
+    Route::get('/{region}/{river}/{spot}/feed', [LegacyRiverRedirectController::class, 'spotFeed']);
+    Route::get('/{region}/{river}', [LegacyRiverRedirectController::class, 'river']);
+    Route::get('/{region}/{river}/{spot}', [LegacyRiverRedirectController::class, 'spot']);
 });
