@@ -181,3 +181,14 @@ it('names the lowercase route as canonical, keeps search and missing pages out o
         ->assertSee('<loc>'.route('beaches.index', $region).'</loc>', false)
         ->assertDontSee('<loc>'.route('lakes.index', $region).'</loc>', false);
 });
+
+it('asks training-only AI crawlers to stay away and leaves search and answer crawlers welcome', function () {
+    $robots = file_get_contents(public_path('robots.txt'));
+    $groups = collect(preg_split('/\n\s*\n/', $robots));
+    $blocked = $groups->first(fn (string $group) => str_contains($group, 'User-agent: GPTBot'));
+
+    expect($blocked)->toContain('User-agent: ClaudeBot')->toContain('User-agent: Google-Extended')->toContain('Disallow: /')
+        ->and($blocked)->not->toContain('OAI-SearchBot')->not->toContain('PerplexityBot')->not->toContain('Googlebot')
+        ->and($robots)->toContain("User-agent: *\nDisallow:\n")
+        ->and($robots)->toContain('Sitemap: https://howsthewater.uk/sitemap.xml');
+});

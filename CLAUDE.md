@@ -435,6 +435,9 @@ replacing the local database with a copy of live rather than backfilling.
   a small source line with the monitors, company and time, which keeps the page's dated, attributed statement. River
   pages keep one dated sentence (`components/dated-summary`) with counts for the river and its tributaries.
   Exclamation marks stay rare: only the thunder note has one.
+- `public/robots.txt` welcomes search engines and AI crawlers that search or fetch pages to answer questions (and
+  cite them), and asks training-only crawlers (GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot and
+  others) not to crawl. Add new training-only crawlers to that group, never to `*`.
 - Levels are described in everyday words on pages: "at its usual level", "higher than usual", "lower than usual"
   (`LevelSummary::usualPhrase()`), never "typical range". The API keeps its `within typical range` values. `/about` explains the sources and methods; keep it in step with Data sources below.
 - `/about` shows a "Last updated" date (`$lastUpdated` at the top of the view), which also goes into its
