@@ -3,15 +3,17 @@
 namespace App\Actions\Ingest;
 
 use App\Data\FloodWarningData;
+use App\Enums\Agency;
 use App\Models\FloodArea;
 use App\Models\FloodWarningEvent;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * Builds the flood warning history from each poll of the national feed,
- * for every area in England rather than only those our spots use, so a
- * region added later already has its history. An area's event stays open
+ * Builds the flood warning history from each poll of an agency's national
+ * feed, for every area in England (or Wales) rather than only those our
+ * spots use, so a region added later already has its history. Each agency's
+ * feed only opens and closes events for that agency's areas. An area's event stays open
  * while it is in force at the same severity; a change of severity closes
  * it and opens another, and the EA marking it "no longer in force" (or it
  * leaving the feed) closes it.
@@ -22,14 +24,19 @@ class RecordFloodWarningHistory
      * @param  Collection<int, FloodWarningData>  $feed
      * @return array{opened: int, closed: int}
      */
-    public function handle(Collection $feed): array
+    public function handle(Collection $feed, Agency $agency = Agency::EnvironmentAgency): array
     {
         $now = now();
         $feed = $feed->keyBy('floodAreaCode');
-        $areas = $this->areasFor($feed);
+        $areas = $this->areasFor($feed, $agency);
 
         // A plain collection, since an Eloquent collection's except() filters by model id rather than by our keys.
-        $open = FloodWarningEvent::query()->whereNull('ended_at')->with('floodArea:id,code')->get()->toBase()
+        $open = FloodWarningEvent::query()
+            ->whereNull('ended_at')
+            ->whereHas('floodArea', fn ($query) => $query->where('agency', $agency))
+            ->with('floodArea:id,code')
+            ->get()
+            ->toBase()
             ->keyBy(fn (FloodWarningEvent $event) => $event->floodArea->code);
         $counts = ['opened' => 0, 'closed' => 0];
 
@@ -78,7 +85,7 @@ class RecordFloodWarningHistory
      * @param  Collection<string, FloodWarningData>  $feed
      * @return Collection<string, FloodArea>
      */
-    private function areasFor(Collection $feed): Collection
+    private function areasFor(Collection $feed, Agency $agency): Collection
     {
         $inForce = $feed->filter(fn (FloodWarningData $warning) => $warning->isInForce());
         $areas = FloodArea::query()->whereIn('code', $inForce->keys())->get()->toBase()->keyBy('code');
@@ -86,6 +93,7 @@ class RecordFloodWarningHistory
         foreach ($inForce->except($areas->keys()->all()) as $code => $warning) {
             $areas[$code] = FloodArea::query()->create([
                 'code' => $code,
+                'agency' => $agency,
                 'label' => $warning->areaLabel ?? $code,
                 'river_or_sea' => $warning->riverOrSea,
                 'county' => $warning->county,

@@ -38,7 +38,7 @@ class Help extends Component
         ],
         'level' => [
             'label' => 'How is the river level measured?',
-            'text' => 'The Environment Agency gauge (SEPA in Scotland) nearest this spot reads the water level every 15 minutes. Most gauges report the height above their own zero mark, so compare it with the typical range rather than other rivers.',
+            'text' => 'The Environment Agency gauge (Natural Resources Wales in Wales, SEPA in Scotland) nearest this spot reads the water level every 15 minutes. Most gauges report the height above their own zero mark, so compare it with the typical range rather than other rivers.',
         ],
         'typical_range' => [
             'label' => 'What is the typical range?',
@@ -54,27 +54,31 @@ class Help extends Component
         ],
         'rainfall' => [
             'label' => 'Where is rainfall measured?',
-            'text' => 'Totals from the Environment Agency rain gauge (SEPA in Scotland) nearest this spot, summed from its 15 minute readings. Rain further up the catchment may differ, and heavy rain is what triggers overflows.',
+            'text' => 'Totals from the Environment Agency rain gauge (Natural Resources Wales in Wales, SEPA in Scotland) nearest this spot, summed from its 15 minute readings. Rain further up the catchment may differ, and heavy rain is what triggers overflows.',
         ],
         'flood_warning' => [
             'label' => 'Where do flood warnings come from?',
-            'text' => 'The Environment Agency issues flood alerts (flooding is possible), flood warnings (flooding is expected) and severe flood warnings (danger to life) for areas along each river. We show any in force for an area covering this stretch, checked every 15 minutes, in the Environment Agency\'s own words.',
+            'text' => 'The Environment Agency (Natural Resources Wales in Wales) issues flood alerts (flooding is possible), flood warnings (flooding is expected) and severe flood warnings (danger to life) for areas along each river. We show any in force for an area covering this stretch, checked every 15 minutes, in the agency\'s own words.',
         ],
         'bathing_classification' => [
             'label' => 'What does the classification mean?',
-            'text' => 'Each designated bathing water is classified every year as Excellent, Good, Sufficient or Poor, from the last four seasons of Environment Agency samples (SEPA in Scotland). It describes those samples, not the water on any one day.',
+            'text' => 'Each designated bathing water is classified every year as Excellent, Good, Sufficient or Poor, from the last four seasons of Environment Agency samples (Natural Resources Wales in Wales, SEPA in Scotland). It describes those samples, not the water on any one day.',
         ],
         'pollution_risk' => [
             'label' => 'What is the pollution risk forecast?',
-            'text' => 'In the bathing season (15 May to 30 September) the Environment Agency forecasts each day whether rain, wind or tide make short-term pollution more likely at sites where that happens. Increased means the risk is higher than usual today.',
+            'text' => 'In the bathing season (15 May to 30 September) the Environment Agency (Natural Resources Wales in Wales) forecasts each day whether rain, wind or tide make short-term pollution more likely at sites where that happens. Increased means the risk is higher than usual today.',
         ],
         'bathing_samples' => [
             'label' => 'What do the sample counts mean?',
-            'text' => 'Environment Agency samplers (SEPA in Scotland) test the water about weekly in the season for two bacteria from sewage and animal waste: E. coli and intestinal enterococci, counted per 100 ml. Lower is better. A "<" means below the lowest level the test can measure.',
+            'text' => 'Environment Agency samplers (Natural Resources Wales in Wales, SEPA in Scotland) test the water about weekly in the season for two bacteria from sewage and animal waste: E. coli and intestinal enterococci, counted per 100 ml. Lower is better. A "<" means below the lowest level the test can measure.',
         ],
         'nearby_overflows' => [
             'label' => 'Which overflows count as nearby?',
             'text' => 'The sea and lakes have no upstream, so we list every storm overflow monitor within 3 km of the beach, the lake or one of its bathing sites, by straight-line distance. Overflows further away, or up rivers that flow in, can still affect the water.',
+        ],
+        'not_covered' => [
+            'label' => 'Why is overflow data not available here?',
+            'text' => 'We do not read this water company\'s storm overflow feed yet, so we cannot say whether overflows upstream or nearby are discharging. It does not mean there are no overflows here.',
         ],
         'stale' => [
             'label' => 'What does out of date mean?',

@@ -74,7 +74,7 @@ class SpotConditionsService
 
         return new SpotConditions(
             spot: $spot,
-            spillRecency: $this->spillRecency($monitors, $dischargingNow, $offline),
+            spillRecency: $this->spillRecency($monitors, $dischargingNow, $offline, $spot->river->region->hasOverflowData()),
             upstreamMonitors: $monitors,
             dischargingNowCount: $dischargingNow,
             offlineCount: $offline,
@@ -145,9 +145,10 @@ class SpotConditionsService
     /**
      * @param  Collection<int, UpstreamMonitorSummary>  $monitors
      */
-    private function spillRecency(Collection $monitors, int $dischargingNow, int $offline): SpillRecency
+    private function spillRecency(Collection $monitors, int $dischargingNow, int $offline, bool $covered): SpillRecency
     {
         return SpillRecency::assess(
+            covered: $covered,
             monitorCount: $monitors->count(),
             dischargingNow: $dischargingNow,
             offline: $offline,

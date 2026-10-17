@@ -22,14 +22,17 @@
                 </dd>
             </div>
         @endif
-        <div>
-            <dt class="sr-only">Upstream monitors</dt>
-            <dd>{{ $conditions->upstreamMonitors->count() }} upstream {{ \Illuminate\Support\Str::plural('monitor', $conditions->upstreamMonitors->count()) }}</dd>
-        </div>
-        <div>
-            <dt class="sr-only">Spills in last 30 days</dt>
-            <dd>{{ $conditions->spillsLast30DaysCount }} {{ \Illuminate\Support\Str::plural('spill', $conditions->spillsLast30DaysCount) }} in 30 days</dd>
-        </div>
+        {{-- Counts would read as "no spills" where we do not read the water company's feed, so the badge says it all there. --}}
+        @if ($conditions->spillRecency !== \App\Enums\SpillRecency::NotCovered)
+            <div>
+                <dt class="sr-only">Upstream monitors</dt>
+                <dd>{{ $conditions->upstreamMonitors->count() }} upstream {{ \Illuminate\Support\Str::plural('monitor', $conditions->upstreamMonitors->count()) }}</dd>
+            </div>
+            <div>
+                <dt class="sr-only">Spills in last 30 days</dt>
+                <dd>{{ $conditions->spillsLast30DaysCount }} {{ \Illuminate\Support\Str::plural('spill', $conditions->spillsLast30DaysCount) }} in 30 days</dd>
+            </div>
+        @endif
         <div>
             <dt class="sr-only">River level</dt>
             <dd><x-level-badge :level="$conditions->level" /></dd>

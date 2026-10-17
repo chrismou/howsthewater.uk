@@ -44,7 +44,7 @@ it('marks only regions with beaches or lakes after the bathing water ingest', fu
     $coastal = Region::factory()->create();
     Region::factory()->create();
     Lake::factory()->create(['region_id' => $coastal->id]);
-    Http::fake(['environment.data.gov.uk/*' => Http::response(['result' => ['items' => []]])]);
+    Http::fake(['environment.data.gov.uk/*' => Http::response(['result' => ['items' => []]]), 'map.sepa.org.uk/*' => Http::response(['features' => []])]);
 
     $this->artisan('ingest:bathing-waters')->assertSuccessful();
 

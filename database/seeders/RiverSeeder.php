@@ -30,6 +30,7 @@ class RiverSeeder extends Seeder
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
             'scotland' => self::scotland(),
+            'wales' => self::wales(),
         ];
     }
 
@@ -479,6 +480,61 @@ class RiverSeeder extends Seeder
     }
 
     /**
+     * Welsh rivers, most of them Dŵr Cymru Welsh Water's. Names follow the
+     * OS: its English alternative where it has one (as for the Severn), its
+     * Welsh name where that is the only one (Afon Teifi); the other form is
+     * an alias, since overflow feeds use either. The Wye and Dee run into
+     * England, which keeps their English stretches here, as the Tweed is in
+     * the North East. The Cardiff Taff and the Carmarthenshire Taf share the
+     * Welsh name Afon Taf, so the mouths matter.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     */
+    private static function wales(): array
+    {
+        return [
+            // South East Wales
+            self::main('River Taff', 'South East Wales', [51.4640, -3.1690], ['Afon Taf']),
+            self::tributary('Afon Rhondda', 'taff', ['Rhondda River', 'River Rhondda']),
+            self::tributary('Afon Cynon', 'taff', ['River Cynon']),
+            self::tributary('Bargod Taf', 'taff'),
+            self::main('River Usk', 'South East Wales', [51.5450, -2.9750], ['Afon Wysg']),
+
+            // Wye
+            self::main('River Wye', 'Wye', [51.6100, -2.6600], ['Afon Gwy']),
+            self::tributary('Irfon', 'wye', ['Afon Irfon', 'River Irfon']),
+            self::tributary('River Ithon', 'wye', ['Afon Ieithon']),
+            self::tributary('Afon Llynfi', 'wye', ['Llynfi River', 'River Llynfi']),
+            self::tributary('River Lugg', 'wye'),
+            self::tributary('River Monnow', 'wye', ['Afon Mynwy']),
+
+            // South West Wales
+            self::main('River Tawe', 'South West Wales', [51.6150, -3.9250], ['Afon Tawe']),
+            self::main('River Neath', 'South West Wales', [51.6050, -3.8400], ['Afon Nedd']),
+            self::main('Afon Mellte', 'South West Wales', [51.7580, -3.5960], ['River Mellte'], flowsInto: 'neath'),
+            self::tributary('Afon Hepste', 'mellte'),
+            self::main('River Towy', 'South West Wales', [51.7700, -4.3750], ['Afon Tywi']),
+            self::main('Afon Teifi', 'South West Wales', [52.0950, -4.6850], ['River Teifi']),
+            self::main('Western Cleddau', 'South West Wales', [51.7900, -4.9600], ['Cleddau Wen']),
+
+            // Mid and North Wales
+            self::main('River Dovey', 'Mid and North Wales', [52.5600, -3.9500], ['Afon Dyfi']),
+            self::main('Afon Mawddach', 'Mid and North Wales', [52.7500, -3.9400], ['River Mawddach']),
+            self::main('Afon Wnion', 'Mid and North Wales', [52.7500, -3.9000], ['River Wnion'], flowsInto: 'mawddach'),
+            self::main('Afon Glaslyn', 'Mid and North Wales', [52.9200, -4.1200], ['River Glaslyn']),
+            self::main('River Conwy', 'Mid and North Wales', [53.2800, -3.8300], ['Afon Conwy']),
+            self::main('Afon Llugwy', 'Mid and North Wales', [53.0880, -3.7950], ['River Llugwy'], flowsInto: 'conwy'),
+            self::tributary('Afon Lledr', 'conwy', ['River Lledr']),
+
+            // Dee
+            self::main('River Dee', 'Dee', [53.2200, -3.0700], ['Afon Dyfrdwy']),
+            self::main('Afon Tryweryn', 'Dee', [52.9100, -3.6000], ['River Tryweryn'], flowsInto: 'dee'),
+            self::tributary('Afon Alwen', 'dee', ['River Alwen']),
+            self::tributary('River Ceiriog', 'dee', ['Afon Ceiriog']),
+        ];
+    }
+
+    /**
      * @param  array{0: float, 1: float}  $mouth  Approximate [lat, lng] of the mouth
      * @param  array<int, string>  $extraAliases
      * @param  string|null  $flowsInto  Slug of the main river this one joins, if any
@@ -503,7 +559,7 @@ class RiverSeeder extends Seeder
 
     private static function slug(string $name): string
     {
-        return Str::slug((string) preg_replace('/^River /', '', $name));
+        return Str::slug((string) preg_replace('/^(River|Afon) /', '', $name));
     }
 
     public function run(): void

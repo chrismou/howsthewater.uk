@@ -11,7 +11,7 @@ final readonly class LevelSummary
 {
     /**
      * A latest reading older than this is flagged as stale and its trend is
-     * unknown. Environment Agency and SEPA gauges read every 15 minutes and usually
+     * unknown. Environment Agency, SEPA and NRW gauges read every 15 minutes and usually
      * publish within a couple of hours.
      */
     public const STALE_AFTER_HOURS = 6;

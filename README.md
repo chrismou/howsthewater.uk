@@ -1,7 +1,7 @@
 # How's the Water?
 
 [howsthewater.uk](https://howsthewater.uk) shows upstream storm overflow spills and river levels for popular swimming,
-paddling and fishing spots on rivers in Yorkshire, the Thames Valley, the North West, the North East, the Midlands and Scotland. Pick a spot and it tells you which sewage overflows upstream have
+paddling and fishing spots on rivers in Yorkshire, the Thames Valley, the North West, the North East, the Midlands, Scotland and Wales. Pick a spot and it tells you which sewage overflows upstream have
 discharged recently, whether any are discharging now, and what the nearest river gauge is reading.
 
 It reports what the monitors say. It does not say whether the water is safe or clean, and all copy on the site should
@@ -18,8 +18,8 @@ keep that distinction.
 - Positions every monitor, gauge and spot along the river centreline (from OS Open Rivers), so "upstream" means
   further up the same river rather than just nearby.
 - Shows a 30-day history per spot: minutes of upstream spilling per day and the individual events.
-- Covers designated beaches and lakes from the Environment Agency bathing water register (and SEPA's map service in
-  Scotland, classifications only, linking to SEPA's results): annual classifications,
+- Covers designated beaches and lakes from the Environment Agency bathing water register (Natural Resources Wales's in
+  Wales, and SEPA's map service in Scotland, classifications only, linking to SEPA's results): annual classifications,
   weekly sample counts and daily pollution risk forecasts in the bathing season, lake levels, and storm overflows
   within 3 km. River spots that are themselves designated bathing waters show the same record.
 - Offers an RSS feed per spot and river (`/yorkshire/wharfe/otley/feed`, `/yorkshire/wharfe/feed`): overflows upstream
@@ -38,7 +38,10 @@ Tyne flowing into it, the Wear, Tees, Coquet, Aln, Wansbeck, Blyth and the Tweed
 Tweed's overflows come from Scottish Water as well as Northumbrian Water, and its Scottish levels and rainfall from SEPA. The Midlands has the Trent, with the Soar and the Peak District's
 Derwent, Wye, Dove and Manifold flowing into it, and the Severn with the Teme and Warwickshire Avon. Scotland has the Tay (with the Tummel, Garry, Braan and Earn), Spey,
 Ness, Findhorn, Lossie, Dee, Don, Forth (with the Teith, Allan Water and Devon), Water of Leith, Almond, Esk, Tyne, Clyde (with the Kelvin
-and White Cart), Leven, Irvine, Ayr, Doon, Fife Eden, Angus North and South Esk, Nith, Annan and Galloway Dee, from Scottish Water's overflows and SEPA's levels and rainfall. A main river that joins another (the Ure into the Ouse, the North
+and White Cart), Leven, Irvine, Ayr, Doon, Fife Eden, Angus North and South Esk, Nith, Annan and Galloway Dee, from Scottish Water's overflows and SEPA's levels and rainfall. Wales has the Taff, Usk,
+Wye (with the Irfon, Ithon, Lugg and Monnow), Tawe, Neath (with the Mellte), Towy, Teifi, Western Cleddau, Dovey, Mawddach
+(with the Wnion), Glaslyn, Conwy (with the Llugwy) and Dee (with the Tryweryn), with Natural Resources Wales's levels,
+rainfall, flood warnings and bathing waters; its pages say overflow data is not available until Welsh Water's feed is added. A main river that joins another (the Ure into the Ouse, the North
 Tyne into the Tyne) keeps its own pages, and its overflows count upstream of the river it joins. Each main river carries the named
 tributaries that hold water company monitors (the Colne, Holme, Rother, Dearne, Sheaf, Loxley, Rye, Foss, Skell and around fifty becks and
 brooks). Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances
@@ -49,7 +52,7 @@ are cheap to serve. Set `CACHE_STORE=redis` in production if Redis is available;
 
 ## Data sources
 
-All open data, no API keys required.
+All open data. Only Natural Resources Wales needs API keys (free, one per product, from its API portal).
 
 | Source | Used for | Licence |
 | --- | --- | --- |
@@ -58,6 +61,9 @@ All open data, no API keys required.
 | Environment Agency real-time flood monitoring API | Gauge stations and 15-minute level readings | OGL v3 |
 | SEPA time series API (KiWIS) | Scottish level and rain gauges and their 15-minute readings | OGL v3 |
 | SEPA bathing waters map service (ArcGIS) | Scottish bathing water locations and classifications | OGL v3 |
+| Natural Resources Wales bathing water register (on the Environment Agency's data platform) | Welsh bathing water classifications, samples and forecasts | OGL v3 |
+| Natural Resources Wales API (River level, Rainfall and Sea data; Live Flood Warnings), key required | Welsh level and rain gauges, 15-minute readings, flood alerts and warnings (kept for a year at most) | OGL v3 |
+| DataMapWales (NRW flood warning and alert areas, WFS) | Welsh flood area outlines, to link spots to warnings | OGL v3 |
 | OS Open Rivers (GeoPackage download) | River centrelines for upstream positioning | OGL v3 |
 | OpenStreetMap | Map tiles, and a fallback centreline source via Overpass | ODbL |
 

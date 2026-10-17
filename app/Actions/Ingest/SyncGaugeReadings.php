@@ -7,6 +7,7 @@ use App\Enums\Agency;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
+use App\Services\NaturalResourcesWales\RiversAndSeasClient;
 use App\Services\Sepa\TimeSeriesClient;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Client\ConnectionException;
@@ -20,13 +21,26 @@ use RuntimeException;
  * Fetches new level readings for every active gauge, picking up from the
  * last stored reading so repeated runs stay cheap. Environment Agency
  * gauges are read one by one; SEPA gauges share requests to stay within
- * its daily credits, and a SEPA failure is logged without stopping the rest.
+ * its daily credits, NRW gauges share one list of latest readings, and a
+ * SEPA or NRW failure is logged without stopping the rest.
  */
 class SyncGaugeReadings
 {
     private const BACKFILL_DAYS = 7;
 
-    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa)
+    /**
+     * A missed NRW reading or two hardly changes a level, so only a gap
+     * longer than this (or a new gauge) spends a history call.
+     */
+    private const NRW_GAP_MINUTES = 60;
+
+    /**
+     * History calls per run, so the level and rainfall ingests together
+     * stay under NRW's 10 calls a minute. New gauges fill in over a few runs.
+     */
+    private const NRW_HISTORY_CALLS_PER_RUN = 3;
+
+    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa, private RiversAndSeasClient $nrw)
     {
     }
 
@@ -47,6 +61,7 @@ class SyncGaugeReadings
         }
 
         $inserted += $this->syncSepaStations($stations->where('network', Agency::Sepa));
+        $inserted += $this->syncNrwStations($stations->where('network', Agency::NaturalResourcesWales));
 
         return ['stations' => $stations->count(), 'readings' => $inserted];
     }
@@ -69,6 +84,42 @@ class SyncGaugeReadings
             $readings = $this->sepa->readingsSince($stations->mapWithKeys(fn (GaugeStation $station) => [(string) $station->measure_id => $this->since($station)])->all());
         } catch (ConnectionException|RequestException|RuntimeException $exception) {
             Log::error("SEPA level readings failed: {$exception->getMessage()}");
+
+            return 0;
+        }
+
+        return $stations->sum(fn (GaugeStation $station) => $this->store($station, $readings[(string) $station->measure_id] ?? collect()));
+    }
+
+    /**
+     * Each gauge's latest reading comes from NRW's station list; gauges with a
+     * gap fill it from their history, which also gives their typical range.
+     *
+     * @param  EloquentCollection<int, GaugeStation>  $stations
+     */
+    private function syncNrwStations(EloquentCollection $stations): int
+    {
+        if ($stations->isEmpty() || ! $this->nrw->isEnabled()) {
+            return 0;
+        }
+
+        $byParameter = $stations->keyBy(fn (GaugeStation $station) => (string) $station->measure_id);
+
+        try {
+            $readings = $this->nrw->readingsSince(
+                $byParameter->map(fn (GaugeStation $station) => ['externalId' => $station->external_id, 'since' => $this->since($station)])->all(),
+                self::NRW_GAP_MINUTES,
+                self::NRW_HISTORY_CALLS_PER_RUN,
+                function (string $parameter, Collection $history) use ($byParameter) {
+                    $range = RiversAndSeasClient::typicalRange($history);
+
+                    if ($range !== null) {
+                        $byParameter[$parameter]->update(['typical_range_low' => $range['low'], 'typical_range_high' => $range['high']]);
+                    }
+                },
+            );
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            Log::error("Natural Resources Wales level readings failed: {$exception->getMessage()}");
 
             return 0;
         }

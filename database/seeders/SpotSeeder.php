@@ -30,6 +30,103 @@ class SpotSeeder extends Seeder
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
             'scotland' => self::scotland(),
+            'wales' => self::wales(),
+        ];
+    }
+
+    /**
+     * Spots on Welsh rivers, snapped onto the OS centreline. The Wye and Dee
+     * spots run on into England (Hereford to Monmouth, Chester).
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function wales(): array
+    {
+        return [
+            'taff' => [
+                ['name' => 'Pontypridd', 'latitude' => 51.6006, 'longitude' => -3.3401, 'description' => 'Ynysangharad Park, below the old bridge.'],
+                ['name' => 'Radyr Weir', 'latitude' => 51.5163, 'longitude' => -3.2422, 'description' => 'The weir and the Taff Trail north of Cardiff.'],
+                ['name' => 'Blackweir', 'latitude' => 51.4915, 'longitude' => -3.1950, 'description' => 'The weir in Bute Park, Cardiff.'],
+            ],
+            'usk' => [
+                ['name' => 'Brecon', 'latitude' => 51.9497, 'longitude' => -3.3998, 'description' => 'The Promenade above the town, by the weir.'],
+                ['name' => 'Llangynidr', 'latitude' => 51.8741, 'longitude' => -3.2251, 'description' => 'The old stone bridge below the village.'],
+                ['name' => 'Crickhowell', 'latitude' => 51.8554, 'longitude' => -3.1401, 'description' => 'The long bridge below the town.'],
+                ['name' => 'Abergavenny', 'latitude' => 51.8170, 'longitude' => -3.0189, 'description' => 'Castle Meadows, below the town.'],
+                ['name' => 'Usk', 'latitude' => 51.7015, 'longitude' => -2.9070, 'description' => 'The town bridge.'],
+            ],
+            'wye' => [
+                ['name' => 'Rhayader', 'latitude' => 52.3024, 'longitude' => -3.5145, 'description' => 'The bridge and the falls in the town.'],
+                ['name' => 'Newbridge-on-Wye', 'latitude' => 52.2153, 'longitude' => -3.4460, 'description' => 'The bridge by the village.'],
+                ['name' => 'Builth Wells', 'latitude' => 52.1513, 'longitude' => -3.4041, 'description' => 'The Groe, the riverside park below the bridge.'],
+                ['name' => 'Erwood', 'latitude' => 52.0822, 'longitude' => -3.3263, 'description' => 'The bridge and the rapids below the village.'],
+                ['name' => 'Glasbury', 'latitude' => 52.0431, 'longitude' => -3.2010, 'description' => 'The bridge, a popular canoe launch.'],
+                ['name' => 'Hay-on-Wye', 'latitude' => 52.0766, 'longitude' => -3.1369, 'description' => 'The Warren, the riverside meadow above the town.'],
+                ['name' => 'Hereford', 'latitude' => 52.0507, 'longitude' => -2.7119, 'description' => 'Victoria Bridge, below the cathedral.'],
+                ['name' => 'Ross-on-Wye', 'latitude' => 51.9145, 'longitude' => -2.5943, 'description' => 'The meadows below the town.'],
+                ['name' => 'Symonds Yat', 'latitude' => 51.8434, 'longitude' => -2.6328, 'description' => 'The gorge and the rapids below the Yat Rock.'],
+                ['name' => 'Monmouth', 'latitude' => 51.8120, 'longitude' => -2.7089, 'description' => 'The Wye bridge below the town.'],
+            ],
+            'tawe' => [
+                ['name' => 'Craig-y-nos', 'latitude' => 51.8252, 'longitude' => -3.6826, 'description' => 'The country park below the castle.'],
+                ['name' => 'Pontardawe', 'latitude' => 51.7174, 'longitude' => -3.8479, 'description' => 'The riverside park in the town.'],
+            ],
+            'neath' => [
+                ['name' => 'Glynneath', 'latitude' => 51.7468, 'longitude' => -3.6177, 'description' => 'The river below the town, at the head of the valley.'],
+            ],
+            'mellte' => [
+                ['name' => 'Porth yr Ogof', 'latitude' => 51.8000, 'longitude' => -3.5559, 'description' => 'The cave mouth where the Mellte goes underground.'],
+                ['name' => 'Sgwd Clun-gwyn', 'latitude' => 51.7837, 'longitude' => -3.5616, 'description' => 'The first of the waterfalls below Porth yr Ogof.'],
+            ],
+            'towy' => [
+                ['name' => 'Llandovery', 'latitude' => 51.9968, 'longitude' => -3.8059, 'description' => 'The bridge below the town.'],
+                ['name' => 'Llandeilo', 'latitude' => 51.8845, 'longitude' => -3.9861, 'description' => 'The swing bridge below the town, a designated bathing water.'],
+                ['name' => 'Dryslwyn', 'latitude' => 51.8618, 'longitude' => -4.1041, 'description' => 'The bridge below Dryslwyn castle.'],
+            ],
+            'teifi' => [
+                ['name' => 'Lampeter', 'latitude' => 52.1092, 'longitude' => -4.0773, 'description' => 'The bridge below the town.'],
+                ['name' => 'Llandysul', 'latitude' => 52.0393, 'longitude' => -4.3104, 'description' => 'The paddling centre and the rapids below the town.'],
+                ['name' => 'Newcastle Emlyn', 'latitude' => 52.0401, 'longitude' => -4.4657, 'description' => 'The bridge below the castle.'],
+                ['name' => 'Cenarth Falls', 'latitude' => 52.0453, 'longitude' => -4.5263, 'description' => 'The falls and the bridge in the village.'],
+                ['name' => 'Cilgerran', 'latitude' => 52.0581, 'longitude' => -4.6341, 'description' => 'The gorge below the castle.'],
+            ],
+            'western-cleddau' => [
+                ['name' => 'Haverfordwest', 'latitude' => 51.8080, 'longitude' => -4.9701, 'description' => 'The river above the town bridges.'],
+            ],
+            'dovey' => [
+                ['name' => 'Dinas Mawddwy', 'latitude' => 52.7161, 'longitude' => -3.6876, 'description' => 'The river below the village.'],
+                ['name' => 'Machynlleth', 'latitude' => 52.6006, 'longitude' => -3.8550, 'description' => 'Dyfi Bridge, north of the town.'],
+            ],
+            'mawddach' => [
+                ['name' => 'Llanelltyd', 'latitude' => 52.7562, 'longitude' => -3.8988, 'description' => 'The old bridge, where the Mawddach meets the estuary.'],
+            ],
+            'wnion' => [
+                ['name' => 'Dolgellau', 'latitude' => 52.7447, 'longitude' => -3.8868, 'description' => 'The Marian and the bridge in the town.'],
+            ],
+            'glaslyn' => [
+                ['name' => 'Beddgelert', 'latitude' => 53.0117, 'longitude' => -4.1010, 'description' => 'Where the Colwyn joins, in the village.'],
+                ['name' => 'Aberglaslyn', 'latitude' => 52.9947, 'longitude' => -4.0955, 'description' => 'The pass and the river path below the village.'],
+            ],
+            'conwy' => [
+                ['name' => 'Fairy Glen', 'latitude' => 53.0769, 'longitude' => -3.7965, 'description' => 'The gorge above Betws-y-Coed.'],
+                ['name' => 'Betws-y-Coed', 'latitude' => 53.0869, 'longitude' => -3.7963, 'description' => 'The Waterloo Bridge, below the village.'],
+                ['name' => 'Llanrwst', 'latitude' => 53.1370, 'longitude' => -3.7976, 'description' => 'Pont Fawr, the old bridge in the town.'],
+            ],
+            'llugwy' => [
+                ['name' => 'Swallow Falls', 'latitude' => 53.1012, 'longitude' => -3.8339, 'description' => 'The falls above Betws-y-Coed.'],
+                ['name' => 'Miners Bridge', 'latitude' => 53.0942, 'longitude' => -3.8097, 'description' => 'The footbridge west of Betws-y-Coed.'],
+            ],
+            'dee' => [
+                ['name' => 'Bala', 'latitude' => 52.9061, 'longitude' => -3.5875, 'description' => 'Where the Dee leaves Llyn Tegid.'],
+                ['name' => 'Llandderfel', 'latitude' => 52.9187, 'longitude' => -3.5065, 'description' => 'The bridge below the village.'],
+                ['name' => 'Corwen', 'latitude' => 52.9838, 'longitude' => -3.3813, 'description' => 'The bridge below the town.'],
+                ['name' => 'Llangollen', 'latitude' => 52.9709, 'longitude' => -3.1697, 'description' => 'The rapids by the town bridge.'],
+                ['name' => 'Bangor-on-Dee', 'latitude' => 52.9981, 'longitude' => -2.9139, 'description' => 'The old bridge in the village.'],
+                ['name' => 'Chester Meadows', 'latitude' => 53.1881, 'longitude' => -2.8833, 'description' => 'The meadows above the city.'],
+            ],
+            'tryweryn' => [
+                ['name' => 'Canolfan Tryweryn', 'latitude' => 52.9397, 'longitude' => -3.6373, 'description' => 'The national white water centre below Llyn Celyn.'],
+            ],
         ];
     }
 

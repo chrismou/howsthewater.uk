@@ -44,11 +44,11 @@
             </div>
             <dl class="flex flex-wrap gap-x-7 gap-y-3">
                 <div>
-                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $summary->dischargingNowCount() }}</dd>
+                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $summary->hasOverflowData ? $summary->dischargingNowCount() : '-' }}</dd>
                     <dt class="text-xs text-muted">discharging now <x-help term="discharging_now" /></dt>
                 </div>
                 <div>
-                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $summary->spotsWithSpillLast24HoursCount() }}</dd>
+                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $summary->hasOverflowData ? $summary->spotsWithSpillLast24HoursCount() : '-' }}</dd>
                     <dt class="text-xs text-muted">spots, spill in 24h <x-help term="spill" /></dt>
                 </div>
                 <div>
@@ -56,7 +56,7 @@
                     <dt class="text-xs text-muted">gauges above typical <x-help term="typical_range" /></dt>
                 </div>
                 <div>
-                    <dd class="font-mono text-3xl font-semibold tabular-nums">{{ number_format($summary->monitorCount) }}</dd>
+                    <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $summary->hasOverflowData ? number_format($summary->monitorCount) : '-' }}</dd>
                     <dt class="text-xs text-muted">monitors</dt>
                 </div>
             </dl>

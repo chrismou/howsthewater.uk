@@ -63,6 +63,7 @@ class RegionSummaries
             generatedAt: now(),
             beaches: $this->waterBodies->forBeaches($region->beaches()->orderBy('name')->get())->map(fn (BeachConditions $conditions) => WaterBodySummary::fromBeach($conditions))->values(),
             lakes: $this->waterBodies->forLakes($region->lakes()->orderBy('name')->get())->map(fn (LakeConditions $conditions) => WaterBodySummary::fromLake($conditions))->values(),
+            hasOverflowData: $region->hasOverflowData(),
         );
     }
 

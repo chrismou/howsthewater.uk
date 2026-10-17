@@ -105,6 +105,17 @@ return [
         ],
     ],
 
+    // Natural Resources Wales's API (Welsh river levels, rainfall and flood warnings): each product has its own free
+    // subscription key, capped at 10 calls a minute and 2,880 a day. NRW asks that its data is not kept over a year.
+    // Flood warning and alert area outlines come from DataMapWales, which needs no key.
+    'nrw' => [
+        'api_url' => env('NRW_API_URL', 'https://api.naturalresources.wales'),
+        'levels_key' => env('NRW_LEVELS_API_KEY'),
+        'flood_warnings_key' => env('NRW_FLOOD_WARNINGS_API_KEY'),
+        'flood_risk_key' => env('NRW_FLOOD_RISK_API_KEY'),
+        'flood_areas_url' => env('NRW_FLOOD_AREAS_URL', 'https://datamap.gov.wales/geoserver/ows'),
+    ],
+
     'ordnance_survey' => [
         'open_rivers_path' => env('OS_OPEN_RIVERS_PATH', storage_path('app/private/oprvrs_gb.gpkg')),
     ],

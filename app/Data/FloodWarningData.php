@@ -8,7 +8,8 @@ use Illuminate\Support\Carbon;
 final readonly class FloodWarningData
 {
     /**
-     * The EA publishes these times in UK local time without an offset.
+     * The EA publishes these times in UK local time without an offset, and
+     * NRW's are read the same way unless they carry one.
      */
     private const SOURCE_TIMEZONE = 'Europe/London';
 
@@ -42,6 +43,24 @@ final readonly class FloodWarningData
             areaLabel: self::text($item['description'] ?? null),
             riverOrSea: self::text($item['floodArea']['riverOrSea'] ?? null),
             county: self::text($item['floodArea']['county'] ?? null),
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $properties  A feature's properties from NRW's live flood warnings API
+     */
+    public static function fromNaturalResourcesWales(array $properties): self
+    {
+        $message = trim((string) ($properties['RIM_ENGLISH'] ?? ''));
+
+        return new self(
+            floodAreaCode: (string) $properties['FWACODE'],
+            severity: FloodSeverity::tryFrom((int) ($properties['SEVERITYVALUE'] ?? 0)),
+            message: $message === '' ? null : $message,
+            raisedAt: self::time($properties['TIMERAISED'] ?? null),
+            messageChangedAt: self::time($properties['RIM_CHANGED'] ?? null),
+            severityChangedAt: self::time($properties['SEVERITY_CHANGED'] ?? null),
+            areaLabel: self::text($properties['DESCRIPTION'] ?? null),
         );
     }
 

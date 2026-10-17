@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Agency;
 use Database\Factories\FloodAreaFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,12 +12,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
- * An Environment Agency flood alert or flood warning area. Spots link to the
+ * An Environment Agency or Natural Resources Wales flood alert or flood warning area. Spots link to the
  * areas that cover them and name their river, so a warning for a beck that
  * happens to pass nearby is not shown.
  *
  * @property int $id
  * @property string $code
+ * @property Agency $agency
  * @property string $label
  * @property string|null $description
  * @property string|null $river_or_sea
@@ -32,11 +34,19 @@ class FloodArea extends Model
 
     protected $fillable = [
         'code',
+        'agency',
         'label',
         'description',
         'river_or_sea',
         'county',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'agency' => Agency::class,
+        ];
+    }
 
     /** @return BelongsToMany<Spot, $this> */
     public function spots(): BelongsToMany

@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\Agency;
 use App\Enums\FloodSeverity;
 use App\Models\FloodWarning;
 use Illuminate\Support\Carbon;
@@ -26,6 +27,7 @@ final readonly class FloodWarningSummary
         public ?Carbon $raisedAt,
         public ?Carbon $messageChangedAt,
         public Carbon $checkedAt,
+        public Agency $agency = Agency::EnvironmentAgency,
     ) {
     }
 
@@ -40,15 +42,27 @@ final readonly class FloodWarningSummary
             raisedAt: $warning->raised_at,
             messageChangedAt: $warning->message_changed_at,
             checkedAt: $warning->checked_at,
+            agency: $warning->floodArea->agency,
         );
     }
 
     /**
-     * The area's page on GOV.UK's Check for flooding service.
+     * The area's page on GOV.UK's Check for flooding service, or NRW's flood
+     * warnings map for a Welsh area, which has no page per area.
      */
     public function url(): string
     {
-        return 'https://check-for-flooding.service.gov.uk/target-area/'.rawurlencode($this->areaCode);
+        return $this->agency === Agency::NaturalResourcesWales
+            ? 'https://flood-warning.naturalresources.wales/'
+            : 'https://check-for-flooding.service.gov.uk/target-area/'.rawurlencode($this->areaCode);
+    }
+
+    /**
+     * The link text for url().
+     */
+    public function urlLabel(): string
+    {
+        return $this->agency === Agency::NaturalResourcesWales ? 'Read the latest from Natural Resources Wales' : 'Read the latest on GOV.UK';
     }
 
     /**

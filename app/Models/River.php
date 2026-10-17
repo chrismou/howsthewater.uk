@@ -184,6 +184,22 @@ class River extends Model
     }
 
     /**
+     * Whether a river name as SEPA and NRW usually write it, without "River"
+     * or "Afon" ("Tweed", "Teifi", "Rhondda"), refers to this river. Names
+     * that do carry either ("River Cynon") match whichever form we seeded.
+     */
+    public function matchesBareName(?string $name): bool
+    {
+        $bare = trim((string) preg_replace('/^(?:river|afon)\s+/i', '', trim((string) $name)));
+
+        if ($bare === '') {
+            return false;
+        }
+
+        return $this->matchesWatercourse($bare) || $this->matchesWatercourse('River '.$bare) || $this->matchesWatercourse('Afon '.$bare);
+    }
+
+    /**
      * Where the river is expected to end, as seeded. Several rivers across
      * Britain share names like Calder or Derwent, so this picks the right one.
      *

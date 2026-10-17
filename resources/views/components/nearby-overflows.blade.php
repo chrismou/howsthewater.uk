@@ -13,7 +13,9 @@
         <span class="text-sm text-muted">Nearest first, straight-line distance.</span>
     </div>
 
-    @if ($overflows->monitors->isEmpty())
+    @if ($overflows->spillRecency === \App\Enums\SpillRecency::NotCovered)
+        <p class="text-sm text-ink-2">We do not read the water company's overflow data here yet, so overflows within {{ $overflows->radiusMetres / 1000 }} km are not shown. <x-help term="not_covered" /></p>
+    @elseif ($overflows->monitors->isEmpty())
         <p class="text-sm text-ink-2">No water company monitors within {{ $overflows->radiusMetres / 1000 }} km.</p>
     @else
         <div class="overflow-x-auto rounded-lg border border-line bg-surface">

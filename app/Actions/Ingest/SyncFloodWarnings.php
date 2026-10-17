@@ -3,6 +3,7 @@
 namespace App\Actions\Ingest;
 
 use App\Data\FloodWarningData;
+use App\Enums\Agency;
 use App\Models\FloodArea;
 use App\Models\FloodWarning;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
@@ -10,9 +11,10 @@ use Illuminate\Support\Collection;
 
 /**
  * Replaces the stored warnings with those in force now for the flood areas
- * our spots use. The feed lists every warning in England in one small
- * response, so each run reads it whole; a warning missing from the feed,
- * or marked no longer in force, has been lifted and is removed.
+ * our spots use, one agency's feed at a time. Each feed lists every warning
+ * in England (or Wales) in one small response, so each run reads it whole; a
+ * warning missing from its agency's feed, or marked no longer in force, has
+ * been lifted and is removed.
  */
 class SyncFloodWarnings
 {
@@ -21,16 +23,16 @@ class SyncFloodWarnings
     }
 
     /**
-     * @param  Collection<int, FloodWarningData>|null  $feed  The national feed, if already fetched
+     * @param  Collection<int, FloodWarningData>|null  $feed  The agency's national feed, if already fetched (the EA's is fetched otherwise)
      * @return array{warnings: int}
      */
-    public function handle(?Collection $feed = null): array
+    public function handle(?Collection $feed = null, Agency $agency = Agency::EnvironmentAgency): array
     {
         $inForce = ($feed ?? $this->client->floodWarnings())
             ->filter(fn (FloodWarningData $warning) => $warning->isInForce())
             ->keyBy('floodAreaCode');
 
-        $areas = FloodArea::query()->whereHas('spots')->whereIn('code', $inForce->keys())->get();
+        $areas = FloodArea::query()->where('agency', $agency)->whereHas('spots')->whereIn('code', $inForce->keys())->get();
 
         foreach ($areas as $area) {
             /** @var FloodWarningData $data */
@@ -48,7 +50,10 @@ class SyncFloodWarnings
             );
         }
 
-        FloodWarning::query()->whereNotIn('flood_area_id', $areas->pluck('id'))->delete();
+        FloodWarning::query()
+            ->whereHas('floodArea', fn ($query) => $query->where('agency', $agency))
+            ->whereNotIn('flood_area_id', $areas->pluck('id'))
+            ->delete();
 
         return ['warnings' => $areas->count()];
     }

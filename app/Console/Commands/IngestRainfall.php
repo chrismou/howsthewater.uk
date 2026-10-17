@@ -22,7 +22,7 @@ class IngestRainfall extends Command
 
     protected $signature = 'ingest:rainfall {--stations : Refresh the rain gauges near every spot, not just spots never searched}';
 
-    protected $description = 'Fetch new rainfall readings from the Environment Agency and SEPA';
+    protected $description = 'Fetch new rainfall readings from the Environment Agency, SEPA and Natural Resources Wales';
 
     public function handle(
         SyncRainfallStations $syncStations,

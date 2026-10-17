@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands, Scotland). The site
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands, Scotland, Wales). The site
 reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -177,7 +177,14 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Cart), the Dunbartonshire Leven, the Ayrshire rivers (Irvine, Ayr, Doon), the Fife Eden, the Angus North and South
   Esk, and the Nith, Annan and Galloway Dee (slug `dee-galloway`). Many share names with English
   or other Scottish rivers, so each main river's mouth hint matters. Scotland has SEPA levels, rainfall and bathing
-  waters (with samples while switched on) but no flood warnings yet. Main rivers and their tributaries are seeded
+  waters (with samples while switched on) but no flood warnings yet. Wales has the Taff and Usk, the Wye (with the
+  Irfon, Ithon, Lugg and Monnow, running on into England to Monmouth), the Tawe, Neath (with the Mellte), Towy, Teifi
+  and Western Cleddau, the Dovey, Mawddach (with the Wnion), Glaslyn, Conwy (with the Llugwy) and the Dee (with the
+  Tryweryn, running on to Chester). Welsh rivers take their OS name: the English alternative where there is one
+  (River Usk), the Welsh name where that is the only one (Afon Teifi), with the other form as an alias; slugs drop
+  "River" or "Afon". Wales has bathing waters (Wales's register, `Agency::NaturalResourcesWales`) and NRW's levels,
+  rainfall and flood warnings, but no overflows yet: Dŵr Cymru Welsh Water's live overflow layer is not read yet.
+  Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
@@ -189,7 +196,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   since spots low on a big system (Goole) have hundreds upstream. Distances follow the water.
   Positions come from projecting lat/lng onto the river centreline (`rivers:centrelines` then `rivers:positions`,
   which also sets each tributary's and inflowing main river's `joins_at_metres`).
-- Beaches and lakes come from the EA designated bathing water register, and in Scotland from SEPA's open map service
+- Beaches and lakes come from the EA designated bathing water register (Wales's register sits on the same platform
+  under `/wales/bathing-waters`, read by `BathingWaterClient::wales()` for NRW sites, which name sites by `label`),
+  and in Scotland from SEPA's open map service
   (`Sepa\BathingWaterClient`, `SyncBathingWaters::handleSepa()`): location, classification and a link to SEPA's
   results page (`profile_url`). SEPA publishes samples only on those HTML pages, so `ingest:sepa-bathing-samples`
   (`SyncSepaBathingWaterSamples`, `Sepa\BathingWaterResultsClient`) reads them one site at a time, only while
@@ -224,7 +233,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Guids are stable per event so readers notify once. The feed routes sit before the river and spot routes, which would
   otherwise take "feed" as a spot slug (or a beach feed as a spot). Spot, river, beach and lake pages pass `feed` to the layout for the `<link rel="alternate">`.
 - `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
-  green "no spills". Keep that distinction for any new status.
+  green "no spills". Keep that distinction for any new status. A region without overflow feeds
+  (`Region::hasOverflowData()`, Wales for now) gives `SpillRecency::NotCovered`: pages say "Overflow data not available
+  here yet" and show dashes, never zero counts, "no monitored overflows" or a 30-day history, and `RegionSummary`
+  carries `hasOverflowData` for the live bar, region page and cards.
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed, and `Spot::onMainRiver()` wherever spots
   are listed; the spot controllers 404 a spot on a tributary.
 - Rivers belong to a `Region` and URLs are region-scoped (`/{region}/{river}/{spot}`, API `/api/v1/regions/...`) with
@@ -275,6 +287,23 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   readings for up to date gauges share one request. The typical range is SEPA's normal
   range, the median annual minimum to median annual maximum. A SEPA failure is logged and the Environment Agency
   gauges still sync.
+- Welsh levels, rainfall and flood warnings: Natural Resources Wales's API (`NaturalResourcesWales\Api`), which needs
+  a free key per product (`NRW_LEVELS_API_KEY`, `NRW_FLOOD_WARNINGS_API_KEY`; `NRW_FLOOD_RISK_API_KEY` for the 5-day
+  flood risk, not used yet). Each product allows 10 calls a minute and 2,880 a day, so `Api` counts calls per product
+  in the cache (`RateLimiter`, a little under both) and refuses beyond that; NRW data is skipped while a key is blank,
+  as it is in tests. `RiversAndSeasClient` reads every station's latest 15 minute reading in one call, cached for
+  5 minutes so the level and rainfall ingests share it. Its history call returns a whole year for one parameter (and
+  returns whatever parameter it is given, even another gauge's, so always pass the gauge's own `measure_id`); it only
+  fills new gauges and gaps (over an hour for levels, any missed reading for rainfall), at most 3 per ingest per run,
+  longest gap first, so new gauges fill in over a few hours. Gauges are matched by the river in their title ("Wye at
+  Glasbury", `River::matchesBareName()`) within 2 km of the centreline, external IDs are `NRW` plus NRW's location
+  and `measure_id` is the parameter id. NRW publishes no typical range, so each history read sets it to the 5th to
+  95th percentile level over at least 180 days. Flood warnings come from `/floodwarnings/v3/all` and the alert and
+  warning area outlines from DataMapWales's open WFS (`FloodWarningsClient::floodAreasNear()`, searched for spots
+  inside NRW's extent); some NRW areas name the river without "River" or leave it blank, so those match on the
+  area's name or description. `flood_areas.agency` keeps each agency's warnings and history apart: each feed only
+  replaces and closes its own. NRW asks that its data is not kept over a year, so `nrw:prune` (daily) deletes NRW
+  readings and Welsh flood warning events over 365 days old.
 - Rainfall: the Environment Agency API's tipping bucket rain gauges (and SEPA's), `ingest:rainfall`. Each spot, beach and lake links to the
   nearest gauge within 20 km (`LinkNearestRainfallStations`, also run by `rivers:positions`); gauge discovery searches
   around all three per region, readings are fetched for any gauge `inUse()`, and totals are sums of 15 minute readings.
@@ -307,7 +336,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `rain_gauges_searched_at` and `flood_areas_searched_at`; the 15-minute `ingest:gauges`, `ingest:rainfall` and
   `ingest:floods` search anything still null, and `ingest:overflows` positions monitors it sees for the first time.
   `--stations` (and `--areas` for floods) re-checks everything (weekly).
-- No API keys are needed. Every request sends a user agent with `CONTACT_EMAIL` (`app.contact_email`), so providers can reach us. Map tiles are OpenStreetMap.
+- No API keys are needed apart from NRW's. Every request sends a user agent with `CONTACT_EMAIL` (`app.contact_email`), so providers can reach us. Map tiles are OpenStreetMap.
 - Bathing waters: the EA register at `environment.data.gov.uk/doc/bathing-water.json`, `ingest:bathing-waters` (hourly).
   One request returns every site's latest classification, sample and pollution risk forecast; each run stores the
   latest sample, and sample and classification history is backfilled per site on first sight (and weekly with

@@ -9,12 +9,14 @@ enum Agency: string
 {
     case EnvironmentAgency = 'environment_agency';
     case Sepa = 'sepa';
+    case NaturalResourcesWales = 'nrw';
 
     public function label(): string
     {
         return match ($this) {
             self::EnvironmentAgency => 'Environment Agency',
             self::Sepa => 'SEPA',
+            self::NaturalResourcesWales => 'Natural Resources Wales',
         };
     }
 }

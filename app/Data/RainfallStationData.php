@@ -30,8 +30,26 @@ final readonly class RainfallStationData
             latitude: (float) $series['station_latitude'],
             longitude: (float) $series['station_longitude'],
             measureId: $series['ts_id'],
-            isActive: GaugeStationData::sepaSeriesIsLive($series['to']),
+            isActive: GaugeStationData::reportedRecently($series['to']),
             network: Agency::Sepa,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $station  A station from NRW's station data
+     * @param  array<array-key, mixed>  $parameter  Its rainfall parameter, 15 minute totals in millimetres
+     */
+    public static function fromNaturalResourcesWales(array $station, array $parameter): self
+    {
+        return new self(
+            externalId: GaugeStationData::NRW_PREFIX.$station['location'],
+            label: is_string($station['nameEN'] ?? null) && $station['nameEN'] !== '' ? $station['nameEN'] : 'Rainfall station',
+            gridReference: is_string($station['ngr'] ?? null) && $station['ngr'] !== '' ? $station['ngr'] : null,
+            latitude: (float) $station['latitude'],
+            longitude: (float) $station['longitude'],
+            measureId: (string) $parameter['parameter'],
+            isActive: ($station['statusEN'] ?? null) === 'Online' && GaugeStationData::reportedRecently(is_string($parameter['latestTime'] ?? null) ? $parameter['latestTime'] : null),
+            network: Agency::NaturalResourcesWales,
         );
     }
 

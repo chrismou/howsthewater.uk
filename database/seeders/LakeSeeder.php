@@ -34,6 +34,10 @@ class LakeSeeder extends Seeder
                 ['name' => 'Loch Ness', 'latitude' => 57.3000, 'longitude' => -4.4500, 'description' => 'The long, deep loch of the Great Glen, with the bathing water at Dores.', 'gauge_reference' => null],
                 ['name' => 'Loch Morlich', 'latitude' => 57.1670, 'longitude' => -3.7050, 'description' => 'The Glenmore loch below the Cairngorms, with a sandy beach.', 'gauge_reference' => null],
             ],
+            'wales' => [
+                ['name' => 'Llyn Padarn', 'latitude' => 53.1290, 'longitude' => -4.1250, 'description' => 'The lake below Snowdon at Llanberis, with the bathing water on its northern shore.', 'gauge_reference' => null],
+                ['name' => 'Llanishen Reservoir', 'latitude' => 51.5310, 'longitude' => -3.1740, 'description' => 'The reopened reservoir in north Cardiff, used for open water swimming.', 'gauge_reference' => null],
+            ],
             'thames-valley' => [
                 ['name' => 'Cotswold Country Park', 'latitude' => 51.6610, 'longitude' => -1.9609, 'description' => 'A former gravel pit lake near Cricklade with a sand beach.', 'gauge_reference' => null],
                 ['name' => 'Frensham Great Pond', 'latitude' => 51.1573, 'longitude' => -0.7918, 'description' => 'Heathland pond with a sandy shore near Farnham.', 'gauge_reference' => null],

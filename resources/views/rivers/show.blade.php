@@ -17,8 +17,12 @@
         <p class="text-sm text-muted"><a href="{{ route('hubs.rivers') }}" class="hover:underline">All rivers</a> <span class="mx-1">/</span> <a href="{{ route('regions.show', $overview->river->region) }}" class="hover:underline">{{ $overview->river->region->name }}</a></p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">{{ $overview->river->name }}</h1>
         <p class="mt-2 text-ink-2">
-            {{ $overview->monitorCount }} storm overflow {{ \Illuminate\Support\Str::plural('monitor', $overview->monitorCount) }} on the {{ $overview->river->name }}{{ $overview->hasTributaries ? ' and its tributaries' : '' }},
-            {{ $overview->dischargingNowCount }} discharging right now{{ $overview->offlineCount > 0 ? ' and '.$overview->offlineCount.' offline' : '' }}. Spots are listed source to mouth.
+            @if ($overview->river->region->hasOverflowData())
+                {{ $overview->monitorCount }} storm overflow {{ \Illuminate\Support\Str::plural('monitor', $overview->monitorCount) }} on the {{ $overview->river->name }}{{ $overview->hasTributaries ? ' and its tributaries' : '' }},
+                {{ $overview->dischargingNowCount }} discharging right now{{ $overview->offlineCount > 0 ? ' and '.$overview->offlineCount.' offline' : '' }}. Spots are listed source to mouth.
+            @else
+                We do not read the water company's overflow data for the {{ $overview->river->name }} yet, so overflows are not shown. Spots are listed source to mouth.
+            @endif
             <a href="{{ route('rivers.feed', [$overview->river->region, $overview->river]) }}" class="whitespace-nowrap text-accent hover:underline">Follow the {{ \Illuminate\Support\Str::after($overview->river->name, 'River ') }} by RSS</a>
         </p>
     </div>

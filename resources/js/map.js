@@ -7,6 +7,7 @@ const recencyColours = {
     within_48_hours: '#b45309',
     none: '#047857',
     no_data: '#78716c',
+    not_covered: '#78716c',
 };
 
 const monitorColours = {

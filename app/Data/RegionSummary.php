@@ -18,6 +18,7 @@ final readonly class RegionSummary
      * @param  Collection<int, RiverSummary>  $rivers  In seed order, which runs through the catchments
      * @param  Collection<int, WaterBodySummary>  $beaches  By name
      * @param  Collection<int, WaterBodySummary>  $lakes  By name
+     * @param  bool  $hasOverflowData  False for a region whose water company feed we do not read yet (Wales, for now)
      */
     public function __construct(
         public ?string $slug,
@@ -31,6 +32,7 @@ final readonly class RegionSummary
         public Carbon $generatedAt,
         public Collection $beaches = new Collection(),
         public Collection $lakes = new Collection(),
+        public bool $hasOverflowData = true,
     ) {
     }
 
@@ -54,6 +56,7 @@ final readonly class RegionSummary
             generatedAt: $summaries->min('generatedAt') ?? now(),
             beaches: $summaries->flatMap(fn (RegionSummary $summary) => $summary->beaches)->values(),
             lakes: $summaries->flatMap(fn (RegionSummary $summary) => $summary->lakes)->values(),
+            hasOverflowData: $summaries->contains('hasOverflowData', true),
         );
     }
 
@@ -172,6 +175,11 @@ final readonly class RegionSummary
 
     public function dataIsStale(): bool
     {
+        // A region whose feed we do not read has no overflow data to go out of date.
+        if (! $this->hasOverflowData) {
+            return false;
+        }
+
         return $this->dataUpdatedAt === null
             || $this->dataUpdatedAt->lessThan(now()->subHours(SpotConditions::STALE_AFTER_HOURS));
     }

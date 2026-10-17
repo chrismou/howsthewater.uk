@@ -9,6 +9,9 @@
     $place = fn ($item) => ['lat' => $item->latitude, 'lng' => $item->longitude, 'label' => $item->name];
     $classifications = $summary->beaches->countBy(fn ($beach) => $beach->classification?->value);
 
+    // Overflow figures for a region whose feed we do not read yet show as a dash, never as zero.
+    $overflowFigure = fn (int $value) => $summary->hasOverflowData ? $value : '-';
+
     [$url, $markers, $blurb, $figures] = match ($type) {
         'beaches' => [
             route('beaches.index', $summary->slug),
@@ -17,7 +20,7 @@
             [
                 ['Beaches', $summary->beaches->count(), null],
                 ['Excellent or good', $classifications->get('Excellent', 0) + $classifications->get('Good', 0), null],
-                ['Overflow discharging nearby', $summary->beaches->where('dischargingNearbyCount', '>', 0)->count(), 'text-alert', 'beaches'],
+                ['Overflow discharging nearby', $overflowFigure($summary->beaches->where('dischargingNearbyCount', '>', 0)->count()), 'text-alert', 'beaches'],
                 ['Classified poor', $classifications->get('Poor', 0), 'text-alert'],
             ],
         ],
@@ -28,8 +31,8 @@
             [
                 ['Lakes', $summary->lakes->count(), null],
                 ['Bathing sites', $summary->lakes->sum('bathingSiteCount'), null],
-                ['Overflow discharging nearby', $summary->lakes->where('dischargingNearbyCount', '>', 0)->count(), 'text-alert', 'lakes'],
-                ['Spill nearby in last 48h', $summary->lakes->filter->spilledNearbyRecently()->count(), 'text-spill', 'lakes'],
+                ['Overflow discharging nearby', $overflowFigure($summary->lakes->where('dischargingNearbyCount', '>', 0)->count()), 'text-alert', 'lakes'],
+                ['Spill nearby in last 48h', $overflowFigure($summary->lakes->filter->spilledNearbyRecently()->count()), 'text-spill', 'lakes'],
             ],
         ],
         default => [
@@ -39,8 +42,8 @@
             [
                 ['Rivers', $summary->rivers->count(), null],
                 ['Spots', $summary->spots()->count(), null],
-                ['Discharging now', $summary->dischargingNowCount(), 'text-alert'],
-                ['Spill in last 24h', $summary->spotsWithSpillLast24HoursCount(), 'text-spill', 'spots'],
+                ['Discharging now', $overflowFigure($summary->dischargingNowCount()), 'text-alert'],
+                ['Spill in last 24h', $overflowFigure($summary->spotsWithSpillLast24HoursCount()), 'text-spill', 'spots'],
             ],
         ],
     };
@@ -56,11 +59,11 @@
             @foreach ($figures as $figure)
                 <div>
                     <dt class="text-muted">{{ $figure[0] }}</dt>
-                    <dd class="font-mono text-xl font-semibold tabular-nums {{ $figure[2] !== null && $figure[1] > 0 ? $figure[2] : '' }}">
+                    <dd class="font-mono text-xl font-semibold tabular-nums {{ $figure[2] !== null && is_int($figure[1]) && $figure[1] > 0 ? $figure[2] : '' }}">
                         {{ $figure[1] }}
-                        @isset($figure[3])
+                        @if (isset($figure[3]) && is_int($figure[1]))
                             <span class="font-sans text-sm font-normal text-muted">{{ $figure[3] }}</span>
-                        @endisset
+                        @endif
                     </dd>
                 </div>
             @endforeach

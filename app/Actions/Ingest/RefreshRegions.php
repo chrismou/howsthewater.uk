@@ -52,12 +52,12 @@ class RefreshRegions
                 $counts['spots']++;
             });
 
-        BathingWater::query()->beaches()->with('rainfallStation')->whereIn('region_id', $regions->modelKeys())->each(function (BathingWater $beach) use (&$counts) {
+        BathingWater::query()->beaches()->with(['rainfallStation', 'region'])->whereIn('region_id', $regions->modelKeys())->each(function (BathingWater $beach) use (&$counts) {
             $this->waterBodies->refreshBeach($beach);
             $counts['beaches']++;
         });
 
-        Lake::query()->with(['gaugeStation', 'rainfallStation', 'bathingWaters'])->whereIn('region_id', $regions->modelKeys())->each(function (Lake $lake) use (&$counts) {
+        Lake::query()->with(['gaugeStation', 'rainfallStation', 'bathingWaters', 'region'])->whereIn('region_id', $regions->modelKeys())->each(function (Lake $lake) use (&$counts) {
             $this->waterBodies->refreshLake($lake);
             $counts['lakes']++;
         });

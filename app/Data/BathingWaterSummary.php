@@ -54,11 +54,15 @@ final readonly class BathingWaterSummary
     }
 
     /**
-     * The link text for url(): the EA's profile, or SEPA's results page.
+     * The link text for url(): the EA's or NRW's profile, or SEPA's results page.
      */
     public function urlLabel(): string
     {
-        return $this->bathingWater->agency === Agency::Sepa ? 'SEPA results page' : 'Environment Agency profile';
+        return match ($this->bathingWater->agency) {
+            Agency::Sepa => 'SEPA results page',
+            Agency::NaturalResourcesWales => 'Natural Resources Wales profile',
+            Agency::EnvironmentAgency => 'Environment Agency profile',
+        };
     }
 
     /**
@@ -67,6 +71,6 @@ final readonly class BathingWaterSummary
      */
     public function hasSamplesHere(): bool
     {
-        return $this->bathingWater->agency === Agency::EnvironmentAgency || $this->bathingWater->samples_checked_at !== null;
+        return $this->bathingWater->agency !== Agency::Sepa || $this->bathingWater->samples_checked_at !== null;
     }
 }

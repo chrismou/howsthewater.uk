@@ -9,9 +9,10 @@ use App\Enums\PollutionRisk;
 use Illuminate\Support\Carbon;
 
 /**
- * One designated bathing water, from the EA register (with its latest
- * classification, sample and pollution risk forecast) or from SEPA's map
- * service (location and classification only).
+ * One designated bathing water, from the EA register or Wales's register
+ * on the same platform (with its latest classification, sample and
+ * pollution risk forecast) or from SEPA's map service (location and
+ * classification only).
  */
 final readonly class BathingWaterData
 {
@@ -83,9 +84,11 @@ final readonly class BathingWaterData
     }
 
     /**
-     * @param  array<string, mixed>  $item  A bathing water from the EA register
+     * Wales's register (published for NRW) names sites by label rather than name.
+     *
+     * @param  array<string, mixed>  $item  A bathing water from the EA register, or Wales's on the same platform
      */
-    public static function fromEnvironmentAgency(array $item): self
+    public static function fromEnvironmentAgency(array $item, Agency $agency = Agency::EnvironmentAgency, ?string $profileUrl = null): self
     {
         $types = $item['type'] ?? [];
         $point = $item['samplingPoint'] ?? [];
@@ -100,7 +103,7 @@ final readonly class BathingWaterData
             eubwid: (string) $item['eubwidNotation'],
             samplingPoint: basename((string) ($point['_about'] ?? '')),
             kind: BathingWaterKind::fromTypes(is_array($types) ? $types : [$types]),
-            name: (string) self::text($item['name'] ?? ''),
+            name: (string) self::text($item['name'] ?? $item['label'] ?? ''),
             districts: array_values(array_filter(array_map(
                 fn ($district) => is_array($district) ? self::text($district['name'] ?? null) : null,
                 is_array($item['district'] ?? null) ? $item['district'] : [],
@@ -117,6 +120,8 @@ final readonly class BathingWaterData
             seasonStartsOn: self::date($profile['seasonStartDate'] ?? null),
             seasonEndsOn: self::date($profile['seasonFinishDate'] ?? null),
             latestSample: $sample === null ? null : BathingWaterSampleData::fromEnvironmentAgency($sample),
+            agency: $agency,
+            profileUrl: $profileUrl,
         );
     }
 

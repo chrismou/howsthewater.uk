@@ -5,12 +5,15 @@ namespace App\Console\Commands;
 use App\Actions\Ingest\RecordFloodWarningHistory;
 use App\Actions\Ingest\SyncFloodAreas;
 use App\Actions\Ingest\SyncFloodWarnings;
+use App\Enums\Agency;
 use App\Services\Conditions\ChangedRegions;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
+use App\Services\NaturalResourcesWales\FloodWarningsClient;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class IngestFloods extends Command
 {
@@ -18,10 +21,11 @@ class IngestFloods extends Command
         {--areas : Refresh the flood areas covering every spot, not just spots never searched}
         {--quick : Skip the slow flood area search, for development; a later run picks the spots up}';
 
-    protected $description = 'Fetch the flood alerts and warnings in force from the Environment Agency';
+    protected $description = 'Fetch the flood alerts and warnings in force from the Environment Agency and Natural Resources Wales';
 
     public function handle(
         FloodMonitoringClient $client,
+        FloodWarningsClient $nrw,
         SyncFloodAreas $syncAreas,
         SyncFloodWarnings $syncWarnings,
         RecordFloodWarningHistory $history,
@@ -40,16 +44,48 @@ class IngestFloods extends Command
         $result = $syncWarnings->handle($feed);
         $recorded = $history->handle($feed);
 
-        $changed->markAll();
-
         $this->info(sprintf(
-            '%d flood alerts and warnings in force for our spots; history: %d opened, %d closed.',
+            'Environment Agency: %d flood alerts and warnings in force for our spots; history: %d opened, %d closed.',
             $result['warnings'],
             $recorded['opened'],
             $recorded['closed'],
         ));
 
+        if ($nrw->isEnabled()) {
+            $failed = ! $this->syncWales($nrw, $syncWarnings, $history) || $failed;
+        }
+
+        $changed->markAll();
+
         return $failed ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * NRW's feed, read and recorded on its own so an NRW failure leaves the
+     * Environment Agency's warnings and the open Welsh events as they were.
+     */
+    private function syncWales(FloodWarningsClient $nrw, SyncFloodWarnings $syncWarnings, RecordFloodWarningHistory $history): bool
+    {
+        try {
+            $feed = $nrw->floodWarnings();
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            $this->error("Natural Resources Wales flood warnings failed, {$exception->getMessage()}");
+            Log::error("Natural Resources Wales flood warnings failed: {$exception->getMessage()}");
+
+            return false;
+        }
+
+        $result = $syncWarnings->handle($feed, Agency::NaturalResourcesWales);
+        $recorded = $history->handle($feed, Agency::NaturalResourcesWales);
+
+        $this->info(sprintf(
+            'Natural Resources Wales: %d flood alerts and warnings in force for our spots; history: %d opened, %d closed.',
+            $result['warnings'],
+            $recorded['opened'],
+            $recorded['closed'],
+        ));
+
+        return true;
     }
 
     /**

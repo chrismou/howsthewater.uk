@@ -8,7 +8,7 @@
         \App\Enums\SpillRecency::Within48Hours => 'bg-pill-amber-bg text-pill-amber-text ring-pill-amber-ring',
         \App\Enums\SpillRecency::None => 'bg-pill-green-bg text-pill-green-text ring-pill-green-ring',
         \App\Enums\SpillRecency::Offline => 'bg-pill-grey-bg text-pill-grey-text ring-pill-grey-ring',
-        \App\Enums\SpillRecency::NoData => 'bg-pill-grey-bg text-pill-grey-text ring-pill-grey-ring',
+        \App\Enums\SpillRecency::NoData, \App\Enums\SpillRecency::NotCovered => 'bg-pill-grey-bg text-pill-grey-text ring-pill-grey-ring',
     };
 @endphp
 

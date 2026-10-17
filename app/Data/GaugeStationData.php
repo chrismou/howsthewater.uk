@@ -7,6 +7,9 @@ use Illuminate\Support\Carbon;
 
 final readonly class GaugeStationData
 {
+    /** NRW gauges are stored as "NRW" followed by NRW's location number. */
+    public const NRW_PREFIX = 'NRW';
+
     public function __construct(
         public string $externalId,
         public string $label,
@@ -39,17 +42,46 @@ final readonly class GaugeStationData
             unit: $series['ts_unitsymbol'] === null || $series['ts_unitsymbol'] === '' ? 'm' : $series['ts_unitsymbol'],
             typicalRangeLow: null,
             typicalRangeHigh: null,
-            isActive: self::sepaSeriesIsLive($series['to']),
+            isActive: self::reportedRecently($series['to']),
             network: Agency::Sepa,
         );
     }
 
     /**
-     * SEPA keeps closed gauges in its lists, so a series with no reading in the last 30 days counts as inactive.
+     * SEPA and NRW keep closed gauges in their lists, so a series with no reading in the last 30 days counts as inactive.
      */
-    public static function sepaSeriesIsLive(?string $lastReadingAt): bool
+    public static function reportedRecently(?string $lastReadingAt): bool
     {
         return $lastReadingAt !== null && $lastReadingAt !== '' && Carbon::parse($lastReadingAt)->isAfter(now()->subDays(30));
+    }
+
+    /**
+     * NRW titles each gauge "<river> at <place>" ("Wye at Glasbury"), naming
+     * the river without "River" or "Afon".
+     *
+     * @param  array<string, mixed>  $station  A station from NRW's station data
+     * @param  array<array-key, mixed>  $parameter  Its river level parameter
+     */
+    public static function fromNaturalResourcesWales(array $station, array $parameter): self
+    {
+        $title = is_string($station['titleEn'] ?? null) ? $station['titleEn'] : '';
+        $riverName = preg_match('/^(.+?)\s+at\s+/i', $title, $matches) === 1 ? trim($matches[1]) : null;
+        $unit = is_string($parameter['units'] ?? null) && $parameter['units'] !== '' ? $parameter['units'] : 'm';
+
+        return new self(
+            externalId: self::NRW_PREFIX.$station['location'],
+            label: is_string($station['nameEN'] ?? null) && $station['nameEN'] !== '' ? $station['nameEN'] : $title,
+            riverName: $riverName,
+            town: null,
+            latitude: (float) $station['latitude'],
+            longitude: (float) $station['longitude'],
+            measureId: (string) $parameter['parameter'],
+            unit: $unit,
+            typicalRangeLow: null,
+            typicalRangeHigh: null,
+            isActive: ($station['statusEN'] ?? null) === 'Online' && self::reportedRecently(is_string($parameter['latestTime'] ?? null) ? $parameter['latestTime'] : null),
+            network: Agency::NaturalResourcesWales,
+        );
     }
 
     /**

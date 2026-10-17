@@ -100,7 +100,7 @@ class WaterBodyConditionsService
     {
         return new BeachConditions(
             bathingWater: $this->summarise($beach),
-            overflows: $this->overflowsNear([[$beach->latitude, $beach->longitude]]),
+            overflows: $this->overflowsNear([[$beach->latitude, $beach->longitude]], $beach->region?->hasOverflowData() ?? true),
             rainfall: $this->rainfallAt($beach->rainfallStation, $beach->latitude, $beach->longitude),
         );
     }
@@ -120,7 +120,7 @@ class WaterBodyConditionsService
             lake: $lake,
             bathingWaters: $lake->bathingWaters->map(fn (BathingWater $site) => $this->summarise($site))->values(),
             level: $lake->gaugeStation !== null ? $this->levelSummariser->summarise($lake->gaugeStation) : null,
-            overflows: $this->overflowsNear($points),
+            overflows: $this->overflowsNear($points, $lake->region->hasOverflowData()),
             rainfall: $this->rainfallAt($lake->rainfallStation, $lake->latitude, $lake->longitude),
         );
     }
@@ -145,7 +145,7 @@ class WaterBodyConditionsService
     /**
      * @param  array<int, array{0: float, 1: float}>  $points
      */
-    private function overflowsNear(array $points): NearbyOverflows
+    private function overflowsNear(array $points, bool $covered): NearbyOverflows
     {
         $monitors = $this->monitors->near($points, self::NEARBY_RADIUS_METRES);
         $recentEvents = $this->spillHistory->recentEventsForMonitors($monitors->map(fn (NearbyMonitorSummary $summary) => $summary->monitor->id));
@@ -158,6 +158,7 @@ class WaterBodyConditionsService
             radiusMetres: self::NEARBY_RADIUS_METRES,
             monitors: $monitors,
             spillRecency: SpillRecency::assess(
+                covered: $covered,
                 monitorCount: $monitors->count(),
                 dischargingNow: $dischargingNow,
                 offline: $offline,

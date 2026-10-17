@@ -42,6 +42,9 @@ function bathingWaterItem(string $id, string $name, string $type, array $distric
 function fakeBathingWaterApi(array $sites): void
 {
     Http::fake([
+        // Wales's register and SEPA's map service, read by the same command, have nothing to add here.
+        'environment.data.gov.uk/wales/*' => Http::response(['result' => ['items' => []]]),
+        'map.sepa.org.uk/*' => Http::response(['features' => []]),
         'environment.data.gov.uk/doc/bathing-water.json*' => Http::response(['result' => ['items' => $sites]]),
         'environment.data.gov.uk/doc/bathing-water-quality/in-season/sample.json*' => Http::response(['result' => ['items' => [
             ['sampleDateTime' => ['inXSDDateTime' => ['_value' => '2026-06-24T09:00:00']], 'escherichiaColiCount' => 310, 'escherichiaColiQualifier' => ['countQualifierNotation' => '=']],
@@ -123,6 +126,8 @@ it('logs an error and fails when a site history fetch fails', function () {
         'environment.data.gov.uk/doc/bathing-water.json*' => Http::response(['result' => ['items' => [
             bathingWaterItem('uke0000-01000', 'Scarborough South Bay', 'CoastalBathingWater', ['North Yorkshire'], 54.28, -0.40),
         ]]]),
+        'environment.data.gov.uk/wales/*' => Http::response(['result' => ['items' => []]]),
+        'map.sepa.org.uk/*' => Http::response(['features' => []]),
         'environment.data.gov.uk/*' => Http::response('', 500),
     ]);
 
@@ -153,6 +158,8 @@ it('logs one clear error when the register request is refused, and still backfil
 
     Http::fake([
         'environment.data.gov.uk/doc/bathing-water.json*' => Http::response('<html>403 Forbidden</html>', 403),
+        'environment.data.gov.uk/wales/*' => Http::response(['result' => ['items' => []]]),
+        'map.sepa.org.uk/*' => Http::response(['features' => []]),
         'environment.data.gov.uk/doc/bathing-water-quality/*' => Http::response(['result' => ['items' => []]]),
         'environment.data.gov.uk/data/bathing-water-quality/*' => Http::response(['result' => ['items' => []]]),
     ]);

@@ -34,7 +34,7 @@ class SyncBathingWaterHistory
     public function handle(bool $onlyNeverFetched = true): array
     {
         $bathingWaters = BathingWater::query()
-            ->where('agency', Agency::EnvironmentAgency)
+            ->whereIn('agency', [Agency::EnvironmentAgency, Agency::NaturalResourcesWales])
             ->when($onlyNeverFetched, fn ($query) => $query->whereNull('history_fetched_at'))
             ->get();
 
@@ -48,9 +48,10 @@ class SyncBathingWaterHistory
 
             // One site's request failing must not stop the rest.
             try {
-                $samples += $this->sync->storeSamples($bathingWater, $this->client->samples($bathingWater->eubwid));
+                $client = $this->client->forAgency($bathingWater->agency);
+                $samples += $this->sync->storeSamples($bathingWater, $client->samples($bathingWater->eubwid));
 
-                foreach ($this->client->classifications($bathingWater->sampling_point) as $year => $classification) {
+                foreach ($client->classifications($bathingWater->sampling_point) as $year => $classification) {
                     $bathingWater->classifications()->updateOrCreate(['year' => $year], ['classification' => $classification]);
                 }
 

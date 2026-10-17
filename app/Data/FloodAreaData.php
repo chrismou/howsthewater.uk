@@ -2,6 +2,8 @@
 
 namespace App\Data;
 
+use App\Enums\Agency;
+
 final readonly class FloodAreaData
 {
     public function __construct(
@@ -9,6 +11,7 @@ final readonly class FloodAreaData
         public string $label,
         public ?string $description,
         public ?string $riverOrSea,
+        public Agency $agency = Agency::EnvironmentAgency,
     ) {
     }
 
@@ -22,6 +25,23 @@ final readonly class FloodAreaData
             label: (string) ($item['label'] ?? $item['notation']),
             description: isset($item['description']) && $item['description'] !== '' ? (string) $item['description'] : null,
             riverOrSea: isset($item['riverOrSea']) && $item['riverOrSea'] !== '' ? (string) $item['riverOrSea'] : null,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $properties  A flood warning or alert area from NRW's DataMapWales layers
+     */
+    public static function fromNaturalResourcesWales(array $properties): self
+    {
+        $text = fn (mixed $value) => is_string($value) && trim($value) !== '' ? trim($value) : null;
+        $code = (string) $properties['fwd_tacode'];
+
+        return new self(
+            code: $code,
+            label: $text($properties['fwa_name'] ?? null) ?? $code,
+            description: $text($properties['descrip'] ?? null),
+            riverOrSea: $text($properties['river_sea'] ?? null),
+            agency: Agency::NaturalResourcesWales,
         );
     }
 

@@ -14,14 +14,18 @@ enum SpillRecency: string
     case None = 'none';
     case Offline = 'offline';
     case NoData = 'no_data';
+    case NotCovered = 'not_covered';
 
     /**
      * The recency for a set of monitors. Every monitor being offline is an
-     * absence of data, not a clean bill, so it never reads as "none".
+     * absence of data, not a clean bill, so it never reads as "none". A
+     * place whose water company feed we do not read yet is not covered,
+     * which never reads as "no monitored overflows" either.
      */
-    public static function assess(int $monitorCount, int $dischargingNow, int $offline, bool $spilledWithin24Hours, bool $spilledWithin48Hours): self
+    public static function assess(int $monitorCount, int $dischargingNow, int $offline, bool $spilledWithin24Hours, bool $spilledWithin48Hours, bool $covered = true): self
     {
         return match (true) {
+            ! $covered => self::NotCovered,
             $monitorCount === 0 => self::NoData,
             $dischargingNow > 0 => self::DischargingNow,
             $spilledWithin24Hours => self::Within24Hours,
@@ -44,6 +48,7 @@ enum SpillRecency: string
             self::None => 'No spills reported nearby in the last 48 hours',
             self::Offline => 'Nearby monitors offline, no spill data',
             self::NoData => 'No monitored overflows nearby',
+            self::NotCovered => 'Overflow data not available here yet',
         };
     }
 
@@ -56,6 +61,7 @@ enum SpillRecency: string
             self::None => 'No spills reported in the last 48 hours',
             self::Offline => 'Upstream monitors offline, no spill data',
             self::NoData => 'No monitored overflows upstream',
+            self::NotCovered => 'Overflow data not available here yet',
         };
     }
 }

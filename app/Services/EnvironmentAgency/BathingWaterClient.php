@@ -4,6 +4,7 @@ namespace App\Services\EnvironmentAgency;
 
 use App\Data\BathingWaterData;
 use App\Data\BathingWaterSampleData;
+use App\Enums\Agency;
 use App\Enums\BathingWaterClassification;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
@@ -12,15 +13,37 @@ use Illuminate\Support\Facades\Http;
 /**
  * Reads the Environment Agency's designated bathing water register and
  * its sample and classification history (open data, no key required).
+ * Natural Resources Wales publishes Wales's register on the same platform
+ * and in the same shape, under /wales/bathing-waters; wales() reads that.
  */
 class BathingWaterClient
 {
+    public function __construct(private string $dataset = '', private Agency $agency = Agency::EnvironmentAgency)
+    {
+    }
+
+    /**
+     * The same client reading Wales's register, published for NRW.
+     */
+    public function wales(): self
+    {
+        return new self('wales/bathing-waters', Agency::NaturalResourcesWales);
+    }
+
+    /**
+     * The client for a bathing water's agency: Wales's register for NRW sites, England's otherwise.
+     */
+    public function forAgency(Agency $agency): self
+    {
+        return $agency === Agency::NaturalResourcesWales ? $this->wales() : $this;
+    }
+
     /**
      * Every property the hourly sync needs, so the whole register comes back
      * in one request rather than one per site.
      */
     private const LIST_PROPERTIES = [
-        'name', 'type', 'eubwidNotation', 'district.name', 'appointedSewerageUndertaker.name',
+        'name', 'label', 'type', 'eubwidNotation', 'district.name', 'appointedSewerageUndertaker.name',
         'samplingPoint.lat', 'samplingPoint.long', 'waterQualityImpactedByHeavyRain',
         'latestComplianceAssessment.complianceClassification.name', 'latestComplianceAssessment.sampleYear.ordinalYear',
         'latestRiskPrediction.riskLevel.name', 'latestRiskPrediction.expiresAt',
@@ -47,7 +70,7 @@ class BathingWaterClient
 
         return collect($items)
             ->filter(fn (array $item) => isset($item['eubwidNotation']))
-            ->map(fn (array $item) => BathingWaterData::fromEnvironmentAgency($item))
+            ->map(fn (array $item) => BathingWaterData::fromEnvironmentAgency($item, $this->agency, $this->profileUrl($item['eubwidNotation'])))
             ->values();
     }
 
@@ -102,9 +125,19 @@ class BathingWaterClient
         return $years;
     }
 
+    /**
+     * Wales's sites need their own profile link; England's use the summary's default.
+     */
+    private function profileUrl(mixed $eubwid): ?string
+    {
+        return $this->agency === Agency::NaturalResourcesWales && is_string($eubwid)
+            ? $this->url('profiles/profile.html').'?site='.rawurlencode($eubwid)
+            : null;
+    }
+
     private function url(string $path): string
     {
-        return rtrim(config('services.environment_agency.bathing_water_url'), '/').'/'.ltrim($path, '/');
+        return collect([rtrim(config('services.environment_agency.bathing_water_url'), '/'), trim($this->dataset, '/'), ltrim($path, '/')])->filter()->join('/');
     }
 
     private function request(): PendingRequest

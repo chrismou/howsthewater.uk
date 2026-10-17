@@ -9,16 +9,19 @@ use App\Models\River;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
 use App\Services\Geo\Coordinates;
 use App\Services\Geo\PolylineProjector;
+use App\Services\NaturalResourcesWales\RiversAndSeasClient;
 use App\Services\Sepa\TimeSeriesClient;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
  * Discovers level gauges on each river we cover and keeps their metadata
- * current: Environment Agency gauges in England, SEPA gauges in Scotland.
+ * current: Environment Agency gauges in England, SEPA gauges in Scotland
+ * and Natural Resources Wales gauges in Wales.
  */
 class SyncGaugeStations
 {
@@ -30,15 +33,18 @@ class SyncGaugeStations
     private const MAX_OFFSET_METRES = 2000;
 
     /**
-     * Border gauges such as Norham on the Tweed are published by both
-     * agencies; the Environment Agency copy is kept and SEPA's skipped.
+     * Border gauges such as Norham on the Tweed are published by two
+     * agencies; the Environment Agency copy is kept and SEPA's or NRW's skipped.
      */
     private const SHARED_GAUGE_METRES = 200;
 
     /** SEPA is down for the whole run once its station list fails, so the failure is logged once. */
     private bool $sepaFailed = false;
 
-    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa)
+    /** Likewise for NRW's station list. */
+    private bool $nrwFailed = false;
+
+    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa, private RiversAndSeasClient $nrw)
     {
     }
 
@@ -63,12 +69,7 @@ class SyncGaugeStations
 
         $environmentAgencyGauges = GaugeStation::query()->where('river_id', $river->id)->where('network', Agency::EnvironmentAgency)->get();
 
-        $sepaStations = $this->sepaStationsOn($river)
-            ->filter(fn (GaugeStationData $data) => $projector === null || $projector->project($data->latitude, $data->longitude)->offsetMetres <= self::MAX_OFFSET_METRES)
-            ->reject(fn (GaugeStationData $data) => $environmentAgencyGauges->contains(
-                fn (GaugeStation $gauge) => Coordinates::distanceMetres($gauge->latitude, $gauge->longitude, $data->latitude, $data->longitude) <= self::SHARED_GAUGE_METRES,
-            ))
-            ->values();
+        $sepaStations = $this->onCentrelineAndNotShared($this->sepaStationsOn($river), $projector, $environmentAgencyGauges);
         $ranges = $this->sepaTypicalRanges($sepaStations);
 
         foreach ($sepaStations as $data) {
@@ -76,7 +77,28 @@ class SyncGaugeStations
             $count++;
         }
 
+        // NRW's station list has no typical range; SyncGaugeReadings works one out from each gauge's history.
+        foreach ($this->onCentrelineAndNotShared($this->nrwStationsOn($river), $projector, $environmentAgencyGauges) as $data) {
+            $this->store($river, $data);
+            $count++;
+        }
+
         return ['stations' => $count];
+    }
+
+    /**
+     * @param  Collection<int, GaugeStationData>  $stations
+     * @param  EloquentCollection<int, GaugeStation>  $environmentAgencyGauges
+     * @return Collection<int, GaugeStationData>
+     */
+    private function onCentrelineAndNotShared(Collection $stations, ?PolylineProjector $projector, EloquentCollection $environmentAgencyGauges): Collection
+    {
+        return $stations
+            ->filter(fn (GaugeStationData $data) => $projector === null || $projector->project($data->latitude, $data->longitude)->offsetMetres <= self::MAX_OFFSET_METRES)
+            ->reject(fn (GaugeStationData $data) => $environmentAgencyGauges->contains(
+                fn (GaugeStation $gauge) => Coordinates::distanceMetres($gauge->latitude, $gauge->longitude, $data->latitude, $data->longitude) <= self::SHARED_GAUGE_METRES,
+            ))
+            ->values();
     }
 
     /**
@@ -93,11 +115,33 @@ class SyncGaugeStations
 
         try {
             return $this->sepa->levelStations()
-                ->filter(fn (GaugeStationData $data) => $data->riverName !== null
-                    && ($river->matchesWatercourse($data->riverName) || $river->matchesWatercourse('River '.$data->riverName)));
+                ->filter(fn (GaugeStationData $data) => $river->matchesBareName($data->riverName));
         } catch (ConnectionException|RequestException|RuntimeException $exception) {
             $this->sepaFailed = true;
             Log::error("SEPA gauge discovery failed: {$exception->getMessage()}");
+
+            return collect();
+        }
+    }
+
+    /**
+     * NRW gauges whose title names this river ("Wye at Glasbury"), skipped
+     * while NRW's key is not set.
+     *
+     * @return Collection<int, GaugeStationData>
+     */
+    private function nrwStationsOn(River $river): Collection
+    {
+        if ($this->nrwFailed || ! $this->nrw->isEnabled()) {
+            return collect();
+        }
+
+        try {
+            return $this->nrw->levelStations()
+                ->filter(fn (GaugeStationData $data) => $river->matchesBareName($data->riverName));
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            $this->nrwFailed = true;
+            Log::error("Natural Resources Wales gauge discovery failed: {$exception->getMessage()}");
 
             return collect();
         }

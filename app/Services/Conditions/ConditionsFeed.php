@@ -226,7 +226,7 @@ class ConditionsFeed
             return new FeedItem(
                 guid: "flood-{$warning->areaCode}-{$issuedAt->getTimestamp()}",
                 title: $this->xmlText("{$warning->severity->label()} in force: {$warning->areaLabel}"),
-                description: $this->xmlText(trim($warning->severity->meaning().' '.($warning->message ?? '').' Read the latest on GOV.UK: '.$warning->url())),
+                description: $this->xmlText(trim($warning->severity->meaning().' '.($warning->message ?? '').' '.$warning->urlLabel().': '.$warning->url())),
                 link: $link,
                 publishedAt: $issuedAt,
             );

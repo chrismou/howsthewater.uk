@@ -46,6 +46,16 @@ class SyncBathingWaters
     }
 
     /**
+     * Wales's register, published for Natural Resources Wales on the EA's platform in the same shape.
+     *
+     * @return array{sites: int, samples: int}
+     */
+    public function handleWales(): array
+    {
+        return $this->store($this->client->wales()->all());
+    }
+
+    /**
      * SEPA's bathing waters for Scotland.
      *
      * @return array{sites: int, samples: int}

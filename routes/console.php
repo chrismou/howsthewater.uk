@@ -14,6 +14,8 @@ Schedule::command('ingest:floods')->everyFifteenMinutes()->withoutOverlapping(30
 Schedule::command('ingest:floods --areas')->weeklyOn(1, '03:50');
 Schedule::command('ingest:bathing-waters')->hourly()->withoutOverlapping(60);
 Schedule::command('ingest:bathing-waters --history')->weeklyOn(1, '04:20');
+// Natural Resources Wales asks that its data is not kept over a year.
+Schedule::command('nrw:prune')->dailyAt('04:40');
 // Every minute, so its one read per turn keeps an even pace; most runs find it is not yet due and exit.
 Schedule::command('ingest:sepa-bathing-samples')->everyMinute()->withoutOverlapping(5);
 

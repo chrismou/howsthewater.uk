@@ -41,7 +41,7 @@
                 <p class="mt-1 text-ink-2">{{ $lake->description }}</p>
             @endif
             <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$overflows->monitors" :where="'within '.($overflows->radiusMetres / 1000).' km of '.$lake->name"
-                             :discharging-now="$overflows->dischargingNowCount" :spills-last48-hours="$overflows->spillsLast48HoursCount" :updated-at="$overflows->dataUpdatedAt" />
+                             :discharging-now="$overflows->dischargingNowCount" :spills-last48-hours="$overflows->spillsLast48HoursCount" :updated-at="$overflows->dataUpdatedAt" :covered="$overflows->isCovered()" />
         </div>
         <x-place-actions :latitude="$lake->latitude" :longitude="$lake->longitude" :label="$lake->name" :feed="route('lakes.feed', [$region, $lake])" />
     </div>
@@ -76,7 +76,7 @@
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Overflows within {{ $overflows->radiusMetres / 1000 }} km <x-help term="nearby_overflows" /></dt>
                 <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $overflows->dischargingNowCount > 0 ? 'text-alert' : '' }}">
-                    {{ $overflows->monitors->count() }}
+                    {{ $overflows->isCovered() ? $overflows->monitors->count() : '-' }}
                     @if ($overflows->dischargingNowCount > 0)
                         <span class="font-sans text-sm font-normal">{{ $overflows->dischargingNowCount }} discharging</span>
                     @elseif ($overflows->offlineCount > 0)
@@ -86,7 +86,7 @@
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Spills nearby, 30 days</dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $overflows->spillsLast30DaysCount }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $overflows->isCovered() ? $overflows->spillsLast30DaysCount : '-' }}</dd>
             </div>
         </dl>
     </section>

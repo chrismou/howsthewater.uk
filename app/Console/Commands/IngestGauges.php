@@ -16,7 +16,7 @@ class IngestGauges extends Command
 {
     protected $signature = 'ingest:gauges {--stations : Refresh the gauge stations on every river, not just rivers never searched}';
 
-    protected $description = 'Fetch new river level readings from the Environment Agency and SEPA';
+    protected $description = 'Fetch new river level readings from the Environment Agency, SEPA and Natural Resources Wales';
 
     public function handle(SyncGaugeStations $syncStations, SyncGaugeReadings $syncReadings, AssignRiverPositions $assign, ChangedRegions $changed): int
     {

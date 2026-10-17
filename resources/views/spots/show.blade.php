@@ -27,6 +27,9 @@
         'status' => $summary->status->value,
     ]))->values();
 
+    // Places whose water company feed we do not read yet show dashes, never zeros that would read as "no spills".
+    $covered = $conditions->spillRecency !== \App\Enums\SpillRecency::NotCovered;
+
     $osmUrl = sprintf('https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=15/%s/%s', $spot->latitude, $spot->longitude, $spot->latitude, $spot->longitude);
 @endphp
 
@@ -51,7 +54,7 @@
                 @endif
             </p>
             <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$conditions->upstreamMonitors" :where="'upstream of '.$spot->name.' on the '.$spot->river->name"
-                             :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" />
+                             :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" :covered="$covered" />
         </div>
         <div class="flex flex-wrap gap-2">
             <button type="button" data-copy-link="{{ url()->current() }}"
@@ -110,20 +113,20 @@
         <dl class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Discharging now <x-help term="discharging_now" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $conditions->dischargingNowCount > 0 ? 'text-alert' : '' }}">{{ $conditions->dischargingNowCount }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $conditions->dischargingNowCount > 0 ? 'text-alert' : '' }}">{{ $covered ? $conditions->dischargingNowCount : '-' }}</dd>
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 48h <x-help term="spill" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $conditions->spillsLast48HoursCount }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $covered ? $conditions->spillsLast48HoursCount : '-' }}</dd>
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 30 days <x-help term="history" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $conditions->spillsLast30DaysCount }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $covered ? $conditions->spillsLast30DaysCount : '-' }}</dd>
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Upstream monitors <x-help term="upstream" /></dt>
                 <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">
-                    {{ $conditions->upstreamMonitors->count() }}
+                    {{ $covered ? $conditions->upstreamMonitors->count() : '-' }}
                     @if ($conditions->offlineCount > 0)
                         <span class="font-sans text-sm font-normal text-muted">{{ $conditions->offlineCount }} offline <x-help term="offline" /></span>
                     @endif
@@ -148,7 +151,11 @@
             </ul>
 
             <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Last 30 days <x-help term="history" /></h2>
-            <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" />
+            @if ($covered)
+                <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" />
+            @else
+                <p class="rounded-lg border border-line bg-surface p-5 text-sm text-ink-2">No spill history, as we do not read the water company's overflow data here yet. <x-help term="not_covered" /></p>
+            @endif
         </div>
 
         <aside class="lg:col-span-2">
@@ -165,7 +172,9 @@
             <h2 class="font-display text-lg font-semibold">Upstream storm overflows <x-help term="upstream" /></h2>
             <span class="text-sm text-muted">Recent spills first, then nearest. Distances follow the water, including tributaries.</span>
         </div>
-        @if ($conditions->upstreamMonitors->isEmpty())
+        @if (! $covered)
+            <p class="text-sm text-ink-2">We do not read the water company's overflow data for this river yet, so overflows upstream of this spot are not shown. <x-help term="not_covered" /></p>
+        @elseif ($conditions->upstreamMonitors->isEmpty())
             <p class="text-sm text-ink-2">No monitors have been matched upstream of this spot yet.</p>
         @else
             <div class="overflow-x-auto rounded-lg border border-line bg-surface">

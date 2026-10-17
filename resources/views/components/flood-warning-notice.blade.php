@@ -3,6 +3,10 @@
 @php
     $entries = $summary->floodWarnings();
     $hasWarning = $entries->contains(fn ($entry) => $entry['warning']->severity !== \App\Enums\FloodSeverity::FloodAlert);
+    // Named after the agency when they all come from one; a region either side of the border can have both.
+    $agencies = $entries->map(fn ($entry) => $entry['warning']->agency)->unique();
+    $heading = \Illuminate\Support\Str::plural($hasWarning ? 'flood warning' : 'flood alert', $entries->count());
+    $heading = $agencies->count() === 1 ? $agencies->first()->label().' '.$heading : \Illuminate\Support\Str::ucfirst($heading);
     // A faint tint of the most severe warning's colour, layered over the surface so it stays light on the page background.
     $boxTint = match ($entries->first()['warning']->severity ?? null) {
         \App\Enums\FloodSeverity::SevereFloodWarning => 'border-l-alert bg-linear-to-r from-alert/10 to-alert/10',
@@ -16,7 +20,7 @@
     {{-- The home page lists several regions, so it wraps them in one #flood-warnings anchor instead. --}}
     <section {!! $linkRegion ? '' : 'id="flood-warnings"' !!} class="mb-8 rounded-lg border border-l-4 border-line bg-surface px-5 py-4 {{ $boxTint }}" role="alert">
         <h2 class="font-display text-lg font-semibold">
-            Environment Agency {{ \Illuminate\Support\Str::plural($hasWarning ? 'flood warning' : 'flood alert', $entries->count()) }} in
+            {{ $heading }} in
             @if ($linkRegion)
                 <a href="{{ route('regions.show', $summary->slug) }}" class="hover:underline">{{ $summary->name }}</a>
             @else

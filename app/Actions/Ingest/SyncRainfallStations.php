@@ -10,6 +10,7 @@ use App\Models\RainfallStation;
 use App\Models\Spot;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
 use App\Services\Geo\Coordinates;
+use App\Services\NaturalResourcesWales\RiversAndSeasClient;
 use App\Services\Sepa\TimeSeriesClient;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
- * Discovers Environment Agency and SEPA rain gauges near the places we show
+ * Discovers Environment Agency, SEPA and Natural Resources Wales rain gauges near the places we show
  * rainfall for: spots, beaches and lakes. One search covers each region's places,
  * and only gauges close enough to be linked to one are stored, so readings
  * are not fetched for the whole country. Searching per region keeps each
@@ -27,7 +28,7 @@ use RuntimeException;
  */
 class SyncRainfallStations
 {
-    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa)
+    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa, private RiversAndSeasClient $nrw)
     {
     }
 
@@ -43,6 +44,7 @@ class SyncRainfallStations
                 ->filter(fn (RainfallStationData $station) => $station->measureId !== null)
                 ->filter(fn (RainfallStationData $station) => $this->isNearAnyPlace($station, $points)))
             ->concat($this->sepaStationsNear($places->flatten(1)))
+            ->concat($this->nrwStationsNear($places->flatten(1)))
             ->unique(fn (RainfallStationData $station) => $station->externalId);
 
         foreach ($stations as $data) {
@@ -83,6 +85,31 @@ class SyncRainfallStations
                 ->values();
         } catch (ConnectionException|RequestException|RuntimeException $exception) {
             Log::error("SEPA rain gauge discovery failed: {$exception->getMessage()}");
+
+            return collect();
+        }
+    }
+
+    /**
+     * NRW lists every Welsh rain gauge in the same request as its level
+     * gauges, so they are filtered the same way. Skipped while NRW's key is
+     * not set; a failure is logged and the other gauges are still stored.
+     *
+     * @param  Collection<int, array{0: float, 1: float}>  $points
+     * @return Collection<int, RainfallStationData>
+     */
+    private function nrwStationsNear(Collection $points): Collection
+    {
+        if ($points->isEmpty() || ! $this->nrw->isEnabled()) {
+            return collect();
+        }
+
+        try {
+            return $this->nrw->rainfallStations()
+                ->filter(fn (RainfallStationData $station) => $this->isNearAnyPlace($station, $points))
+                ->values();
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            Log::error("Natural Resources Wales rain gauge discovery failed: {$exception->getMessage()}");
 
             return collect();
         }

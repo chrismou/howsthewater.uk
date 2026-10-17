@@ -7,6 +7,7 @@ use App\Enums\Agency;
 use App\Models\RainfallReading;
 use App\Models\RainfallStation;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
+use App\Services\NaturalResourcesWales\RiversAndSeasClient;
 use App\Services\Sepa\TimeSeriesClient;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -20,13 +21,23 @@ use RuntimeException;
  * picking up from the last stored reading so repeated runs stay cheap.
  * A gauge that has never returned a reading is retired so spots can be
  * relinked to one that does. SEPA gauges share requests to stay within
- * its daily credits; when SEPA fails, none of its gauges are retired.
+ * its daily credits and NRW gauges share one list of latest readings; when
+ * either fails, none of its gauges are retired.
  */
 class SyncRainfallReadings
 {
     private const BACKFILL_DAYS = 7;
 
-    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa)
+    /**
+     * Totals are sums of 15 minute readings, so any missed NRW reading is
+     * filled from the gauge's history.
+     */
+    private const NRW_GAP_MINUTES = 15;
+
+    /** As in SyncGaugeReadings, so both ingests together stay under NRW's 10 calls a minute. */
+    private const NRW_HISTORY_CALLS_PER_RUN = 3;
+
+    public function __construct(private FloodMonitoringClient $client, private TimeSeriesClient $sepa, private RiversAndSeasClient $nrw)
     {
     }
 
@@ -44,16 +55,21 @@ class SyncRainfallReadings
         $inserted = 0;
         $retired = 0;
 
-        $sepaReadings = $this->sepaReadings($stations->where('network', Agency::Sepa));
+        $batched = [
+            Agency::Sepa->value => $this->sepaReadings($stations->where('network', Agency::Sepa)),
+            Agency::NaturalResourcesWales->value => $this->nrwReadings($stations->where('network', Agency::NaturalResourcesWales)),
+        ];
 
         foreach ($stations as $station) {
-            if ($station->network === Agency::Sepa && $sepaReadings === null) {
+            $isBatched = array_key_exists($station->network->value, $batched);
+
+            if ($isBatched && $batched[$station->network->value] === null) {
                 continue;
             }
 
             $hadReadings = $station->readings()->exists();
-            $count = $station->network === Agency::Sepa
-                ? $this->store($station, $sepaReadings[(string) $station->measure_id] ?? collect())
+            $count = $isBatched
+                ? $this->store($station, $batched[$station->network->value][(string) $station->measure_id] ?? collect())
                 : $this->syncStation($station);
             $inserted += $count;
 
@@ -87,6 +103,36 @@ class SyncRainfallReadings
             return $this->sepa->readingsSince($stations->mapWithKeys(fn (RainfallStation $station) => [(string) $station->measure_id => $this->since($station)])->all());
         } catch (ConnectionException|RequestException|RuntimeException $exception) {
             Log::error("SEPA rainfall readings failed: {$exception->getMessage()}");
+
+            return null;
+        }
+    }
+
+    /**
+     * New readings for the NRW gauges keyed by parameter id, or null when NRW
+     * could not be read or its key is not set.
+     *
+     * @param  Collection<int, RainfallStation>  $stations
+     * @return array<string, Collection<int, GaugeReadingData>>|null
+     */
+    private function nrwReadings(Collection $stations): ?array
+    {
+        if ($stations->isEmpty()) {
+            return [];
+        }
+
+        if (! $this->nrw->isEnabled()) {
+            return null;
+        }
+
+        try {
+            return $this->nrw->readingsSince(
+                $stations->mapWithKeys(fn (RainfallStation $station) => [(string) $station->measure_id => ['externalId' => $station->external_id, 'since' => $this->since($station)]])->all(),
+                self::NRW_GAP_MINUTES,
+                self::NRW_HISTORY_CALLS_PER_RUN,
+            );
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            Log::error("Natural Resources Wales rainfall readings failed: {$exception->getMessage()}");
 
             return null;
         }

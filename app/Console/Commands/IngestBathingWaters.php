@@ -19,7 +19,7 @@ class IngestBathingWaters extends Command
         {--history : Refetch sample and classification history for every site, not just sites never fetched}
         {--quick : Skip the slow history backfill, for development; a later run fetches it}';
 
-    protected $description = 'Fetch bathing water classifications, samples and pollution forecasts from the Environment Agency and SEPA';
+    protected $description = 'Fetch bathing water classifications, samples and pollution forecasts from the Environment Agency (England and Wales) and SEPA';
 
     public function handle(SyncBathingWaters $sync, SyncBathingWaterHistory $history, SyncLakeGauges $lakeGauges, ChangedRegions $changed): int
     {
@@ -47,6 +47,16 @@ class IngestBathingWaters extends Command
             $reason = $exception instanceof RequestException ? "HTTP {$exception->response->status()}" : $exception->getMessage();
             $this->error("Bathing water register request failed, {$reason}");
             Log::error("Bathing water register request failed: {$reason}");
+        }
+
+        try {
+            $wales = $sync->handleWales();
+            $this->info(sprintf('%d Welsh bathing waters updated, %d new samples.', $wales['sites'], $wales['samples']));
+        } catch (ConnectionException|RequestException $exception) {
+            $failed = true;
+            $reason = $exception instanceof RequestException ? "HTTP {$exception->response->status()}" : $exception->getMessage();
+            $this->error("Welsh bathing water register request failed, {$reason}");
+            Log::error("Welsh bathing water register request failed: {$reason}");
         }
 
         try {

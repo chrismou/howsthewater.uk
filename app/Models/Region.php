@@ -86,6 +86,16 @@ class Region extends Model
     }
 
     /**
+     * Whether we read any water company overflow feed for this region. A
+     * region without one (Wales, until Welsh Water's feed is added) says
+     * its overflow data is not available, never that there are no spills.
+     */
+    public function hasOverflowData(): bool
+    {
+        return $this->overflowFeedConfig() !== [];
+    }
+
+    /**
      * The overflow feeds covering this region, keyed by config key.
      *
      * @return array<string, array{name: string, driver: string, url: string}>
