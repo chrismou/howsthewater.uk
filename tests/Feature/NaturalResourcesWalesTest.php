@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Sleep;
 
 /**
  * A station from NRW's station data, with one parameter and its latest reading.
@@ -345,4 +346,39 @@ it('deletes NRW readings and flood history over a year old, and nothing else', f
         ->and($eaGauge->readings()->count())->toBe(2)
         ->and($nrwRain->readings()->count())->toBe(1)
         ->and(FloodWarningEvent::query()->where('flood_area_id', $english->id)->exists())->toBeTrue();
+});
+
+it('still reads NRW levels and rainfall, and Welsh warnings, when the Environment Agency refuses requests', function () {
+    Sleep::fake();
+    Log::spy();
+    $nrwGauge = GaugeStation::factory()->create(['external_id' => 'NRW1', 'network' => Agency::NaturalResourcesWales, 'measure_id' => '101']);
+    $nrwGauge->readings()->create(['measured_at' => now()->subMinutes(20), 'value' => 0.4]);
+    GaugeStation::factory()->count(2)->create();
+    $nrwRain = RainfallStation::factory()->create(['external_id' => 'NRW1000', 'network' => Agency::NaturalResourcesWales, 'measure_id' => '10095']);
+    $nrwRain->readings()->create(['measured_at' => now()->subMinutes(20), 'millimetres' => 0.0]);
+    $eaRain = RainfallStation::factory()->create();
+    Spot::factory()->create(['rainfall_station_id' => $nrwRain->id]);
+    Spot::factory()->create(['rainfall_station_id' => $eaRain->id]);
+    $welsh = FloodArea::factory()->hasAttached(Spot::factory())->create(['code' => '103FWF043', 'agency' => Agency::NaturalResourcesWales]);
+
+    Http::fake([
+        'api.naturalresources.wales/rivers-and-seas/v1/api/StationData' => Http::response([
+            nrwStation(1, 'Wye at Glasbury', 52.0, -3.2, 101, value: 0.6),
+            nrwStation(1000, 'Glasbury raingauge', 52.0, -3.2, 10095, 'Rainfall', 0.4, units: 'mm'),
+        ]),
+        'api.naturalresources.wales/floodwarnings/v3/all' => Http::response(['features' => [['properties' => ['FWACODE' => '103FWF043', 'SEVERITYVALUE' => 3, 'DESCRIPTION' => 'River Taff']]]]),
+        'environment.data.gov.uk/*' => Http::response('<html>403 Forbidden</html>', 403),
+    ]);
+
+    expect(app(SyncGaugeReadings::class)->handle()['readings'])->toBe(1)
+        ->and($nrwGauge->readings()->count())->toBe(2)
+        ->and(app(SyncRainfallReadings::class)->handle())->toMatchArray(['readings' => 1, 'retired' => 0])
+        ->and($eaRain->fresh()->is_active)->toBeTrue();
+
+    $this->artisan('ingest:floods --quick')->assertFailed();
+
+    expect(FloodWarning::query()->where('flood_area_id', $welsh->id)->exists())->toBeTrue();
+    // One refused Environment Agency read per ingest (with its retry); the rest wait for the next run.
+    expect(Http::recorded(fn (Request $request) => str_contains($request->url(), 'environment.data.gov.uk')))->toHaveCount(6);
+    Log::shouldHaveReceived('error')->withArgs(fn (string $message) => str_contains($message, 'Environment Agency level readings failed'))->once();
 });

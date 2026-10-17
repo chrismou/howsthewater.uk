@@ -60,17 +60,30 @@ class SyncRainfallReadings
             Agency::NaturalResourcesWales->value => $this->nrwReadings($stations->where('network', Agency::NaturalResourcesWales)),
         ];
 
-        foreach ($stations as $station) {
+        $environmentAgencyFailed = false;
+
+        // Batched gauges first, so a failing Environment Agency read cannot stop them being stored.
+        foreach ($stations->sortBy(fn (RainfallStation $station) => array_key_exists($station->network->value, $batched) ? 0 : 1) as $station) {
             $isBatched = array_key_exists($station->network->value, $batched);
 
-            if ($isBatched && $batched[$station->network->value] === null) {
+            if (($isBatched && $batched[$station->network->value] === null) || (! $isBatched && $environmentAgencyFailed)) {
                 continue;
             }
 
             $hadReadings = $station->readings()->exists();
-            $count = $isBatched
-                ? $this->store($station, $batched[$station->network->value][(string) $station->measure_id] ?? collect())
-                : $this->syncStation($station);
+
+            try {
+                $count = $isBatched
+                    ? $this->store($station, $batched[$station->network->value][(string) $station->measure_id] ?? collect())
+                    : $this->syncStation($station);
+            } catch (ConnectionException|RequestException $exception) {
+                // Usually the API is down or throttling us: the rest wait for the next run, and none are retired.
+                $environmentAgencyFailed = true;
+                Log::error("Environment Agency rainfall readings failed: {$exception->getMessage()}");
+
+                continue;
+            }
+
             $inserted += $count;
 
             if (! $hadReadings && $count === 0) {

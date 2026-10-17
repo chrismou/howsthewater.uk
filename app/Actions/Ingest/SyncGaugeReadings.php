@@ -54,14 +54,20 @@ class SyncGaugeReadings
             ->whereNotNull('measure_id')
             ->get();
 
-        $inserted = 0;
+        // The batched agencies go first, so the slow one-by-one Environment Agency reads cannot hold them up.
+        $inserted = $this->syncSepaStations($stations->where('network', Agency::Sepa))
+            + $this->syncNrwStations($stations->where('network', Agency::NaturalResourcesWales));
 
         foreach ($stations->where('network', Agency::EnvironmentAgency) as $station) {
-            $inserted += $this->syncStation($station);
-        }
+            // A refused or failed request usually means the API is down or throttling us, so the rest wait for the next run.
+            try {
+                $inserted += $this->syncStation($station);
+            } catch (ConnectionException|RequestException $exception) {
+                Log::error("Environment Agency level readings failed: {$exception->getMessage()}");
 
-        $inserted += $this->syncSepaStations($stations->where('network', Agency::Sepa));
-        $inserted += $this->syncNrwStations($stations->where('network', Agency::NaturalResourcesWales));
+                break;
+            }
+        }
 
         return ['stations' => $stations->count(), 'readings' => $inserted];
     }

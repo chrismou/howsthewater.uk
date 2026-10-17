@@ -39,8 +39,32 @@ class IngestFloods extends Command
             $failed = ! $this->linkFloodAreas($syncAreas);
         }
 
-        // One read of the national feed serves both the warnings in force for our spots and the history of all of them.
-        $feed = $client->floodWarnings();
+        $failed = ! $this->syncEngland($client, $syncWarnings, $history) || $failed;
+
+        if ($nrw->isEnabled()) {
+            $failed = ! $this->syncWales($nrw, $syncWarnings, $history) || $failed;
+        }
+
+        $changed->markAll();
+
+        return $failed ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * One read of the EA's national feed serves both the warnings in force for our spots and the history of all of
+     * them. A failure leaves the stored warnings and open events as they were, and Wales is still read.
+     */
+    private function syncEngland(FloodMonitoringClient $client, SyncFloodWarnings $syncWarnings, RecordFloodWarningHistory $history): bool
+    {
+        try {
+            $feed = $client->floodWarnings();
+        } catch (ConnectionException|RequestException $exception) {
+            $this->error("Environment Agency flood warnings failed, {$exception->getMessage()}");
+            Log::error("Environment Agency flood warnings failed: {$exception->getMessage()}");
+
+            return false;
+        }
+
         $result = $syncWarnings->handle($feed);
         $recorded = $history->handle($feed);
 
@@ -51,13 +75,7 @@ class IngestFloods extends Command
             $recorded['closed'],
         ));
 
-        if ($nrw->isEnabled()) {
-            $failed = ! $this->syncWales($nrw, $syncWarnings, $history) || $failed;
-        }
-
-        $changed->markAll();
-
-        return $failed ? self::FAILURE : self::SUCCESS;
+        return true;
     }
 
     /**
