@@ -9,6 +9,7 @@ use App\Models\Spot;
 use App\Models\WeatherForecast;
 use App\Services\Weather\WeatherCell;
 use App\Services\Weather\WeatherCode;
+use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -16,32 +17,35 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Sleep;
 
+function fakeOpenMeteo(): void
+{
+    Http::fake(['api.open-meteo.com/*' => fn (Request $request) => openMeteoAnswer($request)]);
+}
+
 /**
  * Open-Meteo's answer for however many locations a request asks for: an object for one, a list for several.
  */
-function fakeOpenMeteo(): void
+function openMeteoAnswer(Request $request): PromiseInterface
 {
-    Http::fake(['api.open-meteo.com/*' => function (Request $request) {
-        parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
-        $hours = collect(range(0, 23))->map(fn (int $hour) => now()->startOfHour()->addHours($hour)->getTimestamp());
-        $location = [
-            'hourly' => [
-                'time' => $hours->all(),
-                'temperature_2m' => $hours->map(fn ($time, $hour) => 15.4 - $hour * 0.2)->all(),
-                'apparent_temperature' => $hours->map(fn () => 12.1)->all(),
-                'precipitation_probability' => $hours->map(fn ($time, $hour) => $hour * 4)->all(),
-                'precipitation' => $hours->map(fn () => 0.2)->all(),
-                'weather_code' => $hours->map(fn () => 3)->all(),
-                'wind_speed_10m' => $hours->map(fn () => 9.6)->all(),
-                'wind_gusts_10m' => $hours->map(fn () => 21.3)->all(),
-                'wind_direction_10m' => $hours->map(fn () => 250)->all(),
-            ],
-            'daily' => ['time' => [now('Europe/London')->startOfDay()->getTimestamp()], 'uv_index_max' => [2.6]],
-        ];
-        $count = count(explode(',', $query['latitude']));
+    parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+    $hours = collect(range(0, 23))->map(fn (int $hour) => now()->startOfHour()->addHours($hour)->getTimestamp());
+    $location = [
+        'hourly' => [
+            'time' => $hours->all(),
+            'temperature_2m' => $hours->map(fn ($time, $hour) => 15.4 - $hour * 0.2)->all(),
+            'apparent_temperature' => $hours->map(fn () => 12.1)->all(),
+            'precipitation_probability' => $hours->map(fn ($time, $hour) => $hour * 4)->all(),
+            'precipitation' => $hours->map(fn () => 0.2)->all(),
+            'weather_code' => $hours->map(fn () => 3)->all(),
+            'wind_speed_10m' => $hours->map(fn () => 9.6)->all(),
+            'wind_gusts_10m' => $hours->map(fn () => 21.3)->all(),
+            'wind_direction_10m' => $hours->map(fn () => 250)->all(),
+        ],
+        'daily' => ['time' => [now('Europe/London')->startOfDay()->getTimestamp()], 'uv_index_max' => [2.6]],
+    ];
+    $count = count(explode(',', $query['latitude']));
 
-        return Http::response($count === 1 ? $location : array_fill(0, $count, $location));
-    }]);
+    return Http::response($count === 1 ? $location : array_fill(0, $count, $location));
 }
 
 function weatherSpot(array $attributes = []): Spot
@@ -89,7 +93,23 @@ it('logs a failed read, keeps the last forecast and fails the run', function () 
     $this->artisan('ingest:weather')->assertFailed();
 
     expect($old->fresh()->fetched_at->equalTo($old->fetched_at))->toBeTrue();
+    Http::assertSentCount(1);
     Log::shouldHaveReceived('error')->withArgs(fn (string $message) => str_contains($message, 'Open-Meteo weather forecast request failed'));
+});
+
+it('tries again after a server error, counting each try against the allowance', function () {
+    Sleep::fake();
+    $tries = 0;
+    Http::fake(['api.open-meteo.com/*' => function (Request $request) use (&$tries) {
+        return ++$tries === 1 ? Http::response(['error' => true], 503) : openMeteoAnswer($request);
+    }]);
+    weatherSpot();
+
+    $this->artisan('ingest:weather')->assertSuccessful();
+
+    expect(WeatherForecast::count())->toBe(1)
+        ->and(RateLimiter::attempts('open-meteo:day'))->toBe(2);
+    Http::assertSentCount(2);
 });
 
 it('sends nothing once the day\'s allowance is used', function () {

@@ -2,9 +2,12 @@
 
 namespace App\Services\Weather;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 use RuntimeException;
+use Throwable;
 
 /**
  * Forecasts from Open-Meteo's free, keyless API (non-commercial use; CC BY 4.0). It counts one call per location and
@@ -50,13 +53,21 @@ class OpenMeteoClient
             throw new RuntimeException('Open-Meteo: call allowance used up');
         }
 
-        foreach (['minute' => 60, 'hour' => 3600, 'day' => 86400] as $window => $seconds) {
-            RateLimiter::increment($this->limiterKey($window), $seconds, count($cells));
-        }
+        $this->countCalls(count($cells));
 
-        // No retries: each attempt counts against the allowance, and the next scheduled run tries again.
+        // Open-Meteo answers the odd request with a 503, so server errors and timeouts get two more tries (each counted
+        // against the allowance); anything else, such as a 429, ends the run and the next scheduled run tries again.
         $response = Http::acceptJson()
             ->timeout(120)
+            ->retry([10000, 30000], when: function (Throwable $exception) use ($cells): bool {
+                if (! $this->isWorthRetrying($exception) || ! $this->hasBudget(count($cells))) {
+                    return false;
+                }
+
+                $this->countCalls(count($cells));
+
+                return true;
+            })
             ->withUserAgent(config('services.user_agent'))
             ->get(config('services.open_meteo.url'), [
                 'latitude' => implode(',', array_map(fn (WeatherCell $cell) => $cell->latitude, $cells)),
@@ -118,6 +129,19 @@ class OpenMeteoClient
             ], array_keys($hourly['time'] ?? []), $hourly['time'] ?? []),
             'uv_index_max' => $uvIndexMax,
         ];
+    }
+
+    private function countCalls(int $calls): void
+    {
+        foreach (['minute' => 60, 'hour' => 3600, 'day' => 86400] as $window => $seconds) {
+            RateLimiter::increment($this->limiterKey($window), $seconds, $calls);
+        }
+    }
+
+    private function isWorthRetrying(Throwable $exception): bool
+    {
+        return $exception instanceof ConnectionException
+            || ($exception instanceof RequestException && $exception->response->serverError());
     }
 
     private function limiterKey(string $window): string

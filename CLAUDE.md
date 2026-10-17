@@ -350,7 +350,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   subscriptions or ads, it needs Open-Meteo's paid plan. Places share forecasts by grid cell (`WeatherCell`, about
   5.5 km across, about 600 cells for about 720 places), read 25 to a request with a pause between, and the client
   counts calls in the cache to stay under Open-Meteo's per-minute, hourly and daily allowances. A cell read in the
-  last two and a half hours is skipped, and a failed request ends the run, keeping each cell's last forecast. Each
+  last two and a half hours is skipped, and a 5xx or timeout gets two more tries (Open-Meteo returns the odd 503), and any other failure ends the run, keeping each cell's last forecast. Each
   cell stores 24 hourly values, so pages show whichever hour is current when viewed (`WeatherSummary`); sunrise,
   sunset and first and last light (`SunTimes`) are worked out from each place's position. Weather is not part of
   the cached conditions or the API yet. Tide times wait on a UKHO licence.
