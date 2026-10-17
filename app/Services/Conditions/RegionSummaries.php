@@ -50,13 +50,15 @@ class RegionSummaries
     {
         $rivers = $this->overviews->forRegion($region)->map(fn ($overview) => RiverSummary::fromOverview($overview))->values();
         $riverIds = $region->rivers()->pluck('id');
+        // Monitors positioned on a region whose feed we do not read count for nothing (RiverOverviewService).
+        $monitorRiverIds = $region->hasOverflowData() ? $riverIds : collect();
 
         return new RegionSummary(
             slug: $region->slug,
             name: $region->name,
             rivers: $rivers,
-            monitorCount: OverflowMonitor::query()->whereIn('river_id', $riverIds)->count(),
-            offlineMonitorCount: OverflowMonitor::query()->whereIn('river_id', $riverIds)->where('status', -1)->count(),
+            monitorCount: OverflowMonitor::query()->whereIn('river_id', $monitorRiverIds)->count(),
+            offlineMonitorCount: OverflowMonitor::query()->whereIn('river_id', $monitorRiverIds)->where('status', -1)->count(),
             gaugeCount: GaugeStation::query()->whereIn('river_id', $riverIds)->where('is_active', true)->count(),
             rainGaugeCount: RainfallStation::query()->where('is_active', true)->whereHas('spots', fn ($query) => $query->whereIn('river_id', $riverIds))->count(),
             dataUpdatedAt: $rivers->flatMap(fn (RiverSummary $river) => $river->spots)->max('dataUpdatedAt'),

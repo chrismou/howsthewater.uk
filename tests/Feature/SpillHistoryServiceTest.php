@@ -33,18 +33,25 @@ it('splits event minutes across the days they overlap', function () {
 
     $monitor = OverflowMonitor::factory()->create();
 
+    // Days are UK days: 22:00 UTC is 23:00 British Summer Time.
     $overnight = SpillEvent::factory()->make([
         'overflow_monitor_id' => $monitor->id,
-        'started_at' => Carbon::parse('2026-10-11 23:00:00'),
-        'ended_at' => Carbon::parse('2026-10-12 02:00:00'),
+        'started_at' => Carbon::parse('2026-10-11 22:00:00'),
+        'ended_at' => Carbon::parse('2026-10-12 01:00:00'),
     ]);
     $ongoing = SpillEvent::factory()->make([
         'overflow_monitor_id' => $monitor->id,
         'started_at' => Carbon::parse('2026-10-13 10:00:00'),
         'ended_at' => null,
     ]);
+    // Running for a year, it only counts within the window.
+    $longRunning = SpillEvent::factory()->make([
+        'overflow_monitor_id' => $monitor->id,
+        'started_at' => Carbon::parse('2025-10-01 00:00:00'),
+        'ended_at' => Carbon::parse('2026-09-14 01:00:00'),
+    ]);
 
-    $days = app(SpillHistoryService::class)->dailyBreakdown(collect([$overnight, $ongoing]))->keyBy(fn ($day) => $day->date->toDateString());
+    $days = app(SpillHistoryService::class)->dailyBreakdown(collect([$overnight, $ongoing, $longRunning]))->keyBy(fn ($day) => $day->date->toDateString());
 
     expect($days)->toHaveCount(30)
         ->and($days->keys()->first())->toBe('2026-09-14')
@@ -52,7 +59,8 @@ it('splits event minutes across the days they overlap', function () {
         ->and($days['2026-10-11']->spillCount)->toBe(1)
         ->and($days['2026-10-12']->spillMinutes)->toBe(120)
         ->and($days['2026-10-13']->spillMinutes)->toBe(120)
-        ->and($days['2026-10-10']->spillCount)->toBe(0);
+        ->and($days['2026-10-10']->spillCount)->toBe(0)
+        ->and($days['2026-09-14']->spillMinutes)->toBe(120);
 
     Carbon::setTestNow();
 });

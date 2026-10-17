@@ -60,8 +60,14 @@ class SpillEvent extends Model
      */
     public function durationLabel(?Carbon $asOf = null): string
     {
-        $minutes = $this->durationMinutes($asOf);
+        return self::labelForMinutes($this->durationMinutes($asOf));
+    }
 
+    /**
+     * A duration in minutes in the same words as durationLabel().
+     */
+    public static function labelForMinutes(int $minutes): string
+    {
         if ($minutes < 1) {
             return 'under 1 min';
         }

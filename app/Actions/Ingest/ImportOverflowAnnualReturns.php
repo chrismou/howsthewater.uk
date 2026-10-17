@@ -9,6 +9,7 @@ use App\Services\Geo\Coordinates;
 use App\Services\Geo\OverflowSiteName;
 use App\Services\RiversTrust\AnnualReturnsClient;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -17,11 +18,20 @@ use Throwable;
  * Imports each configured year of the overflow annual returns (services.overflow_annual_returns), replacing that
  * year's rows, and matches each row to a monitor: by id where the return carries the live feeds' id (England from
  * 2023), otherwise by position, the nearest monitor within MATCH_METRES (Welsh rows carry no id, and 2021 and 2022
- * use other ids). Each monitor takes at most one row a year, the closest. Monitors whose feed gives no name then take
- * the site name from their latest return. A year that fails to read keeps its old rows.
+ * use other ids), then by permit across years (matchByPermit). Each monitor takes at most one row a year, the
+ * closest. Monitors whose feed gives no name then take the site name from their latest return. A year that fails to
+ * read keeps its old rows.
  */
 class ImportOverflowAnnualReturns
 {
+    /**
+     * Bump whenever matching changes, so the next deploy imports again (ingest:overflow-annual-returns --if-outdated)
+     * rather than waiting for the monthly run. 2: matching by permit across years.
+     */
+    public const MATCHING_VERSION = 2;
+
+    private const VERSION_CACHE_KEY = 'overflow-annual-returns:matching-version';
+
     /** Returns and live feeds place the same outlet within a few metres (Tintern Main Road, 1 m). */
     public const MATCH_METRES = 25;
 
@@ -42,9 +52,12 @@ class ImportOverflowAnnualReturns
         $monitorIdsByExternalId = $monitors->pluck('id', 'external_id');
         $grid = $this->grid($monitors);
 
+        $rowsByYear = [];
+        $matchesByYear = [];
+
         foreach (config()->array('services.overflow_annual_returns') as $year => $url) {
             try {
-                $rows = $this->client->rows((string) $url);
+                $rowsByYear[(int) $year] = $this->client->rows((string) $url)->values();
             } catch (Throwable $exception) {
                 Log::error("Overflow annual returns for {$year} failed: {$exception->getMessage()}");
                 $totals['failed'][] = (int) $year;
@@ -52,17 +65,35 @@ class ImportOverflowAnnualReturns
                 continue;
             }
 
-            $matches = $this->match($rows, $monitorIdsByExternalId, $grid);
-            $this->replaceYear((int) $year, $rows, $matches);
+            $matchesByYear[(int) $year] = $this->match($rowsByYear[(int) $year], $monitorIdsByExternalId, $grid);
+        }
+
+        $matchesByYear = $this->matchByPermit($rowsByYear, $matchesByYear);
+
+        foreach ($rowsByYear as $year => $rows) {
+            $this->replaceYear($year, $rows, $matchesByYear[$year]);
 
             $totals['years']++;
             $totals['rows'] += $rows->count();
-            $totals['matched'] += count($matches);
+            $totals['matched'] += count($matchesByYear[$year]);
         }
 
         $this->nameMonitors();
 
+        if ($totals['failed'] === []) {
+            Cache::forever(self::VERSION_CACHE_KEY, self::MATCHING_VERSION);
+        }
+
         return $totals;
+    }
+
+    /**
+     * Whether the stored returns were matched by this version's rules (and every year read). The marker lives in the
+     * cache, so losing it costs one extra import.
+     */
+    public function isCurrent(): bool
+    {
+        return OverflowAnnualReturn::query()->exists() && Cache::get(self::VERSION_CACHE_KEY) === self::MATCHING_VERSION;
     }
 
     /**
@@ -107,6 +138,74 @@ class ImportOverflowAnnualReturns
         }
 
         return $matches;
+    }
+
+    /**
+     * Some years can be matched neither by id nor by position: 2021 places each row at its permit's grid reference,
+     * 100 m or more from the outlet, and some 2022 and 2023 rows sit apart from the live feed too. Those rows take
+     * the monitor a row with the same key was matched to in another year, first by permit and site name, then by
+     * permit alone. A key is only used when it names one row in its year on both sides and every year that matched
+     * it matched the same monitor, so outlets sharing a permit (several overflows at one works) are never guessed
+     * between. Each monitor still takes one row a year.
+     *
+     * @param  array<int, Collection<int, OverflowAnnualReturnData>>  $rowsByYear
+     * @param  array<int, array<int, int>>  $matchesByYear
+     * @return array<int, array<int, int>>
+     */
+    private function matchByPermit(array $rowsByYear, array $matchesByYear): array
+    {
+        $keyers = [
+            fn (OverflowAnnualReturnData $row) => $this->permitKey($row).'|'.$this->siteKey($row),
+            fn (OverflowAnnualReturnData $row) => $this->permitKey($row),
+        ];
+
+        foreach ($keyers as $key) {
+            // The monitors each key was matched to, across years, from rows that are the only one with that key.
+            $monitorsByKey = [];
+            $keyCountsByYear = [];
+
+            foreach ($rowsByYear as $year => $rows) {
+                $keyCountsByYear[$year] = $rows->filter(fn (OverflowAnnualReturnData $row) => $row->permitReference !== null)->countBy($key)->all();
+
+                foreach ($matchesByYear[$year] as $index => $monitorId) {
+                    $row = $rows[$index];
+
+                    if ($row->permitReference !== null && $keyCountsByYear[$year][$key($row)] === 1) {
+                        $monitorsByKey[$key($row)][$monitorId] = true;
+                    }
+                }
+            }
+
+            foreach ($rowsByYear as $year => $rows) {
+                $taken = array_flip($matchesByYear[$year]);
+
+                foreach ($rows as $index => $row) {
+                    if (isset($matchesByYear[$year][$index]) || $row->permitReference === null || $keyCountsByYear[$year][$key($row)] !== 1) {
+                        continue;
+                    }
+
+                    $monitors = $monitorsByKey[$key($row)] ?? [];
+                    $monitorId = count($monitors) === 1 ? array_key_first($monitors) : null;
+
+                    if ($monitorId !== null && ! isset($taken[$monitorId])) {
+                        $matchesByYear[$year][$index] = $monitorId;
+                        $taken[$monitorId] = $index;
+                    }
+                }
+            }
+        }
+
+        return $matchesByYear;
+    }
+
+    private function permitKey(OverflowAnnualReturnData $row): string
+    {
+        return mb_strtoupper($row->company.'|'.preg_replace('/\s+/', '', (string) $row->permitReference));
+    }
+
+    private function siteKey(OverflowAnnualReturnData $row): string
+    {
+        return mb_strtoupper((string) preg_replace('/[^a-z0-9]+/i', '', (string) $row->siteName));
     }
 
     /**

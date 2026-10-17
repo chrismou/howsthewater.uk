@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Data\SpotConditions;
 use App\Enums\OverflowStatus;
+use App\Services\Geo\OverflowSiteName;
 use Database\Factories\OverflowMonitorFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -71,6 +72,30 @@ class OverflowMonitor extends Model
         ];
     }
 
+    /**
+     * Overflow pages are addressed by the feed's id, lower case (/overflows/yws02215). Ids are unique across feeds.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'external_id';
+    }
+
+    public function getRouteKey(): string
+    {
+        return strtolower($this->external_id);
+    }
+
+    /**
+     * Every feed's ids are upper case, so a lower case address finds them on any database collation.
+     *
+     * @param  mixed  $value
+     * @param  string|null  $field
+     */
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        return $this->newQuery()->where($field ?? $this->getRouteKeyName(), strtoupper((string) $value))->first();
+    }
+
     /** @return BelongsTo<River, $this> */
     public function river(): BelongsTo
     {
@@ -126,6 +151,15 @@ class OverflowMonitor extends Model
     public function displayName(): ?string
     {
         return $this->name ?? $this->return_name;
+    }
+
+    /**
+     * What the overflow discharges into, for lists: its river's name where it is on one, else the feed's receiving
+     * watercourse, tidied. Load the river first.
+     */
+    public function intoName(): ?string
+    {
+        return $this->river->name ?? OverflowSiteName::tidy($this->receiving_watercourse);
     }
 
     public function isDischarging(): bool

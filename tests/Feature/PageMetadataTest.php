@@ -35,7 +35,7 @@ it('keeps the home and site-wide titles and descriptions short however many regi
         River::factory()->create(['region_id' => Region::factory()->create(['name' => $name, 'slug' => Str::slug($name)])->id]);
     }
 
-    foreach ([route('home'), route('hubs.rivers'), route('hubs.beaches'), route('hubs.lakes'), route('search'), route('about'), route('privacy'), route('terms')] as $url) {
+    foreach ([route('home'), route('hubs.rivers'), route('hubs.beaches'), route('hubs.lakes'), route('search'), route('about'), route('privacy'), route('terms'), route('spills.index'), route('spills.region', 'east-anglia-and-lincolnshire')] as $url) {
         $metadata = pageMetadata($this->get($url));
 
         expect(mb_strlen(Str::beforeLast($metadata['title'], ' - '.config('app.name'))))->toBeLessThanOrEqual(60, "Title of {$url}: {$metadata['title']}")
@@ -206,6 +206,27 @@ it('asks training-only AI crawlers to stay away and leaves search and answer cra
         ->and($robots)->toContain('Sitemap: https://howsthewater.uk/sitemap.xml');
 });
 
+it('keeps overflow page titles and descriptions short for long names, rivers and companies', function () {
+    $region = Region::factory()->create(['name' => 'North East', 'slug' => 'north-east']);
+    $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River South Tyne', 'slug' => 'south-tyne']);
+    $overflows = [
+        OverflowMonitor::factory()->create(['return_name' => 'Crosshouse, 9 Kilmaurs Road CSO', 'river_id' => $river->id]),
+        OverflowMonitor::factory()->create(['name' => 'Tintern Road (Off the Land) Combined Sewer Overflow and Pumping Station', 'company' => 'Dŵr Cymru Welsh Water', 'river_id' => $river->id]),
+        OverflowMonitor::factory()->create(['company' => 'Northumbrian Water Ltd', 'receiving_watercourse' => 'Unnamed Tributary of the River South Tyne', 'river_id' => $river->id]),
+    ];
+    \App\Models\OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $overflows[1]->id, 'year' => 2025, 'counted_spills' => 1234]);
+
+    foreach ($overflows as $overflow) {
+        $metadata = pageMetadata($this->get(route('overflows.show', $overflow)));
+
+        expect(mb_strlen(Str::beforeLast($metadata['title'], ' - '.config('app.name'))))->toBeLessThanOrEqual(60, $metadata['title'])
+            ->and(mb_strlen($metadata['description']))->toBeLessThanOrEqual(160, $metadata['description']);
+    }
+
+    // Too long with the river, so the river goes first.
+    expect(pageMetadata($this->get(route('overflows.show', $overflows[0])))['title'])->toBe('Crosshouse, 9 Kilmaurs Road CSO: storm overflow spills - '.config('app.name'));
+});
+
 it('never skips a heading level on place and listing pages', function () {
     $region = Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
     $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe', 'slug' => 'wharfe']);
@@ -213,8 +234,11 @@ it('never skips a heading level on place and listing pages', function () {
     $beach = BathingWater::factory()->create(['region_id' => $region->id]);
     $lake = Lake::factory()->create(['region_id' => $region->id]);
 
+    $overflow = OverflowMonitor::factory()->create(['river_id' => $river->id]);
+
     $pages = [route('home'), route('regions.show', $region), route('rivers.index', $region), route('rivers.show', [$region, $river]),
-        route('spots.show', [$region, $river, $spot]), route('beaches.show', [$region, $beach]), route('lakes.show', [$region, $lake])];
+        route('spots.show', [$region, $river, $spot]), route('beaches.show', [$region, $beach]), route('lakes.show', [$region, $lake]),
+        route('spills.index'), route('spills.region', $region), route('overflows.show', $overflow)];
 
     foreach ($pages as $page) {
         preg_match_all('/<h([1-6])\b/', $this->get($page)->assertOk()->getContent(), $matches);

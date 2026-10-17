@@ -238,7 +238,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   green "no spills". Keep that distinction for any new status. A region without overflow feeds
   (`Region::hasOverflowData()`, Wales for now) gives `SpillRecency::NotCovered`: pages say "Overflow data not available
   here yet" and show dashes, never zero counts, "no monitored overflows" or a 30-day history, and `RegionSummary`
-  carries `hasOverflowData` for the live bar, region page and cards. Where `services.unread_overflow_maps` names the
+  carries `hasOverflowData` for the live bar, region page and cards. Every company's overflows are recorded ahead of
+  its region, so monitors can be positioned on such a region's rivers; `SpotConditionsService`,
+  `RiverOverviewService` and `RegionSummaries` count none there, so nothing (the combined live bar included) adds
+  them in until the region's feed is switched on. Where `services.unread_overflow_maps` names the
   region's company and map (Dŵr Cymru Welsh Water), those messages also link it (`Region::unreadOverflowMap()`,
   `components/overflow-map-link`).
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed, and `Spot::onMainRiver()` wherever spots
@@ -273,7 +276,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   monitor last reported instead of "Not discharging". Beach and lake summaries carry the same check for the Nearby
   section. The API exposes `data_stale` and `level.stale`.
 - Spill history (`SpillHistoryService`) is derived from `spill_events`, which only exist from the first ingest run
-  onwards. Don't backfill from the feed; it has no history.
+  onwards. Don't backfill from the feed; it has no history. `dailyBreakdown()` buckets by UK day, as pages print
+  dates and rainfall is totalled.
 
 ## Data sources
 
@@ -308,9 +312,36 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `ingest:overflow-annual-returns` (`ImportOverflowAnnualReturns`, monthly, and on deploy while the table is empty)
   replaces each year's rows in `overflow_annual_returns` and matches them to monitors: by id where the return
   carries the live feeds' (England from 2023: `UID` is Stream's `Id`), otherwise to the nearest monitor within 25 m
-  (Welsh rows have no id; 2021 numbers its rows and 2022 has none), one row per monitor per year, the closest. A
-  year that fails to read keeps its old rows. These are the company's figures; never mix them with our own counts
+  (Welsh rows have no id; 2021 numbers its rows and 2022 has none), then by permit across years
+  (`matchByPermit`: 2021 places rows at the permit's grid reference, 100 m or more from the outlet), by permit and
+  site name and then permit alone, only where the key names one row in its year on both sides and one monitor
+  across years, so outlets sharing a permit are never guessed between. One row per monitor per year, the closest. A
+  year that fails to read keeps its old rows. The deploy runs it with `--if-outdated`, which imports while none are
+  stored or `ImportOverflowAnnualReturns::MATCHING_VERSION` (bump it whenever matching changes) differs from the
+  version cached by the last complete import. These are the company's figures; never mix them with our own counts
   without saying which is which.
+- Overflow pages (`/overflows/{id}`, `OverflowController`, `OverflowPageService`, `OverflowPage`) are addressed by the
+  feed's id in lower case (`OverflowMonitor::getRouteKey()`; binding upper-cases it back). An overflow has a page
+  when some region's pages show it (`RegionOverflows::regionFor()`: on a river of a region with overflow data, or
+  linked to a place), else 404. The page shows its status, our record (7 days, 30 days, the year, longest spill;
+  hours are each spill's time inside the window), uptime from `overflow_offline_periods` once a week of it exists
+  (`OverflowPageService::UPTIME_RECORDED_FROM`), the last 30 days beside the nearest linked place's rain gauge
+  (`components/spill-rain-chart`), the annual returns labelled as the company's 12/24 hour counts, the places it
+  reaches and the full spill log, 50 a page (later pages noindexed). Totals come from each spill's start and end
+  alone, read as plain values. A spill still open on a stale monitor counts only up to its last report and shows as
+  "open at last report" (`components/spill-duration`), never "ongoing"; a rain gauge with no readings on a day shows
+  as no data, never as a dry day. Our record runs from the first spill recorded or when we first saw the overflow,
+  whichever is earlier. An overflow with no name, no return and no spill is noindexed and left out of the sitemap
+  (dated by its latest spill). Name an overflow with `components/overflow-link`; link a place with
+  `OverflowMonitorPlace::placeUrl()`.
+- The live bar's spill counts link to `/spills` (every region, `SpillsOverviewService`) or `/{region}/spills`
+  (`#discharging`, `#spots`). "Discharging now" lists what the bar counts (overflows on the region's rivers,
+  tributaries included), read live while the bar is rebuilt every 15 minutes, so the two can differ briefly after an
+  ingest; overflows discharging near beaches and lakes are listed apart; both show the 100 longest running with the
+  total. Spots come from the cached region summaries; then every spill running or ended in the last 24 hours (the
+  latest 200). The page warns when no overflow behind it has reported for 6 hours, so an empty list never reads as
+  "none right now". A region without overflow data has no spills page (404), and the combined page describes its
+  coverage rather than naming countries. `spills` and `overflows` are in `Region::RESERVED_SLUGS`.
 - `overflow_monitor_places` links each overflow to the places whose page shows it: spots it is upstream of (distance
   along the water) and beaches and lakes it is near. `RefreshRegions` rewrites a place's links from the conditions
   it has just built (`SyncOverflowMonitorPlaces`, only changed rows), so they never disagree with the pages, and

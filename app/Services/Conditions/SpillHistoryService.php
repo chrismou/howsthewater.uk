@@ -51,7 +51,7 @@ class SpillHistoryService
     }
 
     /**
-     * One entry per day for the history window, oldest first. Minutes are
+     * One entry per UK day for the history window, oldest first. Minutes are
      * split across the days an event overlaps; the count goes to each day
      * the event was active.
      *
@@ -60,7 +60,10 @@ class SpillHistoryService
      */
     public function dailyBreakdown(Collection $events, ?Carbon $until = null): Collection
     {
-        $until ??= now();
+        // Days are UK days, as the pages print them and as rainfall is totalled, so a spill just after midnight in
+        // summer lands on the day it happened.
+        $timezone = (string) config('app.display_timezone', 'Europe/London');
+        $until = ($until ?? now())->copy()->timezone($timezone);
         $firstDay = $until->copy()->startOfDay()->subDays(self::HISTORY_DAYS - 1);
 
         $days = collect(range(0, self::HISTORY_DAYS - 1))
@@ -72,10 +75,11 @@ class SpillHistoryService
             ->all();
 
         foreach ($events as $event) {
-            $start = $event->started_at->copy();
-            $end = ($event->ended_at ?? $until)->copy()->min($until);
+            $start = $event->started_at->copy()->timezone($timezone);
+            $end = ($event->ended_at ?? $until)->copy()->timezone($timezone)->min($until);
 
-            for ($day = $start->copy()->startOfDay(); $day->lessThanOrEqualTo($end); $day->addDay()) {
+            // A spill running since long before the window starts counting from the window's first day.
+            for ($day = $start->copy()->startOfDay()->max($firstDay); $day->lessThanOrEqualTo($end); $day->addDay()) {
                 $key = $day->toDateString();
 
                 if (! isset($days[$key])) {

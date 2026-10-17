@@ -5,11 +5,13 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LakeController;
 use App\Http\Controllers\LegacyRiverRedirectController;
+use App\Http\Controllers\OverflowController;
 use App\Http\Controllers\PlaceHubController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\RiverController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\SpillsController;
 use App\Http\Controllers\SpotController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +30,8 @@ Route::middleware($pageCaching)->group(function () {
     Route::view('/about', 'about')->name('about');
     Route::view('/privacy', 'privacy')->name('privacy');
     Route::view('/terms', 'terms')->name('terms');
+    Route::get('/spills', [SpillsController::class, 'index'])->name('spills.index');
+    Route::get('/overflows/{monitor}', [OverflowController::class, 'show'])->name('overflows.show');
 });
 
 // Each query is its own URL, so search results are never stored: the edge would otherwise keep one copy per query.
@@ -40,6 +44,7 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap')->middlewar
 Route::scopeBindings()->group(function () use ($pageCaching) {
     Route::middleware($pageCaching)->group(function () {
         Route::get('/{region}', [RegionController::class, 'show'])->name('regions.show');
+        Route::get('/{region}/spills', [SpillsController::class, 'region'])->name('spills.region');
 
         Route::get('/{region}/rivers', [RiverController::class, 'index'])->name('rivers.index');
         Route::get('/{region}/beaches', [BeachController::class, 'index'])->name('beaches.index');

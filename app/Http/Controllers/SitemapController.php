@@ -6,9 +6,12 @@ use App\Data\RegionSummary;
 use App\Data\SpotSummary;
 use App\Models\BathingWater;
 use App\Models\Lake;
+use App\Models\OverflowMonitor;
+use App\Models\OverflowMonitorPlace;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\Spot;
+use App\Services\Conditions\RegionOverflows;
 use App\Services\Conditions\RegionSummaries;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
@@ -24,7 +27,7 @@ use Illuminate\Support\Collection;
  */
 class SitemapController extends Controller
 {
-    public function __invoke(RegionSummaries $regionSummaries): Response
+    public function __invoke(RegionSummaries $regionSummaries, RegionOverflows $regionOverflows): Response
     {
         $regions = Region::query()->orderBy('name')->get();
         $rivers = River::query()->main()->withoutCentreline()->with('region')->orderBy('name')->get();
@@ -52,10 +55,29 @@ class SitemapController extends Controller
             ->concat($spots->map(fn (Spot $spot) => $this->url(route('spots.show', [$spot->river->region, $spot->river, $spot]), $spotTimes[$spot->id] ?? null)))
             ->concat($beaches->map(fn (BathingWater $beach) => $this->url(route('beaches.show', [$beach->region, $beach]), $beach->updated_at)))
             ->concat($lakes->map(fn (Lake $lake) => $this->url(route('lakes.show', [$lake->region, $lake]), $lake->updated_at)))
-            ->concat(collect(['hubs.rivers', 'hubs.beaches', 'hubs.lakes'])->map(fn (string $hub) => $this->url(route($hub), $latest)))
+            ->concat(collect(['hubs.rivers', 'hubs.beaches', 'hubs.lakes', 'spills.index'])->map(fn (string $hub) => $this->url(route($hub), $latest)))
+            ->concat($regions->filter(fn (Region $region) => $region->hasOverflowData())->map(fn (Region $region) => $this->url(route('spills.region', $region), $regionTimes[$region->id])))
+            // Dated by the overflow's latest spill: feeds confirm every monitor each poll, which changes nothing on the page.
+            ->concat($this->overflowPages($regions, $regionOverflows)->map(fn (OverflowMonitor $monitor) => $this->url(route('overflows.show', $monitor), $monitor->latest_event_ended_at ?? $monitor->latest_event_started_at)))
             ->concat(collect(['about', 'terms', 'privacy'])->map(fn (string $page) => $this->url(route($page), Carbon::parse(config("app.pages_updated.{$page}"), config('app.display_timezone', 'Europe/London')))));
 
         return response()->view('sitemap', ['urls' => $urls], 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+    }
+
+    /**
+     * Every overflow some region's pages show, leaving out those whose page says nothing of its own yet (no name, no
+     * annual return and no spill recorded), which are noindexed.
+     *
+     * @param  Collection<int, Region>  $regions
+     * @return Collection<int, OverflowMonitor>
+     */
+    private function overflowPages(Collection $regions, RegionOverflows $regionOverflows): Collection
+    {
+        return OverflowMonitor::query()
+            ->where(fn ($query) => $query->whereIn('river_id', $regionOverflows->riverIdsQuery($regions))->orWhereIn('id', OverflowMonitorPlace::query()->select('overflow_monitor_id')))
+            ->where(fn ($query) => $query->whereNotNull('name')->orWhereNotNull('return_name')->orWhereHas('annualReturns')->orWhereHas('spillEvents'))
+            ->orderBy('external_id')
+            ->get(['id', 'external_id', 'latest_event_started_at', 'latest_event_ended_at']);
     }
 
     /**

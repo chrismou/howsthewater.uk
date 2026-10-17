@@ -65,7 +65,8 @@ class SpotConditionsService
         $spot->loadMissing(['river.region', 'gaugeStation', 'rainfallStation']);
         $spot->setRelation('river', $this->withoutCentreline($spot->river));
 
-        $monitors = $this->upstreamMonitors->for($spot);
+        // Where we do not read the overflow feed (Wales), monitors recorded ahead of the region are left out entirely.
+        $monitors = $spot->river->region->hasOverflowData() ? $this->upstreamMonitors->for($spot) : collect();
         $recentEvents = $this->spillHistory->recentEvents($monitors);
 
         $byStatus = fn (OverflowStatus $status) => $monitors->filter(fn (UpstreamMonitorSummary $summary) => $summary->status === $status)->count();

@@ -87,12 +87,15 @@ class RiverOverviewService
 
         $spots = $this->spotConditions->forMany($spots);
         $riverIds = $this->riverFamilyIds($river);
-        $monitorsByStatus = OverflowMonitor::query()->whereIn('river_id', $riverIds)->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
-        $companies = OverflowMonitor::query()->whereIn('river_id', $riverIds)->distinct()->orderBy('company')->pluck('company')
+        // Where we do not read the overflow feed (Wales), monitors can still be positioned on the rivers, as every
+        // company is recorded ahead of its region; they count for nothing until the region's feed is switched on.
+        $countedRiverIds = $river->region->hasOverflowData() ? $riverIds : [];
+        $monitorsByStatus = OverflowMonitor::query()->whereIn('river_id', $countedRiverIds)->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $companies = OverflowMonitor::query()->whereIn('river_id', $countedRiverIds)->distinct()->orderBy('company')->pluck('company')
             ->map(fn (string $company) => preg_replace('/\s+(Ltd|Limited|plc)\.?$/i', '', $company))->unique()->values()->all();
         // Counted as spot pages count them: spills still running or that ended within the last 48 hours.
         $spillsLast48Hours = SpillEvent::query()
-            ->whereHas('overflowMonitor', fn ($query) => $query->whereIn('river_id', $riverIds))
+            ->whereHas('overflowMonitor', fn ($query) => $query->whereIn('river_id', $countedRiverIds))
             ->where(fn ($query) => $query->whereNull('ended_at')->orWhere('ended_at', '>=', now()->subHours(48)))
             ->count();
 

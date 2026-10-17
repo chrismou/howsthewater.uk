@@ -81,11 +81,12 @@ task('artisan:share-images:generate', function () {
 })->desc('Draw share cards for new or changed spots, rivers, beaches and lakes');
 after('artisan:regions:refresh', 'artisan:share-images:generate');
 
-// Imports the overflow annual returns once, on the first deploy that has none (about 80 requests to the Rivers Trust,
-// a few minutes); the monthly schedule keeps them current. A failed read never fails the deploy: the schedule retries.
+// Imports the overflow annual returns on a deploy that has none, or whose matching rules changed
+// (ImportOverflowAnnualReturns::MATCHING_VERSION): about 80 requests to the Rivers Trust, a few minutes. A year that
+// fails to read keeps its old rows, and a failure never fails the deploy: the next deploy or the monthly run retries.
 task('artisan:ingest:overflow-annual-returns', function () {
     try {
-        run('{{bin/php}} {{release_or_current_path}}/artisan ingest:overflow-annual-returns --if-empty', timeout: 1800);
+        run('{{bin/php}} {{release_or_current_path}}/artisan ingest:overflow-annual-returns --if-outdated', timeout: 1800);
     } catch (\Throwable $exception) {
         warning('Overflow annual returns not imported: '.$exception->getMessage());
     }

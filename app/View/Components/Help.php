@@ -28,6 +28,18 @@ class Help extends Component
             'label' => 'How is the 30 day history built?',
             'text' => 'We record every spill the feed reports from the day a monitor was first seen. The feed itself has no history, so the chart only goes back as far as our own records.',
         ],
+        'annual_return' => [
+            'label' => 'What is the annual return?',
+            'text' => 'Each year the water company reports every overflow\'s spills to the Environment Agency (Natural Resources Wales in Wales). It counts them in blocks: the first 12 hours of spilling count as one spill, and each 24 hours after that as one more, so its counts are lower than the number of separate spills we record. Total hours are the time spent spilling.',
+        ],
+        'uptime' => [
+            'label' => 'What is monitor uptime?',
+            'text' => 'The share of the time the overflow\'s monitor was working and reporting. While a monitor is offline, any spill it misses is not counted, so a low figure means the spill counts are likely to be too low.',
+        ],
+        'our_record' => [
+            'label' => 'How is our record built?',
+            'text' => 'We read the water company\'s live feed every 15 minutes and keep every spill it reports, from the day we first saw this overflow. The feed keeps no history of its own, so our record starts then. A spill that starts and stops between two reads can be missed.',
+        ],
         'upstream' => [
             'label' => 'Which monitors count as upstream?',
             'text' => 'Every storm overflow monitor whose discharge flows past this spot: those higher up the same river, plus everything on tributaries that join above it. Distances follow the water, not a straight line.',

@@ -3,19 +3,18 @@
 namespace App\Console\Commands;
 
 use App\Actions\Ingest\ImportOverflowAnnualReturns;
-use App\Models\OverflowAnnualReturn;
 use Illuminate\Console\Command;
 
 class IngestOverflowAnnualReturns extends Command
 {
-    protected $signature = 'ingest:overflow-annual-returns {--if-empty : Only import when no returns are stored yet (run on deploy)}';
+    protected $signature = 'ingest:overflow-annual-returns {--if-outdated : Only import when none are stored, or they were matched by older rules (run on deploy)}';
 
     protected $description = 'Import the storm overflow annual returns and match them to monitors';
 
     public function handle(ImportOverflowAnnualReturns $import): int
     {
-        if ($this->option('if-empty') && OverflowAnnualReturn::query()->exists()) {
-            $this->line('Annual returns already imported.');
+        if ($this->option('if-outdated') && $import->isCurrent()) {
+            $this->line('Annual returns already imported and matched.');
 
             return self::SUCCESS;
         }
