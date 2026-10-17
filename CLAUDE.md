@@ -414,6 +414,11 @@ replacing the local database with a copy of live rather than backfilling.
   arrays in `@php`, not inside `{!! !!}`, where Blade reads the "@context" key as a directive.
 - Breadcrumb JSON-LD follows the URL (Home, region, Rivers, Beaches or Lakes, river, place). The visible trail's first link goes to
   the matching hub (All rivers, All beaches, All lakes) rather than the home page.
+- Spot, beach and lake pages end with a Nearby section (`NearbyPlaceFinder`, `components/nearby-places`): on spots the
+  next spot up and down the river by distance along it (following a main river into the one it flows into, and up main
+  rivers that join just above), then up to two beaches or lakes within 20 km; on beaches and lakes the three nearest
+  other beaches or lakes within 30 km and the nearest river spot within 20 km, in any region. Statuses come from the
+  cached region summaries. It ends with descriptive links back to the river and the region's listings.
 
 ## Quality
 

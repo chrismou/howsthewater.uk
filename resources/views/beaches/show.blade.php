@@ -154,4 +154,6 @@
     </div>
 
     <x-nearby-overflows :overflows="$overflows" class="mt-10" />
+
+    <x-nearby-places :nearby="$nearby" />
 </x-layouts.app>

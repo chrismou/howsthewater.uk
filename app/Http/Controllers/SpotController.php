@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\Spot;
+use App\Services\Conditions\NearbyPlaceFinder;
 use App\Services\Conditions\SpotConditionsService;
 use Illuminate\View\View;
 
@@ -15,14 +16,14 @@ class SpotController extends Controller
      */
     public const MONITORS_SHOWN = 10;
 
-    public function show(Region $region, River $river, Spot $spot, SpotConditionsService $conditions): View
+    public function show(Region $region, River $river, Spot $spot, SpotConditionsService $conditions, NearbyPlaceFinder $nearby): View
     {
         abort_unless($spot->is_published, 404);
         abort_if($river->isTributary(), 404);
 
         $spot->setRelation('river', $river->setRelation('region', $region));
 
-        return view('spots.show', ['conditions' => $conditions->for($spot), 'river' => $river]);
+        return view('spots.show', ['conditions' => $conditions->for($spot), 'river' => $river, 'nearby' => $nearby->forSpot($spot)]);
     }
 
     /**

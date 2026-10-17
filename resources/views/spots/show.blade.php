@@ -229,4 +229,6 @@
             @endif
         @endif
     </section>
+
+    <x-nearby-places :nearby="$nearby" />
 </x-layouts.app>
