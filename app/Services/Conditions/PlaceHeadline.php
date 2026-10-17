@@ -265,7 +265,7 @@ class PlaceHeadline
     }
 
     /**
-     * "The Wharfe is at its usual level and steady.", or when the gauge last reported if that was a while ago.
+     * "The Wharfe water level is normal and steady.", or when the gauge last reported if that was a while ago.
      * Nothing when there is no gauge or no reading.
      *
      * @return list<array{0: string, 1: bool}>|null
@@ -282,7 +282,8 @@ class PlaceHeadline
             return [["The {$level->station->label} gauge ", false], ['has not reported since '.$readAt->format($readAt->isSameDay(now($this->timezone())) ? 'H:i' : 'j F'), true], ['.', false]];
         }
 
-        $relative = $level->relativeToUsual();
+        // The subject already says "water level", so "at its usual level" would repeat it.
+        $relative = $level->relativeToTypical === 'within typical range' ? 'normal' : $level->relativeToUsual();
         $trend = $level->trend === LevelTrend::Unknown ? null : strtolower($level->trend->label());
 
         if ($relative === null && $trend === null) {
@@ -290,7 +291,7 @@ class PlaceHeadline
         }
 
         return [
-            ["{$subject} is ", false],
+            ["{$subject} water level is ", false],
             ...($relative !== null ? [[$relative, true]] : []),
             ...($relative !== null && $trend !== null ? [[' and ', false]] : []),
             ...($trend !== null ? [[$trend, true]] : []),

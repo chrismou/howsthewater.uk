@@ -107,11 +107,11 @@ it('describes the level in everyday words, with its trend and any flood warning'
     $area = FloodArea::factory()->hasAttached($spot)->create();
     FloodWarning::factory()->severity(FloodSeverity::FloodAlert)->create(['flood_area_id' => $area->id]);
 
-    expect(spotHeadline($spot))->toContain('The Wharfe is higher than usual and rising. Flood alert in force.');
+    expect(spotHeadline($spot))->toContain('The Wharfe water level is higher than usual and rising. Flood alert in force.');
 
     GaugeReading::query()->update(['value' => 0.5]);
 
-    expect(spotHeadline($spot))->toContain('The Wharfe is at its usual level and steady.');
+    expect(spotHeadline($spot))->toContain('The Wharfe water level is normal and steady.');
 });
 
 it('notes heavy rain that has fallen, and heavy rain and thunder in the forecast', function () {
