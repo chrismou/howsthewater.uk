@@ -29,6 +29,8 @@ class AssignRiverPositions
      */
     private const MAX_TRIBUTARY_OFFSET_METRES = 6000;
 
+    private const METRES_PER_DEGREE_LATITUDE = 111320;
+
     /**
      * How far along the river a metres gauge may be before a closer sea
      * level (mAOD) gauge is linked to the spot instead.
@@ -66,8 +68,17 @@ class AssignRiverPositions
     {
         $count = 0;
 
+        // Only monitors within the furthest offset of the river's bounding box can be on it. Every water company is
+        // recorded, so checking each unpositioned monitor against every river took over five minutes a run.
+        $latitudes = array_column($river->centreline, 0);
+        $longitudes = array_column($river->centreline, 1);
+        $latitudePadding = self::MAX_TRIBUTARY_OFFSET_METRES / self::METRES_PER_DEGREE_LATITUDE;
+        $longitudePadding = self::MAX_TRIBUTARY_OFFSET_METRES / (self::METRES_PER_DEGREE_LATITUDE * cos(deg2rad(max(array_map('abs', $latitudes)))));
+
         OverflowMonitor::query()
             ->where(fn ($query) => $query->whereNull('river_id')->orWhere('river_id', $river->id))
+            ->whereBetween('latitude', [min($latitudes) - $latitudePadding, max($latitudes) + $latitudePadding])
+            ->whereBetween('longitude', [min($longitudes) - $longitudePadding, max($longitudes) + $longitudePadding])
             ->each(function (OverflowMonitor $monitor) use ($river, $projector, &$count) {
                 if (! $river->matchesWatercourse($monitor->receiving_watercourse)) {
                     return;

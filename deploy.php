@@ -62,8 +62,11 @@ after('deploy:failed', 'deploy:unlock');
 // fetched for rivers that lack one. Gauge discovery stays on its weekly schedule as it backfills readings.
 task('artisan:rivers:centrelines', artisan('rivers:centrelines', ['skipIfNoEnv', 'showOutput']))
     ->desc('Import centrelines for rivers that do not have one yet');
-task('artisan:rivers:positions', artisan('rivers:positions', ['skipIfNoEnv']))
-    ->desc('Position monitors, gauges and spots along each river');
+// Positions every river's monitors, gauges and spots; a few minutes now that every water company is recorded, so it
+// has the share cards' longer timeout rather than the recipe's five minutes.
+task('artisan:rivers:positions', function () {
+    run('{{bin/php}} {{release_or_current_path}}/artisan rivers:positions', timeout: 1800);
+})->desc('Position monitors, gauges and spots along each river');
 task('artisan:regions:refresh', artisan('regions:refresh --all', ['skipIfNoEnv']))
     ->desc('Rebuild cached conditions, summaries and menus so the new release starts warm');
 

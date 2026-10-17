@@ -563,6 +563,9 @@ replacing the local database with a copy of live rather than backfilling.
   `'permission' => 0660` so web requests and deploy-time artisan can share a log file.
 - Every deploy runs `db:seed`, `rivers:centrelines` and `rivers:positions` after `migrate`, so a seeded river goes
   live on push as long as the GeoPackage is on the server. Gauge discovery is left to the weekly schedule.
+  `rivers:positions` has a 30 minute timeout, and `AssignRiverPositions` only checks monitors inside each river's
+  bounding box (plus the largest offset allowed): with every water company recorded, checking every unpositioned
+  monitor against every river ran past the recipe's five minutes and failed a deploy.
 - Server provisioning (users, PHP-FPM, nginx, deploy keys, GitHub environment) lives in the `opendata-ansible` repo.
   Nothing is deployed by hand; never run `composer update` or merge on the server.
 - `bootstrap/cache` is read-only to www-data once a release is hardened; the deploy writes every cache file there as
