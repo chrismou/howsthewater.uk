@@ -390,7 +390,8 @@ replacing the local database with a copy of live rather than backfilling.
   Tailwind palette classes in views. Dark mode is a class on `<html>` set by the header toggle and remembered in
   `localStorage`; light is the default. Headings use `font-display`, big readings use `font-mono tabular-nums`.
 - Explain data terms with `<x-help term="..." />`, whose glossary lives in `App\View\Components\Help`. Add a term there
-  rather than writing one-off explanations in views. The component renders only the `?` button (often inside a heading);
+  rather than writing one-off explanations in views. The component renders only the `?` button, placed beside a heading
+  (heading and button in a flex row), never inside it;
   each term's text goes once into a hidden glossary at the end of the page, and `tooltip.js` shows it in one shared
   panel kept on screen, so headings never contain the explanations.
 

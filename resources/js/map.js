@@ -41,58 +41,77 @@ function markerFor(marker) {
     });
 }
 
+// Each map is built when it comes near the screen, so pages with several (the hubs, a region's cards) do not draw
+// and fetch tiles for maps nobody scrolls to.
 export function initMaps() {
-    document.querySelectorAll('[data-map]').forEach((element) => {
-        const centreline = JSON.parse(element.dataset.mapCentreline || '[]');
-        const centrelines = JSON.parse(element.dataset.mapCentrelines || '[]');
-        const markers = JSON.parse(element.dataset.mapMarkers || '[]');
+    const elements = document.querySelectorAll('[data-map]');
 
-        // A static map is a picture: no panning, zooming or controls, so it can sit inside a link.
-        const isStatic = element.hasAttribute('data-map-static');
-        const map = L.map(element, {
-            scrollWheelZoom: false,
-            dragging: !isStatic,
-            touchZoom: !isStatic,
-            doubleClickZoom: !isStatic,
-            boxZoom: !isStatic,
-            keyboard: !isStatic,
-            zoomControl: !isStatic,
-            // Half steps let the map fit a region's shape closely (a tall region in a wide box would otherwise drop a
-            // whole level and show twice the area), while keeping tile labels sharp enough to read.
-            zoomSnap: 0.5,
+    if (!('IntersectionObserver' in window)) {
+        elements.forEach(initMap);
+
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.filter((entry) => entry.isIntersecting).forEach((entry) => {
+            observer.unobserve(entry.target);
+            initMap(entry.target);
         });
+    }, { rootMargin: '200px' });
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
+    elements.forEach((element) => observer.observe(element));
+}
 
-        const layers = [];
+function initMap(element) {
+    const centreline = JSON.parse(element.dataset.mapCentreline || '[]');
+    const centrelines = JSON.parse(element.dataset.mapCentrelines || '[]');
+    const markers = JSON.parse(element.dataset.mapMarkers || '[]');
 
-        [centreline, ...centrelines].forEach((line) => {
-            if (line.length > 1) {
-                layers.push(L.polyline(line, { color: '#1f5f8b', weight: 2, opacity: 0.7 }).addTo(map));
-            }
-        });
+    // A static map is a picture: no panning, zooming or controls, so it can sit inside a link.
+    const isStatic = element.hasAttribute('data-map-static');
+    const map = L.map(element, {
+        scrollWheelZoom: false,
+        dragging: !isStatic,
+        touchZoom: !isStatic,
+        doubleClickZoom: !isStatic,
+        boxZoom: !isStatic,
+        keyboard: !isStatic,
+        zoomControl: !isStatic,
+        // Half steps let the map fit a region's shape closely (a tall region in a wide box would otherwise drop a
+        // whole level and show twice the area), while keeping tile labels sharp enough to read.
+        zoomSnap: 0.5,
+    });
 
-        markers.forEach((marker) => {
-            const layer = markerFor(marker).addTo(map);
-            // Labels carry feed-supplied text, so build the popup from DOM nodes rather than an HTML string.
-            const label = document.createElement(marker.url ? 'a' : 'span');
-            label.textContent = marker.label;
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
 
-            if (marker.url) {
-                label.href = marker.url;
-            }
+    const layers = [];
 
-            layer.bindPopup(label);
-            layers.push(layer);
-        });
-
-        if (layers.length > 0) {
-            map.fitBounds(L.featureGroup(layers).getBounds().pad(0.05));
-        } else {
-            map.setView([53.9, -1.7], 9);
+    [centreline, ...centrelines].forEach((line) => {
+        if (line.length > 1) {
+            layers.push(L.polyline(line, { color: '#1f5f8b', weight: 2, opacity: 0.7 }).addTo(map));
         }
     });
+
+    markers.forEach((marker) => {
+        const layer = markerFor(marker).addTo(map);
+        // Labels carry feed-supplied text, so build the popup from DOM nodes rather than an HTML string.
+        const label = document.createElement(marker.url ? 'a' : 'span');
+        label.textContent = marker.label;
+
+        if (marker.url) {
+            label.href = marker.url;
+        }
+
+        layer.bindPopup(label);
+        layers.push(layer);
+    });
+
+    if (layers.length > 0) {
+        map.fitBounds(L.featureGroup(layers).getBounds().pad(0.05));
+    } else {
+        map.setView([53.9, -1.7], 9);
+    }
 }

@@ -4,10 +4,8 @@
     <url>
         <loc>{{ $url['loc'] }}</loc>
 @if ($url['lastmod'])
-        <lastmod>{{ $url['lastmod']->toAtomString() }}</lastmod>
+        <lastmod>{{ $url['lastmod']->copy()->utc()->toAtomString() }}</lastmod>
 @endif
-        <changefreq>{{ $url['changefreq'] }}</changefreq>
-        <priority>{{ $url['priority'] }}</priority>
     </url>
 @endforeach
 </urlset>

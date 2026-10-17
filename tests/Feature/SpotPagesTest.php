@@ -360,7 +360,7 @@ it('describes where a spot sits in the site as breadcrumb structured data', func
 
     $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()
         ->assertSee('"@type":"BreadcrumbList"', false)
-        ->assertSeeInOrder(['"name":"Home"', '"name":"Yorkshire"', '"name":"River Wharfe"', '"name":"Otley","item":"'.route('spots.show', [$region, $river, $spot]).'"'], false);
+        ->assertSeeInOrder(['"name":"All rivers"', '"name":"Yorkshire"', '"name":"Rivers"', '"name":"River Wharfe"', '"name":"Otley","item":"'.route('spots.show', [$region, $river, $spot]).'"'], false);
 });
 
 it('credits the water companies that cover the regions', function () {

@@ -19,12 +19,15 @@
             'intro' => 'Lakes with designated bathing sites or a level gauge, with their results and the storm overflows nearby. Pick a region to see its lakes.',
         ],
     ][$type];
+
+    // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
+    $breadcrumbs = [['Home', route('home')], [$copy['heading'], route('hubs.'.$type)]];
 @endphp
 
-<x-layouts.app :title="$copy['title']" :description="$copy['description']" :breadcrumbs="[[$copy['heading'], url()->current()]]"
+<x-layouts.app :title="$copy['title']" :description="$copy['description']" :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->itemList($copy['heading'], $regions->map(fn ($region) => [$region->name, route($type.'.index', $region->slug)]))">
     <div class="mb-8 max-w-2xl">
-        <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">Home</a></p>
+        <x-breadcrumbs :items="$breadcrumbs" />
         <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $copy['heading'] }}</h1>
         <p class="mt-2 text-ink-2">{{ $copy['intro'] }}</p>
     </div>

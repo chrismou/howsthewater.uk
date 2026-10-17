@@ -19,21 +19,23 @@
         'kind' => 'monitor',
         'status' => $monitor->status->value,
     ]))->values();
+
+    // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
+    $breadcrumbs = [['All beaches', route('hubs.beaches')], [$region->name, route('regions.show', $region)], ['Beaches', route('beaches.index', $region)], [$beach->name, route('beaches.show', [$region, $beach])]];
+
+    // "Bathing water quality" is how people search for beaches; it steps down to fit search results' 60 characters.
+    $title = collect([': bathing water quality and swimming', ': bathing water quality', ''])
+        ->map(fn (string $topic) => $beach->beachSearchName().$topic)
+        ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $beach->beachSearchName());
 @endphp
 
-<x-layouts.app :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$beach->beachSearchName().': water quality and swimming'"
+<x-layouts.app :date-modified="$overflows->dataUpdatedAt" :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$title"
                :description="$beach->agency->label().($beach->agency === \App\Enums\Agency::Sepa ? ' classification and sample results' : ' classification, samples and pollution forecasts').' for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
-               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Beaches', route('beaches.index', $region)], [$beach->name, url()->current()]]"
+               :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->beach($beach, $region)">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="text-sm text-muted">
-                <a href="{{ route('hubs.beaches') }}" class="hover:underline">All beaches</a>
-                <span class="mx-1">/</span>
-                <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
-                <span class="mx-1">/</span>
-                <a href="{{ route('beaches.index', $region) }}" class="hover:underline">Beaches</a>
-            </p>
+            <x-breadcrumbs :items="$breadcrumbs" />
             <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $beach->name }}</h1>
             <p class="mt-1 text-ink-2">
                 {{ collect([$beach->district, $beach->kind === \App\Enums\BathingWaterKind::Estuary ? 'estuary bathing water' : null, $beach->sewerage_undertaker ? 'sewerage by '.$beach->sewerage_undertaker : null])->filter()->join(' · ') }}
@@ -107,7 +109,10 @@
 
         <aside class="lg:col-span-2 lg:col-start-4 lg:row-span-2 lg:row-start-1">
             <section>
-                <h2 class="font-display mb-3 text-lg font-semibold">Recent samples <x-help term="bathing_samples" /></h2>
+                <div class="flex items-center gap-1.5 mb-3">
+                    <h2 class="font-display text-lg font-semibold">Recent samples</h2>
+                    <x-help term="bathing_samples" />
+                </div>
                 <div class="rounded-lg border border-line bg-surface p-5">
                     @if ($summary->recentSamples->count() > 1)
                         <x-sample-bars :samples="$summary->recentSamples" />
@@ -130,7 +135,10 @@
                 </div>
             </section>
 
-            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Rainfall <x-help term="rainfall" /></h2>
+            <div class="flex items-center gap-1.5 mt-8 mb-3">
+                <h2 class="font-display text-lg font-semibold">Rainfall</h2>
+                <x-help term="rainfall" />
+            </div>
             <x-rainfall-card :rainfall="$conditions->rainfall" place="this beach" note="Heavy rain inland can reach the sea through rivers and overflows." />
         </aside>
 

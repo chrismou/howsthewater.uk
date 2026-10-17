@@ -20,15 +20,18 @@
     $featuredSpots = $summary->spots()->where('featured', true)->values();
     $spotsHeading = $featuredSpots->isNotEmpty() ? 'Popular spots' : 'A spot on each river';
     $spotList = ($featuredSpots->isNotEmpty() ? $featuredSpots : $summary->rivers->map(fn ($river) => $river->spots->first())->filter())->take(8)->values();
+
+    // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
+    $breadcrumbs = [['Home', route('home')], [$summary->name, route('regions.show', $region)]];
 @endphp
 
-<x-layouts.app :title="$title"
+<x-layouts.app :date-modified="$summary->dataUpdatedAt" :title="$title"
                :description="'Storm overflow spills, river levels, rainfall, flood warnings and bathing water results for '.$summary->name.'\'s '.$typeList.'.'"
-               :breadcrumbs="[[$summary->name, url()->current()]]"
+               :breadcrumbs="$breadcrumbs"
                :region="$region"
                :structured-data="app(\App\Services\StructuredData::class)->itemList($summary->name, $types->map(fn ($type) => [$summary->name.' '.$type, route($type.'.index', $region)]))">
     <div class="mb-6">
-        <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">Home</a></p>
+        <x-breadcrumbs :items="$breadcrumbs" />
         <div class="mt-1 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
             <div class="max-w-2xl">
                 <h1 class="font-display text-4xl font-semibold tracking-tight">{{ $summary->name }}</h1>

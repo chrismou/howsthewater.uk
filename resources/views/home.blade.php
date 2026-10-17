@@ -14,7 +14,7 @@
     $companyNames = \App\Models\Region::query()->orderBy('name')->get()->flatMap->waterCompanies()->unique()->join(', ', ' and ') ?: 'Water company';
 @endphp
 
-<x-layouts.app title="Storm overflows, river levels and bathing water results"
+<x-layouts.app :date-modified="$allRegions->dataUpdatedAt" title="Storm overflows, river levels and bathing water results"
                :description="$description"
                :live-summary="$allRegions"
                :structured-data="app(\App\Services\StructuredData::class)->site($description)">
@@ -112,7 +112,10 @@
             <li class="grid grid-cols-[2.75rem_1fr] gap-3 py-6 sm:grid-cols-[4.5rem_1fr] sm:gap-4">
                 <span class="font-mono text-2xl text-accent sm:text-3xl">01</span>
                 <div class="flex flex-col gap-2">
-                    <h3 class="font-display text-xl font-semibold">Storm overflows upstream <x-help term="spill" /></h3>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-display text-xl font-semibold">Storm overflows upstream</h3>
+                        <x-help term="spill" />
+                    </div>
                     <p class="text-ink-2">{{ $companyNames }} monitors report every overflow that is discharging. We trace every monitor upstream of a spot, tributaries included, and summarise the last 48 hours and 30 days.</p>
                     <p class="text-sm text-muted">The sea and lakes have no upstream, so beaches and lakes list every overflow within 3 km instead. <x-help term="nearby_overflows" /></p>
                     <div class="flex flex-wrap gap-1.5">
@@ -126,7 +129,10 @@
             <li class="grid grid-cols-[2.75rem_1fr] gap-3 py-6 sm:grid-cols-[4.5rem_1fr] sm:gap-4">
                 <span class="font-mono text-2xl text-accent sm:text-3xl">02</span>
                 <div class="flex flex-col gap-2">
-                    <h3 class="font-display text-xl font-semibold">River level and trend <x-help term="level" /></h3>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-display text-xl font-semibold">River level and trend</h3>
+                        <x-help term="level" />
+                    </div>
                     <p class="text-ink-2">Environment Agency, Natural Resources Wales and SEPA gauges read the river every 15 minutes. The latest reading, the change over 3 hours and where it sits in the gauge's typical range. High and rising means fast, cold water.</p>
                     <p class="flex items-baseline gap-3"><span class="font-mono text-2xl font-semibold tabular-nums">0.43 m</span><span class="text-sm text-muted">↑ rising · within typical range <x-help term="typical_range" /></span></p>
                 </div>
@@ -134,7 +140,10 @@
             <li class="grid grid-cols-[2.75rem_1fr] gap-3 py-6 sm:grid-cols-[4.5rem_1fr] sm:gap-4">
                 <span class="font-mono text-2xl text-accent sm:text-3xl">03</span>
                 <div class="flex flex-col gap-2">
-                    <h3 class="font-display text-xl font-semibold">Rainfall nearby <x-help term="rainfall" /></h3>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-display text-xl font-semibold">Rainfall nearby</h3>
+                        <x-help term="rainfall" />
+                    </div>
                     <p class="text-ink-2">Totals from the nearest rain gauge over 6 hours, 24 hours and 3 days. Rain is what triggers overflows and lifts levels, so it is the earliest signal you get.</p>
                     <p class="flex items-baseline gap-3"><span class="font-mono text-2xl font-semibold tabular-nums">12.4 mm</span><span class="text-sm text-muted">last 24h · gauge 2.2 km away</span></p>
                 </div>
@@ -143,7 +152,10 @@
         {{-- After the readings on phones; under the intro in the left column on wide screens. --}}
         <div class="flex flex-col divide-y divide-line-2 rounded-lg border border-line bg-surface lg:col-span-4 lg:row-start-2 lg:self-start">
             <div class="flex flex-col gap-2 p-5">
-                <h3 class="font-display text-lg font-semibold">Flood alerts and warnings <x-help term="flood_warning" /></h3>
+                <div class="flex items-center gap-1.5">
+                    <h3 class="font-display text-lg font-semibold">Flood alerts and warnings</h3>
+                    <x-help term="flood_warning" />
+                </div>
                 <p class="text-sm text-ink-2">Shown in the Environment Agency's own words when one is in force for a spot's stretch of river.</p>
                 <div class="flex flex-wrap gap-1.5">
                     <x-flood-severity-badge :severity="\App\Enums\FloodSeverity::SevereFloodWarning" class="py-0.5" />
@@ -152,7 +164,10 @@
                 </div>
             </div>
             <div class="flex flex-col gap-2 p-5">
-                <h3 class="font-display text-lg font-semibold">Bathing water results <x-help term="bathing_classification" /></h3>
+                <div class="flex items-center gap-1.5">
+                    <h3 class="font-display text-lg font-semibold">Bathing water results</h3>
+                    <x-help term="bathing_classification" />
+                </div>
                 <p class="text-sm text-ink-2">For designated beaches, lakes and river sites: the yearly classification, recent sample counts and, in season, the daily pollution risk forecast.</p>
                 <div class="flex flex-wrap gap-1.5">
                     @foreach ([\App\Enums\BathingWaterClassification::Excellent, \App\Enums\BathingWaterClassification::Sufficient, \App\Enums\BathingWaterClassification::Poor] as $classification)

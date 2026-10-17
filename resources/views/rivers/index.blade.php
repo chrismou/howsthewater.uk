@@ -23,19 +23,18 @@
             default => 'bg-pill-grey-ring',
         },
     };
+
+    // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
+    $breadcrumbs = [['All rivers', route('hubs.rivers')], [$summary->name, route('regions.show', $region)], ['Rivers', route('rivers.index', $region)]];
 @endphp
 
-<x-layouts.app :title="$summary->name.' rivers: swimming, levels and spills'"
+<x-layouts.app :date-modified="$summary->dataUpdatedAt" :title="$summary->name.' rivers: swimming, levels and spills'"
                :description="'Storm overflow spills, river levels and rainfall for swimming, paddling and fishing spots on '.$summary->name.'\'s rivers, listed source to mouth.'"
-               :breadcrumbs="[[$summary->name, route('regions.show', $region)], ['Rivers', url()->current()]]"
+               :breadcrumbs="$breadcrumbs"
                :region="$region"
                :structured-data="app(\App\Services\StructuredData::class)->itemList($summary->name.' rivers', $summary->rivers->map(fn ($river) => [$river->name, route('rivers.show', [$summary->slug, $river->slug])]))">
     <div class="mb-6">
-        <p class="text-sm text-muted">
-            <a href="{{ route('hubs.rivers') }}" class="hover:underline">All rivers</a>
-            <span class="mx-1">/</span>
-            <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $summary->name }}</a>
-        </p>
+        <x-breadcrumbs :items="$breadcrumbs" />
         <div class="mt-1 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
             <div class="max-w-2xl">
                 <h1 class="font-display text-4xl font-semibold tracking-tight">{{ $summary->name }} rivers</h1>

@@ -9,7 +9,10 @@
 
 <section {{ $attributes }}>
     <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 class="font-display text-lg font-semibold">Storm overflows within {{ $overflows->radiusMetres / 1000 }} km <x-help term="nearby_overflows" /></h2>
+        <div class="flex items-center gap-1.5">
+            <h2 class="font-display text-lg font-semibold">Storm overflows within {{ $overflows->radiusMetres / 1000 }} km</h2>
+            <x-help term="nearby_overflows" />
+        </div>
         <span class="text-sm text-muted">Nearest first, straight-line distance.</span>
     </div>
 

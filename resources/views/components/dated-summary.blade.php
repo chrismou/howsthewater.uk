@@ -5,9 +5,11 @@
 
     monitors: upstream or nearby monitor summaries (each with ->monitor and ->status). where: the place as it reads
     after "monitors", such as "upstream of Ilkley on the River Wharfe" or "within 3 km of Millport Bay". stale: the
-    data is older than the stale threshold, so the sentence says it is the latest the monitors sent.
+    data is older than the stale threshold, so the sentence says it is the latest the monitors sent. level: the
+    place's LevelSummary, adding what its gauge last read, which also gives a place without overflow data a dated
+    fact. Every sentence ends by linking to what the data cannot tell you.
 --}}
-@props(['monitors', 'where', 'dischargingNow', 'spillsLast48Hours', 'updatedAt' => null, 'covered' => true, 'stale' => false])
+@props(['monitors', 'where', 'dischargingNow', 'spillsLast48Hours', 'updatedAt' => null, 'covered' => true, 'stale' => false, 'level' => null])
 
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
@@ -37,6 +39,21 @@
     if ($stale && $covered && $count > 0) {
         $sentence .= ' That is the most recent data the monitors have sent.';
     }
+
+    if ($level?->latestValue !== null && $level->latestAt !== null) {
+        $readAt = $level->latestAt->timezone($timezone);
+        $sentence .= sprintf(
+            ' The %s gauge read %s %s at <time datetime="%s">%s</time>%s.',
+            e($level->station->label),
+            number_format($level->latestValue, 2),
+            e($level->station->unitLabel()),
+            $level->latestAt->copy()->utc()->toIso8601String(),
+            e($readAt->format($readAt->isSameDay(now($timezone)) ? 'H:i T' : 'H:i T \o\n j F')),
+            $level->relativeToTypical !== null ? ', '.e(\Illuminate\Support\Str::replace('typical range', 'its typical range', $level->relativeToTypical)) : '',
+        );
+    }
+
+    $sentence .= ' <a href="'.route('about').'#limits" class="underline decoration-line underline-offset-2 hover:decoration-ink">Monitor data is not a safety check.</a>';
 @endphp
 
 {{-- Every part of the sentence is escaped above; the markup is only the <time> element. --}}

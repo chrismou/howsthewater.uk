@@ -10,7 +10,9 @@ use App\Models\Spot;
 
 /**
  * Schema.org descriptions of the site and its places, for pages to embed as
- * JSON-LD through the layout's structuredData. They state only what the page
+ * JSON-LD through the layout's structuredData, which joins them with the
+ * page's WebPage and BreadcrumbList into one @graph. Each place's @id is its
+ * page URL with a fragment, so it is the same wherever the place appears. They state only what the page
  * does (names, places, coordinates and links), never a rating or a claim
  * about the water, which the site never makes.
  */
@@ -62,10 +64,13 @@ class StructuredData
      */
     public function spot(Spot $spot, River $river, Region $region): array
     {
+        $url = route('spots.show', [$region, $river, $spot]);
+
         return [[
             '@type' => 'Place',
+            '@id' => $url.'#place',
             'name' => $spot->name.', '.$river->name,
-            'url' => route('spots.show', [$region, $river, $spot]),
+            'url' => $url,
             'geo' => $this->geo($spot->latitude, $spot->longitude),
             'containedInPlace' => $this->river($river, $region),
         ]];
@@ -88,10 +93,13 @@ class StructuredData
      */
     public function beach(BathingWater $beach, Region $region): array
     {
+        $url = route('beaches.show', [$region, $beach]);
+
         return [array_filter([
             '@type' => 'Beach',
+            '@id' => $url.'#beach',
             'name' => $beach->name,
-            'url' => route('beaches.show', [$region, $beach]),
+            'url' => $url,
             'geo' => $this->geo($beach->latitude, $beach->longitude),
             'address' => $beach->district !== null ? ['@type' => 'PostalAddress', 'addressRegion' => $beach->district, 'addressCountry' => 'GB'] : null,
             'containedInPlace' => $this->region($region),
@@ -103,10 +111,13 @@ class StructuredData
      */
     public function lake(Lake $lake, Region $region): array
     {
+        $url = route('lakes.show', [$region, $lake]);
+
         return [[
             '@type' => 'LakeBodyOfWater',
+            '@id' => $url.'#lake',
             'name' => $lake->name,
-            'url' => route('lakes.show', [$region, $lake]),
+            'url' => $url,
             'geo' => $this->geo($lake->latitude, $lake->longitude),
             'containedInPlace' => $this->region($region),
         ]];
@@ -134,10 +145,13 @@ class StructuredData
      */
     private function river(River $river, Region $region): array
     {
+        $url = route('rivers.show', [$region, $river]);
+
         return [
             '@type' => 'RiverBodyOfWater',
+            '@id' => $url.'#river',
             'name' => $river->name,
-            'url' => route('rivers.show', [$region, $river]),
+            'url' => $url,
             'containedInPlace' => $this->region($region),
         ];
     }
@@ -147,7 +161,9 @@ class StructuredData
      */
     private function region(Region $region): array
     {
-        return ['@type' => 'Place', 'name' => $region->name, 'url' => route('regions.show', $region)];
+        $url = route('regions.show', $region);
+
+        return ['@type' => 'Place', '@id' => $url.'#region', 'name' => $region->name, 'url' => $url];
     }
 
     /**

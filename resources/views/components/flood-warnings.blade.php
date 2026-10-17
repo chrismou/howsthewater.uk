@@ -22,7 +22,10 @@
                     <span class="font-mono font-normal normal-case tracking-normal"> · updated {{ $updatedAt->timezone($timezone)->format('j M, H:i') }}</span>
                 @endif
             </p>
-            <h2 class="mt-1 font-display text-xl font-semibold">{{ $warning->severity->meaning() }} <x-help term="flood_warning" /></h2>
+            <div class="flex items-center gap-1.5 mt-1">
+                <h2 class="font-display text-xl font-semibold">{{ $warning->severity->meaning() }}</h2>
+                <x-help term="flood_warning" />
+            </div>
             <p class="mt-1 text-sm">
                 <span class="font-semibold">{{ $warning->areaLabel }}</span>{{ $areaDescription }}
             </p>

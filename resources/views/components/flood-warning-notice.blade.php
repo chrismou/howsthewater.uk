@@ -19,15 +19,17 @@
 @if ($entries->isNotEmpty())
     {{-- The home page lists several regions, so it wraps them in one #flood-warnings anchor instead. --}}
     <section {!! $linkRegion ? '' : 'id="flood-warnings"' !!} class="mb-8 rounded-lg border border-l-4 border-line bg-surface px-5 py-4 {{ $boxTint }}" role="alert">
-        <h2 class="font-display text-lg font-semibold">
-            {{ $heading }} in
-            @if ($linkRegion)
-                <a href="{{ route('regions.show', $summary->slug) }}" class="hover:underline">{{ $summary->name }}</a>
-            @else
-                {{ $summary->name }}
-            @endif
+        <div class="flex items-center gap-1.5">
+            <h2 class="font-display text-lg font-semibold">
+                {{ $heading }} in
+                @if ($linkRegion)
+                    <a href="{{ route('regions.show', $summary->slug) }}" class="hover:underline">{{ $summary->name }}</a>
+                @else
+                    {{ $summary->name }}
+                @endif
+            </h2>
             <x-help term="flood_warning" />
-        </h2>
+        </div>
         <ul class="mt-3 divide-y divide-line-2 text-sm">
             @foreach ($entries as $entry)
                 @php

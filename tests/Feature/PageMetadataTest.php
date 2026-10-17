@@ -90,6 +90,12 @@ it('keeps place descriptions short for long names, and ends every title with the
 
     expect($henleyTitle)->toBe('Henley-on-Thames, River Thames: swimming and spills - '.config('app.name'));
 
+    foreach ([route('beaches.show', [$region, $beach]), route('beaches.show', [$region, $scottish])] as $url) {
+        $title = pageMetadata($this->get($url))['title'];
+        expect(mb_strlen(Str::beforeLast($title, ' - '.config('app.name'))))->toBeLessThanOrEqual(60, $title)
+            ->and($title)->toContain('bathing water quality');
+    }
+
     expect(pageMetadata($this->get(route('spots.show', [$region, $river, $short])))['title'])->toBe('Alston, River South Tyne: swimming, river level and spills - '.config('app.name'))
         ->and(pageMetadata($this->get(route('beaches.show', [$region, $scottish])))['description'])->toStartWith('SEPA classification and sample results');
 });

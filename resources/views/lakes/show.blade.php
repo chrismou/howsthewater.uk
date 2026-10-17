@@ -21,27 +21,24 @@
         'kind' => 'monitor',
         'status' => $monitor->status->value,
     ]))->values();
+
+    // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
+    $breadcrumbs = [['All lakes', route('hubs.lakes')], [$region->name, route('regions.show', $region)], ['Lakes', route('lakes.index', $region)], [$lake->name, route('lakes.show', [$region, $lake])]];
 @endphp
 
-<x-layouts.app :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
+<x-layouts.app :date-modified="$overflows->dataUpdatedAt" :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
                :description="'Bathing water results, lake level, rainfall and storm overflows nearby for swimming and paddling at '.$lake->name.'.'"
-               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Lakes', route('lakes.index', $region)], [$lake->name, url()->current()]]"
+               :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->lake($lake, $region)">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="text-sm text-muted">
-                <a href="{{ route('hubs.lakes') }}" class="hover:underline">All lakes</a>
-                <span class="mx-1">/</span>
-                <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
-                <span class="mx-1">/</span>
-                <a href="{{ route('lakes.index', $region) }}" class="hover:underline">Lakes</a>
-            </p>
+            <x-breadcrumbs :items="$breadcrumbs" />
             <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $lake->name }}</h1>
             @if ($lake->description)
                 <p class="mt-1 text-ink-2">{{ $lake->description }}</p>
             @endif
             <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$overflows->monitors" :where="'within '.($overflows->radiusMetres / 1000).' km of '.$lake->name"
-                             :discharging-now="$overflows->dischargingNowCount" :spills-last48-hours="$overflows->spillsLast48HoursCount" :updated-at="$overflows->dataUpdatedAt" :covered="$overflows->isCovered()" :stale="$overflows->isStale()" />
+                             :discharging-now="$overflows->dischargingNowCount" :spills-last48-hours="$overflows->spillsLast48HoursCount" :updated-at="$overflows->dataUpdatedAt" :covered="$overflows->isCovered()" :stale="$overflows->isStale()" :level="$level" />
         </div>
         <x-place-actions :latitude="$lake->latitude" :longitude="$lake->longitude" :label="$lake->name" :feed="route('lakes.feed', [$region, $lake])" />
     </div>
@@ -97,10 +94,16 @@
             <x-bathing-map-key :overflows="$overflows->monitors->isNotEmpty()" :place="$lake->name" />
         </div>
         <aside class="lg:col-span-2">
-            <h2 class="font-display mb-3 text-lg font-semibold">Lake level <x-help term="level" /></h2>
+            <div class="flex items-center gap-1.5 mb-3">
+                <h2 class="font-display text-lg font-semibold">Lake level</h2>
+                <x-help term="level" />
+            </div>
             <x-level-card :level="$level" empty="We don't have a level gauge for this lake." />
 
-            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Rainfall <x-help term="rainfall" /></h2>
+            <div class="flex items-center gap-1.5 mt-8 mb-3">
+                <h2 class="font-display text-lg font-semibold">Rainfall</h2>
+                <x-help term="rainfall" />
+            </div>
             <x-rainfall-card :rainfall="$conditions->rainfall" place="this lake" note="Rain across the lake's catchment may differ." />
         </aside>
     </div>

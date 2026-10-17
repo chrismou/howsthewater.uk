@@ -5,7 +5,7 @@
     $hasScottishWater = $overflowFeeds->contains('driver', 'scottish_water');
 @endphp
 
-<x-layouts.app title="About the data and how it works"
+<x-layouts.app page-type="AboutPage" title="About the data and how it works"
                description="Where How's the Water gets its storm overflow, river level, rainfall, flood and bathing water data, how often it updates, and what it does not claim.">
     <article class="max-w-2xl">
         <p class="text-sm text-muted">Last updated 16 October 2026</p>
@@ -52,7 +52,7 @@
                 </ul>
             </section>
 
-            <section class="grid gap-3">
+            <section id="limits" class="grid scroll-mt-24 gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">What it does not do</h2>
                 <ul class="grid gap-2">
                     <li class="flex gap-3"><span class="text-muted">-</span><span>It does not say whether water is safe or clean.</span></li>

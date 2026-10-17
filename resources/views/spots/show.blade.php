@@ -37,21 +37,18 @@
         ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $place);
 
     $osmUrl = sprintf('https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=15/%s/%s', $spot->latitude, $spot->longitude, $spot->latitude, $spot->longitude);
+
+    // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
+    $breadcrumbs = [['All rivers', route('hubs.rivers')], [$spot->river->region->name, route('regions.show', $spot->river->region)], ['Rivers', route('rivers.index', $spot->river->region)], [$spot->river->name, route('rivers.show', [$spot->river->region, $spot->river])], [$spot->name, route('spots.show', [$spot->river->region, $spot->river, $spot])]];
 @endphp
 
-<x-layouts.app :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$title"
+<x-layouts.app :date-modified="$conditions->dataUpdatedAt" :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$title"
                :description="'Live upstream storm overflow spills, river level and rainfall for swimming, paddling and fishing at '.$spot->name.' on the '.$spot->river->name.'.'"
-               :breadcrumbs="[[$spot->river->region->name, route('regions.show', $spot->river->region)], ['Rivers', route('rivers.index', $spot->river->region)], [$spot->river->name, route('rivers.show', [$spot->river->region, $spot->river])], [$spot->name, url()->current()]]"
+               :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->spot($spot, $spot->river, $spot->river->region)">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="text-sm text-muted">
-                <a href="{{ route('hubs.rivers') }}" class="hover:underline">All rivers</a>
-                <span class="mx-1">/</span>
-                <a href="{{ route('regions.show', $spot->river->region) }}" class="hover:underline">{{ $spot->river->region->name }}</a>
-                <span class="mx-1">/</span>
-                <a href="{{ route('rivers.show', [$spot->river->region, $spot->river]) }}" class="hover:underline">{{ $spot->river->name }}</a>
-            </p>
+            <x-breadcrumbs :items="$breadcrumbs" />
             <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $spot->name }}</h1>
             <p class="mt-1 text-ink-2">
                 @if ($spot->description){{ $spot->description }} @endif
@@ -60,7 +57,7 @@
                 @endif
             </p>
             <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$conditions->upstreamMonitors" :where="'upstream of '.$spot->name.' on the '.$spot->river->name"
-                             :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" :covered="$covered" :stale="$conditions->overflowDataIsStale()" />
+                             :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" :covered="$covered" :stale="$conditions->overflowDataIsStale()" :level="$level" />
         </div>
         <div class="flex flex-wrap gap-2">
             <button type="button" data-copy-link="{{ url()->current() }}"
@@ -156,7 +153,10 @@
                 <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#a8a29e"></span>Offline</li>
             </ul>
 
-            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Last 30 days <x-help term="history" /></h2>
+            <div class="flex items-center gap-1.5 mt-8 mb-3">
+                <h2 class="font-display text-lg font-semibold">Last 30 days</h2>
+                <x-help term="history" />
+            </div>
             @if ($covered)
                 <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" />
             @else
@@ -165,17 +165,26 @@
         </div>
 
         <aside class="lg:col-span-2">
-            <h2 class="font-display mb-3 text-lg font-semibold">River level <x-help term="level" /></h2>
+            <div class="flex items-center gap-1.5 mb-3">
+                <h2 class="font-display text-lg font-semibold">River level</h2>
+                <x-help term="level" />
+            </div>
             <x-level-card :level="$level" empty="No gauge is linked to this spot yet." />
 
-            <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Rainfall <x-help term="rainfall" /></h2>
+            <div class="flex items-center gap-1.5 mt-8 mb-3">
+                <h2 class="font-display text-lg font-semibold">Rainfall</h2>
+                <x-help term="rainfall" />
+            </div>
             <x-rainfall-card :rainfall="$rainfall" place="this spot" note="Rain upstream in the catchment may differ." />
         </aside>
     </div>
 
     <section class="mt-10">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 class="font-display text-lg font-semibold">Upstream storm overflows <x-help term="upstream" /></h2>
+            <div class="flex items-center gap-1.5">
+                <h2 class="font-display text-lg font-semibold">Upstream storm overflows</h2>
+                <x-help term="upstream" />
+            </div>
             <span class="text-sm text-muted">Recent spills first, then nearest. Distances follow the water, including tributaries.</span>
         </div>
         @if (! $covered)

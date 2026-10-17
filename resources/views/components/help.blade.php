@@ -1,6 +1,7 @@
 {{--
-    A "?" button that explains a term. Only the button sits where the component is used, often inside a heading; the
-    explanation goes once per term into a hidden glossary at the end of the page, so headings read as their own words.
+    A "?" button that explains a term. Only the button sits where the component is used, beside a heading rather than
+    inside it, so headings read as their own words; the explanation goes once per term into a hidden glossary at the
+    end of the page.
     tooltip.js shows it in one shared panel, kept on screen.
 --}}
 <button type="button"

@@ -1,13 +1,14 @@
-<x-layouts.app :region="$region" :title="$region->name.' beaches: water quality and swimming'"
+@php
+    // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
+    $breadcrumbs = [['All beaches', route('hubs.beaches')], [$region->name, route('regions.show', $region)], ['Beaches', route('beaches.index', $region)]];
+@endphp
+
+<x-layouts.app :date-modified="$beaches->map(fn ($conditions) => $conditions->overflows->dataUpdatedAt)->filter()->max()" :region="$region" :title="$region->name.' beaches: water quality and swimming'"
                :description="'Bathing water classifications, sample results and nearby storm overflows for swimming at every designated beach in '.$region->name.'.'"
-               :breadcrumbs="[[$region->name, route('regions.show', $region)], ['Beaches', url()->current()]]"
+               :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->itemList($region->name.' beaches', $beaches->map(fn ($conditions) => [$conditions->bathingWater->bathingWater->name, route('beaches.show', [$region, $conditions->bathingWater->bathingWater])]))">
     <div class="mb-6">
-        <p class="text-sm text-muted">
-            <a href="{{ route('hubs.beaches') }}" class="hover:underline">All beaches</a>
-            <span class="mx-1">/</span>
-            <a href="{{ route('regions.show', $region) }}" class="hover:underline">{{ $region->name }}</a>
-        </p>
+        <x-breadcrumbs :items="$breadcrumbs" />
         <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $region->name }} beaches</h1>
         <p class="mt-2 text-ink-2">Every designated bathing water on the {{ $region->name }} coast, with its classification and the storm overflows nearby.</p>
     </div>

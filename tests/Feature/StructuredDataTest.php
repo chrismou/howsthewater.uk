@@ -17,17 +17,18 @@ function structuredData(TestResponse $response): array
 {
     preg_match_all('/<script type="application\/ld\+json">(.*?)<\/script>/s', (string) $response->assertOk()->getContent(), $blocks);
 
-    return collect($blocks[1])
-        ->map(fn (string $json) => json_decode($json, true, flags: JSON_THROW_ON_ERROR))
-        ->each(fn (array $block) => expect($block['@context'] ?? null)->toBe('https://schema.org'))
-        ->keyBy(fn (array $block) => $block['@type'] ?? 'graph')
-        ->all();
+    // One graph per page, so every node can refer to the others by @id.
+    expect($blocks[1])->toHaveCount(1);
+    $graph = json_decode($blocks[1][0], true, flags: JSON_THROW_ON_ERROR);
+    expect($graph['@context'])->toBe('https://schema.org');
+
+    return collect($graph['@graph'])->keyBy('@type')->all();
 }
 
 it('describes the site and its search on the home page', function () {
     Region::factory()->create(['slug' => 'yorkshire']);
 
-    $graph = collect(structuredData($this->get(route('home')))['graph']['@graph'])->keyBy('@type');
+    $graph = structuredData($this->get(route('home')));
 
     expect($graph['WebSite']['name'])->toBe(config('app.name'))
         ->and($graph['WebSite']['potentialAction']['target']['urlTemplate'])->toBe(route('search').'?q={search_term_string}')
@@ -68,4 +69,27 @@ it('lists the places on listing pages, and starts the visible trail at the match
 
     $this->get(route('beaches.show', [$region, $beach]))->assertSee('<a href="'.route('hubs.beaches').'" class="hover:underline">All beaches</a>', false);
     $this->get(route('rivers.index', $region))->assertSee('<a href="'.route('hubs.rivers').'" class="hover:underline">All rivers</a>', false);
+});
+
+it('joins each page into one graph whose WebPage points at its place, trail and date, with the visible trail matching', function () {
+    $region = Region::factory()->create(['name' => 'Scotland', 'slug' => 'scotland']);
+    $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Tay', 'slug' => 'tay']);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'name' => 'Dunkeld', 'slug' => 'dunkeld']);
+    $url = route('spots.show', [$region, $river, $spot]);
+
+    $response = $this->get($url);
+    $graph = structuredData($response);
+
+    expect($graph['WebPage']['@id'])->toBe($url.'#webpage')
+        ->and($graph['WebPage']['mainEntity']['@id'])->toBe($url.'#place')
+        ->and($graph['WebPage']['breadcrumb']['@id'])->toBe($graph['BreadcrumbList']['@id'])
+        ->and($graph['WebPage']['isPartOf']['@id'])->toBe($graph['WebSite']['@id'])
+        ->and($graph['Place']['containedInPlace']['@id'])->toBe(route('rivers.show', [$region, $river]).'#river');
+
+    $trail = collect($graph['BreadcrumbList']['itemListElement'])->pluck('name')->all();
+    expect($trail)->toBe(['All rivers', 'Scotland', 'Rivers', 'River Tay', 'Dunkeld']);
+    $response->assertSeeInOrder(['aria-label="Breadcrumb"', 'All rivers', 'Scotland', 'Rivers', 'River Tay', '</nav>'], false);
+
+    expect(structuredData($this->get(route('about'))))->toHaveKey('AboutPage');
+    $this->get(route('search', ['q' => 'x']))->assertDontSee('application/ld+json', false);
 });

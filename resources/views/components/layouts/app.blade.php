@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'noindex' => false, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => [], 'structuredData' => []])
+@props(['title' => null, 'description' => null, 'noindex' => false, 'pageType' => 'WebPage', 'dateModified' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => [], 'structuredData' => []])
 
 @php
     // The live bar shows the summary a page passes (the home page passes every region combined), else the page's
@@ -50,27 +50,52 @@
     <meta name="twitter:title" content="{{ $pageTitle }}">
     <meta name="twitter:description" content="{{ $pageDescription }}">
     <meta name="twitter:image" content="{{ asset('og-image.png') }}">
-    @if ($breadcrumbs !== [])
-        {{-- The page's trail as structured data, so search results show it in place of the bare URL. --}}
+    {{--
+        The page as one schema.org graph (see App\Services\StructuredData): a WebPage (or AboutPage) node for this URL,
+        its trail as a BreadcrumbList, and what the page describes, each with an @id the others refer to. Facts the
+        page states only, never a rating of the water. Pages kept out of the index carry none.
+    --}}
+    @unless ($noindex)
         @php
-            $breadcrumbList = [
-                '@context' => 'https://schema.org',
-                '@type' => 'BreadcrumbList',
-                'itemListElement' => collect([['Home', route('home')], ...$breadcrumbs])
-                    ->map(fn (array $crumb, int $index) => ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $crumb[0], 'item' => $crumb[1]])
-                    ->all(),
-            ];
+            $siteId = rtrim(route('home'), '/').'/#website';
+            $nodes = collect($structuredData)
+                ->flatMap(fn (array $item) => $item['@graph'] ?? [$item])
+                ->map(fn (array $node) => ['@id' => $canonical.'#'.lcfirst((string) $node['@type']), ...$node])
+                ->values();
+            $mainEntity = $nodes->first(fn (array $node) => ! in_array($node['@type'], ['WebSite', 'Organization'], true));
+
+            if (! $nodes->contains('@id', $siteId)) {
+                $nodes->push(['@type' => 'WebSite', '@id' => $siteId, 'url' => rtrim(route('home'), '/').'/', 'name' => config('app.name')]);
+            }
+
+            if ($breadcrumbs !== []) {
+                $nodes->push([
+                    '@type' => 'BreadcrumbList',
+                    '@id' => $canonical.'#breadcrumb',
+                    'itemListElement' => collect($breadcrumbs)
+                        ->map(fn (array $crumb, int $index) => ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $crumb[0], 'item' => $crumb[1]])
+                        ->all(),
+                ]);
+            }
+
+            $nodes->prepend(array_filter([
+                '@type' => $pageType,
+                '@id' => $canonical.'#webpage',
+                'url' => $canonical,
+                'name' => $pageTitle,
+                'description' => $pageDescription,
+                'inLanguage' => 'en-GB',
+                'isPartOf' => ['@id' => $siteId],
+                'dateModified' => $dateModified?->copy()->utc()->toIso8601String(),
+                'breadcrumb' => $breadcrumbs !== [] ? ['@id' => $canonical.'#breadcrumb'] : null,
+                'mainEntity' => $mainEntity !== null ? ['@id' => $mainEntity['@id']] : null,
+            ]));
+
+            // Built here rather than in an echo, where Blade would read the "@context" key as a directive.
+            $graphJson = json_encode(['@context' => 'https://schema.org', '@graph' => $nodes->all()], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG);
         @endphp
-        <script type="application/ld+json">{!! json_encode($breadcrumbList, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
-    @endif
-    {{-- What the page describes, in schema.org terms (see App\Services\StructuredData): facts the page states, never a rating of the water. --}}
-    @php
-        // Built here rather than in an echo, where Blade would read the "@context" key as a directive.
-        $structuredDataJson = array_map(fn (array $item) => json_encode(['@context' => 'https://schema.org', ...$item], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG), $structuredData);
-    @endphp
-    @foreach ($structuredDataJson as $json)
-        <script type="application/ld+json">{!! $json !!}</script>
-    @endforeach
+        <script type="application/ld+json">{!! $graphJson !!}</script>
+    @endunless
     {{-- Most pages open with a map, whose tiles come from OpenStreetMap. --}}
     <link rel="preconnect" href="https://tile.openstreetmap.org">
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
