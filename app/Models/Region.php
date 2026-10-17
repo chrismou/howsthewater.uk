@@ -86,6 +86,15 @@ class Region extends Model
     }
 
     /**
+     * The name as it reads mid-sentence: "the Midlands", "the North East",
+     * but "Yorkshire" and "Wales".
+     */
+    public function nameInSentence(): string
+    {
+        return preg_match('/^(north|south|east|west|midlands|thames valley)\b/i', $this->name) === 1 ? 'the '.$this->name : $this->name;
+    }
+
+    /**
      * Whether we read any water company overflow feed for this region. A
      * region without one (Wales, until Welsh Water's feed is added) says
      * its overflow data is not available, never that there are no spills.

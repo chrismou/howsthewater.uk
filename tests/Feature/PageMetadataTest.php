@@ -80,6 +80,16 @@ it('keeps place descriptions short for long names, and ends every title with the
     expect(mb_strlen(Str::beforeLast($overview['title'], ' - '.config('app.name'))))->toBeLessThanOrEqual(60, $overview['title'])
         ->and(mb_strlen($overview['description']))->toBeLessThanOrEqual(160, $overview['description']);
 
+    $henley = Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $region->id, 'name' => 'River Thames', 'slug' => 'thames'])->id, 'name' => 'Henley-on-Thames', 'slug' => 'henley']);
+    $henleyTitle = pageMetadata($this->get(route('spots.show', [$region, $henley->river, $henley])))['title'];
+
+    foreach ([route('spots.show', [$region, $river, $spot]), route('spots.show', [$region, $henley->river, $henley])] as $url) {
+        $title = pageMetadata($this->get($url))['title'];
+        expect(mb_strlen(Str::beforeLast($title, ' - '.config('app.name'))))->toBeLessThanOrEqual(60, $title);
+    }
+
+    expect($henleyTitle)->toBe('Henley-on-Thames, River Thames: swimming and spills - '.config('app.name'));
+
     expect(pageMetadata($this->get(route('spots.show', [$region, $river, $short])))['title'])->toBe('Alston, River South Tyne: swimming, river level and spills - '.config('app.name'))
         ->and(pageMetadata($this->get(route('beaches.show', [$region, $scottish])))['description'])->toStartWith('SEPA classification and sample results');
 });
@@ -100,7 +110,43 @@ it('names the place, time and source of the monitor data in one sentence', funct
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSee('At 08:58 BST on 16 October, 1 of 2 storm overflow monitors upstream of Ilkley on the River Wharfe was discharging, with 2 spills in the previous 48 hours, according to Yorkshire Water.');
+        ->assertSeeText('At 08:58 BST on 16 October 2026, 1 of 2 storm overflow monitors upstream of Ilkley on the River Wharfe was discharging, with 2 spills in the previous 48 hours, according to Yorkshire Water.')
+        ->assertSee('<time datetime="2026-10-16T07:58:00+00:00">', false);
+});
+
+it('says when monitors are offline or their data is old, and never counts offline ones as not discharging', function () {
+    $region = Region::factory()->create(['slug' => 'north-east']);
+    $beach = BathingWater::factory()->create(['region_id' => $region->id, 'name' => 'Bamburgh Castle', 'slug' => 'bamburgh', 'latitude' => 55.61, 'longitude' => -1.71]);
+    $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe', 'slug' => 'wharfe']);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 50000]);
+    $this->travelTo(Carbon::parse('2026-10-16 09:30', 'Europe/London'));
+
+    OverflowMonitor::factory()->create([
+        'river_id' => null, 'latitude' => 55.611, 'longitude' => -1.711, 'status' => OverflowStatus::NotDischarging,
+        'company' => 'Northumbrian Water', 'source_updated_at' => Carbon::parse('2026-09-24 11:05', 'Europe/London')->utc(),
+    ]);
+
+    foreach ([OverflowStatus::Offline, OverflowStatus::Offline, OverflowStatus::Discharging] as $index => $status) {
+        OverflowMonitor::factory()->create([
+            'river_id' => $river->id, 'river_metres' => 40000 + $index, 'status' => $status,
+            'company' => 'Yorkshire Water', 'source_updated_at' => now()->subMinutes(30),
+        ]);
+    }
+
+    $this->get(route('beaches.show', [$region, $beach]))
+        ->assertOk()
+        ->assertSeeText('At 11:05 BST on 24 September 2026, the one storm overflow monitor within 3 km of Bamburgh Castle was not discharging, with 0 spills in the previous 48 hours, according to Northumbrian Water. That is the most recent data the monitors have sent.');
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSeeText('1 of 3 storm overflow monitors upstream of Ilkley on the River Wharfe was discharging and 2 were offline');
+
+    OverflowMonitor::query()->where('river_id', $river->id)->update(['status' => OverflowStatus::Offline]);
+    app(\App\Services\Conditions\ConditionsCache::class)->flush();
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSeeText('all 3 storm overflow monitors upstream of Ilkley on the River Wharfe were offline, so there is no current spill data');
 });
 
 it('serves the about page ahead of region slugs, links it from every page and lists it in the sitemap', function () {
@@ -109,4 +155,20 @@ it('serves the about page ahead of region slugs, links it from every page and li
     $this->get('/about')->assertOk()->assertSee('About the data and how it works')->assertSee('What it does not do');
     $this->get(route('home'))->assertSee(route('about'));
     $this->get(route('sitemap'))->assertSee(route('about'));
+});
+
+it('names the lowercase route as canonical, keeps search and missing pages out of the index, and lists every listing page in the sitemap', function () {
+    $region = Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+    River::factory()->create(['region_id' => $region->id]);
+    BathingWater::factory()->create(['region_id' => $region->id]);
+
+    // MySQL also finds /Yorkshire, which then names this lowercase route as canonical; SQLite in tests is case-sensitive.
+    $this->get('/yorkshire?utm_source=x')->assertOk()->assertSee('<link rel="canonical" href="'.route('regions.show', $region).'">', false);
+    $this->get(route('search', ['q' => 'otley']))->assertSee('<meta name="robots" content="noindex">', false)->assertDontSee('rel="canonical"', false);
+    $this->get('/nowhere-at-all')->assertNotFound()->assertSee('<meta name="robots" content="noindex">', false);
+
+    $this->get(route('sitemap'))
+        ->assertSee('<loc>'.route('rivers.index', $region).'</loc>', false)
+        ->assertSee('<loc>'.route('beaches.index', $region).'</loc>', false)
+        ->assertDontSee('<loc>'.route('lakes.index', $region).'</loc>', false);
 });

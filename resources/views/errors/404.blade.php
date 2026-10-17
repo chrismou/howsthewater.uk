@@ -1,8 +1,8 @@
-<x-layouts.app title="Page not found">
+<x-layouts.app title="Page not found" noindex>
     <div class="mx-auto max-w-xl py-10 text-center">
         <p class="font-mono text-sm text-muted">404</p>
         <h1 class="font-display mt-2 text-4xl font-semibold tracking-tight">Nothing here</h1>
-        <p class="mt-3 text-ink-2">That page doesn't exist, or the spot has moved. Spot pages live under their region and river, like <span class="font-mono text-sm">/yorkshire/wharfe/ilkley</span>.</p>
+        <p class="mt-3 text-ink-2">That page doesn't exist, or the spot has moved. Spot pages live under their region's rivers, like <span class="font-mono text-sm">/yorkshire/rivers/wharfe/ilkley</span>.</p>
         <form action="{{ route('search') }}" method="get" role="search" class="mx-auto mt-6 flex max-w-md gap-2">
             <label for="missing-search" class="sr-only">Find a spot or river</label>
             <input id="missing-search" type="search" name="q" placeholder="Find a spot or river"

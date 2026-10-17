@@ -9,13 +9,15 @@
         $totalBeaches.' '.\Illuminate\Support\Str::plural('beach', $totalBeaches) => $totalBeaches,
         $totalLakes.' '.\Illuminate\Support\Str::plural('lake', $totalLakes) => $totalLakes,
     ])->filter()->keys()->join(', ', ' and ');
+    // Names the countries, never the regions, so it stays under 160 characters as regions are added.
+    $description = 'Storm overflow spills, river levels and bathing water results for swimming, paddling and fishing on rivers, beaches and lakes in England, Scotland and Wales.';
     $companyNames = \App\Models\Region::query()->orderBy('name')->get()->flatMap->waterCompanies()->unique()->join(', ', ' and ') ?: 'Water company';
 @endphp
 
 <x-layouts.app title="Storm overflows, river levels and bathing water results"
-               description="Live storm overflow spills, river levels and bathing water results for swimming, paddling and fishing on rivers, beaches and lakes in England and Scotland."
+               :description="$description"
                :live-summary="$allRegions"
-               :structured-data="app(\App\Services\StructuredData::class)->site('Live storm overflow spills, river levels and bathing water results for swimming, paddling and fishing on rivers, beaches and lakes in England and Scotland.')">
+               :structured-data="app(\App\Services\StructuredData::class)->site($description)">
     <x-slot:hero>
         <section class="relative overflow-hidden border-b border-line bg-surface">
             <svg aria-hidden="true" class="pointer-events-none absolute inset-0 h-full w-full text-accent" viewBox="0 0 1280 520" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-opacity="0.12" stroke-width="1.2">

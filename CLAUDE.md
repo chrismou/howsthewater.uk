@@ -373,7 +373,8 @@ replacing the local database with a copy of live rather than backfilling.
 
 - Blade + Tailwind 4 + Leaflet. Components live in `resources/views/components`; the layout is `components/layouts/app`.
 - Fonts (Instrument Sans, Bricolage Grotesque, IBM Plex Mono) are self-hosted by the Laravel Vite font plugin
-  (`vite.config.js`, downloaded from Bunny at build time) and loaded by `@fonts` in the layout, with font-display: swap
+  (`vite.config.js`, downloaded from Google Fonts at build time as one woff2 each; not Bunny, whose woff
+  files this plugin version emits as separate rules that override the woff2) and loaded by `@fonts` in the layout, with font-display: swap
   and preloads only for the faces on screen first. No font request leaves the site.
 - Build data for `data-*` attributes in a `@php` block and output with `{{ json_encode(...) }}`. Multi-line `@json(...)`
   inside attributes breaks the Blade compiler.
@@ -393,7 +394,7 @@ replacing the local database with a copy of live rather than backfilling.
   character limit applies to that unique part, not the site name: search results show about 60 characters, so if they
   cut a title it is the site name that goes, never the place or topic. Meta descriptions stay within 160 characters.
 - Never list every region (or every company, river or place) in a site-wide title or description: they grow with each
-  region added. Say "England and Scotland" or describe the coverage instead; the home page hero lists the regions.
+  region added. Name the countries ("England, Scotland and Wales") or describe the coverage instead; the home page hero lists the regions.
 - When adding a region, page type or new place names, check the longest titles and descriptions it produces.
   `PageMetadataTest` checks the home, search, about and legal pages with many long region names, and place pages with
   long place names; extend it for any new page type.

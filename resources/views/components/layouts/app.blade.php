@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => [], 'structuredData' => []])
+@props(['title' => null, 'description' => null, 'noindex' => false, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => [], 'structuredData' => []])
 
 @php
     // The live bar shows the summary a page passes (the home page passes every region combined), else the page's
@@ -7,6 +7,10 @@
     $liveRegion = $region ?? $allRegions->sortBy('id')->first();
     $liveSummary ??= $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
     $menus = app(\App\Services\Conditions\NavigationMenus::class)->all();
+    // Built from the route and its bound models, so /Yorkshire (which the case-insensitive database still finds)
+    // names /yorkshire as canonical.
+    $currentRoute = request()->route();
+    $canonical = $currentRoute?->getName() !== null ? route($currentRoute->getName(), $currentRoute->parameters()) : url()->current();
     // Overflow data is credited per source: the English companies via Stream, Scottish Water from its own API.
     $overflowFeeds = collect($allRegions->reduce(fn (array $feeds, $region) => $feeds + $region->overflowFeedConfig(), []));
     $streamCompanies = $overflowFeeds->where('driver', 'stream')->pluck('name')->unique()->join(', ', ' and ');
@@ -25,7 +29,11 @@
     @endphp
     <title>{{ $pageTitle }}</title>
     <meta name="description" content="{{ $pageDescription }}">
-    <link rel="canonical" href="{{ url()->current() }}">
+    @if ($noindex)
+        <meta name="robots" content="noindex">
+    @else
+        <link rel="canonical" href="{{ $canonical }}">
+    @endif
     @if ($feed)
         <link rel="alternate" type="application/rss+xml" title="{{ $pageTitle }}" href="{{ $feed }}">
     @endif
@@ -33,7 +41,7 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="{{ $pageTitle }}">
     <meta property="og:description" content="{{ $pageDescription }}">
-    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:url" content="{{ $canonical }}">
     <meta property="og:image" content="{{ asset('og-image.png') }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -63,6 +71,8 @@
     @foreach ($structuredDataJson as $json)
         <script type="application/ld+json">{!! $json !!}</script>
     @endforeach
+    {{-- Most pages open with a map, whose tiles come from OpenStreetMap. --}}
+    <link rel="preconnect" href="https://tile.openstreetmap.org">
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">

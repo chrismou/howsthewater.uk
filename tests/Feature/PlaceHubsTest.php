@@ -54,7 +54,7 @@ it('gives each region an overview with a card for each kind of place it has', fu
 
     $this->get(route('regions.show', $region))
         ->assertOk()
-        ->assertSee('<title>Yorkshire: rivers and beaches', false)
+        ->assertSee('<title>Swimming in Yorkshire: rivers and beaches', false)
         ->assertSee('href="'.route('rivers.index', $region).'"', false)
         ->assertSee('href="'.route('beaches.index', $region).'"', false)
         ->assertDontSee('href="'.route('lakes.index', $region).'"', false)

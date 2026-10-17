@@ -30,10 +30,16 @@
     // Places whose water company feed we do not read yet show dashes, never zeros that would read as "no spills".
     $covered = $conditions->spillRecency !== \App\Enums\SpillRecency::NotCovered;
 
+    // The longest title that fits search results' 60 characters: the full one, then a shorter topic, then just the place.
+    $place = $spot->name.', '.$spot->river->name;
+    $title = collect([': swimming, river level and spills', ': swimming and spills', ''])
+        ->map(fn (string $topic) => $place.$topic)
+        ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $place);
+
     $osmUrl = sprintf('https://www.openstreetmap.org/?mlat=%s&mlon=%s#map=15/%s/%s', $spot->latitude, $spot->longitude, $spot->latitude, $spot->longitude);
 @endphp
 
-<x-layouts.app :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$spot->name.', '.$spot->river->name.': swimming, river level and spills'"
+<x-layouts.app :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$title"
                :description="'Live upstream storm overflow spills, river level and rainfall for swimming, paddling and fishing at '.$spot->name.' on the '.$spot->river->name.'.'"
                :breadcrumbs="[[$spot->river->region->name, route('regions.show', $spot->river->region)], ['Rivers', route('rivers.index', $spot->river->region)], [$spot->river->name, route('rivers.show', [$spot->river->region, $spot->river])], [$spot->name, url()->current()]]"
                :structured-data="app(\App\Services\StructuredData::class)->spot($spot, $spot->river, $spot->river->region)">
@@ -54,7 +60,7 @@
                 @endif
             </p>
             <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$conditions->upstreamMonitors" :where="'upstream of '.$spot->name.' on the '.$spot->river->name"
-                             :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" :covered="$covered" />
+                             :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" :covered="$covered" :stale="$conditions->overflowDataIsStale()" />
         </div>
         <div class="flex flex-wrap gap-2">
             <button type="button" data-copy-link="{{ url()->current() }}"
