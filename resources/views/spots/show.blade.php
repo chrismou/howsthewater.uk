@@ -32,9 +32,22 @@
 
     // The longest title that fits search results' 60 characters: the full one, then a shorter topic, then just the place.
     $place = $spot->name.', '.$spot->river->name;
-    $title = collect([': swimming, river level and spills', ': swimming and spills', ''])
+    $title = collect($covered ? [': swimming, river level and spills', ': swimming and spills', ''] : [': swimming and river level', ': swimming', ''])
         ->map(fn (string $topic) => $place.$topic)
         ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $place);
+
+    // The description carries the spot's own facts (where it is, how many monitors, which gauge), so no two read alike.
+    $upstreamCount = $conditions->upstreamMonitors->count();
+    $facts = collect([
+        ! $covered ? null : ($upstreamCount > 0 ? "spills from {$upstreamCount} storm ".\Illuminate\Support\Str::plural('overflow', $upstreamCount).' upstream' : 'no monitored storm overflows upstream'),
+        $level ? "the {$level->station->label} gauge's level" : 'river level',
+        'rainfall',
+    ])->filter()->join(', ', ' and ');
+    $located = $spot->name.' on the '.$spot->river->name.($spot->river_metres !== null ? ', '.number_format($spot->river_metres / 1000).' km from the source' : '');
+    $description = collect([$located, $spot->name.' on the '.$spot->river->name])
+        ->crossJoin([', for swimming, paddling and fishing.', ', for swimming and paddling.', '.'])
+        ->map(fn (array $parts) => "{$parts[0]}: {$facts}{$parts[1]}")
+        ->first(fn (string $candidate) => mb_strlen($candidate) <= 160, \Illuminate\Support\Str::limit("{$spot->name} on the {$spot->river->name}: {$facts}.", 157));
 
 
     // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
@@ -42,13 +55,14 @@
 @endphp
 
 <x-layouts.app :date-modified="$conditions->dataUpdatedAt" :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$title"
-               :description="'Live upstream storm overflow spills, river level and rainfall for swimming, paddling and fishing at '.$spot->name.' on the '.$spot->river->name.'.'"
+               :description="$description"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->spot($spot, $spot->river, $spot->river->region)">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <x-breadcrumbs :items="$breadcrumbs" />
-            <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $spot->name }}</h1>
+            {{-- Names the river too ("Ilkley, River Wharfe"), as people search for both, with the place standing out. --}}
+            <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $spot->name }}<span class="text-2xl font-medium text-muted sm:text-3xl">, {{ $spot->river->name }}</span></h1>
             <p class="mt-1 text-ink-2">
                 @if ($spot->description){{ $spot->description }} @endif
                 @if ($spot->river_metres !== null)

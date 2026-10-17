@@ -90,7 +90,8 @@ it('says overflow data is not available where we do not read the water company f
         ->assertDontSee('Monitor data is out of date');
 
     $this->get(route('rivers.show', [$wales, $river]))->assertOk()
-        ->assertSee('We do not read the water company\'s overflow data for the River Wye yet', false)
+        ->assertSee("We do not read the water company's overflow data here yet, so storm overflows on the River Wye are not shown.", false)
+        ->assertSee('<title>River Wye levels and swimming spots', false)
         ->assertDontSee('upstream monitors');
 });
 

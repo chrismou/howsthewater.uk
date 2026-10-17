@@ -115,26 +115,29 @@
     [role="button"]:not(:disabled) {
         cursor: pointer;
     }
-
-    /* Leaflet draws its own chrome, so it needs the tokens applied by hand. */
-    .dark .leaflet-tile {
-        filter: brightness(0.72) saturate(0.7);
-    }
-
-    .dark .leaflet-popup-content-wrapper,
-    .dark .leaflet-popup-tip {
-        background: var(--color-surface);
-        color: var(--color-ink);
-    }
-
-    .dark .leaflet-control-zoom a,
-    .dark .leaflet-control-attribution {
-        background: var(--color-surface);
-        color: var(--color-ink);
-    }
 }
 
-/* Leaflet's own CSS is unlayered, so this sits outside the layers to win: zoom buttons a finger can hit on touch screens. */
+/*
+ * Leaflet draws its own chrome. Its CSS is unlayered and loads after this file, so these rules sit outside the layers
+ * and carry .leaflet-container to outrank it (inside a layer, Leaflet's white buttons won even in dark mode).
+ */
+.dark .leaflet-container .leaflet-tile {
+    filter: brightness(0.72) saturate(0.7);
+}
+
+.dark .leaflet-container .leaflet-popup-content-wrapper,
+.dark .leaflet-container .leaflet-popup-tip,
+.dark .leaflet-container .leaflet-control-zoom a,
+.dark .leaflet-container .leaflet-control-attribution {
+    background: var(--color-surface);
+    color: var(--color-ink);
+}
+
+.dark .leaflet-container .leaflet-control-zoom a:hover {
+    background: var(--color-surface-2);
+}
+
+/* Zoom buttons a finger can hit on touch screens. */
 .leaflet-touch .leaflet-bar a.leaflet-control-zoom-in,
 .leaflet-touch .leaflet-bar a.leaflet-control-zoom-out {
     width: 44px;

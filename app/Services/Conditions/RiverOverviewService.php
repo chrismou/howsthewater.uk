@@ -7,6 +7,7 @@ use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
+use App\Models\SpillEvent;
 use App\Models\Spot;
 use Illuminate\Support\Collection;
 
@@ -87,6 +88,13 @@ class RiverOverviewService
         $spots = $this->spotConditions->forMany($spots);
         $riverIds = $this->riverFamilyIds($river);
         $monitorsByStatus = OverflowMonitor::query()->whereIn('river_id', $riverIds)->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $companies = OverflowMonitor::query()->whereIn('river_id', $riverIds)->distinct()->orderBy('company')->pluck('company')
+            ->map(fn (string $company) => preg_replace('/\s+(Ltd|Limited|plc)\.?$/i', '', $company))->unique()->values()->all();
+        // Counted as spot pages count them: spills still running or that ended within the last 48 hours.
+        $spillsLast48Hours = SpillEvent::query()
+            ->whereHas('overflowMonitor', fn ($query) => $query->whereIn('river_id', $riverIds))
+            ->where(fn ($query) => $query->whereNull('ended_at')->orWhere('ended_at', '>=', now()->subHours(48)))
+            ->count();
 
         return new RiverOverview(
             river: $river,
@@ -95,6 +103,8 @@ class RiverOverviewService
             dischargingNowCount: (int) ($monitorsByStatus[OverflowStatus::Discharging->value] ?? 0),
             offlineCount: (int) ($monitorsByStatus[OverflowStatus::Offline->value] ?? 0),
             hasTributaries: count($riverIds) > 1,
+            spillsLast48HoursCount: $spillsLast48Hours,
+            companies: $companies,
         );
     }
 }

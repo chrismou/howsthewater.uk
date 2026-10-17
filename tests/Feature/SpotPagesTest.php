@@ -60,7 +60,7 @@ it('says river monitor counts include tributaries and offline monitors', functio
 
     $this->get('/yorkshire/rivers/wharfe')
         ->assertOk()
-        ->assertSeeInOrder(['3 storm overflow monitors on the River Wharfe and its tributaries,', '1 discharging right now and 1 offline.'])
+        ->assertSee('1 of 3 storm overflow monitors on the River Wharfe and its tributaries was discharging and 1 was offline')
         ->assertDontSee('discharge into');
 });
 
@@ -475,4 +475,27 @@ it('seeds no river or spot under a name the beach, lake or feed routes would hid
 
     expect($riverSlugs->intersect(['beaches', 'lakes']))->toBeEmpty()
         ->and($spotSlugs)->not->toContain('feed');
+});
+
+it('titles a river page by its levels and dates its monitor sentence', function () {
+    [$region, $river] = spotWithUrl([], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
+    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'company' => 'Yorkshire Water Services Ltd']);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours(30), 'ended_at' => now()->subHours(29)]);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subDays(5), 'ended_at' => now()->subDays(5)->addHour()]);
+
+    $this->get('/yorkshire/rivers/wharfe')
+        ->assertOk()
+        ->assertSee('<title>River Wharfe levels, spills and swimming spots - How&#039;s the Water?</title>', false)
+        ->assertSee('the one storm overflow monitor on the River Wharfe was not discharging, with 1 spill in the previous 48 hours, according to Yorkshire Water Services.')
+        ->assertSee('1 spot, listed source to mouth.');
+});
+
+it('names the river in a spot heading and gives each spot its own facts in its description', function () {
+    [$region, $river, $spot] = spotWithUrl(['name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 53000], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
+    OverflowMonitor::factory()->count(2)->create(['river_id' => $river->id, 'river_metres' => 40000]);
+
+    $this->get('/yorkshire/rivers/wharfe/ilkley')
+        ->assertOk()
+        ->assertSee('>Ilkley<span class="text-2xl font-medium text-muted sm:text-3xl">, River Wharfe</span></h1>', false)
+        ->assertSee('<meta name="description" content="Ilkley on the River Wharfe, 53 km from the source: spills from 2 storm overflows upstream, river level and rainfall, for swimming, paddling and fishing.">', false);
 });

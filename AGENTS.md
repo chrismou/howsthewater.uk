@@ -406,13 +406,17 @@ replacing the local database with a copy of live rather than backfilling.
 - Every page title ends with " - How's the Water?", which the layout appends to the `:title` a page passes. The 60
   character limit applies to that unique part, not the site name: search results show about 60 characters, so if they
   cut a title it is the site name that goes, never the place or topic. Meta descriptions stay within 160 characters.
+- Spot H1s name the river ("Ilkley, River Wharfe"), and spot descriptions carry the spot's own facts (distance from
+  the source, overflows upstream, gauge) so no two read alike. River titles lead with the river and "levels". Titles
+  on rivers and spots whose overflow data we do not read never mention spills.
 - Never list every region (or every company, river or place) in a site-wide title or description: they grow with each
   region added. Name the countries ("England, Scotland and Wales") or describe the coverage instead; the home page hero lists the regions.
 - When adding a region, page type or new place names, check the longest titles and descriptions it produces.
   `PageMetadataTest` checks the home, search, about and legal pages with many long region names, and place pages with
   long place names; extend it for any new page type.
-- Spot, beach and lake pages carry one dated sentence (`components/dated-summary`) naming the place, the time of the
-  monitor data and its source. `/about` explains the sources and methods; keep it in step with Data sources below.
+- Spot, beach, lake and river pages carry one dated sentence (`components/dated-summary`) naming the place, the time
+  of the monitor data and its source (river pages pass counts for the river and its tributaries rather than a list of
+  monitors). `/about` explains the sources and methods; keep it in step with Data sources below.
 - `/about` shows a "Last updated" date (`$lastUpdated` at the top of the view), which also goes into its
   `dateModified`. Bump it whenever the page's content changes.
 - Pages describe themselves as schema.org JSON-LD through the layout's `structuredData` (built by

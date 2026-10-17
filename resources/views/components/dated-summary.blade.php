@@ -7,15 +7,16 @@
     after "monitors", such as "upstream of Ilkley on the River Wharfe" or "within 3 km of Millport Bay". stale: the
     data is older than the stale threshold, so the sentence says it is the latest the monitors sent. level: the
     place's LevelSummary, adding what its gauge last read, which also gives a place without overflow data a dated
-    fact. Every sentence ends by linking to what the data cannot tell you.
+    fact. Every sentence ends by linking to what the data cannot tell you. A river page, which counts its monitors
+    rather than listing them, passes monitorCount, offlineCount and companies instead of monitors.
 --}}
-@props(['monitors', 'where', 'dischargingNow', 'spillsLast48Hours', 'updatedAt' => null, 'covered' => true, 'stale' => false, 'level' => null])
+@props(['monitors' => null, 'monitorCount' => null, 'offlineCount' => null, 'companies' => null, 'where', 'dischargingNow', 'spillsLast48Hours', 'updatedAt' => null, 'covered' => true, 'stale' => false, 'level' => null])
 
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
-    $count = $monitors->count();
-    $offline = $monitors->filter(fn ($summary) => $summary->status === \App\Enums\OverflowStatus::Offline)->count();
-    $companies = $monitors->map(fn ($summary) => preg_replace('/\s+(Ltd|Limited|plc)\.?$/i', '', $summary->monitor->company))->unique()->sort()->values();
+    $count = $monitorCount ?? $monitors->count();
+    $offline = $offlineCount ?? $monitors->filter(fn ($summary) => $summary->status === \App\Enums\OverflowStatus::Offline)->count();
+    $companies = collect($companies ?? $monitors->map(fn ($summary) => preg_replace('/\s+(Ltd|Limited|plc)\.?$/i', '', $summary->monitor->company)))->unique()->sort()->values();
     $source = 'according to '.e($companies->join(', ', ' and '));
     $where = e($where);
     $when = $updatedAt
