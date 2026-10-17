@@ -430,7 +430,9 @@ replacing the local database with a copy of live rather than backfilling.
   character limit applies to that unique part, not the site name: search results show about 60 characters, so if they
   cut a title it is the site name that goes, never the place or topic. `og:title` and `twitter:title` leave the site
   name off, since share previews show `og:site_name` or the domain beside them. Meta descriptions stay within 160
-  characters and lead with the place's own facts, since share previews cut them sooner (often around 125).
+  characters and lead with the place's own facts, since share previews cut them sooner (often around 125). The
+  layout prints titles, descriptions and image alt text in the head through `$meta`, which escapes `&`, `<`, `>` and
+  `"` but leaves apostrophes as typed: Google's AI Overview source cards show an escaped one as "&#039;".
 - Spot H1s name the river ("Ilkley, River Wharfe"), and spot descriptions carry the spot's own facts (distance from
   the source, overflows upstream, gauge) so no two read alike. River titles lead with the river and "levels". Titles
   on rivers and spots whose overflow data we do not read never mention spills.

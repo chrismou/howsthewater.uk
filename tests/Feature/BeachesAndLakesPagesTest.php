@@ -134,10 +134,15 @@ it('titles beaches and lakes the way people search for them', function () {
     $bay = BathingWater::factory()->create(['region_id' => $region->id, 'name' => "Robin Hood's Bay", 'slug' => 'robin-hoods-bay']);
 
     $this->get(route('beaches.show', [$region, $beach]))->assertOk()
-        ->assertSee('<title>Blackpool North beach: bathing water quality and swimming - '.e(config('app.name')).'</title>', false)
+        ->assertSee('<title>Blackpool North beach: bathing water quality and swimming - '.config('app.name').'</title>', false)
         ->assertSee('"name":"Beaches","item":"'.route('beaches.index', $region).'"', false);
-    $this->get(route('beaches.show', [$region, $bay]))->assertOk()->assertSee("Robin Hood&#039;s Bay: bathing water quality and swimming", false);
-    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSee('<title>Windermere: swimming, water quality and lake level - '.e(config('app.name')).'</title>', false);
+    // Apostrophes stay as typed in the title and meta tags, which some readers would otherwise show as "&#039;".
+    $head = Str::before($this->get(route('beaches.show', [$region, $bay]))->assertOk()->getContent(), '</head>');
+    expect($head)->toContain("<title>Robin Hood's Bay: bathing water quality and swimming - How's the Water?</title>")
+        ->toContain('<meta property="og:title" content="Robin Hood\'s Bay: bathing water quality and swimming">')
+        ->toContain('<meta property="og:site_name" content="How\'s the Water?">')
+        ->not->toContain('&#039;');
+    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSee('<title>Windermere: swimming, water quality and lake level - '.config('app.name').'</title>', false);
 });
 
 it('finds beaches and lakes in search and lists them in the sitemap', function () {

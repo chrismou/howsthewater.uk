@@ -33,32 +33,35 @@
         // Share previews show og:site_name (or the domain) beside the title, so the shared title leaves the name off.
         $shareTitle = $title ?? config('app.name');
         $pageDescription = $description ?? 'Storm overflow spills, river levels and bathing water results for swimming, paddling and fishing on rivers, beaches and lakes, updated every 15 minutes.';
+        // Titles and descriptions keep their apostrophes as typed: they need no escaping in text or double-quoted
+        // attributes, and some readers (Google's AI Overview source cards) show an escaped one as "&#039;".
+        $meta = fn (?string $text) => htmlspecialchars((string) $text, ENT_COMPAT | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
     @endphp
-    <title>{{ $pageTitle }}</title>
-    <meta name="description" content="{{ $pageDescription }}">
+    <title>{!! $meta($pageTitle) !!}</title>
+    <meta name="description" content="{!! $meta($pageDescription) !!}">
     @if ($noindex)
         <meta name="robots" content="noindex">
     @else
         <link rel="canonical" href="{{ $canonical }}">
     @endif
     @if ($feed)
-        <link rel="alternate" type="application/rss+xml" title="{{ $pageTitle }}" href="{{ $feed }}">
+        <link rel="alternate" type="application/rss+xml" title="{!! $meta($pageTitle) !!}" href="{{ $feed }}">
     @endif
-    <meta property="og:site_name" content="{{ config('app.name') }}">
+    <meta property="og:site_name" content="{!! $meta(config('app.name')) !!}">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ $shareTitle }}">
-    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:title" content="{!! $meta($shareTitle) !!}">
+    <meta property="og:description" content="{!! $meta($pageDescription) !!}">
     <meta property="og:url" content="{{ $canonical }}">
     <meta property="og:image" content="{{ $ogImage }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="{{ $ogImageAlt }}">
+    <meta property="og:image:alt" content="{!! $meta($ogImageAlt) !!}">
     <meta property="og:locale" content="en_GB">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $shareTitle }}">
-    <meta name="twitter:description" content="{{ $pageDescription }}">
+    <meta name="twitter:title" content="{!! $meta($shareTitle) !!}">
+    <meta name="twitter:description" content="{!! $meta($pageDescription) !!}">
     <meta name="twitter:image" content="{{ $ogImage }}">
-    <meta name="twitter:image:alt" content="{{ $ogImageAlt }}">
+    <meta name="twitter:image:alt" content="{!! $meta($ogImageAlt) !!}">
     {{--
         The page as one schema.org graph (see App\Services\StructuredData): a WebPage (or AboutPage) node for this URL,
         its trail as a BreadcrumbList, and what the page describes, each with an @id the others refer to. Facts the

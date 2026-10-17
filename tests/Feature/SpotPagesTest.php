@@ -322,7 +322,7 @@ it('describes pages for sharing and search engines', function () {
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSee('<title>Otley, River Wharfe: swimming, river level and spills - '.e(config('app.name')).'</title>', false)
+        ->assertSee('<title>Otley, River Wharfe: swimming, river level and spills - '.config('app.name').'</title>', false)
         ->assertSee('<meta property="og:title" content="Otley, River Wharfe: swimming, river level and spills">', false)
         ->assertSee('<meta name="twitter:title" content="Otley, River Wharfe: swimming, river level and spills">', false)
         ->assertSee('<meta property="og:url" content="'.route('spots.show', [$region, $river, $spot]).'"', false)
@@ -500,7 +500,7 @@ it('titles a river page by its levels and dates its monitor sentence', function 
 
     $this->get('/yorkshire/rivers/wharfe')
         ->assertOk()
-        ->assertSee('<title>River Wharfe levels, spills and swimming spots - How&#039;s the Water?</title>', false)
+        ->assertSee("<title>River Wharfe levels, spills and swimming spots - How's the Water?</title>", false)
         ->assertSee('the one storm overflow monitor on the River Wharfe was not discharging, with 1 spill in the previous 48 hours, according to Yorkshire Water Services.')
         ->assertSee('1 spot, listed source to mouth.');
 });

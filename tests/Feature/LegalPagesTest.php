@@ -81,7 +81,7 @@ it('describes the share image and gives phones a search box on the search page',
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('<meta property="og:image:alt" content="How&#039;s the Water? What&#039;s the river doing right now?', false)
+        ->assertSee('<meta property="og:image:alt" content="How\'s the Water? What\'s the river doing right now?', false)
         ->assertSee('<meta name="twitter:image:alt"', false)
         ->assertSee('data-search-toggle', false);
 
