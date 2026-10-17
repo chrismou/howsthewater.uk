@@ -5,6 +5,7 @@ namespace App\Actions\Ingest;
 use App\Data\OverflowMonitorData;
 use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
+use App\Models\OverflowOfflinePeriod;
 use App\Models\Region;
 use App\Models\SpillEvent;
 use App\Services\ScottishWater\OverflowEventClient;
@@ -112,6 +113,7 @@ class SyncOverflowMonitors
         $opened = 0;
         $closed = 0;
         $added = 0;
+        $openOfflinePeriods = OverflowOfflinePeriod::query()->whereNull('ended_at')->get()->keyBy('overflow_monitor_id');
 
         foreach ($monitors as $data) {
             /** @var OverflowMonitor|null $monitor */
@@ -133,8 +135,11 @@ class SyncOverflowMonitors
                 'latest_event_started_at' => $data->latestEventStartedAt,
                 'latest_event_ended_at' => $data->latestEventEndedAt,
                 'source_updated_at' => $data->sourceUpdatedAt,
+                // Stream feeds give no name, so only a feed that does replaces it.
+                ...($data->name !== null ? ['name' => $data->name] : []),
             ])->save();
 
+            $this->recordOfflinePeriod($monitor, $openOfflinePeriods->get($monitor->id));
             [$openedHere, $closedHere] = $this->reconcileSpillEvents($monitor, $data);
 
             $opened += $openedHere;
@@ -142,6 +147,19 @@ class SyncOverflowMonitors
         }
 
         return ['monitors' => $monitors->count(), 'monitors_added' => $added, 'events_opened' => $opened, 'events_closed' => $closed];
+    }
+
+    /**
+     * Feeds keep no status history, so each poll that finds a monitor offline opens a period (from now, when we first
+     * saw it) and the first that finds it back closes it. Those periods give the monitor's uptime.
+     */
+    private function recordOfflinePeriod(OverflowMonitor $monitor, ?OverflowOfflinePeriod $open): void
+    {
+        if ($monitor->status === OverflowStatus::Offline && $open === null) {
+            $monitor->offlinePeriods()->create(['started_at' => now()]);
+        } elseif ($monitor->status !== OverflowStatus::Offline && $open !== null) {
+            $open->update(['ended_at' => now()]);
+        }
     }
 
     /**
@@ -158,6 +176,28 @@ class SyncOverflowMonitors
         $opened = 0;
         $closed = 0;
         $latest = null;
+        $previous = null;
+
+        // Scottish Water also gives the event before the latest, so one that started and ended between polls is kept.
+        if ($data->previousEventStartedAt !== null && $data->previousEventEndedAt !== null
+            && $data->previousEventEndedAt->greaterThanOrEqualTo($data->previousEventStartedAt)
+            && ($data->latestEventStartedAt === null || $data->previousEventStartedAt->lessThan($data->latestEventStartedAt))) {
+            $previous = SpillEvent::query()->firstOrNew([
+                'overflow_monitor_id' => $monitor->id,
+                'started_at' => $data->previousEventStartedAt,
+            ]);
+
+            if (! $previous->exists) {
+                $opened++;
+            } elseif ($previous->ended_at === null) {
+                $closed++;
+            }
+
+            if (! $previous->exists || $previous->ended_at === null) {
+                $previous->ended_at = $data->previousEventEndedAt;
+                $previous->save();
+            }
+        }
 
         if ($data->latestEventStartedAt !== null) {
             $latest = SpillEvent::query()->firstOrNew([
@@ -181,7 +221,7 @@ class SyncOverflowMonitors
         }
 
         foreach ($monitor->openSpillEvents as $open) {
-            if ($latest !== null && $open->is($latest)) {
+            if (($latest !== null && $open->is($latest)) || ($previous !== null && $open->is($previous))) {
                 continue;
             }
 

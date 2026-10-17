@@ -370,3 +370,51 @@ it('reads Dŵr Cymru Welsh Water\'s storm overflow map, whose statuses are words
         // The record was last edited the same day, so the read confirms it (updated_on_change).
         ->and($monitors['DCWW1096']->source_updated_at->toDateTimeString())->toBe('2026-10-17 22:00:00');
 });
+
+it('keeps Scottish Water\'s overflow names and the overflow before the latest, so one between polls is not lost', function () {
+    pollOnly('scottish_water');
+    Http::fake(['api.scottishwater.co.uk/*' => Http::response(['last_updated' => 1792098080801, 'results' => [
+        scottishWaterRecord([
+            'ASSET_NAME' => 'CROSSHOUSE, 9 KILMAURS ROAD CSO',
+            'OVERFLOW_START_DATETIME_PREVIOUS' => '2026-10-15T02:05:00.000Z',
+            'OVERFLOW_END_DATETIME_PREVIOUS' => '2026-10-15T09:15:00.000Z',
+        ]),
+    ]])]);
+
+    $result = app(SyncOverflowMonitors::class)->handle();
+    $monitor = OverflowMonitor::query()->sole();
+
+    expect($monitor->name)->toBe('Crosshouse, 9 Kilmaurs Road CSO')
+        ->and($result['events_opened'])->toBe(2)
+        ->and($monitor->spillEvents()->get()->map(fn (SpillEvent $event) => [$event->started_at->toIso8601String(), $event->ended_at?->toIso8601String()])->all())->toBe([
+            ['2026-10-15T09:20:00+00:00', '2026-10-15T09:30:00+00:00'],
+            ['2026-10-15T02:05:00+00:00', '2026-10-15T09:15:00+00:00'],
+        ]);
+
+    // Read again, nothing is added twice.
+    expect(app(SyncOverflowMonitors::class)->handle()['events_opened'])->toBe(0);
+});
+
+it('records when a monitor goes offline and when it comes back, and keeps a name a nameless feed does not give', function () {
+    $this->freezeTime();
+    OverflowMonitor::factory()->create(['external_id' => 'YWS00001', 'return_name' => 'Ellerton CSO']);
+    $status = -1;
+    Http::fake(['services-eu1.arcgis.com/*' => function () use (&$status) {
+        return Http::response(['features' => [arcGisFeature(['Status' => $status])]]);
+    }]);
+
+    app(SyncOverflowMonitors::class)->handle();
+    app(SyncOverflowMonitors::class)->handle();
+    $monitor = OverflowMonitor::query()->sole();
+
+    expect($monitor->offlinePeriods()->sole())
+        ->started_at->toDateTimeString()->toBe(now()->toDateTimeString())
+        ->ended_at->toBeNull();
+
+    $this->travel(2)->hours();
+    $status = 0;
+    app(SyncOverflowMonitors::class)->handle();
+
+    expect($monitor->offlinePeriods()->sole()->ended_at->toDateTimeString())->toBe(now()->toDateTimeString())
+        ->and($monitor->fresh()->displayName())->toBe('Ellerton CSO');
+});

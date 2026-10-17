@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Enums\OverflowStatus;
+use App\Services\Geo\OverflowSiteName;
 use Illuminate\Support\Carbon;
 
 final readonly class OverflowMonitorData
@@ -18,6 +19,9 @@ final readonly class OverflowMonitorData
         public ?Carbon $latestEventStartedAt,
         public ?Carbon $latestEventEndedAt,
         public ?Carbon $sourceUpdatedAt,
+        public ?string $name = null,
+        public ?Carbon $previousEventStartedAt = null,
+        public ?Carbon $previousEventEndedAt = null,
     ) {
     }
 
@@ -34,6 +38,9 @@ final readonly class OverflowMonitorData
             latestEventStartedAt: $this->latestEventStartedAt,
             latestEventEndedAt: $this->latestEventEndedAt,
             sourceUpdatedAt: $sourceUpdatedAt,
+            name: $this->name,
+            previousEventStartedAt: $this->previousEventStartedAt,
+            previousEventEndedAt: $this->previousEventEndedAt,
         );
     }
 
@@ -96,6 +103,7 @@ final readonly class OverflowMonitorData
             latestEventStartedAt: $latestEventStartedAt,
             latestEventEndedAt: $status === OverflowStatus::Discharging ? null : $latestEventEndedAt,
             sourceUpdatedAt: self::fromEpochMillis($attributes['EditDate'] ?? null),
+            name: OverflowSiteName::tidy(is_string($attributes['asset_name'] ?? null) ? $attributes['asset_name'] : null),
         );
     }
 
@@ -104,7 +112,8 @@ final readonly class OverflowMonitorData
      * OF overflowing, RO a recent overflow, NO none and DA no data. Its asset
      * ids carry no company prefix, so one is added to keep them apart from
      * the English feeds. Feed freshness comes from the response, as each
-     * monitor transmits on its own schedule.
+     * monitor transmits on its own schedule. It also gives the overflow
+     * before the latest, so a short one between two polls is still recorded.
      *
      * @param  array<string, mixed>  $record  One result from the near real-time API
      */
@@ -133,6 +142,9 @@ final readonly class OverflowMonitorData
             latestEventStartedAt: $latestEventStartedAt,
             latestEventEndedAt: $latestEventEndedAt,
             sourceUpdatedAt: $feedUpdatedAt,
+            name: OverflowSiteName::tidy(is_string($record['ASSET_NAME'] ?? null) ? $record['ASSET_NAME'] : null),
+            previousEventStartedAt: self::fromIsoString($record['OVERFLOW_START_DATETIME_PREVIOUS'] ?? null),
+            previousEventEndedAt: self::fromIsoString($record['OVERFLOW_END_DATETIME_PREVIOUS'] ?? null),
         );
     }
 

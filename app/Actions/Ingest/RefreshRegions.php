@@ -15,8 +15,8 @@ use Illuminate\Database\Eloquent\Collection;
 /**
  * Rebuilds what visitors read for the given regions: every spot's, beach's
  * and lake's conditions (written over their cached entries, so nothing goes
- * cold), then each region's summary, then the menus. Run once after the
- * ingests rather than by each of them.
+ * cold) and the overflows each one links to, then each region's summary,
+ * then the menus. Run once after the ingests rather than by each of them.
  */
 class RefreshRegions
 {
@@ -25,6 +25,7 @@ class RefreshRegions
         private WaterBodyConditionsService $waterBodies,
         private RegionSummaries $summaries,
         private NavigationMenus $menus,
+        private SyncOverflowMonitorPlaces $overflowPlaces,
     ) {
     }
 
@@ -48,19 +49,21 @@ class RefreshRegions
             ->with(['river' => fn ($query) => $query->withoutCentreline(), 'river.region', 'gaugeStation', 'rainfallStation'])
             ->whereHas('river', fn ($query) => $query->whereIn('region_id', $regions->modelKeys()))
             ->each(function (Spot $spot) use (&$counts) {
-                $this->spots->refresh($spot);
+                $this->overflowPlaces->forSpot($spot, $this->spots->refresh($spot));
                 $counts['spots']++;
             });
 
         BathingWater::query()->beaches()->with(['rainfallStation', 'region'])->whereIn('region_id', $regions->modelKeys())->each(function (BathingWater $beach) use (&$counts) {
-            $this->waterBodies->refreshBeach($beach);
+            $this->overflowPlaces->forBeach($beach, $this->waterBodies->refreshBeach($beach)->overflows);
             $counts['beaches']++;
         });
 
         Lake::query()->with(['gaugeStation', 'rainfallStation', 'bathingWaters', 'region'])->whereIn('region_id', $regions->modelKeys())->each(function (Lake $lake) use (&$counts) {
-            $this->waterBodies->refreshLake($lake);
+            $this->overflowPlaces->forLake($lake, $this->waterBodies->refreshLake($lake)->overflows);
             $counts['lakes']++;
         });
+
+        $this->overflowPlaces->prune();
 
         // Summaries read the conditions just written, so they hit a warm cache.
         $regions->each(fn (Region $region) => $this->summaries->refresh($region));

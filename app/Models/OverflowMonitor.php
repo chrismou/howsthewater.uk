@@ -15,6 +15,8 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $external_id
+ * @property string|null $name The feed's own name, where it gives one
+ * @property string|null $return_name The site name from its latest annual return
  * @property int|null $river_id
  * @property string $company
  * @property string|null $receiving_watercourse
@@ -30,6 +32,9 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read River|null $river
  * @property-read Collection<int, SpillEvent> $openSpillEvents
+ * @property-read Collection<int, OverflowAnnualReturn> $annualReturns
+ * @property-read Collection<int, OverflowMonitorPlace> $places
+ * @property-read Collection<int, OverflowOfflinePeriod> $offlinePeriods
  */
 class OverflowMonitor extends Model
 {
@@ -38,6 +43,8 @@ class OverflowMonitor extends Model
 
     protected $fillable = [
         'external_id',
+        'name',
+        'return_name',
         'river_id',
         'company',
         'receiving_watercourse',
@@ -84,6 +91,41 @@ class OverflowMonitor extends Model
     public function openSpillEvents(): HasMany
     {
         return $this->hasMany(SpillEvent::class)->whereNull('ended_at');
+    }
+
+    /**
+     * Each year's official return for this overflow, newest first.
+     *
+     * @return HasMany<OverflowAnnualReturn, $this>
+     */
+    public function annualReturns(): HasMany
+    {
+        return $this->hasMany(OverflowAnnualReturn::class)->orderByDesc('year');
+    }
+
+    /**
+     * The spots it is upstream of and the beaches and lakes it is near, as rebuilt by regions:refresh.
+     *
+     * @return HasMany<OverflowMonitorPlace, $this>
+     */
+    public function places(): HasMany
+    {
+        return $this->hasMany(OverflowMonitorPlace::class);
+    }
+
+    /** @return HasMany<OverflowOfflinePeriod, $this> */
+    public function offlinePeriods(): HasMany
+    {
+        return $this->hasMany(OverflowOfflinePeriod::class)->orderByDesc('started_at');
+    }
+
+    /**
+     * The overflow's name: the feed's own, else its annual return's. Null when neither has one (a Stream overflow
+     * with no matching return).
+     */
+    public function displayName(): ?string
+    {
+        return $this->name ?? $this->return_name;
     }
 
     public function isDischarging(): bool

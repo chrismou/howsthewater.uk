@@ -297,7 +297,24 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   last 48 hours (`SyncOverflowMonitors::QUIET_FEED_HOURS`), each read sets its monitors' `source_updated_at` to the read
   time; past that they keep their own times and go stale. Southern Water and Welsh Water behave the same way. Check a new company's
   feed for the same behaviour.
-  The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
+  The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally
+  (Scottish Water also gives the event before the latest, which is kept too). Stream feeds give no overflow names;
+  Scottish and Welsh Water's go in `name` (tidied by `OverflowSiteName`), and `OverflowMonitor::displayName()` falls
+  back to `return_name` from the annual returns. Feeds keep no status history either, so each poll opens or closes
+  an `overflow_offline_periods` row when a monitor goes offline or comes back, for uptime from then on.
+- Overflow annual returns: each overflow's official event duration monitoring return per year (counted spills by
+  the 12/24 hour method, total hours, % of the year the monitor worked), from the Rivers Trust's ArcGIS layers for
+  England and Wales (OGL, `services.overflow_annual_returns`, 2021-2025; 2020 has no ids or coordinates).
+  `ingest:overflow-annual-returns` (`ImportOverflowAnnualReturns`, monthly, and on deploy while the table is empty)
+  replaces each year's rows in `overflow_annual_returns` and matches them to monitors: by id where the return
+  carries the live feeds' (England from 2023: `UID` is Stream's `Id`), otherwise to the nearest monitor within 25 m
+  (Welsh rows have no id; 2021 numbers its rows and 2022 has none), one row per monitor per year, the closest. A
+  year that fails to read keeps its old rows. These are the company's figures; never mix them with our own counts
+  without saying which is which.
+- `overflow_monitor_places` links each overflow to the places whose page shows it: spots it is upstream of (distance
+  along the water) and beaches and lakes it is near. `RefreshRegions` rewrites a place's links from the conditions
+  it has just built (`SyncOverflowMonitorPlaces`, only changed rows), so they never disagree with the pages, and
+  prunes links to places without a page. Places in a region without overflow data get none.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
   Readings follow the API's own advice rather than one request per gauge: `FloodMonitoringClient::readingsSinceInBulk()`
   reads every measure's latest reading in one `data/readings?latest` call (cached 5 minutes, so the level and rainfall

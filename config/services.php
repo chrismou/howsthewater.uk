@@ -51,6 +51,16 @@ return [
         'wales' => ['name' => 'Dŵr Cymru Welsh Water', 'url' => 'https://corporate.dwrcymru.com/en/community/environment/storm-overflow-map'],
     ],
 
+    // Each year's event duration monitoring annual returns for England and Wales, as the Rivers Trust republishes them
+    // (OGL). 2020 carries no ids or coordinates, so it is left out.
+    'overflow_annual_returns' => [
+        2025 => 'https://services3.arcgis.com/Bb8lfThdhugyc4G3/arcgis/rest/services/Event_Duration_Monitoring_Storm_Overflows_2025/FeatureServer/0',
+        2024 => 'https://services3.arcgis.com/Bb8lfThdhugyc4G3/arcgis/rest/services/Storm_Overflow_EDM_Annual_Returns_2024/FeatureServer/0',
+        2023 => 'https://services3.arcgis.com/Bb8lfThdhugyc4G3/arcgis/rest/services/edm_2023_tidy_final/FeatureServer/0',
+        2022 => 'https://services3.arcgis.com/Bb8lfThdhugyc4G3/arcgis/rest/services/Event_Duration_Monitoring_Storm_Overflows_2022_England_and_Wales/FeatureServer/0',
+        2021 => 'https://services3.arcgis.com/Bb8lfThdhugyc4G3/arcgis/rest/services/Storm_Overflow_EDM_Annual_Returns_2021/FeatureServer/11',
+    ],
+
     'overflow_feeds' => [
         'yorkshire_water' => [
             'name' => 'Yorkshire Water',

@@ -30,7 +30,7 @@ class StormOverflowMapClient implements OverflowFeedReader
         do {
             $response = $this->request()->get(rtrim($feedUrl, '/').'/query', [
                 'where' => '1=1',
-                'outFields' => 'DCWW_ID,status,start_date_time_discharge,stop_date_time_discharge,Receiving_Water,EditDate',
+                'outFields' => 'DCWW_ID,asset_name,status,start_date_time_discharge,stop_date_time_discharge,Receiving_Water,EditDate',
                 'returnGeometry' => 'true',
                 'outSR' => 4326,
                 'orderByFields' => 'objectid',
