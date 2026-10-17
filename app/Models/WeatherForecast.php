@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
  * @property string $cell_key
  * @property float $latitude
  * @property float $longitude
- * @property array{hours: list<array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}>, uv_index_max: array<string, float>} $data
+ * @property array{hours: list<array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, precipitation: float|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}>, uv_index_max: array<string, float>} $data
  * @property Carbon $forecast_at
  * @property Carbon $fetched_at
  * @property Carbon|null $created_at

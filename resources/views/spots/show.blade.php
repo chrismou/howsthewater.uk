@@ -69,8 +69,7 @@
                     <span class="text-muted">{{ number_format($spot->river_metres / 1000) }} km from the source.</span>
                 @endif
             </p>
-            <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$conditions->upstreamMonitors" :where="'upstream of '.$spot->name.' on the '.$spot->river->name"
-                             :discharging-now="$conditions->dischargingNowCount" :spills-last48-hours="$conditions->spillsLast48HoursCount" :updated-at="$conditions->dataUpdatedAt" :covered="$covered" :stale="$conditions->overflowDataIsStale()" :level="$level" />
+            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forSpot($conditions, $weather)" />
         </div>
         <x-place-actions :latitude="$spot->latitude" :longitude="$spot->longitude" :label="$spot->name" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])"
                          feed-title="Follow overflows upstream and flood warnings in a feed reader" />

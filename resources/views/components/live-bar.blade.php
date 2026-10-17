@@ -26,7 +26,7 @@
             <span>Overflow data not available yet</span>
         @endif
         {{-- On phones a flood warning takes this slot, so the bar stays on one line. --}}
-        <span class="{{ $floodWarnings->isNotEmpty() ? 'hidden sm:inline' : '' }}"><span class="font-mono font-semibold">{{ $above }}</span> <span class="hidden sm:inline">{{ \Illuminate\Support\Str::plural('gauge', $above) }}</span> above typical</span>
+        <span class="{{ $floodWarnings->isNotEmpty() ? 'hidden sm:inline' : '' }}"><span class="font-mono font-semibold">{{ $above }}</span> <span class="sm:hidden">running high</span><span class="hidden sm:inline">{{ \Illuminate\Support\Str::plural('river', $above) }} higher than usual</span></span>
         @if ($floodWarnings->isNotEmpty())
             <a href="{{ $summaryUrl }}#flood-warnings" class="font-semibold hover:underline {{ $hasFloodWarning ? 'text-alert' : 'text-spill' }}" title="{{ $floodBreakdown }} in force">
                 <span class="font-mono">{{ $floodWarnings->count() }}</span> {{ \Illuminate\Support\Str::plural($hasFloodWarning ? 'flood warning' : 'flood alert', $floodWarnings->count()) }}

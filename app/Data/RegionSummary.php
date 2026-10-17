@@ -107,7 +107,8 @@ final readonly class RegionSummary
     }
 
     /**
-     * One spot per river above its gauge's typical range, highest first.
+     * One spot per river whose gauge reads higher than usual (above its typical range), highest first, so the
+     * count is of rivers.
      *
      * @return Collection<int, SpotSummary>
      */
@@ -115,8 +116,8 @@ final readonly class RegionSummary
     {
         return $this->spots()
             ->filter(fn (SpotSummary $spot) => $spot->isAboveTypicalRange() && ! $spot->levelIsStale())
-            ->unique('gaugeLabel')
             ->sortByDesc('levelValue')
+            ->unique(fn (SpotSummary $spot) => $spot->regionSlug.'/'.$spot->riverSlug)
             ->values();
     }
 

@@ -56,7 +56,7 @@
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $aboveTypical->count() }}</dd>
-                    <dt class="text-xs text-muted">gauges above typical <x-help term="typical_range" /></dt>
+                    <dt class="text-xs text-muted">rivers higher than usual <x-help term="typical_range" /></dt>
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $summary->hasOverflowData ? number_format($summary->monitorCount) : '-' }}</dd>
@@ -138,7 +138,7 @@
                 </div>
                 <div class="px-4 py-4">
                     <div class="flex items-baseline justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wide text-muted">Above typical range</span>
+                        <span class="text-xs font-semibold uppercase tracking-wide text-muted">Higher than usual</span>
                         <span class="font-mono text-lg font-semibold">{{ $aboveTypical->count() }}</span>
                     </div>
                     @forelse ($aboveTypical->take(4) as $spot)
@@ -147,7 +147,7 @@
                             <span class="font-mono text-muted">{{ number_format($spot->levelValue, 2) }} {{ $spot->levelUnit }}</span>
                         </a>
                     @empty
-                        <p class="mt-2 text-sm text-ink-2">Every gauge is within or below its typical range.</p>
+                        <p class="mt-2 text-sm text-ink-2">No river is higher than usual.</p>
                     @endforelse
                 </div>
                 <div class="px-4 py-4">
@@ -217,7 +217,7 @@
                                                     <span class="text-muted">No gauge</span>
                                                 @else
                                                     <span class="font-mono tabular-nums">{{ number_format($spot->levelValue, 2) }} {{ $spot->levelUnit }}</span>
-                                                    <span class="text-muted">{{ strtolower($spot->levelTrend->label()) }}{{ $spot->levelRelativeToTypical ? ' · '.\Illuminate\Support\Str::before($spot->levelRelativeToTypical, ' typical').' typical' : '' }}</span>
+                                                    <span class="text-muted">{{ strtolower($spot->levelTrend->label()) }}{{ $spot->levelRelativeToTypical ? ' · '.\App\Data\LevelSummary::usualPhrase($spot->levelRelativeToTypical) : '' }}</span>
                                                 @endif
                                             </td>
                                             <td class="hidden whitespace-nowrap px-4 py-2 font-mono tabular-nums sm:table-cell">{{ $spot->rainfallLast24HoursMillimetres === null ? '-' : number_format($spot->rainfallLast24HoursMillimetres, 1).' mm' }}</td>

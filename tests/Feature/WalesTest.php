@@ -76,7 +76,7 @@ it('says overflow data is not available where we do not read the water company f
 
     $this->get(route('spots.show', [$wales, $river, $spot]))->assertOk()
         ->assertSee('Overflow data not available here yet')
-        ->assertSee('so storm overflows upstream of Hay-on-Wye on the River Wye are not shown')
+        ->assertSee("Overflow data isn't available here yet")
         ->assertDontSee('No monitored overflows upstream')
         ->assertDontSee('No spills reported')
         ->assertDontSee('discharging on');

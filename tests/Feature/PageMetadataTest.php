@@ -100,7 +100,7 @@ it('keeps place descriptions short for long names, and ends every title with the
         ->and(pageMetadata($this->get(route('beaches.show', [$region, $scottish])))['description'])->toStartWith('SEPA classification and sample results');
 });
 
-it('names the place, time and source of the monitor data in one sentence', function () {
+it('leads with the overflow state and names the time and source of the monitor data', function () {
     $region = Region::factory()->create(['slug' => 'yorkshire']);
     $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe', 'slug' => 'wharfe']);
     $spot = Spot::factory()->create(['river_id' => $river->id, 'name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 50000]);
@@ -116,7 +116,8 @@ it('names the place, time and source of the monitor data in one sentence', funct
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSeeText('At 08:58 BST on 16 October 2026, 1 of 2 storm overflow monitors upstream of Ilkley on the River Wharfe was discharging, with 2 spills in the previous 48 hours, according to Yorkshire Water.')
+        ->assertSee('<strong class="font-semibold text-ink">1 overflow upstream is discharging now</strong>, with <strong class="font-semibold text-ink">2 spills in the last 48 hours</strong>.', false)
+        ->assertSeeText('2 Yorkshire Water monitors upstream, data from 08:58 BST.')
         ->assertSee('<time datetime="2026-10-16T07:58:00+00:00">', false);
 });
 
@@ -141,18 +142,20 @@ it('says when monitors are offline or their data is old, and never counts offlin
 
     $this->get(route('beaches.show', [$region, $beach]))
         ->assertOk()
-        ->assertSeeText('At 11:05 BST on 24 September 2026, the one storm overflow monitor within 3 km of Bamburgh Castle was not discharging, with 0 spills in the previous 48 hours, according to Northumbrian Water. That is the most recent data the monitors have sent.');
+        ->assertSeeText('Overflow data is out of date: the latest from Northumbrian Water is from 24 September.')
+        ->assertDontSeeText('No spills reported within 3 km');
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSeeText('1 of 3 storm overflow monitors upstream of Ilkley on the River Wharfe was discharging and 2 were offline');
+        ->assertSeeText('1 overflow upstream is discharging now. 2 monitors are offline.');
 
     OverflowMonitor::query()->where('river_id', $river->id)->update(['status' => OverflowStatus::Offline]);
     app(\App\Services\Conditions\ConditionsCache::class)->flush();
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSeeText('all 3 storm overflow monitors upstream of Ilkley on the River Wharfe were offline, so there is no current spill data');
+        ->assertSeeText('Upstream monitors are offline, so there is no current spill data.')
+        ->assertDontSeeText('No spills reported upstream');
 });
 
 it('serves the about page ahead of region slugs, links it from every page and lists it in the sitemap', function () {

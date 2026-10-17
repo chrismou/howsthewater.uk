@@ -70,7 +70,7 @@
                         </div>
                         <div>
                             <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $allRegions->spotsAboveTypicalRange()->count() }}</dd>
-                            <dt class="mt-1.5 text-sm text-ink-2">gauges above their typical range</dt>
+                            <dt class="mt-1.5 text-sm text-ink-2">rivers higher than usual</dt>
                         </div>
                         <div>
                             <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $medianRain === null ? '-' : number_format($medianRain, 1) }}<span class="text-lg"> mm</span></dd>
@@ -133,8 +133,8 @@
                         <h3 class="font-display text-xl font-semibold">River level and trend</h3>
                         <x-help term="level" />
                     </div>
-                    <p class="text-ink-2">Environment Agency, Natural Resources Wales and SEPA gauges read the river every 15 minutes. The latest reading, the change over 3 hours and where it sits in the gauge's typical range. High and rising means fast, cold water.</p>
-                    <p class="flex items-baseline gap-3"><span class="font-mono text-2xl font-semibold tabular-nums">0.43 m</span><span class="text-sm text-muted">↑ rising · within typical range <x-help term="typical_range" /></span></p>
+                    <p class="text-ink-2">Environment Agency, Natural Resources Wales and SEPA gauges read the river every 15 minutes. The latest reading, the change over 3 hours and whether the river is higher or lower than usual. High and rising means fast, cold water.</p>
+                    <p class="flex items-baseline gap-3"><span class="font-mono text-2xl font-semibold tabular-nums">0.43 m</span><span class="text-sm text-muted">↑ rising · at its usual level <x-help term="typical_range" /></span></p>
                 </div>
             </li>
             <li class="grid grid-cols-[2.75rem_1fr] gap-3 py-6 sm:grid-cols-[4.5rem_1fr] sm:gap-4">

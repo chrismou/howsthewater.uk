@@ -1,22 +1,20 @@
 {{--
-    One plain sentence naming the place, the time of the monitor data and its source, e.g. "At 08:58 BST on 16 October,
-    1 of 14 storm overflow monitors upstream of Ilkley on the River Wharfe was discharging, with 3 spills in the
-    previous 48 hours, according to Yorkshire Water." It reports what the monitors say, never that the water is safe.
+    One plain sentence for a river page naming the river, the time of the monitor data and its source, e.g. "At 08:58
+    BST on 16 October 2026, 1 of 52 storm overflow monitors on the River Wharfe and its tributaries was discharging,
+    with 3 spills in the previous 48 hours, according to Yorkshire Water." It reports what the monitors say, never that
+    the water is safe. Spot, beach and lake pages use components/place-summary instead.
 
-    monitors: upstream or nearby monitor summaries (each with ->monitor and ->status). where: the place as it reads
-    after "monitors", such as "upstream of Ilkley on the River Wharfe" or "within 3 km of Millport Bay". stale: the
-    data is older than the stale threshold, so the sentence says it is the latest the monitors sent. level: the
-    place's LevelSummary, adding what its gauge last read, which also gives a place without overflow data a dated
-    fact. Every sentence ends by linking to what the data cannot tell you. A river page, which counts its monitors
-    rather than listing them, passes monitorCount, offlineCount and companies instead of monitors.
+    monitorCount, offlineCount, companies: the river's monitors. where: the place as it reads after "monitors", such as
+    "on the River Wharfe and its tributaries". stale: the data is older than the stale threshold, so the sentence says
+    it is the latest the monitors sent. Every sentence ends by linking to what the data cannot tell you.
 --}}
-@props(['monitors' => null, 'monitorCount' => null, 'offlineCount' => null, 'companies' => null, 'where', 'dischargingNow', 'spillsLast48Hours', 'updatedAt' => null, 'covered' => true, 'stale' => false, 'level' => null])
+@props(['monitorCount', 'offlineCount', 'companies', 'where', 'dischargingNow', 'spillsLast48Hours', 'updatedAt' => null, 'covered' => true, 'stale' => false])
 
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
-    $count = $monitorCount ?? $monitors->count();
-    $offline = $offlineCount ?? $monitors->filter(fn ($summary) => $summary->status === \App\Enums\OverflowStatus::Offline)->count();
-    $companies = collect($companies ?? $monitors->map(fn ($summary) => preg_replace('/\s+(Ltd|Limited|plc)\.?$/i', '', $summary->monitor->company)))->unique()->sort()->values();
+    $count = $monitorCount;
+    $offline = $offlineCount;
+    $companies = collect($companies)->unique()->sort()->values();
     $source = 'according to '.e($companies->join(', ', ' and '));
     $where = e($where);
     $when = $updatedAt
@@ -39,19 +37,6 @@
 
     if ($stale && $covered && $count > 0) {
         $sentence .= ' That is the most recent data the monitors have sent.';
-    }
-
-    if ($level?->latestValue !== null && $level->latestAt !== null) {
-        $readAt = $level->latestAt->timezone($timezone);
-        $sentence .= sprintf(
-            ' The %s gauge read %s %s at <time datetime="%s">%s</time>%s.',
-            e($level->station->label),
-            number_format($level->latestValue, 2),
-            e($level->station->unitLabel()),
-            $level->latestAt->copy()->utc()->toIso8601String(),
-            e($readAt->format($readAt->isSameDay(now($timezone)) ? 'H:i T' : 'H:i T \o\n j F')),
-            $level->relativeToTypical !== null ? ', '.e(\Illuminate\Support\Str::replace('typical range', 'its typical range', $level->relativeToTypical)) : '',
-        );
     }
 
     $sentence .= ' <a href="'.route('about').'#limits" class="underline decoration-line underline-offset-2 hover:decoration-ink">Monitor data is not a safety check.</a>';

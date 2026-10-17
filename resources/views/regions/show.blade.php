@@ -50,7 +50,7 @@
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $summary->spotsAboveTypicalRange()->count() }}</dd>
-                    <dt class="text-xs text-muted">gauges above typical <x-help term="typical_range" /></dt>
+                    <dt class="text-xs text-muted">rivers higher than usual <x-help term="typical_range" /></dt>
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $summary->hasOverflowData ? number_format($summary->monitorCount) : '-' }}</dd>

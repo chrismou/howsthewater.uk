@@ -86,7 +86,7 @@ class SyncWeatherForecasts
     }
 
     /**
-     * @param  array{hours: list<array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}>, uv_index_max: array<string, float>}  $forecast
+     * @param  array{hours: list<array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, precipitation: float|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}>, uv_index_max: array<string, float>}  $forecast
      */
     private function store(WeatherCell $cell, array $forecast): void
     {

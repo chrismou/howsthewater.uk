@@ -38,15 +38,15 @@ class Help extends Component
         ],
         'level' => [
             'label' => 'How is the river level measured?',
-            'text' => 'The Environment Agency gauge (Natural Resources Wales in Wales, SEPA in Scotland) nearest this spot reads the water level every 15 minutes. Most gauges report the height above their own zero mark, so compare it with the typical range rather than other rivers.',
+            'text' => 'The Environment Agency gauge (Natural Resources Wales in Wales, SEPA in Scotland) nearest this spot reads the water level every 15 minutes. Most gauges report the height above their own zero mark, so compare it with its usual range rather than other rivers.',
         ],
         'typical_range' => [
-            'label' => 'What is the typical range?',
-            'text' => 'The band the gauge usually sits in. Above it, the river is high for this stretch and likely to be fast and cold. Below it, the river is low.',
+            'label' => 'What is the usual range?',
+            'text' => 'The band this gauge sits in most of the time, which the agencies call its typical or normal range. Higher than usual, the river is high for this stretch and likely to be fast and cold. Lower than usual, it is low. It is the same all year, not adjusted for the season.',
         ],
         'maod' => [
             'label' => 'What does mAOD mean?',
-            'text' => 'Metres above Ordnance Datum: the height above mean sea level rather than above the river bed. The number looks large, so watch the trend and typical range instead.',
+            'text' => 'Metres above Ordnance Datum: the height above mean sea level rather than above the river bed. The number looks large, so watch the trend and the usual range instead.',
         ],
         'trend' => [
             'label' => 'How is the trend worked out?',

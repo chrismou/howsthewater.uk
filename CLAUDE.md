@@ -427,9 +427,16 @@ replacing the local database with a copy of live rather than backfilling.
 - When adding a region, page type or new place names, check the longest titles and descriptions it produces.
   `PageMetadataTest` checks the home, search, about and legal pages with many long region names, and place pages with
   long place names; extend it for any new page type.
-- Spot, beach, lake and river pages carry one dated sentence (`components/dated-summary`) naming the place, the time
-  of the monitor data and its source (river pages pass counts for the river and its tributaries rather than a list of
-  monitors). `/about` explains the sources and methods; keep it in step with Data sources below.
+- Spot, beach and lake pages open with a headline (`PlaceHeadline`, `components/place-summary`): the overflow state
+  in plain words ("No spills reported upstream in the last 48 hours", "Last upstream spill ended 6 hours ago",
+  "Overflow data is out of date"), the level, a flood warning or bathing water result, with those facts in bold;
+  then notes only when a threshold is crossed (10 mm of rain in the last 24 hours; heavy rain, thunder or, on beaches
+  and lakes, gusts of 35 mph forecast in the next 12 hours; wind never on rivers, as it does not speed them up); then
+  a small source line with the monitors, company and time, which keeps the page's dated, attributed statement. River
+  pages keep one dated sentence (`components/dated-summary`) with counts for the river and its tributaries.
+  Exclamation marks stay rare: only the thunder note has one.
+- Levels are described in everyday words on pages: "at its usual level", "higher than usual", "lower than usual"
+  (`LevelSummary::usualPhrase()`), never "typical range". The API keeps its `within typical range` values. `/about` explains the sources and methods; keep it in step with Data sources below.
 - `/about` shows a "Last updated" date (`$lastUpdated` at the top of the view), which also goes into its
   `dateModified`. Bump it whenever the page's content changes.
 - Pages describe themselves as schema.org JSON-LD through the layout's `structuredData` (built by

@@ -40,8 +40,7 @@
             <p class="mt-1 text-ink-2">
                 {{ collect([$beach->district, $beach->kind === \App\Enums\BathingWaterKind::Estuary ? 'estuary bathing water' : null, $beach->sewerage_undertaker ? 'sewerage by '.$beach->sewerage_undertaker : null])->filter()->join(' · ') }}
             </p>
-            <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$overflows->monitors" :where="'within '.($overflows->radiusMetres / 1000).' km of '.$beach->name"
-                             :discharging-now="$overflows->dischargingNowCount" :spills-last48-hours="$overflows->spillsLast48HoursCount" :updated-at="$overflows->dataUpdatedAt" :covered="$overflows->isCovered()" :stale="$overflows->isStale()" />
+            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forBeach($conditions, $weather)" />
         </div>
         <x-place-actions :latitude="$beach->latitude" :longitude="$beach->longitude" :label="$beach->name" :feed="route('beaches.feed', [$region, $beach])" />
     </div>

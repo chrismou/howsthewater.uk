@@ -1,4 +1,4 @@
-{{-- A gauge's latest level, trend, typical range and 48 hour sparkline. empty: what to say when there is no gauge. --}}
+{{-- A gauge's latest level, trend, where it sits in its usual range and 48 hour sparkline. empty: what to say when there is no gauge. --}}
 @props(['level', 'empty' => 'No gauge is linked here yet.'])
 
 @php
@@ -10,7 +10,7 @@
 
     $sparkline = $level?->recentReadings->map(fn ($reading) => [$reading['measured_at']->timestamp, $reading['value']])->values() ?? collect();
 
-    // Where the latest reading sits on the typical range bar: the range itself spans 22% to 70% of the bar.
+    // Where the latest reading sits on the usual range bar: the range itself spans 22% to 70% of the bar.
     $rangePosition = null;
 
     if ($level?->latestValue !== null && $level->station->typical_range_low !== null && $level->station->typical_range_high > $level->station->typical_range_low) {
@@ -31,7 +31,7 @@
         </div>
         @if ($level->relativeToTypical)
             <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-2">
-                <span class="shrink-0">{{ ucfirst($level->relativeToTypical) }} <x-help term="typical_range" /></span>
+                <span class="shrink-0">{{ ucfirst($level->relativeToUsual()) }} <x-help term="typical_range" /></span>
                 @if ($rangePosition !== null)
                     <div class="relative order-last h-2 basis-full rounded-full bg-line-2 sm:order-none sm:flex-1 sm:basis-auto" aria-hidden="true">
                         <div class="absolute inset-y-0 rounded-full bg-water" style="left:22%;right:30%;background:var(--color-line)"></div>

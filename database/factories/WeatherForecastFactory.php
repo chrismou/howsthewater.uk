@@ -26,6 +26,7 @@ class WeatherForecastFactory extends Factory
                     'temperature' => round(14.0 - $hour * 0.3, 1),
                     'apparent_temperature' => round(11.5 - $hour * 0.3, 1),
                     'precipitation_probability' => min(100, $hour * 5),
+                    'precipitation' => $hour < 6 ? 0.0 : 0.4,
                     'weather_code' => $hour < 6 ? 2 : 61,
                     'wind_speed' => 12.4,
                     'wind_gusts' => 24.8,

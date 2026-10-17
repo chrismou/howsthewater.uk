@@ -31,6 +31,25 @@ final readonly class LevelSummary
     }
 
     /**
+     * Where a level sits against its gauge's usual range, in everyday words. The range is what the agencies call the
+     * typical or normal range; the API keeps those values ("within typical range"), pages say these.
+     */
+    public static function usualPhrase(?string $relativeToTypical): ?string
+    {
+        return match ($relativeToTypical) {
+            'above typical range' => 'higher than usual',
+            'below typical range' => 'lower than usual',
+            'within typical range' => 'at its usual level',
+            default => null,
+        };
+    }
+
+    public function relativeToUsual(): ?string
+    {
+        return self::usualPhrase($this->relativeToTypical);
+    }
+
+    /**
      * Whether the latest reading is too old to rely on. Evaluated at read
      * time, so a cached result still goes stale on schedule.
      */

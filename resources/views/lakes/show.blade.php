@@ -37,8 +37,7 @@
             @if ($lake->description)
                 <p class="mt-1 text-ink-2">{{ $lake->description }}</p>
             @endif
-            <x-dated-summary class="mt-2 max-w-2xl text-sm text-ink-2" :monitors="$overflows->monitors" :where="'within '.($overflows->radiusMetres / 1000).' km of '.$lake->name"
-                             :discharging-now="$overflows->dischargingNowCount" :spills-last48-hours="$overflows->spillsLast48HoursCount" :updated-at="$overflows->dataUpdatedAt" :covered="$overflows->isCovered()" :stale="$overflows->isStale()" :level="$level" />
+            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forLake($conditions, $weather)" />
         </div>
         <x-place-actions :latitude="$lake->latitude" :longitude="$lake->longitude" :label="$lake->name" :feed="route('lakes.feed', [$region, $lake])" />
     </div>

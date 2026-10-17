@@ -6,7 +6,8 @@ use App\Services\Weather\WeatherCode;
 use Illuminate\Support\Carbon;
 
 /**
- * One hour of a place's forecast. Wind is in miles per hour, the direction it blows from in degrees.
+ * One hour of a place's forecast. Rain is in millimetres over the hour, wind in miles per hour, and its direction
+ * the one it blows from, in degrees.
  */
 final readonly class WeatherHour
 {
@@ -17,6 +18,7 @@ final readonly class WeatherHour
         public ?float $temperature,
         public ?float $apparentTemperature,
         public ?int $precipitationProbability,
+        public ?float $precipitation,
         public ?int $weatherCode,
         public ?float $windSpeed,
         public ?float $windGusts,
@@ -25,7 +27,7 @@ final readonly class WeatherHour
     }
 
     /**
-     * @param  array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}  $hour
+     * @param  array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, precipitation?: float|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}  $hour
      */
     public static function fromArray(array $hour): self
     {
@@ -34,6 +36,8 @@ final readonly class WeatherHour
             temperature: $hour['temperature'],
             apparentTemperature: $hour['apparent_temperature'],
             precipitationProbability: $hour['precipitation_probability'],
+            // Forecasts read before the amount was added have none.
+            precipitation: $hour['precipitation'] ?? null,
             weatherCode: $hour['weather_code'],
             windSpeed: $hour['wind_speed'],
             windGusts: $hour['wind_gusts'],

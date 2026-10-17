@@ -9,7 +9,7 @@ use RuntimeException;
 /**
  * Forecasts from Open-Meteo's free, keyless API (non-commercial use; CC BY 4.0). It counts one call per location and
  * reportedly allows 600 a minute, 5,000 an hour and 10,000 a day, so calls are counted in the cache and every run
- * stays well under all three. Up to ten variables per location keep each location to a single call; this asks for eight.
+ * stays well under all three. Up to ten variables per location keep each location to a single call; this asks for nine.
  */
 class OpenMeteoClient
 {
@@ -42,7 +42,7 @@ class OpenMeteoClient
      * three hours ago still shows the weather now.
      *
      * @param  list<WeatherCell>  $cells  At most BATCH_SIZE
-     * @return list<array{hours: list<array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}>, uv_index_max: array<string, float>}>
+     * @return list<array{hours: list<array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, precipitation: float|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}>, uv_index_max: array<string, float>}>
      */
     public function forecasts(array $cells): array
     {
@@ -61,7 +61,7 @@ class OpenMeteoClient
             ->get(config('services.open_meteo.url'), [
                 'latitude' => implode(',', array_map(fn (WeatherCell $cell) => $cell->latitude, $cells)),
                 'longitude' => implode(',', array_map(fn (WeatherCell $cell) => $cell->longitude, $cells)),
-                'hourly' => 'temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m',
+                'hourly' => 'temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m',
                 'daily' => 'uv_index_max',
                 'forecast_hours' => 24,
                 'forecast_days' => 2,
@@ -84,7 +84,7 @@ class OpenMeteoClient
 
     /**
      * @param  array<string, mixed>  $location
-     * @return array{hours: list<array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}>, uv_index_max: array<string, float>}
+     * @return array{hours: list<array{at: int, temperature: float|null, apparent_temperature: float|null, precipitation_probability: int|null, precipitation: float|null, weather_code: int|null, wind_speed: float|null, wind_gusts: float|null, wind_direction: int|null}>, uv_index_max: array<string, float>}
      */
     private function parse(array $location): array
     {
@@ -110,6 +110,7 @@ class OpenMeteoClient
                 'temperature' => $number($value('temperature_2m', $index)),
                 'apparent_temperature' => $number($value('apparent_temperature', $index)),
                 'precipitation_probability' => $whole($value('precipitation_probability', $index)),
+                'precipitation' => $number($value('precipitation', $index)),
                 'weather_code' => $whole($value('weather_code', $index)),
                 'wind_speed' => $number($value('wind_speed_10m', $index)),
                 'wind_gusts' => $number($value('wind_gusts_10m', $index)),

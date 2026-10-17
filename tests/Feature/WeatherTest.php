@@ -30,6 +30,7 @@ function fakeOpenMeteo(): void
                 'temperature_2m' => $hours->map(fn ($time, $hour) => 15.4 - $hour * 0.2)->all(),
                 'apparent_temperature' => $hours->map(fn () => 12.1)->all(),
                 'precipitation_probability' => $hours->map(fn ($time, $hour) => $hour * 4)->all(),
+                'precipitation' => $hours->map(fn () => 0.2)->all(),
                 'weather_code' => $hours->map(fn () => 3)->all(),
                 'wind_speed_10m' => $hours->map(fn () => 9.6)->all(),
                 'wind_gusts_10m' => $hours->map(fn () => 21.3)->all(),
