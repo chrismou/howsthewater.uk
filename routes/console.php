@@ -14,6 +14,9 @@ Schedule::command('ingest:floods')->everyFifteenMinutes()->withoutOverlapping(30
 Schedule::command('ingest:floods --areas')->weeklyOn(1, '03:50');
 Schedule::command('ingest:bathing-waters')->hourly()->withoutOverlapping(60);
 Schedule::command('ingest:bathing-waters --history')->weeklyOn(1, '04:20');
+// Every three hours, off the quarter hours the other ingests use. A run reads about 600 forecasts in paced batches
+// and can take ten minutes when Open-Meteo is slow.
+Schedule::command('ingest:weather')->cron('7 */3 * * *')->withoutOverlapping(60);
 // Natural Resources Wales asks that its data is not kept over a year.
 Schedule::command('nrw:prune')->dailyAt('04:40');
 // Every minute, so its one read per turn keeps an even pace; most runs find it is not yet due and exit.

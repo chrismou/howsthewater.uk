@@ -35,13 +35,14 @@
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Rainfall.</strong> Tipping bucket rain gauges from the same three services, summed from their 15 minute readings.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Flood alerts and warnings.</strong> The Environment Agency's flood warning service in England and Natural Resources Wales's in Wales, shown in their own words. Scottish flood warnings are not shown yet.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Bathing waters.</strong> The Environment Agency's bathing water register for England, and Natural Resources Wales's for Wales: yearly classifications, sample results and, in season, daily pollution risk forecasts. In Scotland, classifications from SEPA's bathing water map service, with a link to each site's results page on SEPA's site.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Weather and daylight.</strong> Forecasts from <a href="https://open-meteo.com/" rel="noopener" class="text-accent hover:underline">Open-Meteo</a> (CC BY 4.0), which uses the Met Office's UK model, read every three hours for squares about 5 km across. Sunrise, sunset and first and last light are worked out from each place's position.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Rivers and maps.</strong> River centrelines from Ordnance Survey's OS Open Rivers, and map tiles from OpenStreetMap.</span></li>
                 </ul>
             </section>
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">How often it updates</h2>
-                <p>Overflows, river levels, rainfall and flood warnings are read every 15 minutes, and the pages are rebuilt straight after. Bathing water records are read every hour. Every page with overflow data shows when it was last updated, and says so plainly when a feed has not updated for over six hours, so old figures are never shown as current.</p>
+                <p>Overflows, river levels, rainfall and flood warnings are read every 15 minutes, and the pages are rebuilt straight after. Bathing water records are read every hour, and weather forecasts every three hours. Every page with overflow data shows when it was last updated, and says so plainly when a feed has not updated for over six hours, so old figures are never shown as current.</p>
             </section>
 
             <section class="grid gap-3">

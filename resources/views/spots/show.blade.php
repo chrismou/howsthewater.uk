@@ -135,6 +135,14 @@
         </dl>
     </section>
 
+    <section class="mb-8">
+        <div class="mb-3 flex items-center gap-1.5">
+            <h2 class="font-display text-lg font-semibold">Weather</h2>
+            <x-help term="weather" />
+        </div>
+        <x-weather-card :weather="$weather" :sun="$sun" place="this spot" />
+    </section>
+
     <div class="grid gap-8 lg:grid-cols-5">
         <div class="lg:col-span-3">
             <div
@@ -227,6 +235,8 @@
             @endif
         @endif
     </section>
+
+    <x-before-you-go kind="river" />
 
     <x-nearby-places :nearby="$nearby" />
 </x-layouts.app>

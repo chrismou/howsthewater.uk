@@ -7,6 +7,7 @@ use App\Models\River;
 use App\Models\Spot;
 use App\Services\Conditions\NearbyPlaceFinder;
 use App\Services\Conditions\SpotConditionsService;
+use App\Services\Weather\PlaceWeather;
 use Illuminate\View\View;
 
 class SpotController extends Controller
@@ -16,14 +17,20 @@ class SpotController extends Controller
      */
     public const MONITORS_SHOWN = 10;
 
-    public function show(Region $region, River $river, Spot $spot, SpotConditionsService $conditions, NearbyPlaceFinder $nearby): View
+    public function show(Region $region, River $river, Spot $spot, SpotConditionsService $conditions, NearbyPlaceFinder $nearby, PlaceWeather $weather): View
     {
         abort_unless($spot->is_published, 404);
         abort_if($river->isTributary(), 404);
 
         $spot->setRelation('river', $river->setRelation('region', $region));
 
-        return view('spots.show', ['conditions' => $conditions->for($spot), 'river' => $river, 'nearby' => $nearby->forSpot($spot)]);
+        return view('spots.show', [
+            'conditions' => $conditions->for($spot),
+            'river' => $river,
+            'nearby' => $nearby->forSpot($spot),
+            'weather' => $weather->forecast($spot->latitude, $spot->longitude),
+            'sun' => $weather->sunTimes($spot->latitude, $spot->longitude),
+        ]);
     }
 
     /**

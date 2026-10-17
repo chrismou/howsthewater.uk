@@ -88,6 +88,14 @@
         </dl>
     </section>
 
+    <section class="mb-8">
+        <div class="mb-3 flex items-center gap-1.5">
+            <h2 class="font-display text-lg font-semibold">Weather</h2>
+            <x-help term="weather" />
+        </div>
+        <x-weather-card :weather="$weather" :sun="$sun" place="this lake" />
+    </section>
+
     <div class="grid gap-8 lg:grid-cols-5">
         <div class="lg:col-span-3">
             <div class="h-80 w-full rounded-lg border border-line" role="region" aria-label="Map of {{ $lake->name }}, its bathing sites and the overflow monitors within 3 km" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
@@ -122,6 +130,8 @@
     </section>
 
     <x-nearby-overflows :overflows="$overflows" class="mt-10" />
+
+    <x-before-you-go kind="lake" />
 
     <x-nearby-places :nearby="$nearby" />
 </x-layouts.app>

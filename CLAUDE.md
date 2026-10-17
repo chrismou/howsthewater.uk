@@ -345,6 +345,15 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `rain_gauges_searched_at` and `flood_areas_searched_at`; the 15-minute `ingest:gauges`, `ingest:rainfall` and
   `ingest:floods` search anything still null, and `ingest:overflows` positions monitors it sees for the first time.
   `--stations` (and `--areas` for floods) re-checks everything (weekly).
+- Weather: Open-Meteo's forecast API (`Weather\OpenMeteoClient`, CC BY 4.0, no key), `ingest:weather` every three
+  hours at seven minutes past. It is free for non-commercial use only: once the site makes money through
+  subscriptions or ads, it needs Open-Meteo's paid plan. Places share forecasts by grid cell (`WeatherCell`, about
+  5.5 km across, about 600 cells for about 720 places), read 25 to a request with a pause between, and the client
+  counts calls in the cache to stay under Open-Meteo's per-minute, hourly and daily allowances. A cell read in the
+  last two and a half hours is skipped, and a failed request ends the run, keeping each cell's last forecast. Each
+  cell stores 24 hourly values, so pages show whichever hour is current when viewed (`WeatherSummary`); sunrise,
+  sunset and first and last light (`SunTimes`) are worked out from each place's position. Weather is not part of
+  the cached conditions or the API yet. Tide times wait on a UKHO licence.
 - No API keys are needed apart from NRW's. Every request sends a user agent with `CONTACT_EMAIL` (`app.contact_email`), so providers can reach us. Map tiles are OpenStreetMap.
 - Bathing waters: the EA register at `environment.data.gov.uk/doc/bathing-water.json`, `ingest:bathing-waters` (hourly).
   One request returns every site's latest classification, sample and pollution risk forecast; each run stores the
@@ -397,6 +406,10 @@ replacing the local database with a copy of live rather than backfilling.
 - Phones keep the header to two rows: the search box sits behind a search button (`search.js`; without JavaScript it
   links to `/search`, which has its own box on phones). Controls people tap (menus, buttons, the theme toggle) are at
   least 44px tall on phones; small inline ones (help buttons, breadcrumb links) reach further than they are drawn.
+- Spot, beach and lake pages show the weather and daylight as one full-width band under the status card
+  (`components/weather-card`, from `PlaceWeather`), with a line icon per hour (`components/weather-icon`, one per
+  group of WMO codes from `WeatherCode::icon()`, the moon instead of the sun after sunset) and end with general advice for getting in the water (`components/before-you-go`, by kind of
+  place), which says what to check and never whether a place is safe.
 - Spot, beach and lake pages share `components/place-actions`: share (copy link on desktops; `share.js` switches to the
   share sheet on touch screens that have one), RSS feed, and open in OpenStreetMap and Google Maps, as a two by two grid
   on phones.

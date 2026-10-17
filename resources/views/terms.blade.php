@@ -38,6 +38,7 @@
                     <li class="flex gap-3"><span class="text-muted">-</span><span>River centrelines from OS Open Rivers: Open Government Licence v3.0, contains OS data © Crown copyright and database right.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Map tiles: © OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" rel="noopener"
                                 class="text-accent hover:underline">ODbL</a>.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span>Weather forecasts from <a href="https://open-meteo.com/" rel="noopener" class="text-accent hover:underline">Open-Meteo</a>: <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener" class="text-accent hover:underline">CC BY 4.0</a>.</span></li>
                 </ul>
                 <p>The Environment Agency asks that data is not used for safety-critical purposes, and that applies to anything you build with it too.</p>
             </section>

@@ -101,6 +101,14 @@
     </section>
 
     {{-- Phones: map, samples, then the description. Wide screens: map and description left, samples right. --}}
+    <section class="mb-8">
+        <div class="mb-3 flex items-center gap-1.5">
+            <h2 class="font-display text-lg font-semibold">Weather</h2>
+            <x-help term="weather" />
+        </div>
+        <x-weather-card :weather="$weather" :sun="$sun" place="this beach" />
+    </section>
+
     <div class="grid gap-8 lg:grid-cols-5 lg:grid-rows-[auto_1fr]">
         <div class="lg:col-span-3 lg:row-start-1">
             <div class="h-80 w-full rounded-lg border border-line" role="region" aria-label="Map of {{ $beach->name }} and the overflow monitors within 3 km" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
@@ -154,6 +162,8 @@
     </div>
 
     <x-nearby-overflows :overflows="$overflows" class="mt-10" />
+
+    <x-before-you-go kind="beach" />
 
     <x-nearby-places :nearby="$nearby" />
 </x-layouts.app>

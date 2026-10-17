@@ -6,6 +6,7 @@ use App\Models\BathingWater;
 use App\Models\Region;
 use App\Services\Conditions\NearbyPlaceFinder;
 use App\Services\Conditions\WaterBodyConditionsService;
+use App\Services\Weather\PlaceWeather;
 use Illuminate\View\View;
 
 class BeachController extends Controller
@@ -21,12 +22,14 @@ class BeachController extends Controller
         ]);
     }
 
-    public function show(Region $region, BathingWater $beach, WaterBodyConditionsService $conditions, NearbyPlaceFinder $nearby): View
+    public function show(Region $region, BathingWater $beach, WaterBodyConditionsService $conditions, NearbyPlaceFinder $nearby, PlaceWeather $weather): View
     {
         return view('beaches.show', [
             'region' => $region,
             'conditions' => $conditions->forBeach($beach),
             'nearby' => $nearby->forBeach($beach->setRelation('region', $region)),
+            'weather' => $weather->forecast($beach->latitude, $beach->longitude),
+            'sun' => $weather->sunTimes($beach->latitude, $beach->longitude),
         ]);
     }
 }

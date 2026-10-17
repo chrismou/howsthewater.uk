@@ -56,6 +56,10 @@ class Help extends Component
             'label' => 'Where is rainfall measured?',
             'text' => 'Totals from the Environment Agency rain gauge (Natural Resources Wales in Wales, SEPA in Scotland) nearest this spot, summed from its 15 minute readings. Rain further up the catchment may differ, and heavy rain is what triggers overflows.',
         ],
+        'weather' => [
+            'label' => 'Where does the weather come from?',
+            'text' => 'A forecast from Open-Meteo, which uses the Met Office\'s UK model, for the few kilometres around this place, read every three hours. It is a forecast, not a measurement, and it can be windier and colder on the water. First and last light are when it is light enough outside to see without lights, about half an hour either side of sunrise and sunset.',
+        ],
         'flood_warning' => [
             'label' => 'Where do flood warnings come from?',
             'text' => 'The Environment Agency (Natural Resources Wales in Wales) issues flood alerts (flooding is possible), flood warnings (flooding is expected) and severe flood warnings (danger to life) for areas along each river. We show any in force for an area covering this stretch, checked every 15 minutes, in the agency\'s own words.',

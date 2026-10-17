@@ -6,6 +6,7 @@ use App\Models\Lake;
 use App\Models\Region;
 use App\Services\Conditions\NearbyPlaceFinder;
 use App\Services\Conditions\WaterBodyConditionsService;
+use App\Services\Weather\PlaceWeather;
 use Illuminate\View\View;
 
 class LakeController extends Controller
@@ -21,10 +22,16 @@ class LakeController extends Controller
         ]);
     }
 
-    public function show(Region $region, Lake $lake, WaterBodyConditionsService $conditions, NearbyPlaceFinder $nearby): View
+    public function show(Region $region, Lake $lake, WaterBodyConditionsService $conditions, NearbyPlaceFinder $nearby, PlaceWeather $weather): View
     {
         $lake->setRelation('region', $region);
 
-        return view('lakes.show', ['region' => $region, 'conditions' => $conditions->forLake($lake), 'nearby' => $nearby->forLake($lake)]);
+        return view('lakes.show', [
+            'region' => $region,
+            'conditions' => $conditions->forLake($lake),
+            'nearby' => $nearby->forLake($lake),
+            'weather' => $weather->forecast($lake->latitude, $lake->longitude),
+            'sun' => $weather->sunTimes($lake->latitude, $lake->longitude),
+        ]);
     }
 }

@@ -116,6 +116,12 @@ return [
         'flood_areas_url' => env('NRW_FLOOD_AREAS_URL', 'https://datamap.gov.wales/geoserver/ows'),
     ],
 
+    // Open-Meteo's forecast API: free and keyless for non-commercial use (a paid plan is needed once the site makes
+    // money through subscriptions or ads), CC BY 4.0. It draws on the Met Office's UK model for Britain.
+    'open_meteo' => [
+        'url' => env('OPEN_METEO_URL', 'https://api.open-meteo.com/v1/forecast'),
+    ],
+
     'ordnance_survey' => [
         'open_rivers_path' => env('OS_OPEN_RIVERS_PATH', storage_path('app/private/oprvrs_gb.gpkg')),
     ],

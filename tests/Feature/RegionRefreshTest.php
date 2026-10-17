@@ -119,5 +119,5 @@ it('runs the refresh after every ingest, with overlap locks that cannot outlive 
 
     expect($events->last()->command)->toContain('regions:refresh')
         ->and($events->filter->withoutOverlapping)->each(fn ($event) => $event->expiresAt->toBeLessThanOrEqual(60))
-        ->and($events->filter->withoutOverlapping->count())->toBe(7);
+        ->and($events->filter->withoutOverlapping->count())->toBe(8);
 });
