@@ -465,6 +465,12 @@ replacing the local database with a copy of live rather than backfilling.
 - `.github/workflows/tests.yml` runs `composer ci:check` (pint, phpstan, tests) on every push and PR. A push to `main`
   that passes then runs `dep deploy` from CI via `deployphp/action`, using the GitHub `production` environment
   (secrets `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; variables `DEPLOY_IP`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`).
+- Pages are the same for every visitor (no cookies, sessions or accounts), so page routes send
+  `cache.headers:public;max_age=60;s_maxage=300` (`$pageCaching` in `routes/web.php`) and a Cloudflare cache rule keeps
+  them at the edge for five minutes; only successful responses are marked cacheable. Never add per-visitor content
+  or cookies to a page without taking it out of that group. After each deploy CI purges the Cloudflare cache
+  (variable `CLOUDFLARE_ZONE_ID`, secret `CLOUDFLARE_API_TOKEN`; skipped while unset), so cached pages never ask for
+  the old release's build assets.
 - `deploy.php` uses the Laravel recipe plus an npm build. The server clones the repo through the deploy user's
   `github-howsthewater` SSH alias. Permissions follow the shared `www-data` group model: `writable_mode` is `chmod`,
   `writable_recursive` is off, the release is made read-only after the build, and file log channels set

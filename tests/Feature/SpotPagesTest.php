@@ -356,6 +356,18 @@ it('shows a helpful 404 page in the site layout', function () {
         ->assertSee('data-live-bar', false);
 });
 
+it('lets Cloudflare keep pages for five minutes, but never errors or redirects', function () {
+    [$region, $river, $spot] = spotWithUrl(['slug' => 'ilkley'], ['slug' => 'wharfe']);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300');
+    $this->get(route('home'))->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300');
+    $this->get(route('search', ['q' => 'Ilkley']))->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300');
+    $missing = $this->get('/yorkshire/rivers/wharfe/nowhere')->assertNotFound();
+    $redirect = $this->get('/yorkshire/wharfe/ilkley')->assertMovedPermanently();
+    expect((string) $missing->headers->get('Cache-Control'))->not->toContain('public')
+        ->and((string) $redirect->headers->get('Cache-Control'))->not->toContain('public');
+});
+
 it('describes where a spot sits in the site as breadcrumb structured data', function () {
     [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley'], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
 
