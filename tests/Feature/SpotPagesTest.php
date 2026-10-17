@@ -37,7 +37,7 @@ it('introduces the site and its regions on the home page', function () {
         ->assertSee('How to read it')
         ->assertSee('What this site does not do')
         ->assertSee('View Yorkshire')
-        ->assertSee('/yorkshire/wharfe/otley')
+        ->assertSee('/yorkshire/rivers/wharfe/otley')
         ->assertSee('/yorkshire"', false);
 });
 
@@ -45,7 +45,7 @@ it('shows a river page with its spots source to mouth', function () {
     [$region, $river] = spotWithUrl(['name' => 'Castleford', 'river_metres' => 90000], ['slug' => 'aire']);
     Spot::factory()->create(['river_id' => $river->id, 'name' => 'Skipton', 'river_metres' => 20000]);
 
-    $this->get('/yorkshire/aire')
+    $this->get('/yorkshire/rivers/aire')
         ->assertOk()
         ->assertSeeInOrder(['Skipton', 'Castleford']);
 });
@@ -57,7 +57,7 @@ it('says river monitor counts include tributaries and offline monitors', functio
     OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'status' => \App\Enums\OverflowStatus::Offline]);
     OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'status' => \App\Enums\OverflowStatus::NotDischarging]);
 
-    $this->get('/yorkshire/wharfe')
+    $this->get('/yorkshire/rivers/wharfe')
         ->assertOk()
         ->assertSeeInOrder(['3 storm overflow monitors on the River Wharfe and its tributaries,', '1 discharging right now and 1 offline.'])
         ->assertDontSee('discharge into');
@@ -68,10 +68,10 @@ it('scopes rivers and spots to their region', function () {
     $other = Region::factory()->create(['slug' => 'lancashire']);
     River::factory()->create(['region_id' => $other->id, 'slug' => 'calder', 'name' => 'River Calder']);
 
-    $this->get('/yorkshire/calder')->assertOk();
-    $this->get('/lancashire/calder')->assertOk()->assertDontSee($spot->name);
-    $this->get('/lancashire/calder/otley')->assertNotFound();
-    $this->get('/yorkshire/wharfe')->assertNotFound();
+    $this->get('/yorkshire/rivers/calder')->assertOk();
+    $this->get('/lancashire/rivers/calder')->assertOk()->assertDontSee($spot->name);
+    $this->get('/lancashire/rivers/calder/otley')->assertNotFound();
+    $this->get('/yorkshire/rivers/wharfe')->assertNotFound();
 });
 
 it('shows a spot page with upstream monitors and the spill summary', function () {
@@ -100,7 +100,7 @@ it('hides spots on tributaries, which have no pages', function () {
     $this->get(route('spots.show', [$region, $tributary, $spot]))->assertNotFound();
     $this->getJson(route('api.v1.spots.show', [$region, $tributary, $spot]))->assertNotFound();
     $this->getJson(route('api.v1.spots.index', $region))->assertOk()->assertDontSee('becksidebridge');
-    $this->get(route('search', ['q' => 'Becksidebridge']))->assertOk()->assertDontSee('/test-beck/becksidebridge');
+    $this->get(route('search', ['q' => 'Becksidebridge']))->assertOk()->assertDontSee('/rivers/test-beck/becksidebridge');
     $this->get(route('sitemap'))->assertOk()->assertDontSee('becksidebridge');
 });
 
@@ -131,13 +131,13 @@ it('finds spots and rivers by name', function () {
     $this->get(route('search', ['q' => 'otl']))
         ->assertOk()
         ->assertSee('Otley')
-        ->assertSee('/yorkshire/wharfe/otley')
+        ->assertSee('/yorkshire/rivers/wharfe/otley')
         ->assertDontSee('Ilkley');
 
     $this->get(route('search', ['q' => 'wharfe']))
         ->assertOk()
         ->assertSee('River Wharfe')
-        ->assertSee('/yorkshire/wharfe"', false);
+        ->assertSee('/yorkshire/rivers/wharfe"', false);
 
     $this->get(route('search', ['q' => 'zzz']))->assertOk()->assertSee('Nothing matched');
 });
@@ -256,18 +256,18 @@ it('renders the first 10 upstream monitors and loads the rest on request', funct
         ->assertDontSee('<html', false);
 });
 
-it('shows the region page with river strips, catchment tables and the right now panel', function () {
+it('shows a region\'s rivers page with river strips, catchment tables and the right now panel', function () {
     [$region, $river, $spot] = spotWithUrl(['name' => 'Otley', 'slug' => 'otley', 'river_metres' => 50000], ['name' => 'River Wharfe', 'slug' => 'wharfe', 'catchment' => 'Yorkshire Ouse', 'length_metres' => 100000]);
     $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 45000]);
     SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $monitor->id]);
 
-    $this->get(route('regions.show', $region))
+    $this->get(route('rivers.index', $region))
         ->assertOk()
         ->assertSee('Every river, source to mouth')
         ->assertSee('Yorkshire Ouse')
         ->assertSee('Right now')
         ->assertSeeInOrder(['Spots with sewage reported upstream now', 'Otley'])
-        ->assertSee('/yorkshire/wharfe/otley')
+        ->assertSee('/yorkshire/rivers/wharfe/otley')
         ->assertSee('data-map-centrelines', false);
 });
 
@@ -379,7 +379,7 @@ it('totals every region on the home page and keeps the first region added as the
         ->assertOk()
         ->assertSeeInOrder(['data-live-bar', 'Yorkshire', '>1</span> <span class="hidden sm:inline">overflow</span> discharging'], false);
 
-    $this->get(route('regions.show', $later))->assertOk()->assertSee('1 river and 1 spots', false);
+    $this->get(route('rivers.index', $later))->assertOk()->assertSee('1 river and 1 spots', false);
 });
 
 it('shows flood warnings on the spot, region and home pages and in the live bar', function () {

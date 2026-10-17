@@ -1,9 +1,10 @@
 {{--
     A region as a card with a small map and four figures, for one kind of place: rivers (spots coloured by spill
     status upstream), beaches (coloured by classification) or lakes (coloured by spill status nearby). Used by the
-    home page and the Rivers, Beaches and Lakes pages. summary: a RegionSummary.
+    home page, the Rivers, Beaches and Lakes pages and each region's overview, where inRegion titles the card by kind
+    of place instead of by region. summary: a RegionSummary.
 --}}
-@props(['summary', 'type' => 'rivers'])
+@props(['summary', 'type' => 'rivers', 'inRegion' => false])
 
 @php
     $place = fn ($item) => ['lat' => $item->latitude, 'lng' => $item->longitude, 'label' => $item->name];
@@ -36,7 +37,7 @@
             ],
         ],
         default => [
-            route('regions.show', $summary->slug),
+            route('rivers.index', $summary->slug),
             $summary->spots()->map(fn ($spot) => [...$place($spot), 'kind' => 'spot', 'recency' => $spot->spillRecency->value]),
             $summary->riversByCatchment()->keys()->join(', ', ' and ').'. '.$summary->rivers->count().' '.\Illuminate\Support\Str::plural('river', $summary->rivers->count()).', source to mouth.',
             [
@@ -52,8 +53,8 @@
 <a href="{{ $url }}" {{ $attributes->merge(['class' => 'flex flex-col overflow-hidden rounded-lg border border-line bg-surface transition hover:border-muted hover:shadow-sm']) }}>
     <div class="h-56 border-b border-line bg-water" data-map data-map-static data-map-markers="{{ json_encode($markers->values()) }}"></div>
     <div class="flex flex-1 flex-col gap-4 p-6">
-        <span class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">Region</span>
-        <h3 class="font-display text-3xl font-semibold tracking-tight">{{ $summary->name }}</h3>
+        <span class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $inRegion ? $summary->name : 'Region' }}</span>
+        <h3 class="font-display text-3xl font-semibold tracking-tight">{{ $inRegion ? \Illuminate\Support\Str::ucfirst($type) : $summary->name }}</h3>
         <p class="text-sm text-ink-2">{{ $blurb }}</p>
         <dl class="grid grid-cols-2 gap-x-5 gap-y-3 text-sm">
             @foreach ($figures as $figure)
@@ -68,6 +69,6 @@
                 </div>
             @endforeach
         </dl>
-        <span class="mt-auto inline-flex self-start rounded-lg border border-line px-4 py-2 text-sm font-semibold">View {{ $summary->name }}{{ $type === 'rivers' ? '' : ' '.$type }}</span>
+        <span class="mt-auto inline-flex self-start rounded-lg border border-line px-4 py-2 text-sm font-semibold">View {{ $summary->name }} {{ $type }}</span>
     </div>
 </a>

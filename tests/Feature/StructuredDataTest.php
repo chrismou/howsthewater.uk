@@ -63,9 +63,9 @@ it('lists the places on listing pages, and starts the visible trail at the match
     $beach = BathingWater::factory()->create(['region_id' => $region->id, 'name' => 'Millport Bay', 'slug' => 'millport-bay']);
 
     expect(structuredData($this->get(route('hubs.beaches')))['ItemList']['itemListElement'][0])->toMatchArray(['name' => 'Scotland', 'url' => route('beaches.index', $region)])
-        ->and(structuredData($this->get(route('regions.show', $region)))['ItemList']['itemListElement'][0]['name'])->toBe('River Tay')
+        ->and(structuredData($this->get(route('rivers.index', $region)))['ItemList']['itemListElement'][0]['name'])->toBe('River Tay')
         ->and(structuredData($this->get(route('beaches.index', $region)))['ItemList']['numberOfItems'])->toBe(1);
 
     $this->get(route('beaches.show', [$region, $beach]))->assertSee('<a href="'.route('hubs.beaches').'" class="hover:underline">All beaches</a>', false);
-    $this->get(route('regions.show', $region))->assertSee('<a href="'.route('hubs.rivers').'" class="hover:underline">All rivers</a>', false);
+    $this->get(route('rivers.index', $region))->assertSee('<a href="'.route('hubs.rivers').'" class="hover:underline">All rivers</a>', false);
 });

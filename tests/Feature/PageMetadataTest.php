@@ -54,6 +54,7 @@ it('keeps place descriptions short for long names, and ends every title with the
 
     $pages = [
         route('regions.show', $region),
+        route('rivers.index', $region),
         route('rivers.show', [$region, $river]),
         route('spots.show', [$region, $river, $spot]),
         route('beaches.index', $region),
@@ -69,6 +70,15 @@ it('keeps place descriptions short for long names, and ends every title with the
         expect(mb_strlen($metadata['description']))->toBeLessThanOrEqual(160, "Description of {$url}: {$metadata['description']}")
             ->and($metadata['title'])->toEndWith(' - '.config('app.name'));
     }
+
+    $longRegion = Region::factory()->create(['name' => 'East Anglia and Lincolnshire', 'slug' => 'east-anglia']);
+    River::factory()->create(['region_id' => $longRegion->id]);
+    BathingWater::factory()->create(['region_id' => $longRegion->id]);
+    Lake::factory()->create(['region_id' => $longRegion->id]);
+    $overview = pageMetadata($this->get(route('regions.show', $longRegion)));
+
+    expect(mb_strlen(Str::beforeLast($overview['title'], ' - '.config('app.name'))))->toBeLessThanOrEqual(60, $overview['title'])
+        ->and(mb_strlen($overview['description']))->toBeLessThanOrEqual(160, $overview['description']);
 
     expect(pageMetadata($this->get(route('spots.show', [$region, $river, $short])))['title'])->toBe('Alston, River South Tyne: swimming, river level and spills - '.config('app.name'))
         ->and(pageMetadata($this->get(route('beaches.show', [$region, $scottish])))['description'])->toStartWith('SEPA classification and sample results');

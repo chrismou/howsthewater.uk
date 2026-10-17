@@ -23,6 +23,7 @@ class SitemapController extends Controller
 
         $urls = collect([['loc' => route('home'), 'changefreq' => 'hourly', 'priority' => '1.0', 'lastmod' => null]])
             ->concat($regions->map(fn (Region $region) => ['loc' => route('regions.show', $region), 'changefreq' => 'hourly', 'priority' => '0.9', 'lastmod' => $region->updated_at]))
+            ->concat($regions->whereIn('id', $rivers->pluck('region_id'))->map(fn (Region $region) => ['loc' => route('rivers.index', $region), 'changefreq' => 'hourly', 'priority' => '0.9', 'lastmod' => $region->updated_at]))
             ->concat($rivers->map(fn (River $river) => ['loc' => route('rivers.show', [$river->region, $river]), 'changefreq' => 'hourly', 'priority' => '0.8', 'lastmod' => $river->updated_at]))
             ->concat($spots->map(fn (Spot $spot) => ['loc' => route('spots.show', [$spot->river->region, $spot->river, $spot]), 'changefreq' => 'hourly', 'priority' => '0.7', 'lastmod' => $spot->updated_at]))
             ->concat(BathingWater::query()->beaches()->whereNotNull('region_id')->with('region')->orderBy('name')->get()

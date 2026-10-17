@@ -217,8 +217,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   them. `WaterBodyConditionsService` builds `BeachConditions` and `LakeConditions` (cached through
   `ConditionsCache::remember()`): the bathing water record plus `NearbyOverflows`, every monitor within 3 km by
   straight-line distance, since the sea and lakes have no upstream. Use `SpillRecency::nearbyLabel()` there, never the
-  "upstream" wording. Beach and lake routes sit before the river routes, which would otherwise take "beaches" or
-  "lakes" as a river slug. The Rivers, Beaches and Lakes menus all render through `components/nav-menu` as plain links to `/rivers`,
+  "upstream" wording. A region's rivers, beaches and lakes each have a listing (`/{region}/rivers`, `/beaches`,
+  `/lakes`), and `/{region}` is an overview with a `components/region-card` (`inRegion`) for each kind of place it
+  has, plus its headline figures and flood warnings. The Rivers, Beaches and Lakes menus all render through `components/nav-menu` as plain links to `/rivers`,
   `/beaches` and `/lakes` (`PlaceHubController`), which list every region with that kind of place as cards
   (`components/region-card`, also used on the home page), so the menus work without JavaScript. The regions and places
   come from `NavigationMenus::menusJson()`, embedded once per page as `#nav-menus`, and `nav.js` builds each menu from it
@@ -230,8 +231,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `.../feed`) come from `ConditionsFeed`: one item when an upstream (or, for beaches and lakes, nearby) overflow starts,
   one when it stops, one per flood warning in force, and for bathing waters one per sample and one per increased
   pollution risk forecast in force, over 30 days, capped at 50.
-  Guids are stable per event so readers notify once. The feed routes sit before the river and spot routes, which would
-  otherwise take "feed" as a spot slug (or a beach feed as a spot). Spot, river, beach and lake pages pass `feed` to the layout for the `<link rel="alternate">`.
+  Guids are stable per event so readers notify once. The feed and spot monitors routes sit before the spot route,
+  which would otherwise take "feed" or "monitors" as a spot slug. Spot, river, beach and lake pages pass `feed` to the layout for the `<link rel="alternate">`.
 - `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
   green "no spills". Keep that distinction for any new status. A region without overflow feeds
   (`Region::hasOverflowData()`, Wales for now) gives `SpillRecency::NotCovered`: pages say "Overflow data not available
@@ -239,7 +240,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   carries `hasOverflowData` for the live bar, region page and cards.
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed, and `Spot::onMainRiver()` wherever spots
   are listed; the spot controllers 404 a spot on a tributary.
-- Rivers belong to a `Region` and URLs are region-scoped (`/{region}/{river}/{spot}`, API `/api/v1/regions/...`) with
+- Rivers belong to a `Region` and URLs are region-scoped (`/{region}/rivers/{river}/{spot}`, API `/api/v1/regions/...`) with
   `scopeBindings()`, because river and spot names repeat across Britain; slugs are unique per region and per river.
   Build links with `route('spots.show', [$region, $river, $spot])` and eager-load `river.region` wherever spots are
   listed. The header's Rivers, Beaches and Lakes menus come from `NavigationMenus`: plain arrays built once
@@ -401,7 +402,7 @@ replacing the local database with a copy of live rather than backfilling.
   (on its `RiverBodyOfWater`) per spot, `Beach` and `LakeBodyOfWater` with coordinates, and an `ItemList` on listing
   pages. State only what the page does; never add ratings, reviews or anything implying the water is safe. Build JSON-LD
   arrays in `@php`, not inside `{!! !!}`, where Blade reads the "@context" key as a directive.
-- Breadcrumb JSON-LD follows the URL (Home, region, river or Beaches, place). The visible trail's first link goes to
+- Breadcrumb JSON-LD follows the URL (Home, region, Rivers, Beaches or Lakes, river, place). The visible trail's first link goes to
   the matching hub (All rivers, All beaches, All lakes) rather than the home page.
 
 ## Quality

@@ -22,9 +22,9 @@ keep that distinction.
   Wales, and SEPA's map service in Scotland, classifications only, linking to SEPA's results): annual classifications,
   weekly sample counts and daily pollution risk forecasts in the bathing season, lake levels, and storm overflows
   within 3 km. River spots that are themselves designated bathing waters show the same record.
-- Offers an RSS feed per spot and river (`/yorkshire/wharfe/otley/feed`, `/yorkshire/wharfe/feed`): overflows upstream
+- Offers an RSS feed per spot and river (`/yorkshire/rivers/wharfe/otley/feed`, `/yorkshire/rivers/wharfe/feed`): overflows upstream
   starting and stopping, and flood warnings in force.
-- Serves a page per river (`/yorkshire/wharfe`) and per spot (`/yorkshire/wharfe/otley`), plus a read-only JSON API at
+- Serves a page per river (`/yorkshire/rivers/wharfe`) and per spot (`/yorkshire/rivers/wharfe/otley`), plus a read-only JSON API at
   `/api/v1` built from the same services.
 
 Covered rivers are seeded by region in `database/seeders/RiverSeeder.php` and spots in `SpotSeeder.php`. Yorkshire's

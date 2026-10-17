@@ -73,7 +73,7 @@ class NavigationMenus
             $lakes = $region->lakes->map(fn (Lake $lake) => ['name' => $lake->name, 'url' => route('lakes.show', [$region, $lake])])->values()->all();
 
             if ($rivers !== []) {
-                $menus['rivers'][] = $entry($region, route('regions.show', $region), 'map, river strips and every spot', $rivers);
+                $menus['rivers'][] = $entry($region, route('rivers.index', $region), 'map, river strips and every spot', $rivers);
             }
 
             if ($beaches !== []) {

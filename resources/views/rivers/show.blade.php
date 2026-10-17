@@ -11,7 +11,7 @@
 
 <x-layouts.app :region="$overview->river->region" :feed="route('rivers.feed', [$overview->river->region, $overview->river])" :title="'Swimming spots on the '.$overview->river->name.': levels and spills'"
                :description="'Upstream storm overflow spills, river levels and rainfall for every swimming, paddling and fishing spot on the '.$overview->river->name.', source to mouth.'"
-               :breadcrumbs="[[$overview->river->region->name, route('regions.show', $overview->river->region)], [$overview->river->name, url()->current()]]"
+               :breadcrumbs="[[$overview->river->region->name, route('regions.show', $overview->river->region)], ['Rivers', route('rivers.index', $overview->river->region)], [$overview->river->name, url()->current()]]"
                :structured-data="app(\App\Services\StructuredData::class)->riverPage($overview->river, $overview->river->region)">
     <div class="mb-6">
         <p class="text-sm text-muted"><a href="{{ route('hubs.rivers') }}" class="hover:underline">All rivers</a> <span class="mx-1">/</span> <a href="{{ route('regions.show', $overview->river->region) }}" class="hover:underline">{{ $overview->river->region->name }}</a></p>

@@ -46,3 +46,20 @@ it('links the header menus to those pages, so they lead somewhere without JavaSc
 it('refuses a region slug that a top-level page already takes', function (string $slug) {
     expect(fn () => Region::factory()->create(['slug' => $slug]))->toThrow(InvalidArgumentException::class);
 })->with(Region::RESERVED_SLUGS);
+
+it('gives each region an overview with a card for each kind of place it has', function () {
+    $region = Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+    River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe', 'slug' => 'wharfe']);
+    BathingWater::factory()->create(['region_id' => $region->id]);
+
+    $this->get(route('regions.show', $region))
+        ->assertOk()
+        ->assertSee('<title>Yorkshire: rivers and beaches', false)
+        ->assertSee('href="'.route('rivers.index', $region).'"', false)
+        ->assertSee('href="'.route('beaches.index', $region).'"', false)
+        ->assertDontSee('href="'.route('lakes.index', $region).'"', false)
+        ->assertSee('View Yorkshire rivers');
+
+    $this->get(route('rivers.index', $region))->assertOk()->assertSee('Yorkshire rivers')->assertSee('/yorkshire/rivers/wharfe');
+    $this->get(route('lakes.index', $region))->assertNotFound();
+});
