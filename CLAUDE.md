@@ -183,7 +183,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   Tryweryn, running on to Chester). Welsh rivers take their OS name: the English alternative where there is one
   (River Usk), the Welsh name where that is the only one (Afon Teifi), with the other form as an alias; slugs drop
   "River" or "Afon". Wales has bathing waters (Wales's register, `Agency::NaturalResourcesWales`) and NRW's levels,
-  rainfall and flood warnings, but no overflows yet: Dŵr Cymru Welsh Water's live overflow layer is not read yet.
+  rainfall and flood warnings, but no overflows yet: Dŵr Cymru Welsh Water's storm overflow map is recorded
+  (`welsh_water`) but Wales's `overflow_feeds` stays empty, so nothing shows, until it is switched on.
   Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
@@ -278,18 +279,23 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 
 - Storm overflows: one feed per water company, listed in `services.overflow_feeds`, each with a `driver`. Stream
   publishes an ArcGIS feature service per English company, all with the same fields (`stream`, `StormOverflowClient`);
-  Scottish Water publishes its own hourly API (`scottish_water`, `ScottishWater\OverflowEventClient`). Each driver
+  Scottish Water publishes its own hourly API (`scottish_water`, `ScottishWater\OverflowEventClient`), and Dŵr Cymru
+  Welsh Water its own ArcGIS map (`welsh_water`, `WelshWater\StormOverflowMapClient`: statuses in words, UK local
+  times without an offset, the position only in the geometry, ids already prefixed `DCWW`). Each driver
   implements `OverflowFeedReader` and maps its records into `OverflowMonitorData`, so the sync and everything after it
   never see the source format; a new company with other fields needs only a new reader. `ingest:overflows` polls every
   configured feed every 15 minutes, whether or not a region names it in `overflow_feeds`, because spill history that is
-  not recorded as it happens cannot be filled in later (Anglian, Wessex and Southern Water are recorded ahead of their
-  regions). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
+  not recorded as it happens cannot be filled in later (Anglian, Wessex, Southern, South West and Welsh Water are
+  recorded ahead of their regions). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
   `/about` credit every polled feed. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
-  share one table. The footer credits Stream feeds and Scottish Water separately. South West Water uses other fields.
+  share one table. The footer credits Stream feeds, Scottish Water and Welsh Water separately. South West Water's
+  Stream fields are camelCase, so `OverflowMonitorData::fromArcGis()` matches names case-insensitively. Some services
+  return fewer records per page than asked for (Anglian and Southern Water stop at 1,000), so paging moves on by what
+  came back. Hafren Dyfrdwy publishes no live feed.
   Most Stream companies refresh every monitor's `LastUpdated` on each publish, but Northumbrian Water only moves it
   when a monitor's status changes, so its feed is marked `updated_on_change`: while anything in the feed changed in the
   last 48 hours (`SyncOverflowMonitors::QUIET_FEED_HOURS`), each read sets its monitors' `source_updated_at` to the read
-  time; past that they keep their own times and go stale. Southern Water behaves the same way. Check a new company's
+  time; past that they keep their own times and go stale. Southern Water and Welsh Water behave the same way. Check a new company's
   feed for the same behaviour.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).

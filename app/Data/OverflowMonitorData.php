@@ -38,21 +38,64 @@ final readonly class OverflowMonitorData
     }
 
     /**
+     * Stream feeds share their fields, but not always their case: South West Water's are camelCase ("receivingWaterCourse"),
+     * so names are matched case-insensitively.
+     *
      * @param  array<string, mixed>  $attributes  A feature's attributes from the ArcGIS feed
      */
     public static function fromArcGis(array $attributes): self
     {
+        $attributes = array_change_key_case($attributes, CASE_LOWER);
+
         return new self(
-            externalId: (string) $attributes['Id'],
-            company: (string) ($attributes['Company'] ?? 'Unknown'),
-            receivingWatercourse: self::cleanWatercourse($attributes['ReceivingWaterCourse'] ?? null),
-            latitude: (float) $attributes['Latitude'],
-            longitude: (float) $attributes['Longitude'],
-            status: OverflowStatus::tryFrom((int) ($attributes['Status'] ?? 0)) ?? OverflowStatus::Offline,
-            statusStartedAt: self::fromEpochMillis($attributes['StatusStart'] ?? null),
-            latestEventStartedAt: self::fromEpochMillis($attributes['LatestEventStart'] ?? null),
-            latestEventEndedAt: self::fromEpochMillis($attributes['LatestEventEnd'] ?? null),
-            sourceUpdatedAt: self::fromEpochMillis($attributes['LastUpdated'] ?? null),
+            externalId: (string) $attributes['id'],
+            company: (string) ($attributes['company'] ?? 'Unknown'),
+            receivingWatercourse: self::cleanWatercourse($attributes['receivingwatercourse'] ?? null),
+            latitude: (float) $attributes['latitude'],
+            longitude: (float) $attributes['longitude'],
+            status: OverflowStatus::tryFrom((int) ($attributes['status'] ?? 0)) ?? OverflowStatus::Offline,
+            statusStartedAt: self::fromEpochMillis($attributes['statusstart'] ?? null),
+            latestEventStartedAt: self::fromEpochMillis($attributes['latesteventstart'] ?? null),
+            latestEventEndedAt: self::fromEpochMillis($attributes['latesteventend'] ?? null),
+            sourceUpdatedAt: self::fromEpochMillis($attributes['lastupdated'] ?? null),
+        );
+    }
+
+    /**
+     * Dŵr Cymru Welsh Water's storm overflow map gives each overflow's status in words ("Overflow Operating", "Overflow
+     * Not Operating", "Overflow Not Operating (Has in the last 24 hours)", "Under Investigation") and its latest
+     * discharge as UK local times without an offset. Its ids already carry a company prefix (DCWW1003). Each record's
+     * EditDate only moves when it changes, so the feed is marked updated_on_change.
+     *
+     * @param  array<string, mixed>  $attributes  A feature's attributes from the map's feature service
+     * @param  array{x?: mixed, y?: mixed}  $geometry  The feature's point in WGS84
+     */
+    public static function fromWelshWater(array $attributes, array $geometry): self
+    {
+        $description = (string) ($attributes['status'] ?? '');
+        $status = match (true) {
+            $description === 'Overflow Operating' => OverflowStatus::Discharging,
+            str_starts_with($description, 'Overflow Not Operating') => OverflowStatus::NotDischarging,
+            default => OverflowStatus::Offline,
+        };
+        $latestEventStartedAt = self::fromLocalTime($attributes['start_date_time_discharge'] ?? null);
+        $latestEventEndedAt = self::fromLocalTime($attributes['stop_date_time_discharge'] ?? null);
+
+        return new self(
+            externalId: (string) $attributes['DCWW_ID'],
+            company: 'Dŵr Cymru Welsh Water',
+            receivingWatercourse: self::cleanWatercourse($attributes['Receiving_Water'] ?? null),
+            latitude: (float) ($geometry['y'] ?? 0),
+            longitude: (float) ($geometry['x'] ?? 0),
+            status: $status,
+            statusStartedAt: match ($status) {
+                OverflowStatus::Discharging => $latestEventStartedAt,
+                OverflowStatus::NotDischarging => $latestEventEndedAt,
+                OverflowStatus::Offline => null,
+            },
+            latestEventStartedAt: $latestEventStartedAt,
+            latestEventEndedAt: $status === OverflowStatus::Discharging ? null : $latestEventEndedAt,
+            sourceUpdatedAt: self::fromEpochMillis($attributes['EditDate'] ?? null),
         );
     }
 
@@ -100,6 +143,15 @@ final readonly class OverflowMonitorData
         }
 
         return Carbon::parse($value)->utc();
+    }
+
+    private static function fromLocalTime(mixed $value): ?Carbon
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return Carbon::parse($value, 'Europe/London')->utc();
     }
 
     private static function fromEpochMillis(mixed $value): ?Carbon

@@ -42,7 +42,9 @@ class StormOverflowClient implements OverflowFeedReader
                 $monitors->push(OverflowMonitorData::fromArcGis($feature['attributes']));
             }
 
-            $offset += self::PAGE_SIZE;
+            // A service can return fewer than asked for per page (Anglian and Southern Water stop at 1,000), so the next
+            // page starts after what actually came back.
+            $offset += count($features);
             $hasMore = (bool) $response->json('exceededTransferLimit', false) || count($features) === self::PAGE_SIZE;
         } while ($hasMore && count($features) > 0);
 

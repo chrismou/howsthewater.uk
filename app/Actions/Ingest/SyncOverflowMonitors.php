@@ -10,6 +10,7 @@ use App\Models\SpillEvent;
 use App\Services\ScottishWater\OverflowEventClient;
 use App\Services\Stream\OverflowFeedReader;
 use App\Services\Stream\StormOverflowClient;
+use App\Services\WelshWater\StormOverflowMapClient;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -29,7 +30,7 @@ class SyncOverflowMonitors
      */
     public const QUIET_FEED_HOURS = 48;
 
-    public function __construct(private StormOverflowClient $stream, private OverflowEventClient $scottishWater)
+    public function __construct(private StormOverflowClient $stream, private OverflowEventClient $scottishWater, private StormOverflowMapClient $welshWater)
     {
     }
 
@@ -86,12 +87,13 @@ class SyncOverflowMonitors
     }
 
     /**
-     * Stream feeds share one set of fields; Scottish Water publishes its own API.
+     * Stream feeds share one set of fields; Scottish Water publishes its own API and Welsh Water its own map.
      */
     private function readerFor(string $driver): OverflowFeedReader
     {
         return match ($driver) {
             'scottish_water' => $this->scottishWater,
+            'welsh_water' => $this->welshWater,
             default => $this->stream,
         };
     }

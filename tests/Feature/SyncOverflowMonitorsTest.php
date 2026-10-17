@@ -279,3 +279,94 @@ it('reads Scottish Water\'s own API into the same monitors and spill events', fu
         ->and($monitors['SWCSO000010']->receiving_watercourse)->toBeNull()
         ->and($monitors['SWCSO000007']->source_updated_at->getTimestampMs())->toBe(1792098080000);
 });
+
+it('reads Stream feeds whose field names are in another case, and pages through services that return fewer per page', function () {
+    config(['services.overflow_feeds' => [
+        'south_west_water' => ['name' => 'South West Water', 'driver' => 'stream', 'url' => 'https://south-west.test/FeatureServer/0'],
+        'anglian_water' => ['name' => 'Anglian Water', 'driver' => 'stream', 'url' => 'https://anglian.test/FeatureServer/0'],
+    ]]);
+    $anglianPage = fn (int $from, int $count) => collect(range($from, $from + $count - 1))
+        ->map(fn (int $number) => arcGisFeature(['Id' => sprintf('AWS%05d', $number), 'Company' => 'Anglian Water Services']))->all();
+
+    Http::fake([
+        'south-west.test/*' => Http::response(['features' => [['attributes' => [
+            'Id' => 'SBB00407', 'company' => 'South West Water', 'status' => 1, 'statusStart' => 1791274345000,
+            'latestEventStart' => 1791274345000, 'latestEventEnd' => null, 'latitude' => 50.514064, 'longitude' => -4.826458,
+            'receivingWaterCourse' => 'CAMEL ESTUARY (E)', 'lastUpdated' => 1792270800000,
+        ]]]]),
+        // The service stops at 1,000 a page, below the 2,000 asked for, and says there is more.
+        'anglian.test/*' => fn ($request) => (int) ($request->data()['resultOffset'] ?? 0) === 0
+            ? Http::response(['features' => $anglianPage(1, 1000), 'exceededTransferLimit' => true])
+            : Http::response(['features' => $anglianPage(1001, 439), 'exceededTransferLimit' => false]),
+    ]);
+
+    app(SyncOverflowMonitors::class)->handle();
+
+    $southWest = OverflowMonitor::query()->where('external_id', 'SBB00407')->sole();
+
+    expect($southWest->status)->toBe(OverflowStatus::Discharging)
+        ->and($southWest->receiving_watercourse)->toBe('CAMEL ESTUARY (E)')
+        ->and($southWest->latitude)->toBe(50.514064)
+        ->and($southWest->spillEvents()->sole()->ended_at)->toBeNull()
+        ->and(OverflowMonitor::query()->where('company', 'Anglian Water Services')->count())->toBe(1439);
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'anglian.test') && ($request->data()['resultOffset'] ?? null) === 1000);
+});
+
+/**
+ * One overflow from Dŵr Cymru Welsh Water's storm overflow map feature service.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array{attributes: array<string, mixed>, geometry: array{x: float, y: float}}
+ */
+function welshWaterFeature(array $overrides = []): array
+{
+    return [
+        'attributes' => array_merge([
+            'DCWW_ID' => 'DCWW1096',
+            'status' => 'Overflow Not Operating',
+            'start_date_time_discharge' => '2026-10-15T23:15:00',
+            'stop_date_time_discharge' => '2026-10-15T23:30:00',
+            'Receiving_Water' => 'Cyt Bach',
+            'EditDate' => 1792266012452,
+        ], $overrides),
+        'geometry' => ['x' => -4.129494606604582, 'y' => 52.92994061011652],
+    ];
+}
+
+it('reads Dŵr Cymru Welsh Water\'s storm overflow map, whose statuses are words and times are UK local time', function () {
+    $this->travelTo('2026-10-17 22:00:00');
+    config(['services.overflow_feeds' => [
+        'welsh_water' => ['name' => 'Dŵr Cymru Welsh Water', 'driver' => 'welsh_water', 'url' => 'https://welsh-water.test/FeatureServer/0', 'updated_on_change' => true],
+    ]]);
+    Http::fake([
+        'welsh-water.test/*' => Http::response(['features' => [
+            welshWaterFeature(),
+            welshWaterFeature(['DCWW_ID' => 'DCWW1003', 'status' => 'Overflow Operating', 'start_date_time_discharge' => '2026-10-09T07:00:00', 'stop_date_time_discharge' => null]),
+            welshWaterFeature(['DCWW_ID' => 'DCWW1027', 'status' => 'Overflow Not Operating (Has in the last 24 hours)']),
+            welshWaterFeature(['DCWW_ID' => 'DCWW1246', 'status' => 'Under Investigation', 'start_date_time_discharge' => null, 'stop_date_time_discharge' => null]),
+            welshWaterFeature(['DCWW_ID' => null]),
+        ]]),
+    ]);
+
+    $result = app(SyncOverflowMonitors::class)->handle();
+    $monitors = OverflowMonitor::query()->get()->keyBy('external_id');
+
+    expect($result['failed'])->toBe([])
+        ->and($monitors->keys()->sort()->values()->all())->toBe(['DCWW1003', 'DCWW1027', 'DCWW1096', 'DCWW1246'])
+        ->and($monitors['DCWW1096']->company)->toBe('Dŵr Cymru Welsh Water')
+        ->and($monitors['DCWW1096']->status)->toBe(OverflowStatus::NotDischarging)
+        ->and($monitors['DCWW1096']->latitude)->toEqualWithDelta(52.929941, 0.000001)
+        ->and($monitors['DCWW1096']->longitude)->toEqualWithDelta(-4.129495, 0.000001)
+        ->and($monitors['DCWW1096']->receiving_watercourse)->toBe('Cyt Bach')
+        // 23:15 British Summer Time.
+        ->and($monitors['DCWW1096']->spillEvents()->sole()->started_at->toIso8601String())->toBe('2026-10-15T22:15:00+00:00')
+        ->and($monitors['DCWW1096']->spillEvents()->sole()->ended_at->toIso8601String())->toBe('2026-10-15T22:30:00+00:00')
+        ->and($monitors['DCWW1003']->status)->toBe(OverflowStatus::Discharging)
+        ->and($monitors['DCWW1003']->status_started_at->toIso8601String())->toBe('2026-10-09T06:00:00+00:00')
+        ->and($monitors['DCWW1003']->spillEvents()->sole()->ended_at)->toBeNull()
+        ->and($monitors['DCWW1027']->status)->toBe(OverflowStatus::NotDischarging)
+        ->and($monitors['DCWW1246']->status)->toBe(OverflowStatus::Offline)
+        ->and($monitors['DCWW1246']->spillEvents()->exists())->toBeFalse()
+        // The record was last edited the same day, so the read confirms it (updated_on_change).
+        ->and($monitors['DCWW1096']->source_updated_at->toDateTimeString())->toBe('2026-10-17 22:00:00');
+});

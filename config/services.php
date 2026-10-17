@@ -96,6 +96,18 @@ return [
             // Like Northumbrian Water, LastUpdated only moves when a monitor's status changes.
             'updated_on_change' => true,
         ],
+        'south_west_water' => [
+            'name' => 'South West Water',
+            'driver' => 'stream',
+            'url' => env('STREAM_SOUTH_WEST_WATER_URL', 'https://services-eu1.arcgis.com/OMdMOtfhATJPcHe3/arcgis/rest/services/NEH_outlets_PROD/FeatureServer/0'),
+        ],
+        'welsh_water' => [
+            'name' => 'Dŵr Cymru Welsh Water',
+            'driver' => 'welsh_water',
+            'url' => env('WELSH_WATER_OVERFLOWS_URL', 'https://services3.arcgis.com/KLNF7YxtENPLYVey/arcgis/rest/services/Spill_Prod__External/FeatureServer/0'),
+            // EditDate only moves when an overflow's record changes.
+            'updated_on_change' => true,
+        ],
         'scottish_water' => [
             'name' => 'Scottish Water',
             'driver' => 'scottish_water',

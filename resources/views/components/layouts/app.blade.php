@@ -196,6 +196,9 @@
             @if ($overflowFeeds->contains('driver', 'scottish_water'))
                 Overflow data from Scottish Water.
             @endif
+            @if ($overflowFeeds->contains('driver', 'welsh_water'))
+                Overflow data from Dŵr Cymru Welsh Water.
+            @endif
             River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
             Weather forecasts from <a href="https://open-meteo.com/" rel="noopener" class="underline hover:text-ink">Open-Meteo</a>, CC BY 4.0.
             <a href="{{ route('about') }}" class="underline hover:text-ink">About the data and how it works</a>.
