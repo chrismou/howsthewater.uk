@@ -100,11 +100,20 @@ class SyncOverflowMonitors
     }
 
     /**
+     * A feed can list one monitor twice (Anglian Water has AWS00528 twice, word for word), which would otherwise be
+     * inserted twice and fail the whole feed on the unique id, so each id is synced once, from its most recently
+     * updated record.
+     *
      * @param  Collection<int, OverflowMonitorData>  $monitors
      * @return array{monitors: int, monitors_added: int, events_opened: int, events_closed: int}
      */
     public function sync(Collection $monitors): array
     {
+        $monitors = $monitors
+            ->sortBy(fn (OverflowMonitorData $data) => $data->sourceUpdatedAt?->getTimestampMs() ?? 0)
+            ->keyBy('externalId')
+            ->values();
+
         $existing = OverflowMonitor::query()
             ->with('openSpillEvents')
             ->get()

@@ -418,3 +418,17 @@ it('records when a monitor goes offline and when it comes back, and keeps a name
     expect($monitor->offlinePeriods()->sole()->ended_at->toDateTimeString())->toBe(now()->toDateTimeString())
         ->and($monitor->fresh()->displayName())->toBe('Ellerton CSO');
 });
+
+it('syncs a monitor a feed lists twice once, from its latest record, rather than failing the feed', function () {
+    Http::fake(['services-eu1.arcgis.com/*' => Http::response(['features' => [
+        arcGisFeature(['Id' => 'YWS00528', 'Status' => 1, 'LatestEventEnd' => null, 'LastUpdated' => 1760002000000]),
+        arcGisFeature(['Id' => 'YWS00528', 'Status' => 0, 'LastUpdated' => 1760001000000]),
+        arcGisFeature(['Id' => 'YWS00529']),
+    ]])]);
+
+    $result = app(SyncOverflowMonitors::class)->handle();
+
+    expect($result['failed'])->toBe([])
+        ->and($result['monitors'])->toBe(2)
+        ->and(OverflowMonitor::query()->where('external_id', 'YWS00528')->sole()->status)->toBe(OverflowStatus::Discharging);
+});
