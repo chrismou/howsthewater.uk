@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -32,6 +33,7 @@ use Illuminate\Support\Carbon;
  * @property-read GaugeStation|null $gaugeStation
  * @property-read RainfallStation|null $rainfallStation
  * @property-read Collection<int, FloodArea> $floodAreas
+ * @property-read ShareImage|null $shareImage
  */
 class Spot extends Model
 {
@@ -114,5 +116,15 @@ class Spot extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('is_published', true);
+    }
+
+    /**
+     * The card social sites show when this page is shared, once GenerateShareImages has drawn it.
+     *
+     * @return MorphOne<ShareImage, $this>
+     */
+    public function shareImage(): MorphOne
+    {
+        return $this->morphOne(ShareImage::class, 'shareable');
     }
 }

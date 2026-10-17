@@ -449,6 +449,13 @@ replacing the local database with a copy of live rather than backfilling.
   arrays in `@php`, not inside `{!! !!}`, where Blade reads the "@context" key as a directive.
 - Breadcrumb JSON-LD follows the URL (Home, region, Rivers, Beaches or Lakes, river, place). The visible trail's first link goes to
   the matching hub (All rivers, All beaches, All lakes) rather than the home page.
+- Spot, river, beach and lake pages share their own card (`og:image`, 1200 by 630): `share-images:generate`
+  (`GenerateShareImages`, run on every deploy) draws it with GD (`ShareCardRenderer`, TTF copies of the site fonts in
+  `resources/fonts`) from what `ShareCards` says: the place, where it is and what the page covers, with the river's
+  line and its spots, or Britain with a pin (`resources/geo`, Natural Earth). Never live status: social sites keep a
+  card for days. A card is only redrawn when its fingerprint changes, and the file name carries the fingerprint, so
+  bump `ShareCardRenderer::VERSION` whenever the drawing changes. Cards live on the public disk under `share/`, rows in
+  `share_images`; pages fall back to `og-image.png` until theirs is drawn.
 - Spot, beach and lake pages end with a Nearby section (`NearbyPlaceFinder`, `components/nearby-places`): on spots the
   next spot up and down the river by distance along it (following a main river into the one it flows into, and up main
   rivers that join just above), then up to two beaches or lakes within 20 km; on beaches and lakes the three nearest

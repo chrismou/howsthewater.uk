@@ -36,6 +36,9 @@ class RiverController extends Controller
     {
         abort_if($river->isTributary(), 404);
 
-        return view('rivers.show', ['overview' => $overview->for($river->setRelation('region', $region))]);
+        return view('rivers.show', [
+            'overview' => $overview->for($river->setRelation('region', $region)),
+            'shareImage' => $river->shareImage,
+        ]);
     }
 }

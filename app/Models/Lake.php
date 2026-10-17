@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -31,6 +32,7 @@ use Illuminate\Support\Carbon;
  * @property-read Region $region
  * @property-read GaugeStation|null $gaugeStation
  * @property-read Collection<int, BathingWater> $bathingWaters
+ * @property-read ShareImage|null $shareImage
  */
 class Lake extends Model
 {
@@ -103,5 +105,15 @@ class Lake extends Model
     private function matchName(): string
     {
         return (string) preg_replace('/ Ponds$/', '', $this->name);
+    }
+
+    /**
+     * The card social sites show when this page is shared, once GenerateShareImages has drawn it.
+     *
+     * @return MorphOne<ShareImage, $this>
+     */
+    public function shareImage(): MorphOne
+    {
+        return $this->morphOne(ShareImage::class, 'shareable');
     }
 }

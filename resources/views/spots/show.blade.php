@@ -54,7 +54,7 @@
     $breadcrumbs = [['All rivers', route('hubs.rivers')], [$spot->river->region->name, route('regions.show', $spot->river->region)], ['Rivers', route('rivers.index', $spot->river->region)], [$spot->river->name, route('rivers.show', [$spot->river->region, $spot->river])], [$spot->name, route('spots.show', [$spot->river->region, $spot->river, $spot])]];
 @endphp
 
-<x-layouts.app :date-modified="$conditions->dataUpdatedAt" :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$title"
+<x-layouts.app :share-image="$shareImage" :date-modified="$conditions->dataUpdatedAt" :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$title"
                :description="$description"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->spot($spot, $spot->river, $spot->river->region)">

@@ -32,6 +32,7 @@ class LakeController extends Controller
             'nearby' => $nearby->forLake($lake),
             'weather' => $weather->forecast($lake->latitude, $lake->longitude),
             'sun' => $weather->sunTimes($lake->latitude, $lake->longitude),
+            'shareImage' => $lake->shareImage,
         ]);
     }
 }

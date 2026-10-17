@@ -18,7 +18,7 @@
         ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $overview->river->name);
 @endphp
 
-<x-layouts.app :date-modified="$overview->dataUpdatedAt()" :region="$overview->river->region" :feed="route('rivers.feed', [$overview->river->region, $overview->river])" :title="$title"
+<x-layouts.app :share-image="$shareImage" :date-modified="$overview->dataUpdatedAt()" :region="$overview->river->region" :feed="route('rivers.feed', [$overview->river->region, $overview->river])" :title="$title"
                :description="'Upstream storm overflow spills, river levels and rainfall for every swimming, paddling and fishing spot on the '.$overview->river->name.', source to mouth.'"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->riverPage($overview->river, $overview->river->region)">

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -55,6 +56,7 @@ use Illuminate\Support\Carbon;
  * @property-read Spot|null $spot
  * @property-read Collection<int, BathingWaterSample> $samples
  * @property-read Collection<int, BathingWaterClassificationRecord> $classifications
+ * @property-read ShareImage|null $shareImage
  */
 class BathingWater extends Model
 {
@@ -186,5 +188,15 @@ class BathingWater extends Model
         $today = ($on ?? now())->copy()->timezone(config('app.display_timezone', 'Europe/London'))->toDateString();
 
         return $today >= $this->season_starts_on->toDateString() && $today <= $this->season_ends_on->toDateString();
+    }
+
+    /**
+     * The card social sites show when this page is shared, once GenerateShareImages has drawn it.
+     *
+     * @return MorphOne<ShareImage, $this>
+     */
+    public function shareImage(): MorphOne
+    {
+        return $this->morphOne(ShareImage::class, 'shareable');
     }
 }

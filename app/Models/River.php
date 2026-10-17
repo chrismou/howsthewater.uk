@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -33,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, River> $tributaries
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read ShareImage|null $shareImage
  */
 class River extends Model
 {
@@ -228,5 +230,15 @@ class River extends Model
         $centreline = $this->centreline;
 
         return end($centreline);
+    }
+
+    /**
+     * The card social sites show when this page is shared, once GenerateShareImages has drawn it.
+     *
+     * @return MorphOne<ShareImage, $this>
+     */
+    public function shareImage(): MorphOne
+    {
+        return $this->morphOne(ShareImage::class, 'shareable');
     }
 }

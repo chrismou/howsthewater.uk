@@ -73,3 +73,10 @@ after('artisan:rivers:centrelines', 'artisan:rivers:positions');
 // Cache keys carry a hash of the cached classes, so the new release warms its own entries before it goes live while
 // the old release keeps serving from its own. No cache:clear, which would leave the old release cold meanwhile.
 after('artisan:rivers:positions', 'artisan:regions:refresh');
+
+// Share cards are drawn only for places whose card has changed, so most deploys draw none; a change to how cards are
+// drawn redraws all of them (about 800, a few minutes), hence the longer timeout.
+task('artisan:share-images:generate', function () {
+    run('{{bin/php}} {{release_or_current_path}}/artisan share-images:generate', timeout: 1800);
+})->desc('Draw share cards for new or changed spots, rivers, beaches and lakes');
+after('artisan:regions:refresh', 'artisan:share-images:generate');

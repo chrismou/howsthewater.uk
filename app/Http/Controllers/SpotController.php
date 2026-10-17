@@ -30,6 +30,7 @@ class SpotController extends Controller
             'nearby' => $nearby->forSpot($spot),
             'weather' => $weather->forecast($spot->latitude, $spot->longitude),
             'sun' => $weather->sunTimes($spot->latitude, $spot->longitude),
+            'shareImage' => $spot->shareImage,
         ]);
     }
 

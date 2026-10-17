@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'noindex' => false, 'pageType' => 'WebPage', 'dateModified' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => [], 'structuredData' => []])
+@props(['title' => null, 'description' => null, 'noindex' => false, 'pageType' => 'WebPage', 'dateModified' => null, 'region' => null, 'liveSummary' => null, 'feed' => null, 'hero' => null, 'after' => null, 'breadcrumbs' => [], 'structuredData' => [], 'shareImage' => null])
 
 @php
     // The live bar shows the summary a page passes (the home page passes every region combined), else the page's
@@ -7,8 +7,10 @@
     $liveRegion = $region ?? $allRegions->sortBy('id')->first();
     $liveSummary ??= $liveRegion ? app(\App\Services\Conditions\RegionSummaries::class)->for($liveRegion) : null;
     $menus = app(\App\Services\Conditions\NavigationMenus::class)->all();
-    // The share image is the same everywhere, so its description is too.
-    $ogImageAlt = "How's the Water? What's the river doing right now? Storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots, every 15 minutes.";
+    // Spot, river, beach and lake pages pass their own card (GenerateShareImages); every other page, or one whose
+    // card is not drawn yet, shares the site's.
+    $ogImage = $shareImage?->url() ?? asset('og-image.png');
+    $ogImageAlt = $shareImage?->alt ?? "How's the Water? What's the river doing right now? Storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots, every 15 minutes.";
     // Built from the route and its bound models, so /Yorkshire (which the case-insensitive database still finds)
     // names /yorkshire as canonical.
     $currentRoute = request()->route();
@@ -44,7 +46,7 @@
     <meta property="og:title" content="{{ $pageTitle }}">
     <meta property="og:description" content="{{ $pageDescription }}">
     <meta property="og:url" content="{{ $canonical }}">
-    <meta property="og:image" content="{{ asset('og-image.png') }}">
+    <meta property="og:image" content="{{ $ogImage }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="{{ $ogImageAlt }}">
@@ -52,7 +54,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $pageTitle }}">
     <meta name="twitter:description" content="{{ $pageDescription }}">
-    <meta name="twitter:image" content="{{ asset('og-image.png') }}">
+    <meta name="twitter:image" content="{{ $ogImage }}">
     <meta name="twitter:image:alt" content="{{ $ogImageAlt }}">
     {{--
         The page as one schema.org graph (see App\Services\StructuredData): a WebPage (or AboutPage) node for this URL,

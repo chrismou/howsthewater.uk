@@ -29,7 +29,7 @@
         ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $beach->beachSearchName());
 @endphp
 
-<x-layouts.app :date-modified="$overflows->dataUpdatedAt" :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$title"
+<x-layouts.app :share-image="$shareImage" :date-modified="$overflows->dataUpdatedAt" :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$title"
                :description="$beach->agency->label().($beach->agency === \App\Enums\Agency::Sepa ? ' classification and sample results' : ' classification, samples and pollution forecasts').' for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->beach($beach, $region)">

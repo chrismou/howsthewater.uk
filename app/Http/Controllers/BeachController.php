@@ -30,6 +30,7 @@ class BeachController extends Controller
             'nearby' => $nearby->forBeach($beach->setRelation('region', $region)),
             'weather' => $weather->forecast($beach->latitude, $beach->longitude),
             'sun' => $weather->sunTimes($beach->latitude, $beach->longitude),
+            'shareImage' => $beach->shareImage,
         ]);
     }
 }

@@ -26,7 +26,7 @@
     $breadcrumbs = [['All lakes', route('hubs.lakes')], [$region->name, route('regions.show', $region)], ['Lakes', route('lakes.index', $region)], [$lake->name, route('lakes.show', [$region, $lake])]];
 @endphp
 
-<x-layouts.app :date-modified="$overflows->dataUpdatedAt" :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
+<x-layouts.app :share-image="$shareImage" :date-modified="$overflows->dataUpdatedAt" :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
                :description="'Bathing water results, lake level, rainfall and storm overflows nearby for swimming and paddling at '.$lake->name.'.'"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->lake($lake, $region)">
