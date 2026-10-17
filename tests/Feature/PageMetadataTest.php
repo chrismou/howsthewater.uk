@@ -143,7 +143,12 @@ it('says when monitors are offline or their data is old, and never counts offlin
     $this->get(route('beaches.show', [$region, $beach]))
         ->assertOk()
         ->assertSeeText('Overflow data is out of date: the latest from Northumbrian Water is from 24 September.')
-        ->assertDontSeeText('No spills reported within 3 km');
+        ->assertDontSeeText('No spills reported within 3 km')
+        // The badge and the monitor's row say the data is old too, rather than an old "no spills" or "not discharging".
+        ->assertSeeText('Overflow data out of date')
+        ->assertSeeText('No recent report, 24 Sep')
+        ->assertDontSeeText('No spills reported nearby')
+        ->assertDontSeeText('Not discharging');
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
@@ -176,6 +181,13 @@ it('names the lowercase route as canonical, keeps search and missing pages out o
     $this->get(route('search', ['q' => 'otley']))->assertSee('<meta name="robots" content="noindex">', false)->assertDontSee('rel="canonical"', false);
     $this->get('/nowhere-at-all')->assertNotFound()->assertSee('<meta name="robots" content="noindex">', false);
 
+    foreach (['about', 'privacy', 'terms'] as $page) {
+        $this->get(route($page))->assertOk()
+            ->assertSee('<link rel="canonical" href="'.route($page).'">', false)
+            ->assertSee('<meta property="og:url" content="'.route($page).'">', false)
+            ->assertDontSee('?view=', false);
+    }
+
     $this->get(route('sitemap'))
         ->assertSee('<loc>'.route('rivers.index', $region).'</loc>', false)
         ->assertSee('<loc>'.route('beaches.index', $region).'</loc>', false)
@@ -187,8 +199,31 @@ it('asks training-only AI crawlers to stay away and leaves search and answer cra
     $groups = collect(preg_split('/\n\s*\n/', $robots));
     $blocked = $groups->first(fn (string $group) => str_contains($group, 'User-agent: GPTBot'));
 
-    expect($blocked)->toContain('User-agent: ClaudeBot')->toContain('User-agent: Google-Extended')->toContain('Disallow: /')
-        ->and($blocked)->not->toContain('OAI-SearchBot')->not->toContain('PerplexityBot')->not->toContain('Googlebot')
+    // Google-Extended also controls Gemini's grounding, so it is not training-only and stays welcome.
+    expect($blocked)->toContain('User-agent: ClaudeBot')->toContain('Disallow: /')
+        ->and($blocked)->not->toContain('OAI-SearchBot')->not->toContain('PerplexityBot')->not->toContain('Googlebot')->not->toContain('User-agent: Google-Extended')
         ->and($robots)->toContain("User-agent: *\nDisallow:\n")
         ->and($robots)->toContain('Sitemap: https://howsthewater.uk/sitemap.xml');
+});
+
+it('never skips a heading level on place and listing pages', function () {
+    $region = Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+    $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe', 'slug' => 'wharfe']);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'name' => 'Ilkley', 'slug' => 'ilkley']);
+    $beach = BathingWater::factory()->create(['region_id' => $region->id]);
+    $lake = Lake::factory()->create(['region_id' => $region->id]);
+
+    $pages = [route('home'), route('regions.show', $region), route('rivers.index', $region), route('rivers.show', [$region, $river]),
+        route('spots.show', [$region, $river, $spot]), route('beaches.show', [$region, $beach]), route('lakes.show', [$region, $lake])];
+
+    foreach ($pages as $page) {
+        preg_match_all('/<h([1-6])\b/', $this->get($page)->assertOk()->getContent(), $matches);
+        $levels = array_map('intval', $matches[1]);
+
+        expect($levels[0] ?? null)->toBe(1, "{$page} starts with an h1");
+
+        foreach (array_slice($levels, 1, null, true) as $index => $level) {
+            expect($level)->toBeLessThanOrEqual($levels[$index - 1] + 1, "{$page} jumps from h{$levels[$index - 1]} to h{$level}");
+        }
+    }
 });

@@ -12,9 +12,11 @@
  * block below swaps every token at once without touching the markup.
  */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Bricolage Grotesque', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    /* Each "fallback" face is a local font resized to match its web font (written by fontaine at build time), so text
+       barely moves when the web font swaps in. */
+    --font-sans: 'Instrument Sans', 'Instrument Sans fallback', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque fallback', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'IBM Plex Mono fallback', ui-monospace, SFMono-Regular, Menlo, monospace;
 
     /* Surfaces and text */
     --color-ground: #f6f3ec;

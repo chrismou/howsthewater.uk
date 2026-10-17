@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\BathingWaterClassification;
+use App\Enums\BathingWaterKind;
 use App\Enums\FloodSeverity;
 use App\Enums\OverflowStatus;
 use App\Models\BathingWater;
@@ -7,6 +9,7 @@ use App\Models\FloodArea;
 use App\Models\FloodWarning;
 use App\Models\GaugeReading;
 use App\Models\GaugeStation;
+use App\Models\Lake;
 use App\Models\OverflowMonitor;
 use App\Models\RainfallReading;
 use App\Models\RainfallStation;
@@ -15,6 +18,7 @@ use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
 use App\Models\WeatherForecast;
+use App\Services\Conditions\ConditionsCache;
 use App\Services\Conditions\PlaceHeadline;
 use App\Services\Conditions\SpotConditionsService;
 use App\Services\Conditions\WaterBodyConditionsService;
@@ -26,6 +30,13 @@ function headlineSpot(): Spot
     $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe', 'slug' => 'wharfe']);
 
     return Spot::factory()->create(['river_id' => $river->id, 'name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 50000, 'latitude' => 53.92, 'longitude' => -1.82]);
+}
+
+function headlineSpotWithoutBathingWater(): Spot
+{
+    $river = River::factory()->create(['region_id' => Region::factory()->create()->id]);
+
+    return Spot::factory()->create(['river_id' => $river->id, 'river_metres' => 50000]);
 }
 
 function spotHeadline(Spot $spot): string
@@ -65,6 +76,17 @@ it('says a quiet couple of days plainly, and qualifies it when the month was bus
     }
 
     expect(spotHeadline($spot))->toBe('No spills reported upstream in the last 48 hours, but spills on 3 of the last 30 days.');
+});
+
+it('leads with how few monitors are reporting when half or more are offline, rather than with no spills', function () {
+    $spot = headlineSpot();
+
+    foreach ([OverflowStatus::NotDischarging, OverflowStatus::Offline, OverflowStatus::Offline] as $index => $status) {
+        OverflowMonitor::factory()->create(['river_id' => $spot->river_id, 'river_metres' => 40000 + $index, 'status' => $status, 'source_updated_at' => now()]);
+    }
+
+    expect(spotHeadline($spot))->toStartWith('Only 1 of 3 monitors upstream is reporting, and it reported no spills in the last 48 hours.')
+        ->not->toContain('No spills reported');
 });
 
 it('says when the last spill ended, and how many there were', function () {
@@ -109,6 +131,12 @@ it('notes heavy rain that has fallen, and heavy rain and thunder in the forecast
         ->toContain('Heavy rain forecast from around '.$from(3).'.')
         // Wind does not speed a river up, so rivers get no wind note.
         ->not->toContain('Strong winds');
+
+    // A forecast note names its source and when it was read; the weather card gives that time a timezone too.
+    $this->get('/yorkshire/rivers/wharfe/ilkley')
+        ->assertOk()
+        ->assertSeeText('Forecast from Open-Meteo, read')
+        ->assertSeeInOrder(['from', 'Open-Meteo', 'updated', now()->timezone('Europe/London')->format('T')]);
 });
 
 it('gives beaches their classification, pollution forecast and a strong wind note', function () {
@@ -125,6 +153,35 @@ it('gives beaches their classification, pollution forecast and a strong wind not
 
     expect($headline)->toStartWith('Good bathing water (2025 classification). Normal pollution risk forecast today. No monitored overflows within 3 km.')
         ->toContain('Strong winds forecast, gusting to 42 mph: open water can get rough.');
+});
+
+it('leads a spot with its bathing water classification, so a Poor result is never below a quiet headline', function () {
+    $spot = headlineSpot();
+    BathingWater::factory()->kind(BathingWaterKind::River)->create(['region_id' => $spot->river->region_id, 'spot_id' => $spot->id, 'classification' => BathingWaterClassification::Poor, 'classification_year' => 2025]);
+
+    expect(spotHeadline($spot))->toStartWith('Poor bathing water (2025 classification). No monitored overflows upstream.')
+        ->and(spotHeadline(headlineSpotWithoutBathingWater()))->toStartWith('No monitored overflows upstream.');
+});
+
+it('leads a lake with its sites\' classifications, counting each when they differ', function () {
+    $region = Region::factory()->create(['name' => 'North West', 'slug' => 'north-west']);
+    $lake = Lake::factory()->create(['region_id' => $region->id, 'name' => 'Windermere', 'slug' => 'windermere']);
+    $site = fn (BathingWaterClassification $classification) => BathingWater::factory()->kind(BathingWaterKind::Lake)->create(['region_id' => $region->id, 'lake_id' => $lake->id, 'classification' => $classification, 'classification_year' => 2025]);
+    $headline = function () use ($lake) {
+        // Lake conditions are cached; each step adds a site.
+        app(ConditionsCache::class)->flush();
+
+        return app(PlaceHeadline::class)->forLake(app(WaterBodyConditionsService::class)->forLake($lake->fresh()), null)->plainText();
+    };
+
+    $site(BathingWaterClassification::Excellent);
+    expect($headline())->toStartWith('Excellent bathing water (2025 classification). No monitored overflows within 3 km.');
+
+    $site(BathingWaterClassification::Excellent);
+    expect($headline())->toStartWith('Excellent bathing water at all 2 sites (2025 classifications).');
+
+    $site(BathingWaterClassification::Poor);
+    expect($headline())->toStartWith('3 bathing water sites (2025 classifications): 2 Excellent, 1 Poor.');
 });
 
 it('puts the headline facts in bold on the page, with the source and time below', function () {

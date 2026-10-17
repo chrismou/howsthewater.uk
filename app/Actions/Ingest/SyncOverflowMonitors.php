@@ -22,6 +22,13 @@ use Throwable;
  */
 class SyncOverflowMonitors
 {
+    /**
+     * How long a feed that only edits monitors when they change can go without any edit before its monitors are
+     * treated as out of date. A dry spell has left Northumbrian Water's 1,500 or so monitors unedited for a day and a
+     * half.
+     */
+    public const QUIET_FEED_HOURS = 48;
+
     public function __construct(private StormOverflowClient $stream, private OverflowEventClient $scottishWater)
     {
     }
@@ -39,7 +46,8 @@ class SyncOverflowMonitors
 
         foreach (Region::overflowFeeds() as $key => $feed) {
             try {
-                $result = $this->sync($this->readerFor($feed['driver'])->all($feed['url']));
+                $monitors = $this->readerFor($feed['driver'])->all($feed['url']);
+                $result = $this->sync($feed['updated_on_change'] ? $this->confirmedAsRead($monitors) : $monitors);
             } catch (Throwable $exception) {
                 Log::error("Storm overflow feed {$key} failed: {$exception->getMessage()}");
                 $totals['failed'][] = $feed['name'];
@@ -55,6 +63,26 @@ class SyncOverflowMonitors
         }
 
         return $totals;
+    }
+
+    /**
+     * Northumbrian Water only moves a monitor's LastUpdated when its status changes, so a quiet monitor's time says
+     * when it last changed, not when the feed last confirmed it. While anything in the feed has changed within
+     * QUIET_FEED_HOURS, every monitor it returns is current as of this read; past that, the monitors keep their own
+     * times and pages show the data as out of date.
+     *
+     * @param  Collection<int, OverflowMonitorData>  $monitors
+     * @return Collection<int, OverflowMonitorData>
+     */
+    private function confirmedAsRead(Collection $monitors): Collection
+    {
+        $lastEdited = $monitors->max(fn (OverflowMonitorData $data) => $data->sourceUpdatedAt);
+
+        if ($lastEdited === null || $lastEdited->lessThan(now()->subHours(self::QUIET_FEED_HOURS))) {
+            return $monitors;
+        }
+
+        return $monitors->map(fn (OverflowMonitorData $data) => $data->withSourceUpdatedAt(now()));
     }
 
     /**

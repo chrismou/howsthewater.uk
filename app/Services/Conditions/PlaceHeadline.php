@@ -2,6 +2,7 @@
 
 namespace App\Services\Conditions;
 
+use App\Data\BathingWaterSummary;
 use App\Data\BeachConditions;
 use App\Data\FloodWarningSummary;
 use App\Data\Headline;
@@ -13,8 +14,10 @@ use App\Data\SpotConditions;
 use App\Data\UpstreamMonitorSummary;
 use App\Data\WeatherHour;
 use App\Data\WeatherSummary;
+use App\Enums\BathingWaterClassification;
 use App\Enums\LevelTrend;
 use App\Enums\SpillRecency;
+use App\Models\BathingWater;
 use App\Models\SpillEvent;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -48,43 +51,44 @@ class PlaceHeadline
         $covered = $conditions->spillRecency !== SpillRecency::NotCovered;
 
         $sentences = array_values(array_filter([
+            ...$this->bathingWaterSentences($conditions->bathingWater),
             $this->overflowSentence($conditions->spillRecency, 'upstream', $monitors->count(), $conditions->offlineCount, $conditions->dischargingNowCount, $conditions->spillsLast48HoursCount, $conditions->recentSpillEvents, $conditions->overflowDataIsStale(), $conditions->dataUpdatedAt, $this->companies($monitors)),
             $this->levelSentence('The '.$this->shortRiverName($river->name), $conditions->level),
             $this->floodSentence($conditions->floodWarnings),
         ]));
 
+        [$notes, $forecastAt] = $this->notes($conditions->rainfall, $weather, 'rivers can rise quickly and run faster, and overflows spill most after rain', windy: false);
+
         return new Headline(
             sentences: $sentences,
-            notes: $this->notes($conditions->rainfall, $weather, 'rivers can rise quickly and run faster, and overflows spill most after rain', windy: false),
+            notes: $notes,
             overflowSource: $covered && $monitors->isNotEmpty() ? $this->monitorCount($monitors, 'upstream') : null,
             overflowAt: $conditions->dataUpdatedAt,
             levelSource: $this->levelSource($conditions->level),
             levelAt: $conditions->level?->latestAt,
+            forecastAt: $forecastAt,
         );
     }
 
     public function forBeach(BeachConditions $conditions, ?WeatherSummary $weather): Headline
     {
-        $beach = $conditions->bathingWater->bathingWater;
         $overflows = $conditions->overflows;
-        $risk = $conditions->bathingWater->currentRisk();
 
         $sentences = array_values(array_filter([
-            $beach->classification === null ? null : [
-                [$beach->classification->value, true],
-                [' bathing water'.($beach->classification_year ? " ({$beach->classification_year} classification)." : '.'), false],
-            ],
-            $risk === null ? null : [[$risk->label().' today', true], ['.', false]],
+            ...$this->bathingWaterSentences($conditions->bathingWater),
             $this->overflowSentence($overflows->spillRecency, $this->within($overflows->radiusMetres), $overflows->monitors->count(), $overflows->offlineCount, $overflows->dischargingNowCount, $overflows->spillsLast48HoursCount, $overflows->recentSpillEvents, $overflows->isStale(), $overflows->dataUpdatedAt, $this->companies($overflows->monitors)),
         ]));
 
+        [$notes, $forecastAt] = $this->notes($conditions->rainfall, $weather, 'overflows spill most after rain, and it can lower water quality for a day or two', windy: true);
+
         return new Headline(
             sentences: $sentences,
-            notes: $this->notes($conditions->rainfall, $weather, 'overflows spill most after rain, and it can lower water quality for a day or two', windy: true),
+            notes: $notes,
             overflowSource: $overflows->isCovered() && $overflows->monitors->isNotEmpty() ? $this->monitorCount($overflows->monitors, $this->within($overflows->radiusMetres)) : null,
             overflowAt: $overflows->dataUpdatedAt,
             levelSource: null,
             levelAt: null,
+            forecastAt: $forecastAt,
         );
     }
 
@@ -93,18 +97,83 @@ class PlaceHeadline
         $overflows = $conditions->overflows;
 
         $sentences = array_values(array_filter([
+            $this->lakeClassificationSentence($conditions->bathingWaters),
             $this->overflowSentence($overflows->spillRecency, $this->within($overflows->radiusMetres), $overflows->monitors->count(), $overflows->offlineCount, $overflows->dischargingNowCount, $overflows->spillsLast48HoursCount, $overflows->recentSpillEvents, $overflows->isStale(), $overflows->dataUpdatedAt, $this->companies($overflows->monitors)),
             $this->levelSentence($conditions->lake->name, $conditions->level),
         ]));
 
+        [$notes, $forecastAt] = $this->notes($conditions->rainfall, $weather, 'overflows spill most after rain, and it can lower water quality for a day or two', windy: true);
+
         return new Headline(
             sentences: $sentences,
-            notes: $this->notes($conditions->rainfall, $weather, 'overflows spill most after rain, and it can lower water quality for a day or two', windy: true),
+            notes: $notes,
             overflowSource: $overflows->isCovered() && $overflows->monitors->isNotEmpty() ? $this->monitorCount($overflows->monitors, $this->within($overflows->radiusMetres)) : null,
             overflowAt: $overflows->dataUpdatedAt,
             levelSource: $this->levelSource($conditions->level),
             levelAt: $conditions->level?->latestAt,
+            forecastAt: $forecastAt,
         );
+    }
+
+    /**
+     * "Poor bathing water (2025 classification)." and today's pollution risk forecast while one is in force, for a
+     * beach or a spot with a designated bathing water. Nothing for a place without one.
+     *
+     * @return list<list<array{0: string, 1: bool}>|null>
+     */
+    private function bathingWaterSentences(?BathingWaterSummary $summary): array
+    {
+        $bathingWater = $summary?->bathingWater;
+        $risk = $summary?->currentRisk();
+
+        return [
+            $bathingWater?->classification === null ? null : [
+                [$bathingWater->classification->value, true],
+                [' bathing water'.($bathingWater->classification_year ? " ({$bathingWater->classification_year} classification)." : '.'), false],
+            ],
+            $risk === null ? null : [[$risk->label().' today', true], ['.', false]],
+        ];
+    }
+
+    /**
+     * A lake's bathing water classifications: as for a beach when it has one site or all its sites share one, else
+     * the count of sites per classification ("3 bathing water sites (2025 classifications): 2 Excellent, 1 Poor.").
+     *
+     * @param  Collection<int, BathingWaterSummary>  $sites
+     * @return list<array{0: string, 1: bool}>|null
+     */
+    private function lakeClassificationSentence(Collection $sites): ?array
+    {
+        $classified = $sites->map(fn (BathingWaterSummary $site) => $site->bathingWater)->filter(fn (BathingWater $site) => $site->classification !== null);
+
+        if ($classified->isEmpty()) {
+            return null;
+        }
+
+        $years = $classified->pluck('classification_year')->filter()->unique();
+        $year = $years->count() === 1 ? $years->first() : null;
+        $counts = $classified->countBy(fn (BathingWater $site) => $site->classification->value);
+
+        if ($counts->count() === 1) {
+            $sites = $classified->count() === 1 ? '' : " at all {$classified->count()} sites";
+
+            return [
+                [$counts->keys()->first(), true],
+                [" bathing water{$sites}".($year ? " ({$year} ".Str::plural('classification', $classified->count()).')' : '').'.', false],
+            ];
+        }
+
+        $breakdown = collect(BathingWaterClassification::cases())
+            ->filter(fn (BathingWaterClassification $classification) => $counts->has($classification->value))
+            ->map(fn (BathingWaterClassification $classification) => $counts[$classification->value].' '.$classification->value)
+            ->join(', ');
+
+        return [
+            ["{$classified->count()} bathing water sites", false],
+            [($year ? " ({$year} classifications)" : '').': ', false],
+            [$breakdown, true],
+            ['.', false],
+        ];
     }
 
     /**
@@ -143,6 +212,15 @@ class PlaceHeadline
         $offlineNote = $offline > 0 && $recency !== SpillRecency::Offline
             ? [[" {$offline} ".Str::plural('monitor', $offline).' '.($offline === 1 ? 'is' : 'are').' offline.', false]]
             : [];
+        $working = $monitorCount - $offline;
+
+        // With half or more offline, a quiet couple of days leads with how few are reporting, not with "no spills".
+        if ($recency === SpillRecency::None && $offline > 0 && $offline >= $working) {
+            return [
+                ["Only {$working} of {$monitorCount} monitors {$where} ".($working === 1 ? 'is' : 'are').' reporting', true],
+                [', and '.($working === 1 ? 'it' : 'they').' reported no spills in the last 48 hours.', false],
+            ];
+        }
 
         return [...match ($recency) {
             SpillRecency::NoData => [['No monitored overflows '.$where, true], ['.', false]],
@@ -233,9 +311,10 @@ class PlaceHeadline
 
     /**
      * Notes for rain that has fallen, and for heavy rain, thunder or (on open water) strong winds forecast in the
-     * next twelve hours. A quiet day has none.
+     * next twelve hours, with when the forecast behind any forecast note was read, for the source line. A quiet day
+     * has none.
      *
-     * @return list<list<array{0: string, 1: bool}>>
+     * @return array{0: list<list<array{0: string, 1: bool}>>, 1: Carbon|null}
      */
     private function notes(?RainfallSummary $rainfall, ?WeatherSummary $weather, string $rainEffect, bool $windy): array
     {
@@ -249,8 +328,10 @@ class PlaceHeadline
         }
 
         if ($weather === null || $weather->isStale()) {
-            return $notes;
+            return [$notes, null];
         }
+
+        $gaugeNotes = count($notes);
 
         $hours = collect([$weather->now])->concat($weather->laterHours)
             ->filter(fn (WeatherHour $hour) => $hour->at->lessThan($weather->now->at->copy()->addHours(self::FORECAST_HOURS)));
@@ -276,7 +357,7 @@ class PlaceHeadline
             $notes[] = [['Strong winds forecast', true], [', gusting to '.number_format($strongestGust, 0).' mph: open water can get rough.', false]];
         }
 
-        return $notes;
+        return [$notes, count($notes) > $gaugeNotes ? $weather->fetchedAt : null];
     }
 
     /**

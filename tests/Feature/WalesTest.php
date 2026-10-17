@@ -5,6 +5,8 @@ use App\Actions\Ingest\SyncBathingWaters;
 use App\Enums\Agency;
 use App\Enums\SpillRecency;
 use App\Models\BathingWater;
+use App\Models\GaugeReading;
+use App\Models\GaugeStation;
 use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
@@ -93,6 +95,41 @@ it('says overflow data is not available where we do not read the water company f
         ->assertSee("We do not read the water company's overflow data here yet, so storm overflows on the River Wye are not shown.", false)
         ->assertSee('<title>River Wye levels and swimming spots', false)
         ->assertDontSee('upstream monitors');
+});
+
+it('dates Welsh spots and their river and region in the sitemap from their gauges, as they have no overflow data', function () {
+    $wales = wales();
+    $river = River::factory()->create(['region_id' => $wales->id, 'name' => 'River Wye', 'slug' => 'wye']);
+    $station = GaugeStation::factory()->create(['river_id' => $river->id]);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'name' => 'Hay-on-Wye', 'slug' => 'hay-on-wye', 'gauge_station_id' => $station->id]);
+    $reading = GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subMinutes(20)->startOfMinute()]);
+    $lastmod = '<lastmod>'.$reading->measured_at->copy()->utc()->toAtomString().'</lastmod>';
+
+    $this->get(route('sitemap'))->assertOk()
+        ->assertSeeInOrder(['<loc>'.route('regions.show', $wales).'</loc>', $lastmod], false)
+        ->assertSeeInOrder(['<loc>'.route('rivers.show', [$wales, $river]).'</loc>', $lastmod], false)
+        ->assertSeeInOrder(['<loc>'.route('spots.show', [$wales, $river, $spot]).'</loc>', $lastmod], false);
+
+    $this->get(route('spots.show', [$wales, $river, $spot]))->assertSee('"dateModified":"'.$reading->measured_at->copy()->utc()->toIso8601String(), false);
+});
+
+it('names Dŵr Cymru Welsh Water and links its own overflow map wherever Welsh overflow data is not available', function () {
+    $wales = wales();
+    $river = River::factory()->create(['region_id' => $wales->id, 'name' => 'River Wye', 'slug' => 'wye']);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'name' => 'Hay-on-Wye', 'slug' => 'hay-on-wye']);
+    $beach = BathingWater::factory()->create(['region_id' => $wales->id, 'agency' => Agency::NaturalResourcesWales, 'name' => 'Penarth Beach', 'slug' => 'penarth-beach']);
+    $map = config('services.unread_overflow_maps.wales.url');
+
+    foreach ([route('spots.show', [$wales, $river, $spot]), route('beaches.show', [$wales, $beach]), route('rivers.show', [$wales, $river])] as $url) {
+        $this->get($url)->assertOk()
+            ->assertSeeText('Dŵr Cymru Welsh Water shows the live status of its overflows on its storm overflow map.')
+            ->assertSee('href="'.$map.'"', false);
+    }
+
+    // Once a region's feed is read, the map is no longer offered.
+    $yorkshire = Region::factory()->create(['slug' => 'yorkshire', 'overflow_feeds' => ['yorkshire_water']]);
+    expect($wales->unreadOverflowMap())->toBe(['name' => 'Dŵr Cymru Welsh Water', 'url' => $map])
+        ->and($yorkshire->unreadOverflowMap())->toBeNull();
 });
 
 it('still reports no monitored overflows in a region whose feed we do read', function () {

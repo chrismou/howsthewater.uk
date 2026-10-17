@@ -2,6 +2,7 @@
 
 use App\Models\BathingWater;
 use App\Models\Lake;
+use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\Spot;
@@ -78,6 +79,18 @@ it('lists the nearest beaches and lakes within 20 km of a spot', function () {
         ->assertSeeInOrder(['Nearby', 'Beach', 'Whitby', '5.6 km away', 'Lake', 'Scaling Dam', '11.1 km away']);
 
     expect(nearbySection($response))->not->toContain('Scarborough South Bay');
+});
+
+it('says a nearby beach\'s overflow data is out of date rather than showing an old "no spills"', function () {
+    $region = nearbyRegion();
+    $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Esk', 'slug' => 'esk']);
+    Spot::factory()->create(['river_id' => $river->id, 'name' => 'Ruswarp', 'slug' => 'ruswarp', 'latitude' => 54.0, 'longitude' => -1.0]);
+    BathingWater::factory()->create(['region_id' => $region->id, 'name' => 'Whitby', 'slug' => 'whitby', 'latitude' => 54.05, 'longitude' => -1.0]);
+    OverflowMonitor::factory()->create(['river_id' => null, 'latitude' => 54.051, 'longitude' => -1.0, 'source_updated_at' => now()->subDays(3)]);
+
+    $section = nearbySection($this->get('/yorkshire/rivers/esk/ruswarp')->assertOk());
+
+    expect($section)->toContain('Whitby')->toContain('Overflow data out of date')->not->toContain('No spills reported nearby');
 });
 
 it('lists the nearest other beaches and a river spot on a beach page', function () {

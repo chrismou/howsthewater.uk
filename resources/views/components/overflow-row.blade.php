@@ -15,15 +15,7 @@
     <td class="hidden whitespace-nowrap px-4 py-2.5 text-ink-2 sm:table-cell">{{ $summary->river->name }}</td>
     <td class="hidden whitespace-nowrap px-4 py-2.5 font-mono tabular-nums sm:table-cell">{{ number_format($summary->distanceUpstreamMetres / 1000, 1) }} km</td>
     <td class="px-4 py-2.5">
-        @if ($status === \App\Enums\OverflowStatus::Discharging)
-            <span class="font-medium text-alert">Discharging now</span>
-        @elseif ($status === \App\Enums\OverflowStatus::Offline)
-            <span class="text-muted">Monitor offline</span>
-        @elseif ($spilledRecently)
-            <span class="font-medium text-pill-amber-text">Spilled in the last 48h</span>
-        @else
-            <span class="text-ink-2">Not discharging</span>
-        @endif
+        <x-overflow-status :monitor="$summary->monitor" :spilled-recently="$spilledRecently" />
         <span class="block text-xs text-muted sm:hidden">
             @if ($event)
                 Last spill started {{ $event->started_at->diffForHumans() }}, {{ $event->isOngoing() ? 'ongoing' : 'lasted '.$event->durationLabel() }}

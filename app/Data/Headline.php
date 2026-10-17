@@ -16,6 +16,7 @@ final readonly class Headline
      * @param  list<list<array{0: string, 1: bool}>>  $notes
      * @param  string|null  $overflowSource  Such as "9 Yorkshire Water monitors upstream"
      * @param  string|null  $levelSource  Such as "the Ilkley gauge"
+     * @param  Carbon|null  $forecastAt  When the forecast behind a forecast note was read; null without one
      */
     public function __construct(
         public array $sentences,
@@ -24,6 +25,7 @@ final readonly class Headline
         public ?Carbon $overflowAt,
         public ?string $levelSource,
         public ?Carbon $levelAt,
+        public ?Carbon $forecastAt,
     ) {
     }
 

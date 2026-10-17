@@ -19,7 +19,6 @@ $pageCaching = 'cache.headers:public;max_age=60;s_maxage=300';
 
 Route::middleware($pageCaching)->group(function () {
     Route::get('/', HomeController::class)->name('home');
-    Route::get('/search', SearchController::class)->name('search')->middleware('throttle:public');
 
     // These come before the region route, which would otherwise take them as region slugs.
     // Region::RESERVED_SLUGS lists these slugs, which no region may take.
@@ -30,6 +29,9 @@ Route::middleware($pageCaching)->group(function () {
     Route::view('/privacy', 'privacy')->name('privacy');
     Route::view('/terms', 'terms')->name('terms');
 });
+
+// Each query is its own URL, so search results are never stored: the edge would otherwise keep one copy per query.
+Route::get('/search', SearchController::class)->name('search')->middleware(['throttle:public', 'cache.headers:no_store;private']);
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap')->middleware('cache.headers:public;max_age=3600');
 

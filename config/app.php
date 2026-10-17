@@ -18,6 +18,14 @@ return [
     // Where data providers can reach us; it is sent in the user agent of every API request.
     'contact_email' => env('CONTACT_EMAIL', 'howsthewater@mou.me'),
 
+    // When the about and legal pages last changed: shown on each page, in its dateModified and in the sitemap. Bump a
+    // date whenever that page's content changes.
+    'pages_updated' => [
+        'about' => '2026-10-17',
+        'privacy' => '2026-10-16',
+        'terms' => '2026-10-16',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

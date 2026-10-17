@@ -85,6 +85,14 @@ final readonly class SpotConditions
     }
 
     /**
+     * The newest of the overflow, level and rain data behind the page, for its dateModified (SpotSummary::latestDataAt()).
+     */
+    public function latestDataAt(): ?Carbon
+    {
+        return collect([$this->dataUpdatedAt, $this->level?->latestAt, $this->rainfall?->latestAt])->filter()->max();
+    }
+
+    /**
      * Whether the upstream monitor data is too old to rely on. Evaluated at
      * read time, so a cached result still goes stale on schedule.
      */

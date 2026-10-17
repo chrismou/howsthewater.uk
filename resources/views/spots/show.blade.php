@@ -54,7 +54,7 @@
     $breadcrumbs = [['All rivers', route('hubs.rivers')], [$spot->river->region->name, route('regions.show', $spot->river->region)], ['Rivers', route('rivers.index', $spot->river->region)], [$spot->river->name, route('rivers.show', [$spot->river->region, $spot->river])], [$spot->name, route('spots.show', [$spot->river->region, $spot->river, $spot])]];
 @endphp
 
-<x-layouts.app :share-image="$shareImage" :date-modified="$conditions->dataUpdatedAt" :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$title"
+<x-layouts.app :share-image="$shareImage" :date-modified="$conditions->latestDataAt()" :region="$spot->river->region" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])" :title="$title"
                :description="$description"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->spot($spot, $spot->river, $spot->river->region)">
@@ -69,7 +69,7 @@
                     <span class="text-muted">{{ number_format($spot->river_metres / 1000) }} km from the source.</span>
                 @endif
             </p>
-            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forSpot($conditions, $weather)" />
+            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forSpot($conditions, $weather)" :region="$spot->river->region" />
         </div>
         <x-place-actions :latitude="$spot->latitude" :longitude="$spot->longitude" :label="$spot->name" :feed="route('spots.feed', [$spot->river->region, $spot->river, $spot])"
                          feed-title="Follow overflows upstream and flood warnings in a feed reader" />
@@ -143,7 +143,7 @@
     </section>
 
     <div class="grid gap-8 lg:grid-cols-5">
-        <div class="lg:col-span-3">
+        <div class="min-w-0 lg:col-span-3">
             <div
                 class="h-80 w-full rounded-lg border border-line"
                 role="region" aria-label="Map of {{ $spot->name }} on the {{ $spot->river->name }}, with the overflow monitors upstream"
@@ -165,7 +165,7 @@
             @if ($covered)
                 <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" />
             @else
-                <p class="rounded-lg border border-line bg-surface p-5 text-sm text-ink-2">No spill history, as we do not read the water company's overflow data here yet. <x-help term="not_covered" /></p>
+                <p class="rounded-lg border border-line bg-surface p-5 text-sm text-ink-2">No spill history, as we do not read the water company's overflow data here yet. <x-help term="not_covered" /> <x-overflow-map-link :region="$spot->river->region" /></p>
             @endif
         </div>
 
@@ -193,7 +193,7 @@
             <span class="text-sm text-muted">Recent spills first, then nearest. Distances follow the water, including tributaries.</span>
         </div>
         @if (! $covered)
-            <p class="text-sm text-ink-2">We do not read the water company's overflow data for this river yet, so overflows upstream of this spot are not shown. <x-help term="not_covered" /></p>
+            <p class="text-sm text-ink-2">We do not read the water company's overflow data for this river yet, so overflows upstream of this spot are not shown. <x-help term="not_covered" /> <x-overflow-map-link :region="$spot->river->region" /></p>
         @elseif ($conditions->upstreamMonitors->isEmpty())
             <p class="text-sm text-ink-2">No monitors have been matched upstream of this spot yet.</p>
         @else

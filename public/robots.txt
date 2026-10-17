@@ -4,7 +4,6 @@
 # Training only
 User-agent: GPTBot
 User-agent: ClaudeBot
-User-agent: Google-Extended
 User-agent: Applebot-Extended
 User-agent: CCBot
 User-agent: meta-externalagent
@@ -13,7 +12,8 @@ User-agent: cohere-training-data-crawler
 Disallow: /
 
 # Everyone else, including search engines and AI search and answer crawlers (OAI-SearchBot, ChatGPT-User,
-# Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, DuckAssistBot)
+# Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User, DuckAssistBot). Google-Extended stays welcome: besides
+# training, it decides whether Gemini and Vertex AI can ground their answers in these pages.
 User-agent: *
 Disallow:
 

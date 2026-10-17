@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Carbon;
 use App\Models\Region;
 
 it('serves the privacy and terms pages ahead of region slugs', function () {
@@ -54,7 +55,11 @@ it('credits Stream companies and Scottish Water separately in the footer', funct
 });
 
 it('lists the legal pages in the sitemap', function () {
-    $this->get(route('sitemap'))->assertOk()->assertSee(route('privacy'))->assertSee(route('terms'));
+    $this->get(route('sitemap'))->assertOk()->assertSee(route('privacy'))->assertSee(route('terms'))
+        // Dated from the same entry each page shows.
+        ->assertSeeInOrder(['<loc>'.route('terms').'</loc>', '<lastmod>'.Carbon::parse(config('app.pages_updated.terms'), 'Europe/London')->utc()->toAtomString().'</lastmod>'], false);
+
+    $this->get(route('terms'))->assertSeeText('Last updated '.Carbon::parse(config('app.pages_updated.terms'))->format('j F Y'));
 });
 
 it('explains what the monitors record and offers an email contact on the about page', function () {

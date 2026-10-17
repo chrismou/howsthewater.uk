@@ -29,7 +29,7 @@
                :description="'Storm overflow spills, river levels, rainfall, flood warnings and bathing water results for '.$summary->name.'\'s '.$typeList.'.'"
                :breadcrumbs="$breadcrumbs"
                :region="$region"
-               :structured-data="app(\App\Services\StructuredData::class)->itemList($summary->name, $types->map(fn ($type) => [$summary->name.' '.$type, route($type.'.index', $region)]))">
+               :structured-data="app(\App\Services\StructuredData::class)->regionPage($region, $types->map(fn ($type) => [$summary->name.' '.$type, route($type.'.index', $region)]))">
     <div class="mb-6">
         <x-breadcrumbs :items="$breadcrumbs" />
         <div class="mt-1 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">

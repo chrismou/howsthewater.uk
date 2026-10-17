@@ -38,32 +38,35 @@
             <summary class="cursor-pointer text-ink-2 hover:text-ink">
                 {{ $events->count() }} {{ \Illuminate\Support\Str::plural('spill', $events->count()) }} recorded
             </summary>
-            <table class="mt-3 w-full text-sm">
-                <thead class="text-left text-xs uppercase tracking-wide text-muted">
-                    <tr>
-                        <th class="py-1 pr-4 font-medium">Started</th>
-                        <th class="py-1 pr-4 font-medium">Duration</th>
-                        <th class="py-1 pr-4 font-medium">Monitor</th>
-                        <th class="py-1 font-medium">Watercourse</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-line-2">
-                    @foreach ($listedEvents as $event)
+            {{-- Scrolls on its own on phones, so an opened list never widens the page. --}}
+            <div class="mt-3 overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="text-left text-xs uppercase tracking-wide text-muted">
                         <tr>
-                            <td class="py-1.5 pr-4 whitespace-nowrap">{{ $event->started_at->timezone(config('app.display_timezone', 'Europe/London'))->format('D j M, H:i') }}</td>
-                            <td class="py-1.5 pr-4 whitespace-nowrap">
-                                @if ($event->isOngoing())
-                                    <span class="font-medium text-alert">Ongoing</span>
-                                @else
-                                    {{ $event->durationLabel() }}
-                                @endif
-                            </td>
-                            <td class="py-1.5 pr-4 font-mono text-xs">{{ $event->overflowMonitor->external_id }}</td>
-                            <td class="py-1.5 text-ink-2">{{ $event->overflowMonitor->river?->name ?? $event->overflowMonitor->receiving_watercourse }}</td>
+                            <th class="py-1 pr-4 font-medium">Started</th>
+                            <th class="py-1 pr-4 font-medium">Duration</th>
+                            <th class="py-1 pr-4 font-medium">Monitor</th>
+                            <th class="py-1 font-medium">Watercourse</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-line-2">
+                        @foreach ($listedEvents as $event)
+                            <tr>
+                                <td class="py-1.5 pr-4 whitespace-nowrap">{{ $event->started_at->timezone(config('app.display_timezone', 'Europe/London'))->format('D j M, H:i') }}</td>
+                                <td class="py-1.5 pr-4 whitespace-nowrap">
+                                    @if ($event->isOngoing())
+                                        <span class="font-medium text-alert">Ongoing</span>
+                                    @else
+                                        {{ $event->durationLabel() }}
+                                    @endif
+                                </td>
+                                <td class="py-1.5 pr-4 font-mono text-xs">{{ $event->overflowMonitor->external_id }}</td>
+                                <td class="py-1.5 text-ink-2">{{ $event->overflowMonitor->river?->name ?? $event->overflowMonitor->receiving_watercourse }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
             @if ($events->count() > $listedEvents->count())
                 <p class="mt-2 text-xs text-muted">The latest {{ $listedEvents->count() }} are listed.</p>
             @endif

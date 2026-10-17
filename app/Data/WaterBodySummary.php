@@ -4,6 +4,7 @@ namespace App\Data;
 
 use App\Enums\BathingWaterClassification;
 use App\Enums\SpillRecency;
+use Illuminate\Support\Carbon;
 
 /**
  * What a listing needs to say about a beach or lake, as plain values. Built
@@ -21,6 +22,8 @@ final readonly class WaterBodySummary
         public int $bathingSiteCount,
         public SpillRecency $nearbySpillRecency,
         public int $dischargingNearbyCount,
+        public int $nearbyMonitorCount,
+        public ?Carbon $overflowDataUpdatedAt,
     ) {
     }
 
@@ -37,6 +40,8 @@ final readonly class WaterBodySummary
             bathingSiteCount: 1,
             nearbySpillRecency: $conditions->overflows->spillRecency,
             dischargingNearbyCount: $conditions->overflows->dischargingNowCount,
+            nearbyMonitorCount: $conditions->overflows->monitors->count(),
+            overflowDataUpdatedAt: $conditions->overflows->dataUpdatedAt,
         );
     }
 
@@ -51,7 +56,22 @@ final readonly class WaterBodySummary
             bathingSiteCount: $conditions->bathingWaters->count(),
             nearbySpillRecency: $conditions->overflows->spillRecency,
             dischargingNearbyCount: $conditions->overflows->dischargingNowCount,
+            nearbyMonitorCount: $conditions->overflows->monitors->count(),
+            overflowDataUpdatedAt: $conditions->overflows->dataUpdatedAt,
         );
+    }
+
+    /**
+     * Mirrors NearbyOverflows::isStale(), evaluated at read time so cached summaries still go stale on schedule.
+     */
+    public function overflowDataIsStale(): bool
+    {
+        if ($this->nearbyMonitorCount === 0) {
+            return false;
+        }
+
+        return $this->overflowDataUpdatedAt === null
+            || $this->overflowDataUpdatedAt->lessThan(now()->subHours(SpotConditions::STALE_AFTER_HOURS));
     }
 
     /**

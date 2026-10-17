@@ -169,6 +169,34 @@ it('polls only the feeds a region needs and keeps going when one fails', functio
     Http::assertNotSent(fn ($request) => str_contains($request->url(), 'services1.arcgis.com'));
 });
 
+it('treats a feed that only edits changed monitors as current when read, until the whole feed goes quiet', function () {
+    $this->freezeTime();
+    Region::factory()->create(['overflow_feeds' => ['northumbrian_water']]);
+    $quiet = now()->subWeeks(3)->startOfSecond()->getTimestampMs();
+    $lastEdited = now()->subHour()->getTimestampMs();
+    Http::fake([
+        'services-eu1.arcgis.com/1WqkK5cDKUbF0CkH/*' => Http::response(['features' => [arcGisFeature(['LastUpdated' => $quiet])]]),
+        'services-eu1.arcgis.com/MSNNjkZ51iVh8yBj/*' => function () use ($quiet, &$lastEdited) {
+            return Http::response(['features' => [
+                arcGisFeature(['Id' => 'NWL00001', 'LastUpdated' => $quiet]),
+                arcGisFeature(['Id' => 'NWL00002', 'LastUpdated' => $lastEdited]),
+            ]]);
+        },
+    ]);
+    $updatedAt = fn (string $id) => OverflowMonitor::query()->where('external_id', $id)->value('source_updated_at');
+
+    app(SyncOverflowMonitors::class)->handle();
+
+    // Yorkshire Water refreshes LastUpdated on every publish, so its own time stands.
+    expect($updatedAt('NWL00001')->toDateTimeString())->toBe(now()->toDateTimeString())
+        ->and($updatedAt('YWS00001')->getTimestampMs())->toBe($quiet);
+
+    $lastEdited = now()->subHours(SyncOverflowMonitors::QUIET_FEED_HOURS + 1)->getTimestampMs();
+    app(SyncOverflowMonitors::class)->handle();
+
+    expect($updatedAt('NWL00001')->getTimestampMs())->toBe($quiet);
+});
+
 it('fails the ingest command and logs an error when a feed fails', function () {
     Sleep::fake();
     Log::spy();

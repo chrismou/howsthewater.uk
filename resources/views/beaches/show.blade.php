@@ -29,7 +29,7 @@
         ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $beach->beachSearchName());
 @endphp
 
-<x-layouts.app :share-image="$shareImage" :date-modified="$overflows->dataUpdatedAt" :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$title"
+<x-layouts.app :share-image="$shareImage" :date-modified="collect([$overflows->dataUpdatedAt, $conditions->bathingWater->latestSample()?->sampled_at])->filter()->max()" :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$title"
                :description="$beach->agency->label().($beach->agency === \App\Enums\Agency::Sepa ? ' classification and sample results' : ' classification, samples and pollution forecasts').' for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->beach($beach, $region)">
@@ -40,7 +40,7 @@
             <p class="mt-1 text-ink-2">
                 {{ collect([$beach->district, $beach->kind === \App\Enums\BathingWaterKind::Estuary ? 'estuary bathing water' : null, $beach->sewerage_undertaker ? 'sewerage by '.$beach->sewerage_undertaker : null])->filter()->join(' · ') }}
             </p>
-            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forBeach($conditions, $weather)" />
+            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forBeach($conditions, $weather)" :region="$region" />
         </div>
         <x-place-actions :latitude="$beach->latitude" :longitude="$beach->longitude" :label="$beach->name" :feed="route('beaches.feed', [$region, $beach])" />
     </div>
@@ -160,7 +160,7 @@
             @endif
     </div>
 
-    <x-nearby-overflows :overflows="$overflows" class="mt-10" />
+    <x-nearby-overflows :overflows="$overflows" :region="$region" class="mt-10" />
 
     <x-before-you-go kind="beach" />
 

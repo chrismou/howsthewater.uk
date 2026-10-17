@@ -11,6 +11,7 @@
     $degrees = fn (?float $value) => $value === null ? '-' : number_format($value, 0).'°';
     $mph = fn (?float $value) => $value === null ? '-' : number_format($value, 0).' mph';
     $time = fn ($moment) => $moment?->copy()->timezone($timezone)->format('H:i') ?? '-';
+    $readAt = fn ($moment) => $moment->copy()->timezone($timezone)->format($moment->isSameDay(now()) ? 'H:i T' : 'H:i T, j F');
     $outlook = $weather?->outlook(2, 6) ?? collect();
     $daylight = [['First light', $sun->firstLight], ['Sunrise', $sun->sunrise], ['Sunset', $sun->sunset], ['Last light', $sun->lastLight]];
 @endphp
@@ -83,7 +84,7 @@
 
     @if ($weather !== null)
         <p class="border-t border-line-2 px-5 py-2.5 text-xs text-muted">
-            Forecast for the area around {{ $place }} from <a href="https://open-meteo.com/" rel="noopener" class="underline hover:text-ink">Open-Meteo</a>, updated {{ $time($weather->fetchedAt) }}.
+            Forecast for the area around {{ $place }} from <a href="https://open-meteo.com/" rel="noopener" class="underline hover:text-ink">Open-Meteo</a>, updated <time datetime="{{ $weather->fetchedAt->copy()->utc()->toIso8601String() }}">{{ $readAt($weather->fetchedAt) }}</time>.
         </p>
         @if ($weather->isStale())
             <p class="mx-5 mb-4 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-text" role="status">

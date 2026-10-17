@@ -164,9 +164,9 @@ it('gives advice for each kind of place before you go in', function () {
     $beach = BathingWater::factory()->create(['region_id' => $region->id]);
     $lake = Lake::factory()->create(['region_id' => $region->id]);
 
-    $this->get('/yorkshire/rivers/wharfe/ilkley')->assertOk()->assertSeeInOrder(['Before you go in', 'Cold water', 'Rivers can be faster than they look', 'In an emergency call 999.']);
-    $this->get(route('beaches.show', [$region, $beach]))->assertOk()->assertSee('Rip currents')->assertSee('ask for the Coastguard');
-    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSee('blue-green algae');
+    $this->get('/yorkshire/rivers/wharfe/ilkley')->assertOk()->assertSeeInOrder(['Before you go in', 'Cold water', 'Rivers can be faster than they look', 'Fishing and paddling', 'keep well clear of weirs', 'In an emergency call 999 and ask for the Fire Service.']);
+    $this->get(route('beaches.show', [$region, $beach]))->assertOk()->assertSee('Rip currents')->assertSee('offshore wind')->assertSee('ask for the Coastguard');
+    $this->get(route('lakes.show', [$region, $lake]))->assertOk()->assertSee('blue-green algae')->assertSee('within reach of the shore')->assertSee('ask for the Fire Service');
 });
 
 it('has an icon for every weather code it can name, and none for an unknown code', function () {

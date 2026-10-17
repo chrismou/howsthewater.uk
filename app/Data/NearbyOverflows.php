@@ -30,9 +30,6 @@ final readonly class NearbyOverflows
     }
 
     /**
-     * Mirrors SpotConditions::overflowDataIsStale(), evaluated at read time.
-     */
-    /**
      * Whether we read the water company's overflow feed here at all.
      */
     public function isCovered(): bool
@@ -40,6 +37,9 @@ final readonly class NearbyOverflows
         return $this->spillRecency !== SpillRecency::NotCovered;
     }
 
+    /**
+     * Mirrors SpotConditions::overflowDataIsStale(), evaluated at read time.
+     */
     public function isStale(): bool
     {
         if ($this->monitors->isEmpty()) {

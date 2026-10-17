@@ -1,7 +1,8 @@
 @props(['recency', 'stale' => false, 'nearby' => false])
 
 @php
-    // Stale data gets the neutral style whatever it says, so an old "no spills" never reads as reassurance.
+    // Stale data gets the neutral style and its own words whatever it last said, so an old "no spills" never reads as
+    // reassurance.
     $classes = $stale ? 'bg-pill-grey-bg text-pill-grey-text ring-pill-grey-ring' : match ($recency) {
         \App\Enums\SpillRecency::DischargingNow => 'bg-pill-red-bg text-pill-red-text ring-pill-red-ring',
         \App\Enums\SpillRecency::Within24Hours => 'bg-pill-amber-bg text-pill-amber-text ring-pill-amber-ring',
@@ -14,5 +15,5 @@
 
 <span {{ $attributes->merge(['class' => "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {$classes}"]) }}
       @if ($stale) title="Monitor data is out of date" @endif>
-    {{ $nearby ? $recency->nearbyLabel() : $recency->label() }}
+    {{ $stale ? 'Overflow data out of date' : ($nearby ? $recency->nearbyLabel() : $recency->label()) }}
 </span>

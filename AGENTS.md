@@ -237,7 +237,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   green "no spills". Keep that distinction for any new status. A region without overflow feeds
   (`Region::hasOverflowData()`, Wales for now) gives `SpillRecency::NotCovered`: pages say "Overflow data not available
   here yet" and show dashes, never zero counts, "no monitored overflows" or a 30-day history, and `RegionSummary`
-  carries `hasOverflowData` for the live bar, region page and cards.
+  carries `hasOverflowData` for the live bar, region page and cards. Where `services.unread_overflow_maps` names the
+  region's company and map (Dŵr Cymru Welsh Water), those messages also link it (`Region::unreadOverflowMap()`,
+  `components/overflow-map-link`).
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed, and `Spot::onMainRiver()` wherever spots
   are listed; the spot controllers 404 a spot on a tributary.
 - Rivers belong to a `Region` and URLs are region-scoped (`/{region}/rivers/{river}/{spot}`, API `/api/v1/regions/...`) with
@@ -265,8 +267,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   along the river (none beyond that, rather than a reading far away) and prefer `m` gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
 - Stale data: `SpotConditions::overflowDataIsStale()` and `LevelSummary::isStale()` compare the feed timestamp or latest
   reading against `STALE_AFTER_HOURS` (6) at read time, so cached conditions still go stale on schedule. Show the
-  warning and the neutral badge wherever a spill status or level is printed; the API exposes `data_stale` and
-  `level.stale`.
+  warning and the neutral badge wherever a spill status or level is printed: the badge then reads "Overflow data out
+  of date", and each overflows table row (`components/overflow-status`, `OverflowMonitor::isStale()`) says when the
+  monitor last reported instead of "Not discharging". Beach and lake summaries carry the same check for the Nearby
+  section. The API exposes `data_stale` and `level.stale`.
 - Spill history (`SpillHistoryService`) is derived from `spill_events`, which only exist from the first ingest run
   onwards. Don't backfill from the feed; it has no history.
 
@@ -280,6 +284,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   it needs in `overflow_feeds`, and `ingest:overflows` polls only those, every 15 minutes. A failing feed is logged
   and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
   share one table. The footer credits Stream feeds and Scottish Water separately. South West Water uses other fields.
+  Most Stream companies refresh every monitor's `LastUpdated` on each publish, but Northumbrian Water only moves it
+  when a monitor's status changes, so its feed is marked `updated_on_change`: while anything in the feed changed in the
+  last 48 hours (`SyncOverflowMonitors::QUIET_FEED_HOURS`), each read sets its monitors' `source_updated_at` to the read
+  time; past that they keep their own times and go stale. Check a new company's feed for the same behaviour.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
   Readings follow the API's own advice rather than one request per gauge: `FloodMonitoringClient::readingsSinceInBulk()`
@@ -390,7 +398,9 @@ replacing the local database with a copy of live rather than backfilling.
 - Fonts (Instrument Sans, Bricolage Grotesque, IBM Plex Mono) are self-hosted by the Laravel Vite font plugin
   (`vite.config.js`, downloaded from Google Fonts at build time as one woff2 each; not Bunny, whose woff
   files this plugin version emits as separate rules that override the woff2) and loaded by `@fonts` in the layout, with font-display: swap
-  and preloads only for the faces on screen first. No font request leaves the site.
+  and preloads only for the faces on screen first. No font request leaves the site. With `fontaine` installed the
+  plugin also writes a metric-matched "<name> fallback" face for each (local Arial with `size-adjust`), which the
+  `--font-*` stacks in `app.css` name second so text barely moves when the web font arrives.
 - Build data for `data-*` attributes in a `@php` block and output with `{{ json_encode(...) }}`. Multi-line `@json(...)`
   inside attributes breaks the Blade compiler.
 - Use a plain hyphen for dashes in any user-facing text.
@@ -418,7 +428,9 @@ replacing the local database with a copy of live rather than backfilling.
 
 - Every page title ends with " - How's the Water?", which the layout appends to the `:title` a page passes. The 60
   character limit applies to that unique part, not the site name: search results show about 60 characters, so if they
-  cut a title it is the site name that goes, never the place or topic. Meta descriptions stay within 160 characters.
+  cut a title it is the site name that goes, never the place or topic. `og:title` and `twitter:title` leave the site
+  name off, since share previews show `og:site_name` or the domain beside them. Meta descriptions stay within 160
+  characters and lead with the place's own facts, since share previews cut them sooner (often around 125).
 - Spot H1s name the river ("Ilkley, River Wharfe"), and spot descriptions carry the spot's own facts (distance from
   the source, overflows upstream, gauge) so no two read alike. River titles lead with the river and "levels". Titles
   on rivers and spots whose overflow data we do not read never mention spills.
@@ -433,15 +445,22 @@ replacing the local database with a copy of live rather than backfilling.
   then notes only when a threshold is crossed (10 mm of rain in the last 24 hours; heavy rain, thunder or, on beaches
   and lakes, gusts of 35 mph forecast in the next 12 hours; wind never on rivers, as it does not speed them up); then
   a small source line with the monitors, company and time, which keeps the page's dated, attributed statement. River
-  pages keep one dated sentence (`components/dated-summary`) with counts for the river and its tributaries.
+  pages keep one dated sentence (`components/dated-summary`) with counts for the river and its tributaries. Places
+  with a designated bathing water (beaches, spots with a river site, lakes) lead with its classification; a lake with
+  several sites counts them by classification. With half or more monitors offline, a quiet headline leads with how
+  few are reporting, never with "No spills reported". A forecast note adds "Forecast from Open-Meteo, read ..." to the
+  source line.
   Exclamation marks stay rare: only the thunder note has one.
 - `public/robots.txt` welcomes search engines and AI crawlers that search or fetch pages to answer questions (and
-  cite them), and asks training-only crawlers (GPTBot, ClaudeBot, Google-Extended, Applebot-Extended, CCBot and
-  others) not to crawl. Add new training-only crawlers to that group, never to `*`.
+  cite them), and asks training-only crawlers (GPTBot, ClaudeBot, Applebot-Extended, CCBot and others) not to crawl.
+  Google-Extended is not in that group: it also controls whether Gemini and Vertex AI ground answers in the pages.
+  Add new training-only crawlers to that group, never to `*`.
 - Levels are described in everyday words on pages: "at its usual level", "higher than usual", "lower than usual"
   (`LevelSummary::usualPhrase()`), never "typical range". The API keeps its `within typical range` values. `/about` explains the sources and methods; keep it in step with Data sources below.
-- `/about` shows a "Last updated" date (`$lastUpdated` at the top of the view), which also goes into its
-  `dateModified`. Bump it whenever the page's content changes.
+- `/about`, `/privacy` and `/terms` show a "Last updated" date from `app.pages_updated`, which also goes into their
+  `dateModified` and sitemap `lastmod`. Bump a page's date whenever its content changes. Other pages' `lastmod` and
+  `dateModified` are the newest of their overflow, level and rain data (`SpotSummary::latestDataAt()`), so places
+  without overflow data still carry one.
 - Pages describe themselves as schema.org JSON-LD through the layout's `structuredData` (built by
   `App\Services\StructuredData`) beside the `BreadcrumbList`: `WebSite` and `Organization` on the home page, a `Place`
   (on its `RiverBodyOfWater`) per spot, `Beach` and `LakeBodyOfWater` with coordinates, and an `ItemList` on listing
@@ -475,7 +494,8 @@ replacing the local database with a copy of live rather than backfilling.
 - Pages are the same for every visitor (no cookies, sessions or accounts), so page routes send
   `cache.headers:public;max_age=60;s_maxage=300` (`$pageCaching` in `routes/web.php`) and a Cloudflare cache rule keeps
   them at the edge for five minutes; only successful responses are marked cacheable. Never add per-visitor content
-  or cookies to a page without taking it out of that group. After each deploy CI purges the Cloudflare cache
+  or cookies to a page without taking it out of that group. `/search` is outside it and sends `no-store`, as every
+  query is its own URL. After each deploy CI purges the Cloudflare cache
   (variable `CLOUDFLARE_ZONE_ID`, secret `CLOUDFLARE_API_TOKEN`; skipped while unset), so cached pages never ask for
   the old release's build assets.
 - `deploy.php` uses the Laravel recipe plus an npm build. The server clones the repo through the deploy user's

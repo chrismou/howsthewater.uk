@@ -83,6 +83,15 @@ final readonly class SpotSummary
     }
 
     /**
+     * The newest of the overflow, level and rain data behind the spot, for lastmod: places without overflow data
+     * (Wales) or without monitors upstream still change with their gauges.
+     */
+    public function latestDataAt(): ?Carbon
+    {
+        return collect([$this->dataUpdatedAt, $this->levelAt, $this->rainfallAt])->filter()->max();
+    }
+
+    /**
      * Mirrors SpotConditions::overflowDataIsStale(), evaluated at read time.
      */
     public function overflowDataIsStale(): bool

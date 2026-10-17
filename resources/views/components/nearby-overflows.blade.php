@@ -1,5 +1,5 @@
 {{-- Storm overflow monitors within a fixed distance of a beach or lake: those active in 30 days first, the rest tucked away. --}}
-@props(['overflows'])
+@props(['overflows', 'region' => null])
 
 @php
     $spilledMonitorIds = $overflows->recentSpillEvents->pluck('overflow_monitor_id')->unique();
@@ -17,7 +17,7 @@
     </div>
 
     @if ($overflows->spillRecency === \App\Enums\SpillRecency::NotCovered)
-        <p class="text-sm text-ink-2">We do not read the water company's overflow data here yet, so overflows within {{ $overflows->radiusMetres / 1000 }} km are not shown. <x-help term="not_covered" /></p>
+        <p class="text-sm text-ink-2">We do not read the water company's overflow data here yet, so overflows within {{ $overflows->radiusMetres / 1000 }} km are not shown. <x-help term="not_covered" /> <x-overflow-map-link :region="$region" /></p>
     @elseif ($overflows->monitors->isEmpty())
         <p class="text-sm text-ink-2">No water company monitors within {{ $overflows->radiusMetres / 1000 }} km.</p>
     @else
@@ -44,13 +44,7 @@
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums">{{ number_format($summary->distanceMetres / 1000, 1) }} km</td>
                                 <td class="px-4 py-2.5">
-                                    @if ($summary->status === \App\Enums\OverflowStatus::Discharging)
-                                        <span class="font-medium text-alert">Discharging now</span>
-                                    @elseif ($summary->status === \App\Enums\OverflowStatus::Offline)
-                                        <span class="text-muted">Monitor offline</span>
-                                    @else
-                                        <span class="text-ink-2">Not discharging</span>
-                                    @endif
+                                    <x-overflow-status :monitor="$summary->monitor" />
                                     <span class="block text-xs text-muted sm:hidden">
                                         @if ($event)
                                             Last spill started {{ $event->started_at->diffForHumans() }}, {{ $event->isOngoing() ? 'ongoing' : 'lasted '.$event->durationLabel() }}

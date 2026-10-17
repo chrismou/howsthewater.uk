@@ -66,7 +66,7 @@ class Region extends Model
      * The storm overflow feeds every region needs, keyed by config key, so
      * ingest polls only the water companies we actually cover.
      *
-     * @return array<string, array{name: string, driver: string, url: string}>
+     * @return array<string, array{name: string, driver: string, url: string, updated_on_change: bool}>
      */
     public static function overflowFeeds(): array
     {
@@ -105,9 +105,26 @@ class Region extends Model
     }
 
     /**
+     * The water company and live map for a region whose overflow feed is not read yet (services.unread_overflow_maps),
+     * so its pages can point there instead. Null once a feed is read, or for a region not listed.
+     *
+     * @return array{name: string, url: string}|null
+     */
+    public function unreadOverflowMap(): ?array
+    {
+        $map = config("services.unread_overflow_maps.{$this->slug}");
+
+        if ($this->hasOverflowData() || ! is_array($map) || ! is_string($map['name'] ?? null) || ! is_string($map['url'] ?? null)) {
+            return null;
+        }
+
+        return ['name' => $map['name'], 'url' => $map['url']];
+    }
+
+    /**
      * The overflow feeds covering this region, keyed by config key.
      *
-     * @return array<string, array{name: string, driver: string, url: string}>
+     * @return array<string, array{name: string, driver: string, url: string, updated_on_change: bool}>
      */
     public function overflowFeedConfig(): array
     {
@@ -116,8 +133,9 @@ class Region extends Model
 
     /**
      * The configured feeds, skipping any entry without a name and URL. A feed without a driver is a Stream feed.
+     * `updated_on_change` marks a feed whose timestamps only move when a monitor changes (SyncOverflowMonitors).
      *
-     * @return array<string, array{name: string, driver: string, url: string}>
+     * @return array<string, array{name: string, driver: string, url: string, updated_on_change: bool}>
      */
     private static function feedConfig(): array
     {
@@ -125,7 +143,7 @@ class Region extends Model
 
         foreach (config()->array('services.overflow_feeds') as $key => $feed) {
             if (is_string($key) && is_array($feed) && is_string($feed['name'] ?? null) && is_string($feed['url'] ?? null)) {
-                $feeds[$key] = ['name' => $feed['name'], 'driver' => is_string($feed['driver'] ?? null) ? $feed['driver'] : 'stream', 'url' => $feed['url']];
+                $feeds[$key] = ['name' => $feed['name'], 'driver' => is_string($feed['driver'] ?? null) ? $feed['driver'] : 'stream', 'url' => $feed['url'], 'updated_on_change' => ($feed['updated_on_change'] ?? false) === true];
             }
         }
 

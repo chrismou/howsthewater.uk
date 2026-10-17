@@ -1,6 +1,10 @@
-<x-layouts.app title="Terms of use" description="The terms for using How's the Water and the data it shows.">
+@php
+    $lastUpdated = \Illuminate\Support\Carbon::parse(config('app.pages_updated.terms'), config('app.display_timezone', 'Europe/London'));
+@endphp
+
+<x-layouts.app :date-modified="$lastUpdated" title="Terms of use" description="The terms for using How's the Water and the data it shows.">
     <article class="max-w-2xl">
-        <p class="text-sm text-muted">Last updated 16 October 2026</p>
+        <p class="text-sm text-muted">Last updated <time datetime="{{ $lastUpdated->toDateString() }}">{{ $lastUpdated->format('j F Y') }}</time></p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">Terms of use</h1>
 
         <div class="mt-6 grid gap-8 leading-relaxed text-ink-2">

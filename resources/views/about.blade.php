@@ -3,8 +3,9 @@
     $overflowFeeds = collect($regions->reduce(fn (array $feeds, $region) => $feeds + $region->overflowFeedConfig(), []));
     $streamCompanies = $overflowFeeds->where('driver', 'stream')->pluck('name')->unique()->sort()->join(', ', ' and ');
     $hasScottishWater = $overflowFeeds->contains('driver', 'scottish_water');
-    // Bump this whenever the page's content changes; it is shown and goes into the page's dateModified.
-    $lastUpdated = \Illuminate\Support\Carbon::parse('2026-10-17', config('app.display_timezone', 'Europe/London'));
+    // Bump app.pages_updated.about whenever the page's content changes; it is shown, goes into the page's dateModified
+    // and the sitemap.
+    $lastUpdated = \Illuminate\Support\Carbon::parse(config('app.pages_updated.about'), config('app.display_timezone', 'Europe/London'));
     $contactEmail = config('app.contact_email');
 @endphp
 
@@ -30,7 +31,7 @@
                         @if ($hasScottishWater)
                             Scottish Water publishes its own near real-time overflow feed, updated hourly.
                         @endif
-                        Dŵr Cymru Welsh Water's overflows are not shown yet, so Welsh spots, beaches and lakes say that overflow data is not available rather than showing none. Each feed gives a monitor's current status and its latest spill, so the spill history here is built up from our own readings, starting from the day each monitor was first seen.</span></li>
+                        Dŵr Cymru Welsh Water's overflows are not shown yet, so Welsh spots, beaches and lakes say that overflow data is not available rather than showing none, and link to Welsh Water's own storm overflow map. Each feed gives a monitor's current status and its latest spill, so the spill history here is built up from our own readings, starting from the day each monitor was first seen.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">River and lake levels.</strong> The Environment Agency's real-time flood monitoring API in England, Natural Resources Wales's river level, rainfall and sea data API in Wales, and SEPA's time series service in Scotland (all Open Government Licence). Readings from Natural Resources Wales are kept for a year at most, as it asks.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Rainfall.</strong> Tipping bucket rain gauges from the same three services, summed from their 15 minute readings.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Flood alerts and warnings.</strong> The Environment Agency's flood warning service in England and Natural Resources Wales's in Wales, shown in their own words. Scottish flood warnings are not shown yet.</span></li>
@@ -42,7 +43,7 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">How often it updates</h2>
-                <p>Overflows, river levels, rainfall and flood warnings are read every 15 minutes, and the pages are rebuilt straight after. Bathing water records are read every hour, and weather forecasts every three hours. Every page with overflow data shows when it was last updated, and says so plainly when a feed has not updated for over six hours, so old figures are never shown as current.</p>
+                <p>Overflows, river levels, rainfall and flood warnings are read every 15 minutes, and the pages are rebuilt straight after. Bathing water records are read every hour, and weather forecasts every three hours. Every page with overflow data shows when it was last updated, and says so plainly when a feed has not updated for over six hours, so old figures are never shown as current. Northumbrian Water's feed only changes when a monitor does, so its monitors count as current each time the feed is read, unless nothing in it has changed for two days.</p>
             </section>
 
             <section class="grid gap-3">

@@ -17,8 +17,8 @@ enum BathingWaterClassification: string
     public function meaning(): string
     {
         return match ($this) {
-            self::Excellent => 'The cleanest samples over the last four seasons.',
-            self::Good => 'Generally good samples over the last four seasons.',
+            self::Excellent => 'Samples met the highest standard over the last four seasons.',
+            self::Good => 'Samples met the good standard over the last four seasons.',
             self::Sufficient => 'Samples met the minimum standard over the last four seasons.',
             self::Poor => 'Samples failed the minimum standard, and the advice is against bathing.',
         };

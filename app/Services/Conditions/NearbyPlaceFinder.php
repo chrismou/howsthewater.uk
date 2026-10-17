@@ -213,7 +213,7 @@ class NearbyPlaceFinder
                     distanceMetres: $candidate['distance'],
                     alongRiver: false,
                     spillRecency: $summary->nearbySpillRecency,
-                    stale: false,
+                    stale: $summary->overflowDataIsStale(),
                     nearbyWording: true,
                 );
             })

@@ -3,7 +3,7 @@
     phrases in bold, any weather notes, then a small line saying where the figures come from and when, which keeps
     the page's dated, attributed statement. It never says whether a place is safe.
 --}}
-@props(['headline'])
+@props(['headline', 'region' => null])
 
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
@@ -14,6 +14,7 @@
     $sources = array_values(array_filter([
         $headline->overflowSource !== null && $headline->overflowAt !== null ? ucfirst(e($headline->overflowSource)).', data from '.$time($headline->overflowAt) : null,
         $headline->levelSource !== null && $headline->levelAt !== null ? 'Level from '.e($headline->levelSource).' at '.$time($headline->levelAt) : null,
+        $headline->forecastAt !== null ? 'Forecast from Open-Meteo, read '.$time($headline->forecastAt) : null,
     ]));
 @endphp
 
@@ -31,6 +32,7 @@
     {{-- Every part is escaped above; the markup is only the bold runs and the <time> elements. --}}
     <p class="mt-2 text-xs text-muted">
         @if ($sources !== []){!! implode('. ', $sources) !!}. @endif
+        <x-overflow-map-link :region="$region" />
         <a href="{{ route('about') }}#limits" class="underline decoration-line underline-offset-2 hover:decoration-ink">Monitor data is not a safety check.</a>
     </p>
 </div>

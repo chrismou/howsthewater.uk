@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Data\SpotConditions;
 use App\Enums\OverflowStatus;
 use Database\Factories\OverflowMonitorFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -88,5 +89,15 @@ class OverflowMonitor extends Model
     public function isDischarging(): bool
     {
         return $this->status === OverflowStatus::Discharging;
+    }
+
+    /**
+     * Whether the feed has not confirmed this monitor's status within SpotConditions::STALE_AFTER_HOURS, so its
+     * status is only what it was at the last report.
+     */
+    public function isStale(): bool
+    {
+        return $this->source_updated_at === null
+            || $this->source_updated_at->lessThan(now()->subHours(SpotConditions::STALE_AFTER_HOURS));
     }
 }

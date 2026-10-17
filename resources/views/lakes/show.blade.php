@@ -26,7 +26,7 @@
     $breadcrumbs = [['All lakes', route('hubs.lakes')], [$region->name, route('regions.show', $region)], ['Lakes', route('lakes.index', $region)], [$lake->name, route('lakes.show', [$region, $lake])]];
 @endphp
 
-<x-layouts.app :share-image="$shareImage" :date-modified="$overflows->dataUpdatedAt" :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
+<x-layouts.app :share-image="$shareImage" :date-modified="collect([$overflows->dataUpdatedAt, $conditions->level?->latestAt])->filter()->max()" :region="$region" :feed="route('lakes.feed', [$region, $lake])" :title="$lake->name.': swimming, water quality and lake level'"
                :description="'Bathing water results, lake level, rainfall and storm overflows nearby for swimming and paddling at '.$lake->name.'.'"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->lake($lake, $region)">
@@ -37,7 +37,7 @@
             @if ($lake->description)
                 <p class="mt-1 text-ink-2">{{ $lake->description }}</p>
             @endif
-            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forLake($conditions, $weather)" />
+            <x-place-summary class="mt-3" :headline="app(\App\Services\Conditions\PlaceHeadline::class)->forLake($conditions, $weather)" :region="$region" />
         </div>
         <x-place-actions :latitude="$lake->latitude" :longitude="$lake->longitude" :label="$lake->name" :feed="route('lakes.feed', [$region, $lake])" />
     </div>
@@ -128,7 +128,7 @@
         @endif
     </section>
 
-    <x-nearby-overflows :overflows="$overflows" class="mt-10" />
+    <x-nearby-overflows :overflows="$overflows" :region="$region" class="mt-10" />
 
     <x-before-you-go kind="lake" />
 

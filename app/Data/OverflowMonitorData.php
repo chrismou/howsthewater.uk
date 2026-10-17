@@ -21,6 +21,22 @@ final readonly class OverflowMonitorData
     ) {
     }
 
+    public function withSourceUpdatedAt(Carbon $sourceUpdatedAt): self
+    {
+        return new self(
+            externalId: $this->externalId,
+            company: $this->company,
+            receivingWatercourse: $this->receivingWatercourse,
+            latitude: $this->latitude,
+            longitude: $this->longitude,
+            status: $this->status,
+            statusStartedAt: $this->statusStartedAt,
+            latestEventStartedAt: $this->latestEventStartedAt,
+            latestEventEndedAt: $this->latestEventEndedAt,
+            sourceUpdatedAt: $sourceUpdatedAt,
+        );
+    }
+
     /**
      * @param  array<string, mixed>  $attributes  A feature's attributes from the ArcGIS feed
      */

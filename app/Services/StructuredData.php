@@ -124,6 +124,18 @@ class StructuredData
     }
 
     /**
+     * A region page: the region as the Place every spot, beach and lake page names as containedInPlace, then its
+     * listings.
+     *
+     * @param  iterable<array{0: string, 1: string}>  $listings  Name and URL pairs
+     * @return list<array<string, mixed>>
+     */
+    public function regionPage(Region $region, iterable $listings): array
+    {
+        return [$this->region($region), ...$this->itemList($region->name, $listings)];
+    }
+
+    /**
      * The places a listing page links to, in the order shown.
      *
      * @param  iterable<array{0: string, 1: string}>  $items  [name, url] pairs

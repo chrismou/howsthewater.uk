@@ -6,9 +6,10 @@
 
     monitorCount, offlineCount, companies: the river's monitors. where: the place as it reads after "monitors", such as
     "on the River Wharfe and its tributaries". stale: the data is older than the stale threshold, so the sentence says
-    it is the latest the monitors sent. Every sentence ends by linking to what the data cannot tell you.
+    it is the latest the monitors sent. region: where the feed is not read yet, its water company's own map is linked.
+    Every sentence ends by linking to what the data cannot tell you.
 --}}
-@props(['monitorCount', 'offlineCount', 'companies', 'where', 'dischargingNow', 'spillsLast48Hours', 'updatedAt' => null, 'covered' => true, 'stale' => false])
+@props(['monitorCount', 'offlineCount', 'companies', 'where', 'dischargingNow', 'spillsLast48Hours', 'updatedAt' => null, 'covered' => true, 'stale' => false, 'region' => null])
 
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
@@ -39,8 +40,14 @@
         $sentence .= ' That is the most recent data the monitors have sent.';
     }
 
+    $map = $covered ? null : $region?->unreadOverflowMap();
+
+    if ($map !== null) {
+        $sentence .= ' '.e($map['name']).' shows the live status of its overflows on its <a href="'.e($map['url']).'" rel="noopener" target="_blank" class="underline hover:text-ink">storm overflow map</a>.';
+    }
+
     $sentence .= ' <a href="'.route('about').'#limits" class="underline decoration-line underline-offset-2 hover:decoration-ink">Monitor data is not a safety check.</a>';
 @endphp
 
-{{-- Every part of the sentence is escaped above; the markup is only the <time> element. --}}
+{{-- Every part of the sentence is escaped above; the markup is only the <time> element and the links. --}}
 <p {{ $attributes }}>{!! $sentence !!}</p>

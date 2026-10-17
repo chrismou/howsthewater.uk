@@ -45,6 +45,12 @@ return [
     // Storm overflow feeds, one per water company. Stream publishes an ArcGIS feature service for each English company,
     // all with the same fields; Scottish Water publishes its own API. The driver picks the reader, and regions list the
     // keys they need in `overflow_feeds`; only those feeds are polled.
+    // Water companies whose overflow data is not read yet, by region slug. Places there name the company and link its
+    // own live map, so "not available" still points somewhere.
+    'unread_overflow_maps' => [
+        'wales' => ['name' => 'Dŵr Cymru Welsh Water', 'url' => 'https://corporate.dwrcymru.com/en/community/environment/storm-overflow-map'],
+    ],
+
     'overflow_feeds' => [
         'yorkshire_water' => [
             'name' => 'Yorkshire Water',
@@ -55,6 +61,8 @@ return [
             'name' => 'Northumbrian Water',
             'driver' => 'stream',
             'url' => env('STREAM_NORTHUMBRIAN_WATER_URL', 'https://services-eu1.arcgis.com/MSNNjkZ51iVh8yBj/arcgis/rest/services/Northumbrian_Water_Storm_Overflow_Activity_2_view/FeatureServer/0'),
+            // LastUpdated only moves when a monitor's status changes, so each read confirms the feed (SyncOverflowMonitors).
+            'updated_on_change' => true,
         ],
         'united_utilities' => [
             'name' => 'United Utilities',

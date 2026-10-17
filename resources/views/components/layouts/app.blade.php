@@ -12,9 +12,10 @@
     $ogImage = $shareImage?->url() ?? asset('og-image.png');
     $ogImageAlt = $shareImage?->alt ?? "How's the Water? What's the river doing right now? Storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots, every 15 minutes.";
     // Built from the route and its bound models, so /Yorkshire (which the case-insensitive database still finds)
-    // names /yorkshire as canonical.
+    // names /yorkshire as canonical. Only the URL's own parameters go in: Route::view() keeps its view and status as
+    // defaults, which route() would otherwise append as a query string.
     $currentRoute = request()->route();
-    $canonical = $currentRoute?->getName() !== null ? route($currentRoute->getName(), $currentRoute->parameters()) : url()->current();
+    $canonical = $currentRoute?->getName() !== null ? route($currentRoute->getName(), \Illuminate\Support\Arr::only($currentRoute->parameters(), $currentRoute->parameterNames())) : url()->current();
     // Overflow data is credited per source: the English companies via Stream, Scottish Water from its own API.
     $overflowFeeds = collect($allRegions->reduce(fn (array $feeds, $region) => $feeds + $region->overflowFeedConfig(), []));
     $streamCompanies = $overflowFeeds->where('driver', 'stream')->pluck('name')->unique()->join(', ', ' and ');
@@ -29,6 +30,8 @@
         // Every title ends with the site name. The page's own part comes first and stays within 60 characters (see the
         // SEO section of CLAUDE.md), so if search results cut the title short they only lose the site name.
         $pageTitle = ($title ? $title.' - ' : '').config('app.name');
+        // Share previews show og:site_name (or the domain) beside the title, so the shared title leaves the name off.
+        $shareTitle = $title ?? config('app.name');
         $pageDescription = $description ?? 'Storm overflow spills, river levels and bathing water results for swimming, paddling and fishing on rivers, beaches and lakes, updated every 15 minutes.';
     @endphp
     <title>{{ $pageTitle }}</title>
@@ -43,7 +46,7 @@
     @endif
     <meta property="og:site_name" content="{{ config('app.name') }}">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:title" content="{{ $shareTitle }}">
     <meta property="og:description" content="{{ $pageDescription }}">
     <meta property="og:url" content="{{ $canonical }}">
     <meta property="og:image" content="{{ $ogImage }}">
@@ -52,7 +55,7 @@
     <meta property="og:image:alt" content="{{ $ogImageAlt }}">
     <meta property="og:locale" content="en_GB">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:title" content="{{ $shareTitle }}">
     <meta name="twitter:description" content="{{ $pageDescription }}">
     <meta name="twitter:image" content="{{ $ogImage }}">
     <meta name="twitter:image:alt" content="{{ $ogImageAlt }}">
@@ -64,9 +67,11 @@
     @unless ($noindex)
         @php
             $siteId = rtrim(route('home'), '/').'/#website';
+            // The home page's ids take the same trailing slash as the site's, so every id on it shares one base.
+            $idBase = $canonical === rtrim(route('home'), '/') ? $canonical.'/' : $canonical;
             $nodes = collect($structuredData)
                 ->flatMap(fn (array $item) => $item['@graph'] ?? [$item])
-                ->map(fn (array $node) => ['@id' => $canonical.'#'.lcfirst((string) $node['@type']), ...$node])
+                ->map(fn (array $node) => ['@id' => $idBase.'#'.lcfirst((string) $node['@type']), ...$node])
                 ->values();
             $mainEntity = $nodes->first(fn (array $node) => ! in_array($node['@type'], ['WebSite', 'Organization'], true));
 
@@ -77,7 +82,7 @@
             if ($breadcrumbs !== []) {
                 $nodes->push([
                     '@type' => 'BreadcrumbList',
-                    '@id' => $canonical.'#breadcrumb',
+                    '@id' => $idBase.'#breadcrumb',
                     'itemListElement' => collect($breadcrumbs)
                         ->map(fn (array $crumb, int $index) => ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $crumb[0], 'item' => $crumb[1]])
                         ->all(),
@@ -86,14 +91,14 @@
 
             $nodes->prepend(array_filter([
                 '@type' => $pageType,
-                '@id' => $canonical.'#webpage',
+                '@id' => $idBase.'#webpage',
                 'url' => $canonical,
                 'name' => $pageTitle,
                 'description' => $pageDescription,
                 'inLanguage' => 'en-GB',
                 'isPartOf' => ['@id' => $siteId],
                 'dateModified' => $dateModified?->copy()->utc()->toIso8601String(),
-                'breadcrumb' => $breadcrumbs !== [] ? ['@id' => $canonical.'#breadcrumb'] : null,
+                'breadcrumb' => $breadcrumbs !== [] ? ['@id' => $idBase.'#breadcrumb'] : null,
                 'mainEntity' => $mainEntity !== null ? ['@id' => $mainEntity['@id']] : null,
             ]));
 

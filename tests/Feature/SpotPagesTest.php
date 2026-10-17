@@ -322,7 +322,9 @@ it('describes pages for sharing and search engines', function () {
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: swimming, river level and spills - '.e(config('app.name')).'">', false)
+        ->assertSee('<title>Otley, River Wharfe: swimming, river level and spills - '.e(config('app.name')).'</title>', false)
+        ->assertSee('<meta property="og:title" content="Otley, River Wharfe: swimming, river level and spills">', false)
+        ->assertSee('<meta name="twitter:title" content="Otley, River Wharfe: swimming, river level and spills">', false)
         ->assertSee('<meta property="og:url" content="'.route('spots.show', [$region, $river, $spot]).'"', false)
         ->assertSee('og-image.png')
         ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
@@ -356,12 +358,13 @@ it('shows a helpful 404 page in the site layout', function () {
         ->assertSee('data-live-bar', false);
 });
 
-it('lets Cloudflare keep pages for five minutes, but never errors or redirects', function () {
+it('lets Cloudflare keep pages for five minutes, but never errors, redirects or search results', function () {
     [$region, $river, $spot] = spotWithUrl(['slug' => 'ilkley'], ['slug' => 'wharfe']);
 
     $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300');
     $this->get(route('home'))->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300');
-    $this->get(route('search', ['q' => 'Ilkley']))->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300');
+    $search = $this->get(route('search', ['q' => 'Ilkley']))->assertOk();
+    expect((string) $search->headers->get('Cache-Control'))->toContain('no-store')->not->toContain('public');
     $missing = $this->get('/yorkshire/rivers/wharfe/nowhere')->assertNotFound();
     $redirect = $this->get('/yorkshire/wharfe/ilkley')->assertMovedPermanently();
     expect((string) $missing->headers->get('Cache-Control'))->not->toContain('public')

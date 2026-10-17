@@ -28,7 +28,7 @@
         <x-dated-summary class="mt-2 max-w-2xl text-ink-2" :monitor-count="$overview->monitorCount" :offline-count="$overview->offlineCount" :companies="$overview->companies"
                          :where="'on the '.$overview->river->name.($overview->hasTributaries ? ' and its tributaries' : '')"
                          :discharging-now="$overview->dischargingNowCount" :spills-last48-hours="$overview->spillsLast48HoursCount" :updated-at="$overview->dataUpdatedAt()"
-                         :covered="$overview->river->region->hasOverflowData()" :stale="$overview->overflowDataIsStale()" />
+                         :covered="$overview->river->region->hasOverflowData()" :region="$overview->river->region" :stale="$overview->overflowDataIsStale()" />
         <p class="mt-2 text-sm text-ink-2">
             {{ $overview->spots->count() }} {{ \Illuminate\Support\Str::plural('spot', $overview->spots->count()) }}, listed source to mouth.
             <a href="{{ route('rivers.feed', [$overview->river->region, $overview->river]) }}" class="whitespace-nowrap text-accent hover:underline">Follow the {{ \Illuminate\Support\Str::after($overview->river->name, 'River ') }} by RSS</a>
@@ -43,6 +43,8 @@
         data-map-markers="{{ json_encode($mapMarkers) }}"
     ></div>
 
+    {{-- The spot cards' names are h3s, so the list has its own h2. --}}
+    <h2 class="font-display mb-3 text-lg font-semibold">Spots on the {{ $overview->river->name }}</h2>
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
         @foreach ($overview->spots as $conditions)
             <x-spot-card :conditions="$conditions" />
