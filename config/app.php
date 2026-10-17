@@ -21,7 +21,7 @@ return [
     // When the about and legal pages last changed: shown on each page, in its dateModified and in the sitemap. Bump a
     // date whenever that page's content changes.
     'pages_updated' => [
-        'about' => '2026-10-17',
+        'about' => '2026-10-18',
         'privacy' => '2026-10-16',
         'terms' => '2026-10-16',
     ],

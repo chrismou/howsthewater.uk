@@ -65,7 +65,7 @@
                 <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">{{ $page->record[30]['spills'] }} <span class="font-sans text-sm font-normal text-muted">{{ \Illuminate\Support\Str::plural('spill', $page->record[30]['spills']) }}, {{ $hours($page->record[30]['hours']) }} h</span></dd>
             </div>
             <div>
-                <dt class="text-xs text-muted">{{ $today->year }} so far</dt>
+                <dt class="text-xs text-muted">{{ $page->yearLabel() }}</dt>
                 <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">{{ $page->record['year']['spills'] }} <span class="font-sans text-sm font-normal text-muted">{{ \Illuminate\Support\Str::plural('spill', $page->record['year']['spills']) }}, {{ $hours($page->record['year']['hours']) }} h</span></dd>
             </div>
             <div>
@@ -148,7 +148,7 @@
     <section id="spills" class="mt-10 scroll-mt-24">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h2 class="font-display text-lg font-semibold">Every spill recorded <span class="font-mono tabular-nums text-muted">{{ $spills->total() }}</span></h2>
-            <span class="text-sm text-muted">Since we first saw this overflow on {{ $recordedFrom->format('j F Y') }}.</span>
+            <span class="text-sm text-muted">Since we first saw this overflow on {{ $recordedFrom->format('j F Y') }}. Any earlier spill is the latest the feed reported then.</span>
         </div>
         @if ($spills->isEmpty())
             <p class="text-sm text-ink-2">No spill recorded yet.</p>

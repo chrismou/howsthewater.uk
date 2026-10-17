@@ -147,7 +147,9 @@ class WaterBodyConditionsService
      */
     private function overflowsNear(array $points, bool $covered): NearbyOverflows
     {
-        $monitors = $this->monitors->near($points, self::NEARBY_RADIUS_METRES);
+        // Where we do not read the overflow feed (Wales), monitors recorded ahead of the region are left out entirely,
+        // as on spots: they would show without context and link to overflows that have no page.
+        $monitors = $covered ? $this->monitors->near($points, self::NEARBY_RADIUS_METRES) : collect();
         $recentEvents = $this->spillHistory->recentEventsForMonitors($monitors->map(fn (NearbyMonitorSummary $summary) => $summary->monitor->id));
 
         $byStatus = fn (OverflowStatus $status) => $monitors->filter(fn (NearbyMonitorSummary $summary) => $summary->status === $status)->count();

@@ -99,7 +99,7 @@ it('says when the rain gauge sent nothing, rather than showing a dry month', fun
         ->assertDontSee('0.0 mm of rain');
 });
 
-it('dates our record from the first spill recorded, works out uptime, and survives a deleted nearest place', function () {
+it('dates our record from when we first saw the overflow, works out uptime, and survives a deleted nearest place', function () {
     $this->travelTo('2026-11-20 12:00:00');
     $region = Region::factory()->create();
     $river = River::factory()->create(['region_id' => $region->id]);
@@ -115,7 +115,10 @@ it('dates our record from the first spill recorded, works out uptime, and surviv
     $this->get(route('overflows.show', $monitor))
         ->assertOk()
         ->assertSee('<title>Storm overflow NWL00001: spills - How\'s the Water?</title>', false)
-        ->assertSee('Our record, since 8 October 2026')
+        // The 8 October spill is the feed's latest when we first saw the overflow on the 15th: listed, not the start.
+        ->assertSee('Our record, since 15 October 2026')
+        ->assertSee('Thu 8 Oct 2026, 07:00')
+        ->assertSee('Any earlier spill is the latest the feed reported then.')
         ->assertSee('97.0%')
         ->assertSee($lake->name);
 });

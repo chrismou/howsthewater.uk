@@ -8,7 +8,6 @@ use App\Models\Lake;
 use App\Models\OverflowMonitor;
 use App\Models\OverflowMonitorPlace;
 use App\Models\OverflowOfflinePeriod;
-use App\Models\RainfallReading;
 use App\Models\RainfallStation;
 use App\Models\Region;
 use App\Models\River;
@@ -38,37 +37,39 @@ class OverflowPageService
     /** Uptime over less than this reads as more certain than it is, so it is not shown. */
     private const UPTIME_MINIMUM_DAYS = 7;
 
-    public function __construct(private RegionOverflows $overflows, private SpillHistoryService $history)
+    public function __construct(private RegionOverflows $overflows, private SpillHistoryService $history, private DailyRainfall $rainfall)
     {
     }
 
     public function for(OverflowMonitor $monitor, Region $region): OverflowPage
     {
         $now = now();
-        $openUntil = $monitor->isStale() ? ($monitor->source_updated_at ?? $now)->copy()->min($now) : $now;
-        $spans = $this->spans($monitor, $openUntil);
+        $spans = $this->spans($monitor, SpillIntervals::openUntil($monitor, $now));
         $places = $this->overflows->placesFor($monitor);
         $rainfallStation = $this->rainfallStationFor($places);
-        $startOfYear = $now->copy()->timezone($this->timezone())->startOfYear()->utc();
         $uptime = $this->uptime($monitor, $now);
-        $firstSpill = $spans->min('start');
+        // Our record runs from when we first saw the overflow. Its first spill is the feed's latest at that moment,
+        // often from long before, so it stays in the log but the year's figures start from the record.
+        $recordingSince = ($monitor->created_at ?? $now)->copy();
+        $yearFrom = $now->copy()->timezone($this->timezone())->startOfYear()->utc()->max($recordingSince);
+        $days = SpillIntervals::dayBoundaries($now, SpillHistoryService::HISTORY_DAYS);
 
         return new OverflowPage(
             monitor: $monitor,
             region: $region,
             places: $places,
-            // The first spill recorded is the feed's latest when we first saw the overflow, often from before then.
-            recordingSince: collect([$monitor->created_at ?? $now, $firstSpill])->filter()->min()->copy(),
+            recordingSince: $recordingSince,
             record: [
-                7 => $this->window($spans, $now->copy()->subDays(7), $now),
-                30 => $this->window($spans, $now->copy()->subDays(30), $now),
-                'year' => $this->window($spans, $startOfYear, $now),
+                7 => $this->window($spans, $days[SpillHistoryService::HISTORY_DAYS - 7], $now->getTimestamp()),
+                30 => $this->window($spans, $days[0], $now->getTimestamp()),
+                'year' => $this->window($spans, $yearFrom->getTimestamp(), $now->getTimestamp()),
             ],
-            totalSpills: $spans->count(),
-            longestSpillMinutes: $spans->isEmpty() ? null : (int) $spans->max(fn (array $span) => $span['start']->diffInMinutes($span['end'])),
-            dailyHistory: $this->history->dailyBreakdown($this->recentEvents($monitor, $now, $openUntil), $now),
+            yearFrom: $yearFrom,
+            totalSpills: count($spans),
+            longestSpillMinutes: $spans === [] ? null : (int) round(max(array_map(fn (array $span) => $span[1] - $span[0], $spans)) / 60),
+            dailyHistory: $this->history->dailyBreakdown($this->recentEvents($monitor, $now), $now),
             rainfallStation: $rainfallStation,
-            dailyRainfall: $rainfallStation === null ? null : $this->dailyRainfall($rainfallStation, $now),
+            dailyRainfall: $rainfallStation === null ? null : $this->rainfall->forStation($rainfallStation, $now),
             annualReturns: $monitor->annualReturns()->get(),
             uptimePercent: $uptime['uptimePercent'],
             uptimeSince: $uptime['uptimeSince'],
@@ -94,56 +95,50 @@ class OverflowPageService
     }
 
     /**
-     * Each spill's start and end, read as plain values; an open one ends at $openUntil.
+     * Each spill's start and end as timestamps; an open one ends at $openUntil.
      *
-     * @return Collection<int, array{start: Carbon, end: Carbon}>
+     * @return list<array{0: int, 1: int}>
      */
-    private function spans(OverflowMonitor $monitor, Carbon $openUntil): Collection
+    private function spans(OverflowMonitor $monitor, Carbon $openUntil): array
     {
         return SpillEvent::query()
             ->where('overflow_monitor_id', $monitor->id)
             ->toBase()
             ->get(['started_at', 'ended_at'])
             ->map(function (object $row) use ($openUntil) {
-                $start = Carbon::parse($row->started_at, 'UTC');
+                $start = Carbon::parse($row->started_at, 'UTC')->getTimestamp();
 
-                return ['start' => $start, 'end' => $row->ended_at === null ? $openUntil->copy()->max($start) : Carbon::parse($row->ended_at, 'UTC')];
-            });
+                return [$start, $row->ended_at === null ? max($start, $openUntil->getTimestamp()) : Carbon::parse($row->ended_at, 'UTC')->getTimestamp()];
+            })
+            ->all();
     }
 
     /**
-     * Spills overlapping the history window, those still open on a monitor that has stopped reporting ended at its
-     * last report.
+     * Spills overlapping the history window, each with its monitor, so one still open on a monitor that has stopped
+     * reporting is counted only to its last report.
      *
      * @return Collection<int, SpillEvent>
      */
-    private function recentEvents(OverflowMonitor $monitor, Carbon $now, Carbon $openUntil): Collection
+    private function recentEvents(OverflowMonitor $monitor, Carbon $now): Collection
     {
         return SpillEvent::query()
             ->where('overflow_monitor_id', $monitor->id)
             ->where(fn ($query) => $query->whereNull('ended_at')->orWhere('ended_at', '>=', $now->copy()->subDays(SpillHistoryService::HISTORY_DAYS + 1)))
             ->get()
-            ->map(function (SpillEvent $event) use ($monitor, $openUntil) {
-                if ($event->ended_at === null && $monitor->isStale()) {
-                    $event = clone $event;
-                    $event->ended_at = $openUntil->copy()->max($event->started_at);
-                }
-
-                return $event;
-            });
+            ->each(fn (SpillEvent $event) => $event->setRelation('overflowMonitor', $monitor));
     }
 
     /**
-     * @param  Collection<int, array{start: Carbon, end: Carbon}>  $spans
+     * Spills overlapping the window and the hours spent spilling in it.
+     *
+     * @param  list<array{0: int, 1: int}>  $spans
      * @return array{spills: int, hours: float}
      */
-    private function window(Collection $spans, Carbon $from, Carbon $until): array
+    private function window(array $spans, int $from, int $until): array
     {
-        $inWindow = $spans->filter(fn (array $span) => $span['start']->lessThanOrEqualTo($until) && $span['end']->greaterThanOrEqualTo($from));
+        $inWindow = array_filter($spans, fn (array $span) => $span[0] < $until && $span[1] > $from);
 
-        $minutes = $inWindow->sum(fn (array $span) => max(0, (int) $span['start']->copy()->max($from)->diffInMinutes($span['end']->copy()->min($until))));
-
-        return ['spills' => $inWindow->count(), 'hours' => round($minutes / 60, 1)];
+        return ['spills' => count($inWindow), 'hours' => round(SpillIntervals::unionSeconds($inWindow, $from, $until) / 3600, 1)];
     }
 
     /**
@@ -159,40 +154,6 @@ class OverflowPageService
             ?->rainfall_station_id;
 
         return $stationId === null ? null : RainfallStation::query()->find($stationId);
-    }
-
-    /**
-     * Rain per UK day over the history window, oldest first, with every day present: null for a day the gauge sent
-     * no readings, so a silent gauge never reads as a dry day.
-     *
-     * @return array<string, float|null>
-     */
-    private function dailyRainfall(RainfallStation $station, Carbon $now): array
-    {
-        $timezone = $this->timezone();
-        $firstDay = $now->copy()->timezone($timezone)->startOfDay()->subDays(SpillHistoryService::HISTORY_DAYS - 1);
-        $totals = [];
-
-        foreach (range(0, SpillHistoryService::HISTORY_DAYS - 1) as $offset) {
-            $totals[$firstDay->copy()->addDays($offset)->toDateString()] = null;
-        }
-
-        $readings = RainfallReading::query()
-            ->where('rainfall_station_id', $station->id)
-            ->where('measured_at', '>', $firstDay->copy()->utc())
-            ->toBase()
-            ->get(['measured_at', 'millimetres']);
-
-        foreach ($readings as $reading) {
-            // A reading closes its 15 minutes, so one at midnight belongs to the day before.
-            $day = Carbon::parse($reading->measured_at, 'UTC')->subSecond()->timezone($timezone)->toDateString();
-
-            if (array_key_exists($day, $totals)) {
-                $totals[$day] = ($totals[$day] ?? 0.0) + (float) $reading->millimetres;
-            }
-        }
-
-        return array_map(fn (?float $millimetres) => $millimetres === null ? null : round($millimetres, 1), $totals);
     }
 
     /**

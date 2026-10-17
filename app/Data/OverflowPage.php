@@ -22,7 +22,8 @@ final readonly class OverflowPage
 {
     /**
      * @param  Collection<int, OverflowMonitorPlace>  $places  Nearest first, each place loaded
-     * @param  array{7: array{spills: int, hours: float}, 30: array{spills: int, hours: float}, year: array{spills: int, hours: float}}  $record
+     * @param  array{7: array{spills: int, hours: float}, 30: array{spills: int, hours: float}, year: array{spills: int, hours: float}}  $record  The last 7 and 30 UK days, and the year from $yearFrom
+     * @param  Carbon  $yearFrom  The start of the year, or of our record if that began this year
      * @param  Collection<int, SpillHistoryDay>  $dailyHistory  Oldest first, UK days
      * @param  array<string, float|null>|null  $dailyRainfall  Millimetres by UK date, oldest first; null for a day with no readings
      * @param  Collection<int, OverflowAnnualReturn>  $annualReturns  Newest first
@@ -34,6 +35,7 @@ final readonly class OverflowPage
         public Collection $places,
         public Carbon $recordingSince,
         public array $record,
+        public Carbon $yearFrom,
         public int $totalSpills,
         public ?int $longestSpillMinutes,
         public Collection $dailyHistory,
@@ -123,6 +125,17 @@ final readonly class OverflowPage
     public function waterBodies(): Collection
     {
         return $this->places->reject(fn (OverflowMonitorPlace $link) => $link->place instanceof Spot)->values();
+    }
+
+    /**
+     * "2026 so far", or "Since 13 Oct" when our record began this year, so a part year never reads as a whole one.
+     */
+    public function yearLabel(): string
+    {
+        $timezone = (string) config('app.display_timezone', 'Europe/London');
+        $from = $this->yearFrom->copy()->timezone($timezone);
+
+        return $from->isSameDay($from->copy()->startOfYear()) ? $from->year.' so far' : 'Since '.$from->format('j M');
     }
 
     public function longestSpillLabel(): ?string

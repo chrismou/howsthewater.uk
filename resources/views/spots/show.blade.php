@@ -22,7 +22,8 @@
     ]])->concat($mapMonitors->map(fn ($summary) => [
         'lat' => $summary->monitor->latitude,
         'lng' => $summary->monitor->longitude,
-        'label' => $summary->monitor->external_id.', '.$summary->river->name.' ('.$summary->status->label().')',
+        'label' => ($summary->monitor->displayName() ?? $summary->monitor->external_id).', '.$summary->river->name.' ('.$summary->status->label().')',
+        'url' => route('overflows.show', $summary->monitor),
         'kind' => 'monitor',
         'status' => $summary->status->value,
     ]))->values();
@@ -163,7 +164,8 @@
                 <x-help term="history" />
             </div>
             @if ($covered)
-                <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" />
+                <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" :recency="$conditions->spillRecency"
+                                 :all-url="$conditions->upstreamMonitors->isNotEmpty() ? route('spots.spills', [$spot->river->region, $spot->river, $spot]) : null" />
             @else
                 <p class="rounded-lg border border-line bg-surface p-5 text-sm text-ink-2">No spill history, as we do not read the water company's overflow data here yet. <x-help term="not_covered" /> <x-overflow-map-link :region="$spot->river->region" /></p>
             @endif

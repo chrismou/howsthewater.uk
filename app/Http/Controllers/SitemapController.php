@@ -57,11 +57,34 @@ class SitemapController extends Controller
             ->concat($lakes->map(fn (Lake $lake) => $this->url(route('lakes.show', [$lake->region, $lake]), $lake->updated_at)))
             ->concat(collect(['hubs.rivers', 'hubs.beaches', 'hubs.lakes', 'spills.index'])->map(fn (string $hub) => $this->url(route($hub), $latest)))
             ->concat($regions->filter(fn (Region $region) => $region->hasOverflowData())->map(fn (Region $region) => $this->url(route('spills.region', $region), $regionTimes[$region->id])))
+            ->concat($this->placeSpillsPages($spots, $beaches, $lakes, $spotTimes))
             // Dated by the overflow's latest spill: feeds confirm every monitor each poll, which changes nothing on the page.
             ->concat($this->overflowPages($regions, $regionOverflows)->map(fn (OverflowMonitor $monitor) => $this->url(route('overflows.show', $monitor), $monitor->latest_event_ended_at ?? $monitor->latest_event_started_at)))
             ->concat(collect(['about', 'terms', 'privacy'])->map(fn (string $page) => $this->url(route($page), Carbon::parse(config("app.pages_updated.{$page}"), config('app.display_timezone', 'Europe/London')))));
 
         return response()->view('sitemap', ['urls' => $urls], 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+    }
+
+    /**
+     * The spills pages of places linked to at least one overflow (none are in regions without overflow data).
+     *
+     * @param  Collection<int, Spot>  $spots
+     * @param  Collection<int, BathingWater>  $beaches
+     * @param  Collection<int, Lake>  $lakes
+     * @param  Collection<int, Carbon|null>  $spotTimes
+     * @return Collection<int, array{loc: string, lastmod: Carbon|null}>
+     */
+    private function placeSpillsPages(Collection $spots, Collection $beaches, Collection $lakes, Collection $spotTimes): Collection
+    {
+        $linked = OverflowMonitorPlace::query()->distinct()->get(['place_type', 'place_id'])
+            ->groupBy('place_type')
+            ->map(fn (Collection $links) => $links->pluck('place_id')->flip());
+        $has = fn (Spot|BathingWater|Lake $place) => $linked->get($place->getMorphClass())?->has($place->getKey()) ?? false;
+
+        return $spots->filter($has)->map(fn (Spot $spot) => $this->url(route('spots.spills', [$spot->river->region, $spot->river, $spot]), $spotTimes[$spot->id] ?? null))
+            ->concat($beaches->filter($has)->map(fn (BathingWater $beach) => $this->url(route('beaches.spills', [$beach->region, $beach]), $beach->updated_at)))
+            ->concat($lakes->filter($has)->map(fn (Lake $lake) => $this->url(route('lakes.spills', [$lake->region, $lake]), $lake->updated_at)))
+            ->values();
     }
 
     /**

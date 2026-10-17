@@ -330,8 +330,9 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   reaches and the full spill log, 50 a page (later pages noindexed). Totals come from each spill's start and end
   alone, read as plain values. A spill still open on a stale monitor counts only up to its last report and shows as
   "open at last report" (`components/spill-duration`), never "ongoing"; a rain gauge with no readings on a day shows
-  as no data, never as a dry day. Our record runs from the first spill recorded or when we first saw the overflow,
-  whichever is earlier. An overflow with no name, no return and no spill is noindexed and left out of the sitemap
+  as no data, never as a dry day. Our record runs from when we first saw the overflow; an earlier spill (the feed's latest
+  then) stays in the log, but the year's figures start at the record. An overflow with no name, no return and no
+  spill is noindexed and left out of the sitemap
   (dated by its latest spill). Name an overflow with `components/overflow-link`; link a place with
   `OverflowMonitorPlace::placeUrl()`.
 - The live bar's spill counts link to `/spills` (every region, `SpillsOverviewService`) or `/{region}/spills`
@@ -342,6 +343,24 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   latest 200). The page warns when no overflow behind it has reported for 6 hours, so an empty list never reads as
   "none right now". A region without overflow data has no spills page (404), and the combined page describes its
   coverage rather than naming countries. `spills` and `overflows` are in `Region::RESERVED_SLUGS`.
+- Each spot, beach and lake has a spills page (`spots.spills`, `beaches.spills`, `lakes.spills`, at `.../spills`;
+  `PlaceSpillsController`, `PlaceSpillsService`, `PlaceSpills`, `spills/place`) for the overflows its page shows
+  (`overflow_monitor_places`): hours when at least one was spilling over 7 days, 30 days and the year (overlapping
+  spills count once, so the total never exceeds the time that passed), days with a spill, the last 30 days beside
+  the place's rain gauge, hours by month, the busiest overflows this year (each with its own hours) and every spill,
+  50 a page (later pages noindexed). Spots say "upstream", beaches and lakes "nearby". Regions without overflow data
+  404, as do places with no overflows matched (noindexed, unlinked). Figures run from when we first saw the place's
+  monitors: the first spill held for each is the feed's latest at that moment, often months old, so it stays in the
+  log but the year (labelled "Since 13 Oct" while the record is younger than the year), the months and the busiest
+  list start at the record. Only spills inside the windows shown are read, and the figures are cached per place for
+  10 minutes (as plain values), so the routes are not rate limited. A stale warning shows when no linked overflow
+  has reported for 6 hours. The place pages list their latest 10 spills (`components/spill-history`,
+  `components/nearby-overflows`) with a link to it, and link every overflow, in tables and map markers, to its page.
+  `SpillIntervals` holds the shared rules: hours as the union of spills on plain timestamps (overlaps count once,
+  seconds summed then rounded), UK day boundaries (23 and 25 hour days at the clock changes), and open spills
+  counted to now, or only to the monitor's last report if it is stale (`endOf()` needs the event's
+  `overflowMonitor` loaded). `SpillHistoryService::dailyBreakdown()`, the overflow pages and the place pages all use
+  it. `DailyRainfall` totals a gauge per UK day for both kinds of page.
 - `overflow_monitor_places` links each overflow to the places whose page shows it: spots it is upstream of (distance
   along the water) and beaches and lakes it is near. `RefreshRegions` rewrites a place's links from the conditions
   it has just built (`SyncOverflowMonitorPlaces`, only changed rows), so they never disagree with the pages, and

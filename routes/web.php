@@ -7,6 +7,7 @@ use App\Http\Controllers\LakeController;
 use App\Http\Controllers\LegacyRiverRedirectController;
 use App\Http\Controllers\OverflowController;
 use App\Http\Controllers\PlaceHubController;
+use App\Http\Controllers\PlaceSpillsController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\RiverController;
 use App\Http\Controllers\SearchController;
@@ -51,6 +52,11 @@ Route::scopeBindings()->group(function () use ($pageCaching) {
         Route::get('/{region}/beaches/{beach}', [BeachController::class, 'show'])->name('beaches.show');
         Route::get('/{region}/lakes', [LakeController::class, 'index'])->name('lakes.index');
         Route::get('/{region}/lakes/{lake}', [LakeController::class, 'show'])->name('lakes.show');
+        // Not rate limited, so crawlers can read every place's history; each place's figures are cached
+        // (PlaceSpillsService), so URLs that only differ by query string cost little.
+        Route::get('/{region}/beaches/{beach}/spills', [PlaceSpillsController::class, 'beach'])->name('beaches.spills');
+        Route::get('/{region}/lakes/{lake}/spills', [PlaceSpillsController::class, 'lake'])->name('lakes.spills');
+        Route::get('/{region}/rivers/{river}/{spot}/spills', [PlaceSpillsController::class, 'spot'])->name('spots.spills');
     });
 
     // Feeds and the spot's extra overflow rows come before the spot route, which would otherwise take "feed" or

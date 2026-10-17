@@ -17,7 +17,8 @@
     ]))->concat($overflows->monitors->map(fn ($monitor) => [
         'lat' => $monitor->monitor->latitude,
         'lng' => $monitor->monitor->longitude,
-        'label' => $monitor->monitor->external_id.', '.number_format($monitor->distanceMetres / 1000, 1).' km ('.$monitor->status->label().')',
+        'label' => ($monitor->monitor->displayName() ?? $monitor->monitor->external_id).', '.number_format($monitor->distanceMetres / 1000, 1).' km ('.$monitor->status->label().')',
+        'url' => route('overflows.show', $monitor->monitor),
         'kind' => 'monitor',
         'status' => $monitor->status->value,
     ]))->values();
@@ -128,7 +129,7 @@
         @endif
     </section>
 
-    <x-nearby-overflows :overflows="$overflows" :region="$region" class="mt-10" />
+    <x-nearby-overflows :overflows="$overflows" :region="$region" :all-url="route('lakes.spills', [$region, $lake])" class="mt-10" />
 
     <x-before-you-go kind="lake" />
 

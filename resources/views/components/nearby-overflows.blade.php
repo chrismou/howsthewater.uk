@@ -1,5 +1,5 @@
 {{-- Storm overflow monitors within a fixed distance of a beach or lake: those active in 30 days first, the rest tucked away. --}}
-@props(['overflows', 'region' => null])
+@props(['overflows', 'region' => null, 'allUrl' => null])
 
 @php
     $spilledMonitorIds = $overflows->recentSpillEvents->pluck('overflow_monitor_id')->unique();
@@ -39,8 +39,8 @@
                             @php($event = $summary->latestEvent)
                             <tr>
                                 <td class="px-4 py-2.5">
-                                    <span class="font-mono text-xs">{{ $summary->monitor->external_id }}</span>
-                                    <span class="block text-xs text-muted">{{ $summary->monitor->receiving_watercourse }}</span>
+                                    <x-overflow-link :monitor="$summary->monitor" />
+                                    <span class="block text-xs text-muted">{{ $summary->monitor->intoName() }}</span>
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums">{{ number_format($summary->distanceMetres / 1000, 1) }} km</td>
                                 <td class="px-4 py-2.5">
@@ -76,6 +76,38 @@
                 {{ $quiet->count() }} more {{ \Illuminate\Support\Str::plural('monitor', $quiet->count()) }} nearby had no spill in the last 30 days.
                 <button type="button" data-show-quiet class="font-medium text-accent hover:underline">Show all {{ $overflows->monitors->count() }}</button>
             </p>
+        @endif
+
+        <div class="mt-6 flex flex-wrap items-baseline justify-between gap-2">
+            <h3 class="text-sm font-semibold">Latest spills nearby</h3>
+            @if ($allUrl)
+                <a href="{{ $allUrl }}" class="text-sm font-medium text-accent hover:underline">All spills nearby</a>
+            @endif
+        </div>
+        @if ($overflows->recentSpillEvents->isEmpty())
+            <p class="mt-2 text-sm text-ink-2">{{ $overflows->spillRecency === \App\Enums\SpillRecency::Offline ? 'No spill recorded nearby in the last 30 days, but the monitors nearby are offline.' : 'No spill recorded nearby in the last 30 days.' }}</p>
+        @else
+            <div class="mt-2 overflow-x-auto rounded-lg border border-line bg-surface">
+                <table class="w-full text-sm">
+                    <caption class="sr-only">The latest spills from overflows nearby, newest first</caption>
+                    <thead class="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted">
+                        <tr>
+                            <th scope="col" class="px-4 py-2.5 font-medium">Started</th>
+                            <th scope="col" class="px-4 py-2.5 font-medium">Overflow</th>
+                            <th scope="col" class="px-4 py-2.5 font-medium">Lasted</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-line-2">
+                        @foreach ($overflows->recentSpillEvents->take(10) as $event)
+                            <tr>
+                                <td class="whitespace-nowrap px-4 py-2.5 font-mono text-xs tabular-nums">{{ $event->started_at->copy()->timezone(config('app.display_timezone', 'Europe/London'))->format('D j M, H:i') }}</td>
+                                <td class="px-4 py-2.5"><x-overflow-link :monitor="$event->overflowMonitor" /></td>
+                                <td class="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums"><x-spill-duration :spill="$event" :monitor="$event->overflowMonitor" /></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     @endif
 </section>

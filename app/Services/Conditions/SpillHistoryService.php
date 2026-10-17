@@ -52,8 +52,8 @@ class SpillHistoryService
 
     /**
      * One entry per UK day for the history window, oldest first. Minutes are
-     * split across the days an event overlaps; the count goes to each day
-     * the event was active.
+     * those when at least one spill was running, so overlapping spills count
+     * once; the count goes to each day the event was active.
      *
      * @param  Collection<int, SpillEvent>  $events
      * @return Collection<int, SpillHistoryDay>
@@ -63,39 +63,27 @@ class SpillHistoryService
         // Days are UK days, as the pages print them and as rainfall is totalled, so a spill just after midnight in
         // summer lands on the day it happened.
         $timezone = (string) config('app.display_timezone', 'Europe/London');
-        $until = ($until ?? now())->copy()->timezone($timezone);
-        $firstDay = $until->copy()->startOfDay()->subDays(self::HISTORY_DAYS - 1);
-
-        $days = collect(range(0, self::HISTORY_DAYS - 1))
-            ->mapWithKeys(function (int $offset) use ($firstDay) {
-                $date = $firstDay->copy()->addDays($offset);
-
-                return [$date->toDateString() => ['date' => $date, 'count' => 0, 'minutes' => 0]];
-            })
-            ->all();
+        $until = ($until ?? now())->copy();
+        $boundaries = SpillIntervals::dayBoundaries($until, self::HISTORY_DAYS);
+        $counts = array_fill(0, self::HISTORY_DAYS, 0);
+        $intervals = array_fill(0, self::HISTORY_DAYS, []);
 
         foreach ($events as $event) {
-            $start = $event->started_at->copy()->timezone($timezone);
-            $end = ($event->ended_at ?? $until)->copy()->timezone($timezone)->min($until);
+            $start = $event->started_at->getTimestamp();
+            $end = min(SpillIntervals::endOf($event, $until)->getTimestamp(), $boundaries[self::HISTORY_DAYS]);
 
-            // A spill running since long before the window starts counting from the window's first day.
-            for ($day = $start->copy()->startOfDay()->max($firstDay); $day->lessThanOrEqualTo($end); $day->addDay()) {
-                $key = $day->toDateString();
-
-                if (! isset($days[$key])) {
-                    continue;
+            for ($day = 0; $day < self::HISTORY_DAYS; $day++) {
+                if ($start < $boundaries[$day + 1] && $end > $boundaries[$day]) {
+                    $counts[$day]++;
+                    $intervals[$day][] = [$start, $end];
                 }
-
-                $overlapStart = $start->max($day);
-                $overlapEnd = $end->min($day->copy()->endOfDay());
-
-                $days[$key]['count']++;
-                $days[$key]['minutes'] += max(0, (int) $overlapStart->diffInMinutes($overlapEnd));
             }
         }
 
-        return collect($days)
-            ->map(fn (array $day) => new SpillHistoryDay($day['date'], $day['count'], $day['minutes']))
-            ->values();
+        return collect(range(0, self::HISTORY_DAYS - 1))->map(fn (int $day) => new SpillHistoryDay(
+            Carbon::createFromTimestamp($boundaries[$day], $timezone),
+            $counts[$day],
+            (int) round(SpillIntervals::unionSeconds($intervals[$day], $boundaries[$day], $boundaries[$day + 1]) / 60),
+        ));
     }
 }

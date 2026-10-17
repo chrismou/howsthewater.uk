@@ -57,6 +57,9 @@ it('keeps place descriptions short for long names, and ends every title with the
         route('rivers.index', $region),
         route('rivers.show', [$region, $river]),
         route('spots.show', [$region, $river, $spot]),
+        route('spots.spills', [$region, $river, $spot]),
+        route('beaches.spills', [$region, $beach]),
+        route('lakes.spills', [$region, $lake]),
         route('beaches.index', $region),
         route('beaches.show', [$region, $beach]),
         route('beaches.show', [$region, $scottish]),
@@ -83,7 +86,7 @@ it('keeps place descriptions short for long names, and ends every title with the
     $henley = Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $region->id, 'name' => 'River Thames', 'slug' => 'thames'])->id, 'name' => 'Henley-on-Thames', 'slug' => 'henley']);
     $henleyTitle = pageMetadata($this->get(route('spots.show', [$region, $henley->river, $henley])))['title'];
 
-    foreach ([route('spots.show', [$region, $river, $spot]), route('spots.show', [$region, $henley->river, $henley])] as $url) {
+    foreach ([route('spots.show', [$region, $river, $spot]), route('spots.show', [$region, $henley->river, $henley]), route('spots.spills', [$region, $river, $spot]), route('beaches.spills', [$region, $beach]), route('lakes.spills', [$region, $lake])] as $url) {
         $title = pageMetadata($this->get($url))['title'];
         expect(mb_strlen(Str::beforeLast($title, ' - '.config('app.name'))))->toBeLessThanOrEqual(60, $title);
     }
@@ -238,7 +241,8 @@ it('never skips a heading level on place and listing pages', function () {
 
     $pages = [route('home'), route('regions.show', $region), route('rivers.index', $region), route('rivers.show', [$region, $river]),
         route('spots.show', [$region, $river, $spot]), route('beaches.show', [$region, $beach]), route('lakes.show', [$region, $lake]),
-        route('spills.index'), route('spills.region', $region), route('overflows.show', $overflow)];
+        route('spills.index'), route('spills.region', $region), route('overflows.show', $overflow), route('spots.spills', [$region, $river, $spot]),
+        route('beaches.spills', [$region, $beach])];
 
     foreach ($pages as $page) {
         preg_match_all('/<h([1-6])\b/', $this->get($page)->assertOk()->getContent(), $matches);

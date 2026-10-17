@@ -9,7 +9,7 @@
 {{-- On phones only the monitor and status columns show; the rest folds into a second line under each. --}}
 <tr>
     <td class="px-4 py-2.5">
-        <span class="whitespace-nowrap font-mono text-xs">{{ $summary->monitor->external_id }}</span>
+        <x-overflow-link :monitor="$summary->monitor" />
         <span class="block text-xs text-muted sm:hidden">{{ $summary->river->name }} · <span class="whitespace-nowrap">{{ number_format($summary->distanceUpstreamMetres / 1000, 1) }} km</span></span>
     </td>
     <td class="hidden whitespace-nowrap px-4 py-2.5 text-ink-2 sm:table-cell">{{ $summary->river->name }}</td>

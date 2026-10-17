@@ -55,12 +55,54 @@ it('splits event minutes across the days they overlap', function () {
 
     expect($days)->toHaveCount(30)
         ->and($days->keys()->first())->toBe('2026-09-14')
-        ->and($days['2026-10-11']->spillMinutes)->toBe(59)
+        ->and($days['2026-10-11']->spillMinutes)->toBe(60)
         ->and($days['2026-10-11']->spillCount)->toBe(1)
         ->and($days['2026-10-12']->spillMinutes)->toBe(120)
         ->and($days['2026-10-13']->spillMinutes)->toBe(120)
         ->and($days['2026-10-10']->spillCount)->toBe(0)
         ->and($days['2026-09-14']->spillMinutes)->toBe(120);
+
+    Carbon::setTestNow();
+});
+
+it('counts the minutes when overflows spill at the same time once', function () {
+    Carbon::setTestNow('2026-10-13 12:00:00');
+    $first = SpillEvent::factory()->make(['started_at' => Carbon::parse('2026-10-12 08:00:00'), 'ended_at' => Carbon::parse('2026-10-12 10:00:00')]);
+    $second = SpillEvent::factory()->make(['started_at' => Carbon::parse('2026-10-12 09:00:00'), 'ended_at' => Carbon::parse('2026-10-12 11:00:00')]);
+
+    $day = app(SpillHistoryService::class)->dailyBreakdown(collect([$first, $second]))->first(fn ($day) => $day->date->toDateString() === '2026-10-12');
+
+    expect($day->spillCount)->toBe(2)
+        ->and($day->spillMinutes)->toBe(180);
+
+    Carbon::setTestNow();
+});
+
+it('keeps every day of spills that started before the window, however many there are', function () {
+    Carbon::setTestNow('2026-10-13 12:00:00');
+    // Both started before the window; the second used to lose its first days to the first one's loop.
+    $long = SpillEvent::factory()->make(['started_at' => Carbon::parse('2026-09-01 00:00:00'), 'ended_at' => Carbon::parse('2026-09-20 12:00:00')]);
+    $inside = SpillEvent::factory()->make(['started_at' => Carbon::parse('2026-09-10 00:00:00'), 'ended_at' => Carbon::parse('2026-09-15 22:00:00')]);
+
+    $days = app(SpillHistoryService::class)->dailyBreakdown(collect([$long, $inside]))->keyBy(fn ($day) => $day->date->toDateString());
+
+    expect($days['2026-09-14']->spillCount)->toBe(2)
+        ->and($days['2026-09-15']->spillCount)->toBe(2)
+        ->and($days['2026-09-16']->spillCount)->toBe(1)
+        ->and($days['2026-09-20']->spillMinutes)->toBe(13 * 60);
+
+    Carbon::setTestNow();
+});
+
+it('counts a spill still open on a monitor that has stopped reporting only up to its last report', function () {
+    Carbon::setTestNow('2026-10-13 12:00:00');
+    $monitor = OverflowMonitor::factory()->create(['source_updated_at' => Carbon::parse('2026-10-12 12:00:00')]);
+    $open = SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => Carbon::parse('2026-10-12 10:00:00'), 'ended_at' => null])->load('overflowMonitor');
+
+    $days = app(SpillHistoryService::class)->dailyBreakdown(collect([$open]))->keyBy(fn ($day) => $day->date->toDateString());
+
+    expect($days['2026-10-12']->spillMinutes)->toBe(120)
+        ->and($days['2026-10-13']->spillCount)->toBe(0);
 
     Carbon::setTestNow();
 });

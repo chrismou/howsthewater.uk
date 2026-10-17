@@ -1,10 +1,10 @@
-@props(['days', 'events'])
+@props(['days', 'events', 'allUrl' => null, 'recency' => null])
 
 @php
     $maxMinutes = max(1, $days->max(fn ($day) => $day->spillMinutes));
     $totalMinutes = $days->sum(fn ($day) => $day->spillMinutes);
     $activeDays = $days->filter(fn ($day) => $day->spillCount > 0)->count();
-    $listedEvents = $events->take(50);
+    $listedEvents = $events->take(10);
 @endphp
 
 <div class="rounded-lg border border-line bg-surface p-5">
@@ -33,43 +33,42 @@
         <span>Today</span>
     </div>
 
-    @if ($events->isNotEmpty())
-        <details class="mt-4 text-sm">
-            <summary class="cursor-pointer text-ink-2 hover:text-ink">
-                {{ $events->count() }} {{ \Illuminate\Support\Str::plural('spill', $events->count()) }} recorded
-            </summary>
-            {{-- Scrolls on its own on phones, so an opened list never widens the page. --}}
-            <div class="mt-3 overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="text-left text-xs uppercase tracking-wide text-muted">
+    <div class="mt-5 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 class="text-sm font-semibold">Latest spills upstream</h3>
+        @if ($allUrl)
+            <a href="{{ $allUrl }}" class="text-sm font-medium text-accent hover:underline">All spills upstream</a>
+        @endif
+    </div>
+    @if ($events->isEmpty())
+        <p class="mt-2 text-sm text-ink-2">{{ $recency === \App\Enums\SpillRecency::Offline ? 'No spill recorded upstream in the last '.$days->count().' days, but the monitors upstream are offline.' : 'No spill recorded upstream in the last '.$days->count().' days.' }}</p>
+    @else
+        {{-- Scrolls on its own on phones, so the table never widens the page. --}}
+        <div class="mt-2 overflow-x-auto">
+            <table class="w-full text-sm">
+                <caption class="sr-only">The latest spills from overflows upstream, newest first</caption>
+                <thead class="text-left text-xs uppercase tracking-wide text-muted">
+                    <tr>
+                        <th scope="col" class="py-1 pr-4 font-medium">Started</th>
+                        <th scope="col" class="py-1 pr-4 font-medium">Overflow</th>
+                        <th scope="col" class="py-1 font-medium">Lasted</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-line-2">
+                    @foreach ($listedEvents as $event)
                         <tr>
-                            <th class="py-1 pr-4 font-medium">Started</th>
-                            <th class="py-1 pr-4 font-medium">Duration</th>
-                            <th class="py-1 pr-4 font-medium">Monitor</th>
-                            <th class="py-1 font-medium">Watercourse</th>
+                            <td class="py-1.5 pr-4 whitespace-nowrap font-mono text-xs tabular-nums">{{ $event->started_at->copy()->timezone(config('app.display_timezone', 'Europe/London'))->format('D j M, H:i') }}</td>
+                            <td class="py-1.5 pr-4">
+                                <x-overflow-link :monitor="$event->overflowMonitor" />
+                                <span class="block text-xs text-muted">{{ $event->overflowMonitor->intoName() }}</span>
+                            </td>
+                            <td class="py-1.5 whitespace-nowrap font-mono tabular-nums"><x-spill-duration :spill="$event" :monitor="$event->overflowMonitor" /></td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line-2">
-                        @foreach ($listedEvents as $event)
-                            <tr>
-                                <td class="py-1.5 pr-4 whitespace-nowrap">{{ $event->started_at->timezone(config('app.display_timezone', 'Europe/London'))->format('D j M, H:i') }}</td>
-                                <td class="py-1.5 pr-4 whitespace-nowrap">
-                                    @if ($event->isOngoing())
-                                        <span class="font-medium text-alert">Ongoing</span>
-                                    @else
-                                        {{ $event->durationLabel() }}
-                                    @endif
-                                </td>
-                                <td class="py-1.5 pr-4 font-mono text-xs">{{ $event->overflowMonitor->external_id }}</td>
-                                <td class="py-1.5 text-ink-2">{{ $event->overflowMonitor->river?->name ?? $event->overflowMonitor->receiving_watercourse }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            @if ($events->count() > $listedEvents->count())
-                <p class="mt-2 text-xs text-muted">The latest {{ $listedEvents->count() }} are listed.</p>
-            @endif
-        </details>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @if ($events->count() > $listedEvents->count())
+            <p class="mt-2 text-xs text-muted">The latest {{ $listedEvents->count() }} of {{ $events->count() }} in the last {{ $days->count() }} days.@if ($allUrl) <a href="{{ $allUrl }}" class="font-medium text-accent hover:underline">See them all</a>.@endif</p>
+        @endif
     @endif
 </div>
