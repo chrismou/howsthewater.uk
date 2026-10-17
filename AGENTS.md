@@ -361,6 +361,18 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   counted to now, or only to the monitor's last report if it is stale (`endOf()` needs the event's
   `overflowMonitor` loaded). `SpillHistoryService::dailyBreakdown()`, the overflow pages and the place pages all use
   it. `DailyRainfall` totals a gauge per UK day for both kinds of page.
+- Rivers and regions are compared from the annual returns (`AnnualReturnTotals`, `AreaReturnTotal`,
+  `RiverReturnRank`): `/{region}/spills` has "How {region}'s rivers compare" and `/spills` "How the regions compare"
+  (`spills/comparison`, `#compare`) for the latest year, most hours first, with each river's or region's overflows,
+  how many have a return with hours, counted spills, hours and hours per overflow with a return (so rivers with many
+  overflows compare fairly). A river counts its tributaries' overflows but not those of main rivers flowing into it;
+  a region counts every overflow its pages show, on its rivers and near its beaches and lakes, once. These hours add
+  each overflow's own, unlike the place pages' union. A comparison needs two places with returns, so one-river
+  regions show none, and Scotland (no Scottish Water returns) says so instead. River pages show the river's years
+  and, where two or more rivers have returns, its place ("the most", "the joint 3rd most"). Figures are cached as
+  plain values (slugs and ids, never URLs, so links follow the host serving the page) for a day under a generation
+  number that `ImportOverflowAnnualReturns` bumps. Regions without overflow data are left out. Compare places; never
+  call any "worst". Local authority and constituency totals are deliberately left out.
 - `overflow_monitor_places` links each overflow to the places whose page shows it: spots it is upstream of (distance
   along the water) and beaches and lakes it is near. `RefreshRegions` rewrites a place's links from the conditions
   it has just built (`SyncOverflowMonitorPlaces`, only changed rows), so they never disagree with the pages, and

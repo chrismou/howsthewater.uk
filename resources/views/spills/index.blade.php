@@ -75,18 +75,19 @@
             <ul class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($overview->spotsWithSpill as $spot)
                     <li>
-                        <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" class="flex items-start justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 transition hover:border-muted">
-                            <span>
-                                <span class="block font-semibold">{{ $spot->name }}</span>
-                                <span class="block text-xs text-muted">{{ $spot->riverName }}</span>
+                        <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" title="{{ $spot->name }}, {{ $spot->riverName }}" class="flex items-start justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 transition hover:border-muted">
+                            {{-- One line each, cut short with an ellipsis, so a long name never pushes the pill down. --}}
+                            <span class="min-w-0">
+                                <span class="block truncate font-semibold">{{ $spot->name }}</span>
+                                <span class="block truncate text-xs text-muted">{{ $spot->riverName }}</span>
                             </span>
                             {{-- The heading says "last 24 hours", so the pill only marks those discharging now or out of date. --}}
                             @if ($spot->overflowDataIsStale())
-                                <span class="whitespace-nowrap rounded-full bg-pill-grey-bg px-2.5 py-0.5 text-xs font-medium text-pill-grey-text ring-1 ring-inset ring-pill-grey-ring">Out of date</span>
+                                <span class="shrink-0 whitespace-nowrap rounded-full bg-pill-grey-bg px-2.5 py-0.5 text-xs font-medium text-pill-grey-text ring-1 ring-inset ring-pill-grey-ring">Out of date</span>
                             @elseif ($spot->spillRecency === \App\Enums\SpillRecency::DischargingNow)
-                                <span class="whitespace-nowrap rounded-full bg-pill-red-bg px-2.5 py-0.5 text-xs font-medium text-pill-red-text ring-1 ring-inset ring-pill-red-ring">Discharging now</span>
+                                <span class="shrink-0 whitespace-nowrap rounded-full bg-pill-red-bg px-2.5 py-0.5 text-xs font-medium text-pill-red-text ring-1 ring-inset ring-pill-red-ring">Discharging now</span>
                             @else
-                                <span class="whitespace-nowrap rounded-full bg-pill-amber-bg px-2.5 py-0.5 text-xs font-medium text-pill-amber-text ring-1 ring-inset ring-pill-amber-ring">Last 24h</span>
+                                <span class="shrink-0 whitespace-nowrap rounded-full bg-pill-amber-bg px-2.5 py-0.5 text-xs font-medium text-pill-amber-text ring-1 ring-inset ring-pill-amber-ring">Last 24h</span>
                             @endif
                         </a>
                     </li>
@@ -94,6 +95,18 @@
             </ul>
         @endif
     </section>
+
+    {{-- A comparison needs two places with returns: a one-river region, or Scotland, whose company publishes none, has nothing to set side by side. --}}
+    @if ($comparisonYear !== null && $comparison->filter(fn ($total) => $total->hasReturns())->count() >= 2)
+        @include('spills.comparison', [
+            'totals' => $comparison,
+            'year' => $comparisonYear,
+            'heading' => $region ? 'How '.$region->nameInSentence().'\'s rivers compare' : 'How the regions compare',
+            'nameHeading' => $region ? 'River' : 'Region',
+        ])
+    @elseif ($region && $comparison->isNotEmpty() && ! $comparison->contains(fn ($total) => $total->hasReturns()))
+        <p class="mb-10 text-sm text-ink-2">No yearly figures to compare {{ $region->nameInSentence() }}'s rivers with: Scottish Water's annual overflow figures are not read.</p>
+    @endif
 
     <section id="recent" class="mb-10 scroll-mt-24">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">

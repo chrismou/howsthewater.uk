@@ -36,6 +36,10 @@ class Help extends Component
             'label' => 'What is monitor uptime?',
             'text' => 'The share of the time the overflow\'s monitor was working and reporting. While a monitor is offline, any spill it misses is not counted, so a low figure means the spill counts are likely to be too low.',
         ],
+        'overflow_hours' => [
+            'label' => 'How are these totals worked out?',
+            'text' => 'From the water companies\' annual returns: each overflow\'s counted spills (in 12 and 24 hour blocks) and hours, added up for every overflow on the river and its tributaries, or in the region. Overflows spilling at the same time each add their own hours. Hours per overflow divide by the overflows with a return, so rivers with many overflows compare fairly with those with few.',
+        ],
         'spill_hours' => [
             'label' => 'How are these hours counted?',
             'text' => 'Hours when at least one of these overflows was spilling. When several spill at once, those hours count once, so the total is never more than the time that passed. Each overflow\'s own hours are on its page.',

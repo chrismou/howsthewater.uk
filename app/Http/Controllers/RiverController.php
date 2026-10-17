@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Region;
 use App\Models\River;
+use App\Services\Conditions\AnnualReturnTotals;
 use App\Services\Conditions\RegionSummaries;
 use App\Services\Conditions\RiverOverviewService;
 use App\Services\Geo\Coordinates;
@@ -32,13 +33,19 @@ class RiverController extends Controller
         ]);
     }
 
-    public function show(Region $region, River $river, RiverOverviewService $overview): View
+    public function show(Region $region, River $river, RiverOverviewService $overview, AnnualReturnTotals $totals): View
     {
         abort_if($river->isTributary(), 404);
 
+        $river->setRelation('region', $region);
+        $latestYear = $totals->latestYear();
+
         return view('rivers.show', [
-            'overview' => $overview->for($river->setRelation('region', $region)),
+            'overview' => $overview->for($river),
             'shareImage' => $river->shareImage,
+            'returnYears' => $totals->riverByYear($river),
+            'returnRank' => $latestYear === null ? null : $totals->riverRank($river, $latestYear),
+            'hasInflowingMainRivers' => $totals->hasInflowingMainRivers($river),
         ]);
     }
 }

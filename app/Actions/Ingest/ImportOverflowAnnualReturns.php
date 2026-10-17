@@ -5,6 +5,7 @@ namespace App\Actions\Ingest;
 use App\Data\OverflowAnnualReturnData;
 use App\Models\OverflowAnnualReturn;
 use App\Models\OverflowMonitor;
+use App\Services\Conditions\AnnualReturnTotals;
 use App\Services\Geo\Coordinates;
 use App\Services\Geo\OverflowSiteName;
 use App\Services\RiversTrust\AnnualReturnsClient;
@@ -83,6 +84,9 @@ class ImportOverflowAnnualReturns
         if ($totals['failed'] === []) {
             Cache::forever(self::VERSION_CACHE_KEY, self::MATCHING_VERSION);
         }
+
+        // River and region totals are cached per generation; a new one makes them read the new returns at once.
+        Cache::forever(AnnualReturnTotals::GENERATION_KEY, (int) Cache::get(AnnualReturnTotals::GENERATION_KEY, 0) + 1);
 
         return $totals;
     }
