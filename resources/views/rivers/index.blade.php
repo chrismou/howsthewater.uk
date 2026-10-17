@@ -178,7 +178,7 @@
                 <h2 class="font-display text-2xl font-semibold tracking-tight">{{ $catchment }}</h2>
                 <span class="text-sm text-muted">{{ $rivers->count() }} {{ \Illuminate\Support\Str::plural('river', $rivers->count()) }} · {{ $rivers->sum(fn ($river) => $river->spots->count()) }} spots</span>
             </div>
-            <div class="grid gap-5 {{ $rivers->count() > 1 && $rivers->count() <= 2 ? 'lg:grid-cols-2' : '' }}">
+            <div class="grid gap-5">
                 @foreach ($rivers as $river)
                     <div class="overflow-hidden rounded-lg border border-line bg-surface">
                         <div class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3">
@@ -186,21 +186,22 @@
                             <span class="text-xs text-muted">{{ $river->spots->count() }} spots · {{ $river->monitorCount }} monitors{{ $river->lengthMetres ? ' · '.number_format($river->lengthMetres / 1000).' km' : '' }}</span>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
+                            {{-- Fixed column widths on wide screens, sized to the longest badge and reading, so every river's table lines up; the spot takes the rest. --}}
+                            <table class="w-full text-sm lg:table-fixed">
                                 <thead class="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted">
                                     <tr>
                                         <th class="px-4 py-2 font-medium">Spot</th>
-                                        <th class="hidden px-4 py-2 font-medium sm:table-cell">Upstream spills</th>
-                                        <th class="hidden px-4 py-2 font-medium sm:table-cell">Level</th>
-                                        <th class="hidden px-4 py-2 font-medium sm:table-cell">Rain 24h</th>
-                                        <th class="hidden px-4 py-2 font-medium sm:table-cell">Monitors</th>
+                                        <th class="hidden px-4 py-2 font-medium sm:table-cell lg:w-66">Upstream spills</th>
+                                        <th class="hidden px-4 py-2 font-medium sm:table-cell lg:w-80">Level</th>
+                                        <th class="hidden px-4 py-2 font-medium sm:table-cell lg:w-24">Rain 24h</th>
+                                        <th class="hidden px-4 py-2 font-medium sm:table-cell lg:w-24">Monitors</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-line-2">
                                     @foreach ($river->spots->take(6) as $spot)
                                         <tr class="hover:bg-surface-2">
                                             {{-- On phones the other columns fold into this one, under the spot name. --}}
-                                            <td class="px-4 py-2 sm:whitespace-nowrap">
+                                            <td class="px-4 py-2 sm:whitespace-nowrap lg:whitespace-normal">
                                                 <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" class="font-semibold hover:underline">{{ $spot->name }}</a>
                                                 <div class="mt-1 flex flex-col items-start gap-1 sm:hidden">
                                                     <x-spill-badge :recency="$spot->spillRecency" :stale="$spot->overflowDataIsStale()" />
