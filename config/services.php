@@ -89,6 +89,13 @@ return [
             'driver' => 'stream',
             'url' => env('STREAM_WESSEX_WATER_URL', 'https://services.arcgis.com/3SZ6e0uCvPROr4mS/arcgis/rest/services/Wessex_Water_Storm_Overflow_Activity/FeatureServer/0'),
         ],
+        'southern_water' => [
+            'name' => 'Southern Water',
+            'driver' => 'stream',
+            'url' => env('STREAM_SOUTHERN_WATER_URL', 'https://services-eu1.arcgis.com/6qJmARkS2dt2IjVA/arcgis/rest/services/SouthernWater_StormOverflowActivity_PROD_view/FeatureServer/0'),
+            // Like Northumbrian Water, LastUpdated only moves when a monitor's status changes.
+            'updated_on_change' => true,
+        ],
         'scottish_water' => [
             'name' => 'Scottish Water',
             'driver' => 'scottish_water',

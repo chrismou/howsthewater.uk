@@ -63,16 +63,15 @@ class Region extends Model
     }
 
     /**
-     * The storm overflow feeds every region needs, keyed by config key, so
-     * ingest polls only the water companies we actually cover.
+     * Every configured storm overflow feed, keyed by config key. Ingest polls them all, whether or not a region shows
+     * them yet, because the feeds only give each monitor's latest event: spill history that is not recorded as it
+     * happens cannot be filled in later, so a region added later arrives with its history.
      *
      * @return array<string, array{name: string, driver: string, url: string, updated_on_change: bool}>
      */
     public static function overflowFeeds(): array
     {
-        $keys = static::query()->pluck('overflow_feeds')->flatten()->filter()->unique()->all();
-
-        return Arr::only(self::feedConfig(), $keys);
+        return self::feedConfig();
     }
 
     /**

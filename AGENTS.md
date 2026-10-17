@@ -280,14 +280,17 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   publishes an ArcGIS feature service per English company, all with the same fields (`stream`, `StormOverflowClient`);
   Scottish Water publishes its own hourly API (`scottish_water`, `ScottishWater\OverflowEventClient`). Each driver
   implements `OverflowFeedReader` and maps its records into `OverflowMonitorData`, so the sync and everything after it
-  never see the source format; a new company with other fields needs only a new reader. Each region names the feeds
-  it needs in `overflow_feeds`, and `ingest:overflows` polls only those, every 15 minutes. A failing feed is logged
-  and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
+  never see the source format; a new company with other fields needs only a new reader. `ingest:overflows` polls every
+  configured feed every 15 minutes, whether or not a region names it in `overflow_feeds`, because spill history that is
+  not recorded as it happens cannot be filled in later (Anglian, Wessex and Southern Water are recorded ahead of their
+  regions). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
+  `/about` credit every polled feed. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
   share one table. The footer credits Stream feeds and Scottish Water separately. South West Water uses other fields.
   Most Stream companies refresh every monitor's `LastUpdated` on each publish, but Northumbrian Water only moves it
   when a monitor's status changes, so its feed is marked `updated_on_change`: while anything in the feed changed in the
   last 48 hours (`SyncOverflowMonitors::QUIET_FEED_HOURS`), each read sets its monitors' `source_updated_at` to the read
-  time; past that they keep their own times and go stale. Check a new company's feed for the same behaviour.
+  time; past that they keep their own times and go stale. Southern Water behaves the same way. Check a new company's
+  feed for the same behaviour.
   The feed only exposes each monitor's latest event, so `SyncOverflowMonitors` builds the spill history incrementally.
 - River levels: Environment Agency flood monitoring API, `ingest:gauges` (add `--stations` to discover new gauges).
   Readings follow the API's own advice rather than one request per gauge: `FloodMonitoringClient::readingsSinceInBulk()`

@@ -34,7 +34,7 @@ class SyncOverflowMonitors
     }
 
     /**
-     * Syncs every water company feed a region needs. A feed that fails is
+     * Syncs every configured water company feed. A feed that fails is
      * logged and skipped, so one company's outage never stops the others;
      * its monitors simply go stale and the pages say so.
      *

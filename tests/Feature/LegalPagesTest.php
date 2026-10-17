@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use App\Models\Region;
 
@@ -46,6 +47,7 @@ it('sets no cookies and stores no session for visitors', function () {
 });
 
 it('credits Stream companies and Scottish Water separately in the footer', function () {
+    config(['services.overflow_feeds' => Arr::only(config('services.overflow_feeds'), ['northumbrian_water', 'scottish_water'])]);
     Region::factory()->create(['name' => 'North East', 'slug' => 'north-east', 'overflow_feeds' => ['northumbrian_water', 'scottish_water']]);
 
     $this->get(route('home'))

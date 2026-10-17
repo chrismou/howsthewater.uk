@@ -16,8 +16,9 @@
     // defaults, which route() would otherwise append as a query string.
     $currentRoute = request()->route();
     $canonical = $currentRoute?->getName() !== null ? route($currentRoute->getName(), \Illuminate\Support\Arr::only($currentRoute->parameters(), $currentRoute->parameterNames())) : url()->current();
-    // Overflow data is credited per source: the English companies via Stream, Scottish Water from its own API.
-    $overflowFeeds = collect($allRegions->reduce(fn (array $feeds, $region) => $feeds + $region->overflowFeedConfig(), []));
+    // Overflow data is credited per source: the English companies via Stream, Scottish Water from its own API. Every
+    // polled feed is credited, as monitors near a region's rivers, beaches and lakes can come from any of them.
+    $overflowFeeds = collect(\App\Models\Region::overflowFeeds());
     $streamCompanies = $overflowFeeds->where('driver', 'stream')->pluck('name')->unique()->join(', ', ' and ');
     $analyticsId = app()->isProduction() ? config('services.google_analytics.measurement_id') : null;
 @endphp

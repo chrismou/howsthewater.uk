@@ -1,6 +1,6 @@
 @php
     $regions = \App\Models\Region::query()->orderBy('name')->get();
-    $overflowFeeds = collect($regions->reduce(fn (array $feeds, $region) => $feeds + $region->overflowFeedConfig(), []));
+    $overflowFeeds = collect(\App\Models\Region::overflowFeeds());
     $streamCompanies = $overflowFeeds->where('driver', 'stream')->pluck('name')->unique()->sort()->join(', ', ' and ');
     $hasScottishWater = $overflowFeeds->contains('driver', 'scottish_water');
     // Bump app.pages_updated.about whenever the page's content changes; it is shown, goes into the page's dateModified
@@ -31,7 +31,7 @@
                         @if ($hasScottishWater)
                             Scottish Water publishes its own near real-time overflow feed, updated hourly.
                         @endif
-                        Dŵr Cymru Welsh Water's overflows are not shown yet, so Welsh spots, beaches and lakes say that overflow data is not available rather than showing none, and link to Welsh Water's own storm overflow map. Each feed gives a monitor's current status and its latest spill, so the spill history here is built up from our own readings, starting from the day each monitor was first seen.</span></li>
+                        Dŵr Cymru Welsh Water's overflows are not shown yet, so Welsh spots, beaches and lakes say that overflow data is not available rather than showing none, and link to Welsh Water's own storm overflow map. Each feed gives a monitor's current status and its latest spill, so the spill history here is built up from our own readings, starting from the day each monitor was first seen. We read every company's feed, including those whose rivers are not on the site yet, so their history is already building when they are added.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">River and lake levels.</strong> The Environment Agency's real-time flood monitoring API in England, Natural Resources Wales's river level, rainfall and sea data API in Wales, and SEPA's time series service in Scotland (all Open Government Licence). Readings from Natural Resources Wales are kept for a year at most, as it asks.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Rainfall.</strong> Tipping bucket rain gauges from the same three services, summed from their 15 minute readings.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span><strong class="font-semibold text-ink">Flood alerts and warnings.</strong> The Environment Agency's flood warning service in England and Natural Resources Wales's in Wales, shown in their own words. Scottish flood warnings are not shown yet.</span></li>

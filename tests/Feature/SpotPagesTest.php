@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Arr;
 use App\Enums\FloodSeverity;
 use App\Models\FloodArea;
 use App\Models\FloodWarning;
@@ -379,13 +380,14 @@ it('describes where a spot sits in the site as breadcrumb structured data', func
         ->assertSeeInOrder(['"name":"All rivers"', '"name":"Yorkshire"', '"name":"Rivers"', '"name":"River Wharfe"', '"name":"Otley","item":"'.route('spots.show', [$region, $river, $spot]).'"'], false);
 });
 
-it('credits the water companies that cover the regions', function () {
+it('credits every water company we poll, and names the ones that cover the regions', function () {
+    config(['services.overflow_feeds' => Arr::only(config('services.overflow_feeds'), ['yorkshire_water', 'northumbrian_water', 'southern_water'])]);
     spotWithUrl(['river_metres' => null]);
     Region::factory()->create(['name' => 'North East', 'slug' => 'north-east', 'overflow_feeds' => ['northumbrian_water']]);
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('Northumbrian Water and Yorkshire Water storm overflow data')
+        ->assertSee('Yorkshire Water, Northumbrian Water and Southern Water storm overflow data')
         ->assertSee('Northumbrian Water and Yorkshire Water monitors report')
         ->assertSee('Yorkshire and North East, updated every 15 minutes');
 });

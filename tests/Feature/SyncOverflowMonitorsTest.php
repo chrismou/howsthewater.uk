@@ -6,13 +6,26 @@ use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\SpillEvent;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Sleep;
 
 beforeEach(function () {
     Region::factory()->create(['overflow_feeds' => ['yorkshire_water']]);
+    pollOnly('yorkshire_water');
 });
+
+/**
+ * Every configured feed is polled, so each test keeps only the feeds it fakes.
+ */
+function pollOnly(string ...$keys): void
+{
+    static $configured;
+    $configured ??= config('services.overflow_feeds');
+
+    config(['services.overflow_feeds' => Arr::only($configured, $keys)]);
+}
 
 function arcGisFeature(array $overrides = []): array
 {
@@ -149,29 +162,31 @@ it('closes an older open event when a new one starts while still discharging', f
         ->and($events[1]->ended_at)->toBeNull();
 });
 
-it('polls only the feeds a region needs and keeps going when one fails', function () {
+it('polls every configured feed, even one no region names yet, and keeps going when one fails', function () {
     Sleep::fake();
-    Region::factory()->create(['overflow_feeds' => ['northumbrian_water', 'united_utilities']]);
+    config(['services.overflow_feeds' => [
+        'yorkshire_water' => ['name' => 'Yorkshire Water', 'driver' => 'stream', 'url' => 'https://yorkshire.test/FeatureServer/0'],
+        'southern_water' => ['name' => 'Southern Water', 'driver' => 'stream', 'url' => 'https://southern.test/FeatureServer/0'],
+        'united_utilities' => ['name' => 'United Utilities', 'driver' => 'stream', 'url' => 'https://united.test/FeatureServer/0'],
+    ]]);
 
     Http::fake([
-        'services-eu1.arcgis.com/1WqkK5cDKUbF0CkH/*' => Http::response(['features' => [arcGisFeature(['Id' => 'YWS00001'])]]),
-        'services-eu1.arcgis.com/MSNNjkZ51iVh8yBj/*' => Http::response(['features' => [arcGisFeature(['Id' => 'NWL00001', 'Company' => 'Northumbrian Water Ltd'])]]),
-        'services5.arcgis.com/*' => Http::response('Service unavailable', 503),
-        '*' => Http::response(['features' => [arcGisFeature(['Id' => 'XXX00001'])]]),
+        'yorkshire.test/*' => Http::response(['features' => [arcGisFeature(['Id' => 'YWS00001'])]]),
+        'southern.test/*' => Http::response(['features' => [arcGisFeature(['Id' => 'SWS00001', 'Company' => 'Southern Water'])]]),
+        'united.test/*' => Http::response('Service unavailable', 503),
     ]);
 
     $result = app(SyncOverflowMonitors::class)->handle();
 
     expect($result['feeds'])->toBe(2)
         ->and($result['failed'])->toBe(['United Utilities'])
-        ->and(OverflowMonitor::query()->orderBy('external_id')->pluck('external_id')->all())->toBe(['NWL00001', 'YWS00001']);
-
-    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'services1.arcgis.com'));
+        ->and(OverflowMonitor::query()->orderBy('external_id')->pluck('external_id')->all())->toBe(['SWS00001', 'YWS00001']);
 });
 
 it('treats a feed that only edits changed monitors as current when read, until the whole feed goes quiet', function () {
     $this->freezeTime();
     Region::factory()->create(['overflow_feeds' => ['northumbrian_water']]);
+    pollOnly('yorkshire_water', 'northumbrian_water');
     $quiet = now()->subWeeks(3)->startOfSecond()->getTimestampMs();
     $lastEdited = now()->subHour()->getTimestampMs();
     Http::fake([
@@ -236,6 +251,7 @@ function scottishWaterRecord(array $overrides = []): array
 
 it('reads Scottish Water\'s own API into the same monitors and spill events', function () {
     Region::factory()->create(['overflow_feeds' => ['scottish_water']]);
+    pollOnly('yorkshire_water', 'scottish_water');
     Http::fake([
         'services-eu1.arcgis.com/*' => Http::response(['features' => []]),
         'api.scottishwater.co.uk/*' => Http::response(['last_updated' => 1792098080801, 'results' => [
