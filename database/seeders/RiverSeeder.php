@@ -19,13 +19,14 @@ class RiverSeeder extends Seeder
      * approximate mouth so same-named rivers elsewhere in Britain are ignored.
      * Keyed by region slug; slugs only need to be unique within a region.
      *
-     * @return array<string, array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>>
+     * @return array<string, array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>>
      */
     public static function rivers(): array
     {
         return [
             'yorkshire' => self::yorkshire(),
             'thames-valley' => self::thamesValley(),
+            'london' => self::london(),
             'north-west' => self::northWest(),
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
@@ -37,7 +38,7 @@ class RiverSeeder extends Seeder
     }
 
     /**
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function yorkshire(): array
     {
@@ -149,15 +150,15 @@ class RiverSeeder extends Seeder
 
     /**
      * The Thames from its source to the tidal limit, with the tributaries
-     * that join above Teddington. Rivers joining below it (the Lee, Brent,
-     * Wandle, Roding) only affect tidal water, so they are left out.
+     * that join above Teddington. Rivers joining below it (the Lea, Brent,
+     * Wandle, Roding) are London's, in london(), which also lists the Thames.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function thamesValley(): array
     {
         return [
-            self::main('River Thames', 'Thames', [51.5055, -0.0880], ['River Isis', 'Seacourt Stream', 'Shill Brook']),
+            self::main('River Thames', 'Thames', [51.5055, -0.0880], ['River Isis', 'Seacourt Stream', 'Shill Brook'], alsoRunsThrough: ['london' => ['hampton-court', 'kingston-upon-thames', 'teddington-lock']]),
             self::tributary('River Churn', 'thames'),
             self::tributary('River Coln', 'thames'),
             self::tributary('River Leach', 'thames'),
@@ -190,7 +191,7 @@ class RiverSeeder extends Seeder
      * monitors, each with its tributaries. Mouths are at the head of each
      * estuary, as the tidal reaches are not walkable river.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function northWest(): array
     {
@@ -241,7 +242,7 @@ class RiverSeeder extends Seeder
      * tidal limit (the Derwent, Team, Ouse Burn and Don on the Tyne) still
      * count on the river page.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function northEast(): array
     {
@@ -285,7 +286,7 @@ class RiverSeeder extends Seeder
             self::tributary('River Pont', 'blyth'),
 
             // Tweed, with the Till flowing into it at Twizel
-            self::main('River Tweed', 'Tweed', [55.7660, -2.0050]),
+            self::main('River Tweed', 'Tweed', [55.7660, -2.0050], alsoRunsThrough: ['scotland' => ['peebles', 'innerleithen', 'walkerburn', 'melrose', 'dryburgh', 'kelso', 'coldstream', 'paxton']]),
             self::tributary('Biggar Water', 'tweed'),
             self::tributary('Lyne Water', 'tweed'),
             self::tributary('Eddleston Water', 'tweed'),
@@ -308,6 +309,61 @@ class RiverSeeder extends Seeder
     }
 
     /**
+     * Thames Water's London rivers, each joining the tidal Thames below
+     * Teddington, so none flows into a Thames Valley spot: the Lea from
+     * Hertfordshire (OS's "River Lea", Thames Water's "River Lee"), the
+     * Roding from Essex, the Brent and Crane in the west, the Wandle, Beverley
+     * Brook and Ravensbourne in the south, and Kent's Darent with the Cray.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     */
+    private static function london(): array
+    {
+        return [
+            // Lea, from Luton to Bow Creek. Brooks OS does not map (Dagenham, Stonebridge, Mitchell, Decoy, Edgware and
+            // the Roding's) are aliases of the river they run into, as their overflows sit within a kilometre or so of it.
+            self::main('River Lea', 'Lea', [51.5085, 0.0090], ['River Lee', 'River Lee Navigation', 'Lee Navigation', 'Bow Creek', 'Dagenham Brook', 'Stonebridge Brook']),
+            self::tributary('River Mimram', 'lea'),
+            self::tributary('River Beane', 'lea'),
+            self::tributary('River Rib', 'lea'),
+            self::tributary('River Ash', 'lea'),
+            self::tributary('River Stort', 'lea', ['Stort Navigation', 'River Stort Navigation']),
+            self::tributary('Pincey Brook', 'stort'),
+            self::tributary('Turkey Brook', 'lea'),
+            self::tributary('The Ching', 'lea', ['Ching Brook'], slug: 'ching'),
+            self::tributary("Pymme's Brook", 'lea', ['Pymmes Brook'], slug: 'pymmes-brook'),
+            self::tributary("Salmon's Brook", 'pymmes-brook', ['Salmon Brook', 'Salmons Brook'], slug: 'salmons-brook'),
+            self::tributary('Bounds Green Brook', 'pymmes-brook'),
+
+            // Roding, from Essex to Barking Creek
+            self::main('River Roding', 'Roding', [51.5150, 0.0950], ['Lower Roding', 'Barking Creek', 'Brookhouse Brook', 'Chigwell Brook']),
+            self::tributary('Cripsey Brook', 'roding'),
+            self::tributary('Loxford Water', 'roding'),
+            self::tributary('Seven Kings Water', 'roding'),
+
+            // West London
+            self::main('River Brent', 'West London rivers', [51.4850, -0.3050], ['Mitchell Brook', 'Decoy Brook']),
+            self::tributary('Dollis Brook', 'brent'),
+            self::tributary('Silk Stream', 'brent', ['Edgware Brook']),
+            self::tributary('Wealdstone Brook', 'brent'),
+            self::main('River Crane', 'West London rivers', [51.4720, -0.3230]),
+            self::tributary('Yeading Brook', 'crane'),
+
+            // South London
+            self::main('River Wandle', 'South London rivers', [51.4620, -0.1930]),
+            self::main('Beverley Brook', 'South London rivers', [51.4690, -0.2260], slug: 'beverley-brook'),
+            self::main('Ravensbourne River', 'South London rivers', [51.4820, -0.0180], ['River Ravensbourne', 'River Ravensbourne / Deptford Creek'], slug: 'ravensbourne'),
+            self::tributary('Quaggy River', 'ravensbourne', ['River Quaggy', 'Quaggy'], slug: 'quaggy'),
+            self::tributary('Kyd Brook', 'quaggy'),
+            self::tributary('Pool River', 'ravensbourne'),
+
+            // Darent, from the Kent downs to Dartford Creek
+            self::main('River Darent', 'Darent', [51.4800, 0.2100], ['Dartford Creek', 'Darent / Dartford Creek']),
+            self::tributary('River Cray', 'darent', ['Crayford Creek']),
+        ];
+    }
+
+    /**
      * South West Water's rivers, Devon and Cornwall: the Dartmoor rivers
      * (Dart, Teign, Tavy, Plym, Erme, Avon), the Exe with the Barle, the
      * Tamar, the Cornish Fowey and Camel, the Taw and Torridge, the Otter and
@@ -315,7 +371,7 @@ class RiverSeeder extends Seeder
      * keeps its own pages and flows into it. The Avon shares its name with
      * rivers across England, so its mouth hint matters.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function southWest(): array
     {
@@ -409,7 +465,7 @@ class RiverSeeder extends Seeder
      * Several share names with rivers elsewhere (Stour, Colne, Blackwater,
      * Glen), so each main river's mouth hint matters.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function eastOfEngland(): array
     {
@@ -494,7 +550,7 @@ class RiverSeeder extends Seeder
      * belong to Hafren Dyfrdwy, which is not on Stream, so they do not
      * count yet.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function midlands(): array
     {
@@ -566,7 +622,7 @@ class RiverSeeder extends Seeder
      * a river within reach of its centreline. Rivers with spots are main
      * rivers flowing into the river they join, so they keep their own pages.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function scotland(): array
     {
@@ -669,7 +725,7 @@ class RiverSeeder extends Seeder
      * the North East. The Cardiff Taff and the Carmarthenshire Taf share the
      * Welsh name Afon Taf, so the mouths matter.
      *
-     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
      */
     private static function wales(): array
     {
@@ -720,11 +776,12 @@ class RiverSeeder extends Seeder
      * @param  array<int, string>  $extraAliases
      * @param  string|null  $flowsInto  Slug of the main river this one joins, if any
      * @param  string|null  $slug  For a river whose name another in the region already uses (the Galloway Dee)
-     * @return array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth: array{0: float, 1: float}, flows_into: string|null}
+     * @param  array<string, array<int, string>>  $alsoRunsThrough  Other regions it runs through, whose listings link to it, by slug, each with the slugs of its spots there (the Thames's in London)
+     * @return array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth: array{0: float, 1: float}, flows_into: string|null, also_runs_through: array<string, array<int, string>>|null}
      */
-    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = [], ?string $flowsInto = null, ?string $slug = null): array
+    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = [], ?string $flowsInto = null, ?string $slug = null, array $alsoRunsThrough = []): array
     {
-        return ['name' => $name, 'slug' => $slug ?? self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...$extraAliases], 'mouth' => $mouth, 'flows_into' => $flowsInto];
+        return ['name' => $name, 'slug' => $slug ?? self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...$extraAliases], 'mouth' => $mouth, 'flows_into' => $flowsInto, 'also_runs_through' => $alsoRunsThrough ?: null];
     }
 
     /**
@@ -751,7 +808,7 @@ class RiverSeeder extends Seeder
     }
 
     /**
-     * @param  array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>  $rivers
+     * @param  array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>  $rivers
      */
     private function seedRegion(Region $region, array $rivers): void
     {

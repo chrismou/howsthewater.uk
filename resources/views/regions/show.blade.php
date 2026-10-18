@@ -91,4 +91,12 @@
             <x-region-card :summary="$summary" :type="$type" in-region />
         @endforeach
     </div>
+
+    @if ($alsoRunningThrough->isNotEmpty())
+        <p class="mt-6 max-w-2xl text-sm text-ink-2">
+            @foreach ($alsoRunningThrough as $river)
+                The <a href="{{ route('rivers.show', [$river->region, $river]) }}" class="font-medium text-accent hover:underline">{{ $river->name }}</a> also runs through {{ $region->nameInSentence() }}; its page is under {{ $river->region->nameInSentence() }}.
+            @endforeach
+        </p>
+    @endif
 </x-layouts.app>

@@ -25,9 +25,21 @@ class RiverController extends Controller
             ->filter()
             ->values();
 
+        // Other regions' rivers running through this one, read from their own region's summary, with their spots here.
+        $alsoRunningThrough = $region->riversAlsoRunningThrough()
+            ->map(fn (River $river) => [
+                'river' => $summaries->for($river->region)->rivers->firstWhere('id', $river->id),
+                'spotSlugs' => $river->also_runs_through[$region->slug] ?? [],
+                'regionSlug' => $river->region->slug,
+                'regionName' => $river->region->nameInSentence(),
+            ])
+            ->filter(fn (array $entry) => $entry['river'] !== null)
+            ->values();
+
         return view('rivers.index', [
             'region' => $region,
             'summary' => $summary,
+            'alsoRunningThrough' => $alsoRunningThrough,
             'centrelines' => $centrelines,
             'mapIsTall' => Coordinates::isTallerThanWide($centrelines->flatten(1)),
         ]);

@@ -26,6 +26,7 @@ class SpotSeeder extends Seeder
         return [
             'yorkshire' => self::yorkshire(),
             'thames-valley' => self::thamesValley(),
+            'london' => self::london(),
             'north-west' => self::northWest(),
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
@@ -299,6 +300,59 @@ class SpotSeeder extends Seeder
             'dee-galloway' => [
                 ['name' => 'Threave', 'latitude' => 54.9385, 'longitude' => -3.9698, 'description' => 'The river around Threave castle island.'],
                 ['name' => 'Tongland', 'latitude' => 54.8579, 'longitude' => -4.0383, 'description' => 'Below the bridge at Tongland.'],
+            ],
+        ];
+    }
+
+    /**
+     * Spots on Thames Water's London rivers, snapped onto the OS centreline.
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function london(): array
+    {
+        return [
+            'lea' => [
+                ['name' => 'Wheathampstead', 'latitude' => 51.8135, 'longitude' => -0.2924, 'description' => 'The Lea through the village meadows.'],
+                ['name' => 'Hartham Common', 'latitude' => 51.7999, 'longitude' => -0.0764, 'description' => 'The common in Hertford where the Beane joins the Lea.'],
+                ['name' => 'Ware', 'latitude' => 51.8098, 'longitude' => -0.0301, 'description' => 'The riverside gazebos in Ware.'],
+                ['name' => 'Broxbourne', 'latitude' => 51.7430, 'longitude' => -0.0124, 'description' => 'The meadows and old mill in the Lee Valley.'],
+                ['name' => 'Tottenham Marshes', 'latitude' => 51.6002, 'longitude' => -0.0460, 'description' => 'Open marshland in the Lee Valley.'],
+                ['name' => 'Hackney Marshes', 'latitude' => 51.5543, 'longitude' => -0.0252, 'description' => 'The marshes and playing fields beside the Lea.'],
+            ],
+            'roding' => [
+                ['name' => 'Ongar', 'latitude' => 51.7064, 'longitude' => 0.2564, 'description' => 'The water meadows by Chipping Ongar.'],
+                ['name' => 'Abridge', 'latitude' => 51.6518, 'longitude' => 0.1192, 'description' => 'The village bridge over the Roding.'],
+                ['name' => 'Roding Valley Meadows', 'latitude' => 51.6388, 'longitude' => 0.0772, 'description' => 'Hay meadows between Loughton and Chigwell.'],
+                ['name' => 'Ilford', 'latitude' => 51.5573, 'longitude' => 0.0654, 'description' => 'By the bridge at Ilford.'],
+            ],
+            'brent' => [
+                ['name' => 'Tokyngton Park', 'latitude' => 51.5435, 'longitude' => -0.2750, 'description' => 'The restored river through the park.'],
+                ['name' => 'Brent Lodge Park', 'latitude' => 51.5111, 'longitude' => -0.3439, 'description' => 'The wooded valley by the Wharncliffe Viaduct.'],
+            ],
+            'crane' => [
+                ['name' => 'Cranford Park', 'latitude' => 51.4947, 'longitude' => -0.4115, 'description' => 'The parkland at Cranford.'],
+                ['name' => 'Crane Park', 'latitude' => 51.4445, 'longitude' => -0.3801, 'description' => 'The island nature reserve by the Shot Tower.'],
+            ],
+            'wandle' => [
+                ['name' => 'Morden Hall Park', 'latitude' => 51.4022, 'longitude' => -0.1876, 'description' => 'The park and its old snuff mills.'],
+                ['name' => 'Merton Abbey Mills', 'latitude' => 51.4110, 'longitude' => -0.1842, 'description' => 'The old textile mills by the river.'],
+                ['name' => 'King George\'s Park', 'latitude' => 51.4476, 'longitude' => -0.1932, 'description' => 'The park in the Wandle valley at Earlsfield.'],
+            ],
+            'beverley-brook' => [
+                ['name' => 'Richmond Park', 'latitude' => 51.4486, 'longitude' => -0.2550, 'description' => 'The brook along the edge of Richmond Park.'],
+                ['name' => 'Barn Elms', 'latitude' => 51.4714, 'longitude' => -0.2270, 'description' => 'The playing fields where the brook meets the Thames.'],
+            ],
+            'ravensbourne' => [
+                ['name' => 'Ladywell Fields', 'latitude' => 51.4565, 'longitude' => -0.0180, 'description' => 'The restored river in the park at Ladywell.'],
+            ],
+            'darent' => [
+                ['name' => 'Otford', 'latitude' => 51.3129, 'longitude' => 0.1845, 'description' => 'The river through the village.'],
+                ['name' => 'Shoreham', 'latitude' => 51.3335, 'longitude' => 0.1811, 'description' => 'The village beneath the chalk cross.'],
+                ['name' => 'Lullingstone', 'latitude' => 51.3636, 'longitude' => 0.1971, 'description' => 'The country park by the Roman villa.'],
+                ['name' => 'Eynsford', 'latitude' => 51.3688, 'longitude' => 0.2125, 'description' => 'The ford and the packhorse bridge.'],
+                ['name' => 'Farningham', 'latitude' => 51.3801, 'longitude' => 0.2190, 'description' => 'The river below the old mill.'],
+                ['name' => 'Dartford', 'latitude' => 51.4431, 'longitude' => 0.2202, 'description' => 'The river through Central Park.'],
             ],
         ];
     }

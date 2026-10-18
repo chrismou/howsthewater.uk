@@ -14,6 +14,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpillsController;
 use App\Http\Controllers\SpotController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Pages are the same for every visitor (no cookies or accounts), so Cloudflare may keep them for five minutes and
@@ -73,15 +74,18 @@ Route::scopeBindings()->group(function () use ($pageCaching) {
         Route::get('/{region}/rivers/{river}/{spot}/monitors', [SpotController::class, 'monitors'])->name('spots.monitors');
     });
 
-    Route::middleware($pageCaching)->group(function () {
-        Route::get('/{region}/rivers/{river}', [RiverController::class, 'show'])->name('rivers.show');
-        Route::get('/{region}/rivers/{river}/{spot}', [SpotController::class, 'show'])->name('spots.show');
+    // A river listed under another region but running through this one (the Thames through London) redirects there.
+    $riverElsewhere = fn (Request $request) => app(LegacyRiverRedirectController::class)->riverElsewhere($request);
+
+    Route::middleware($pageCaching)->group(function () use ($riverElsewhere) {
+        Route::get('/{region}/rivers/{river}', [RiverController::class, 'show'])->name('rivers.show')->missing($riverElsewhere);
+        Route::get('/{region}/rivers/{river}/{spot}', [SpotController::class, 'show'])->name('spots.show')->missing($riverElsewhere);
     });
 
     // Rivers and spots used to sit straight under the region. These come last, so every route above wins, and an
     // old address for a river or spot that no longer exists still 404s.
     Route::get('/{region}/{river}/feed', [LegacyRiverRedirectController::class, 'riverFeed']);
     Route::get('/{region}/{river}/{spot}/feed', [LegacyRiverRedirectController::class, 'spotFeed']);
-    Route::get('/{region}/{river}', [LegacyRiverRedirectController::class, 'river']);
-    Route::get('/{region}/{river}/{spot}', [LegacyRiverRedirectController::class, 'spot']);
+    Route::get('/{region}/{river}', [LegacyRiverRedirectController::class, 'river'])->missing($riverElsewhere);
+    Route::get('/{region}/{river}/{spot}', [LegacyRiverRedirectController::class, 'spot'])->missing($riverElsewhere);
 });

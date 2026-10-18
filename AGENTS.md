@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands, East of England, South West, Scotland, Wales).
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, London, North West, North East, Midlands, East of England, South West, Scotland, Wales).
 The site reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -181,6 +181,18 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   `WatercourseName` normalises, and many of its overflows discharge to Fen drains and streams no river page counts.
   A river's extra aliases are compared after that parsing, so write them as it leaves them ("South Calder", not
   "Unknown tributary of South Calder"); `SeederIntegrityTest` fails on any that can never match.
+  London has Thames Water's rivers that join the tidal Thames below Teddington, where the Thames Valley's spots stop,
+  so none flows into a Thames Valley spot: the Lea (OS's name; Thames Water writes "River Lee"), with the Stort, Rib,
+  Ash, Beane, Mimram and Pymme's Brook, the Roding, the Brent and Crane, the Wandle, Beverley Brook and Ravensbourne,
+  and Kent's Darent with the Cray. It has no designated bathing waters. Brooks OS does not map (Dagenham, Stonebridge,
+  Mitchell, Decoy, Edgware) are aliases of the river they run into, as their overflows sit within the distance check;
+  the Graveney's are too far from the Wandle to place, as OS does not map it. A main river can also be listed in
+  other regions it runs through (`alsoRunsThrough:` in `RiverSeeder`, region slug to the slugs of its spots there,
+  stored in `rivers.also_runs_through`; `Region::riversAlsoRunningThrough()`): the Thames in London (Hampton Court
+  down) and the Tweed in Scotland. Those regions' rivers page (`components/river-spots-card`, showing only those
+  spots), overview and Rivers menu link to its one page under its own region, and never add it to their figures.
+  Guessed addresses under the listing region (`/london/rivers/thames`, its spots, `/london/thames`) 301 there through
+  the routes' `missing()` (`LegacyRiverRedirectController::riverElsewhere()`).
   The South West has South West Water's rivers in Devon and Cornwall: the Dartmoor rivers (the Dart, with the East
   Dart flowing into it at Dartmeet, where OS starts the Dart; the Teign, Plym, Erme and Avon), the Exe with the
   Barle, the Tamar with the Tavy, the Fowey and Camel, the Taw and Torridge, the East Lyn, and the Otter and Axe,

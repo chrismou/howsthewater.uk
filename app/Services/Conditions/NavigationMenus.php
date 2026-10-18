@@ -59,10 +59,25 @@ class NavigationMenus
 
         $menus = ['rivers' => [], 'beaches' => [], 'lakes' => []];
 
+        // Rivers listed under one region but running through others (the Thames through London), keyed by those regions' slugs.
+        $alsoRunningThrough = [];
+
+        foreach (River::query()->main()->withoutCentreline()->whereNotNull('also_runs_through')->with('region')->orderBy('name')->get() as $river) {
+            foreach ($river->region === null ? [] : array_keys($river->also_runs_through ?? []) as $slug) {
+                if ($slug !== $river->region->slug) {
+                    $alsoRunningThrough[$slug][] = ['name' => $river->name, 'url' => route('rivers.show', [$river->region, $river])];
+                }
+            }
+        }
+
         foreach ($regions as $region) {
             $rivers = $region->riversByCatchment()
                 ->map(fn ($rivers) => $rivers->map(fn (River $river) => ['name' => $river->name, 'url' => route('rivers.show', [$region, $river])])->values()->all())
                 ->all();
+
+            if ($rivers !== [] && isset($alsoRunningThrough[$region->slug])) {
+                $rivers['Also through '.$region->nameInSentence()] = $alsoRunningThrough[$region->slug];
+            }
 
             $beaches = $region->bathingWaters
                 ->groupBy(fn (BathingWater $beach) => $beach->district ?? $region->name)

@@ -24,6 +24,11 @@
         },
     };
 
+    // Other regions' rivers that run through this one, named once with the regions they are listed under.
+    $alsoNames = $alsoRunningThrough->map(fn ($entry) => $entry['river']->name)->join(', ', ' and ');
+    $alsoHomes = $alsoRunningThrough->pluck('regionName')->unique()->join(', ', ' and ');
+    $alsoIsOne = $alsoRunningThrough->count() === 1;
+
     // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
     $breadcrumbs = [['All rivers', route('hubs.rivers')], [$summary->name, route('regions.show', $region)], ['Rivers', route('rivers.index', $region)]];
 @endphp
@@ -39,7 +44,7 @@
             <div class="max-w-2xl">
                 <h1 class="font-display text-4xl font-semibold tracking-tight">{{ $summary->name }} rivers</h1>
                 <p class="mt-2 text-ink-2">
-                    {{ $summary->rivers->count() }} {{ \Illuminate\Support\Str::plural('river', $summary->rivers->count()) }} and {{ $spots->count() }} spots, listed source to mouth.
+                    {{ $summary->rivers->count() }} {{ \Illuminate\Support\Str::plural('river', $summary->rivers->count()) }} and {{ $spots->count() }} {{ \Illuminate\Support\Str::plural('spot', $spots->count()) }}, listed source to mouth.
                     @if ($summary->dataUpdatedAt)
                         Monitor data updated {{ $summary->dataUpdatedAt->diffForHumans() }}.
                     @endif
@@ -176,63 +181,27 @@
         <section class="mb-12">
             <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
                 <h2 class="font-display text-2xl font-semibold tracking-tight">{{ $catchment }}</h2>
-                <span class="text-sm text-muted">{{ $rivers->count() }} {{ \Illuminate\Support\Str::plural('river', $rivers->count()) }} · {{ $rivers->sum(fn ($river) => $river->spots->count()) }} spots</span>
+                <span class="text-sm text-muted">{{ $rivers->count() }} {{ \Illuminate\Support\Str::plural('river', $rivers->count()) }} · {{ $rivers->sum(fn ($river) => $river->spots->count()) }} {{ \Illuminate\Support\Str::plural('spot', $rivers->sum(fn ($river) => $river->spots->count())) }}</span>
             </div>
             <div class="grid gap-5">
                 @foreach ($rivers as $river)
-                    <div class="overflow-hidden rounded-lg border border-line bg-surface">
-                        <div class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3">
-                            <a href="{{ route('rivers.show', [$summary->slug, $river->slug]) }}" class="font-display text-lg font-semibold hover:underline">{{ $river->name }}</a>
-                            <span class="text-xs text-muted">{{ $river->spots->count() }} spots · {{ $river->monitorCount }} monitors{{ $river->lengthMetres ? ' · '.number_format($river->lengthMetres / 1000).' km' : '' }}</span>
-                        </div>
-                        <div class="overflow-x-auto">
-                            {{-- Fixed column widths on wide screens, sized to the longest badge and reading, so every river's table lines up; the spot takes the rest. --}}
-                            <table class="w-full text-sm lg:table-fixed">
-                                <thead class="bg-surface-2 text-left text-xs uppercase tracking-wide text-muted">
-                                    <tr>
-                                        <th class="px-4 py-2 font-medium">Spot</th>
-                                        <th class="hidden px-4 py-2 font-medium sm:table-cell lg:w-66">Upstream spills</th>
-                                        <th class="hidden px-4 py-2 font-medium sm:table-cell lg:w-80">Level</th>
-                                        <th class="hidden px-4 py-2 font-medium sm:table-cell lg:w-24">Rain 24h</th>
-                                        <th class="hidden px-4 py-2 font-medium sm:table-cell lg:w-24">Monitors</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-line-2">
-                                    @foreach ($river->spots->take(6) as $spot)
-                                        <tr class="hover:bg-surface-2">
-                                            {{-- On phones the other columns fold into this one, under the spot name. --}}
-                                            <td class="px-4 py-2 sm:whitespace-nowrap lg:whitespace-normal">
-                                                <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" class="font-semibold hover:underline">{{ $spot->name }}</a>
-                                                <div class="mt-1 flex flex-col items-start gap-1 sm:hidden">
-                                                    <x-spill-badge :recency="$spot->spillRecency" :stale="$spot->overflowDataIsStale()" />
-                                                    <span class="text-xs text-muted">
-                                                        {{ $spot->levelValue === null ? 'No gauge' : number_format($spot->levelValue, 2).' '.$spot->levelUnit.' '.strtolower($spot->levelTrend->label()) }}
-                                                        · {{ $spot->rainfallLast24HoursMillimetres === null ? 'no rain gauge' : number_format($spot->rainfallLast24HoursMillimetres, 1).' mm rain' }}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td class="hidden whitespace-nowrap px-4 py-2 sm:table-cell"><x-spill-badge :recency="$spot->spillRecency" :stale="$spot->overflowDataIsStale()" /></td>
-                                            <td class="hidden whitespace-nowrap px-4 py-2 sm:table-cell">
-                                                @if ($spot->levelValue === null)
-                                                    <span class="text-muted">No gauge</span>
-                                                @else
-                                                    <span class="font-mono tabular-nums">{{ number_format($spot->levelValue, 2) }} {{ $spot->levelUnit }}</span>
-                                                    <span class="text-muted">{{ strtolower($spot->levelTrend->label()) }}{{ $spot->levelRelativeToTypical ? ' · '.\App\Data\LevelSummary::usualPhrase($spot->levelRelativeToTypical) : '' }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="hidden whitespace-nowrap px-4 py-2 font-mono tabular-nums sm:table-cell">{{ $spot->rainfallLast24HoursMillimetres === null ? '-' : number_format($spot->rainfallLast24HoursMillimetres, 1).' mm' }}</td>
-                                            <td class="hidden whitespace-nowrap px-4 py-2 font-mono tabular-nums text-muted sm:table-cell">{{ $spot->monitorCount }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        @if ($river->spots->count() > 6)
-                            <a href="{{ route('rivers.show', [$summary->slug, $river->slug]) }}" class="block border-t border-line-2 px-4 py-2.5 text-center text-sm font-medium text-accent hover:underline">All {{ $river->spots->count() }} {{ \Illuminate\Support\Str::after($river->name, 'River ') }} spots</a>
-                        @endif
-                    </div>
+                    <x-river-spots-card :river="$river" :region-slug="$summary->slug" />
                 @endforeach
             </div>
         </section>
     @endforeach
+
+    @if ($alsoRunningThrough->isNotEmpty())
+        <section class="mb-12">
+            <div class="mb-4">
+                <h2 class="font-display text-2xl font-semibold tracking-tight">Also through {{ $region->nameInSentence() }}</h2>
+                <p class="mt-1 text-sm text-ink-2">{{ $alsoNames }} {{ $alsoIsOne ? 'runs' : 'run' }} through {{ $region->nameInSentence() }} too. {{ $alsoIsOne ? 'Its page is' : 'Their pages are' }} listed under {{ $alsoHomes }}, so the figures above leave {{ $alsoIsOne ? 'it' : 'them' }} out. Shown here are {{ $alsoIsOne ? 'its spots' : 'their spots' }} in {{ $region->nameInSentence() }}.</p>
+            </div>
+            <div class="grid gap-5">
+                @foreach ($alsoRunningThrough as $entry)
+                    <x-river-spots-card :river="$entry['river']" :region-slug="$entry['regionSlug']" :spot-slugs="$entry['spotSlugs']" />
+                @endforeach
+            </div>
+        </section>
+    @endif
 </x-layouts.app>

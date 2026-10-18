@@ -24,6 +24,12 @@ class RegionSeeder extends Seeder
             'overflow_feeds' => ['thames_water'],
             'bathing_water_districts' => [],
         ]);
+        // Thames Water's London rivers, which all join the Thames below Teddington, where the Thames Valley's stop.
+        Region::query()->updateOrCreate(['slug' => 'london'], [
+            'name' => 'London',
+            'overflow_feeds' => ['thames_water'],
+            'bathing_water_districts' => [],
+        ]);
         Region::query()->updateOrCreate(['slug' => 'north-west'], [
             'name' => 'North West',
             'overflow_feeds' => ['united_utilities'],

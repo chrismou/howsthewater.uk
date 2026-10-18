@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property string|null $catchment
  * @property array<int, string>|null $aliases
+ * @property array<string, array<int, string>>|null $also_runs_through
  * @property float|null $mouth_latitude
  * @property float|null $mouth_longitude
  * @property array<int, array{0: float, 1: float}>|null $centreline
@@ -49,6 +50,7 @@ class River extends Model
         'slug',
         'catchment',
         'aliases',
+        'also_runs_through',
         'mouth_latitude',
         'mouth_longitude',
         'centreline',
@@ -61,6 +63,7 @@ class River extends Model
     {
         return [
             'aliases' => 'array',
+            'also_runs_through' => 'array',
             'mouth_latitude' => 'float',
             'mouth_longitude' => 'float',
             'centreline' => 'array',
@@ -133,7 +136,7 @@ class River extends Model
      */
     public function scopeWithoutCentreline(Builder $query): Builder
     {
-        return $query->select(['id', 'region_id', 'parent_river_id', 'flows_into_river_id', 'name', 'slug', 'catchment', 'aliases', 'mouth_latitude', 'mouth_longitude', 'length_metres', 'joins_at_metres', 'created_at', 'updated_at']);
+        return $query->select(['id', 'region_id', 'parent_river_id', 'flows_into_river_id', 'name', 'slug', 'catchment', 'also_runs_through', 'aliases', 'mouth_latitude', 'mouth_longitude', 'length_metres', 'joins_at_metres', 'created_at', 'updated_at']);
     }
 
     public function isTributary(): bool

@@ -202,4 +202,23 @@ class Region extends Model
                 fn (SupportCollection $a, SupportCollection $b) => $a->min('id') <=> $b->min('id'),
             ]);
     }
+
+    /**
+     * Main rivers of other regions that also run through this one (the
+     * Thames through London). Its listings link to their one page, under
+     * their own region, and never add them to its own figures.
+     *
+     * @return Collection<int, River>
+     */
+    public function riversAlsoRunningThrough(): Collection
+    {
+        return River::query()
+            ->main()
+            ->withoutCentreline()
+            ->whereJsonContainsKey('also_runs_through->'.$this->slug)
+            ->where('region_id', '!=', $this->id)
+            ->with('region')
+            ->orderBy('name')
+            ->get();
+    }
 }

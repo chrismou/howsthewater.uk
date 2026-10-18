@@ -414,7 +414,7 @@ it('totals every region on the home page and keeps the first region added as the
         ->assertOk()
         ->assertSeeInOrder(['data-live-bar', 'Yorkshire', '>1</span> <span class="hidden sm:inline">overflow</span> discharging'], false);
 
-    $this->get(route('rivers.index', $later))->assertOk()->assertSee('1 river and 1 spots', false);
+    $this->get(route('rivers.index', $later))->assertOk()->assertSee('1 river and 1 spot', false);
 });
 
 it('shows flood warnings on the spot, region and home pages and in the live bar', function () {

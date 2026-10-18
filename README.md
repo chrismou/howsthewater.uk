@@ -1,7 +1,7 @@
 # How's the Water?
 
 [howsthewater.uk](https://howsthewater.uk) shows upstream storm overflow spills and river levels for popular swimming,
-paddling and fishing spots on rivers in Yorkshire, the Thames Valley, the North West, the North East, the Midlands, the East of England, the South West, Scotland and Wales. Pick a spot and it tells you which sewage overflows upstream have
+paddling and fishing spots on rivers in Yorkshire, the Thames Valley, London, the North West, the North East, the Midlands, the East of England, the South West, Scotland and Wales. Pick a spot and it tells you which sewage overflows upstream have
 discharged recently, whether any are discharging now, and what the nearest river gauge is reading.
 
 It reports what the monitors say. It does not say whether the water is safe or clean, and all copy on the site should
@@ -31,7 +31,9 @@ Covered rivers are seeded by region in `database/seeders/RiverSeeder.php` and sp
 main rivers are the Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse, Esk and Hull. The Thames Valley has the
 Thames from its source to the tidal limit at Teddington, with the twenty-four tributaries that join above it (Churn, Coln,
 Windrush, Evenlode, Cherwell, Thame, Kennet and Lambourn, Loddon, the Colne with the Ver, Gade and Chess, Wey and Cranleigh
-Waters, Mole and others). The North West has the Ribble, Lune, Kent, Eden and Cumbrian Derwent, with the tributaries that
+Waters, Mole and others). London has Thames Water's rivers that join the tidal Thames below Teddington: the Lea (with the
+Stort, Rib, Ash, Beane, Mimram and Pymme's Brook), Roding, Brent, Crane, Wandle, Beverley Brook, Ravensbourne and Kent's
+Darent; its river pages also link the Thames, as Scotland's link the Tweed. The North West has the Ribble, Lune, Kent, Eden and Cumbrian Derwent, with the tributaries that
 hold United Utilities monitors (the Lancashire Calder with Pendle Water, the Darwen and Blakewater, the Wenning, two
 Gretas, the Eamont, Irthing, Petteril and Caldew and others). The North East has the Tyne, with the North and South
 Tyne flowing into it, the Wear, Tees, Coquet, Aln, Wansbeck, Blyth and the Tweed, with the Till flowing into it. The

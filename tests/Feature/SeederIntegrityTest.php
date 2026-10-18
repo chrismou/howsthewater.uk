@@ -8,6 +8,7 @@ use App\Services\Geo\WatercourseName;
 use Database\Seeders\RegionSeeder;
 use Database\Seeders\RiverSeeder;
 use Database\Seeders\SpotSeeder;
+use Illuminate\Support\Str;
 
 it('seeds aliases that a feed name can match, as receiving watercourses are parsed before they are compared', function () {
     $unreachable = collect(RiverSeeder::rivers())
@@ -46,6 +47,23 @@ it('seeds every parent before its tributaries and every river a main river flows
         foreach (SpotSeeder::spots()[$region] ?? [] as $slug => $spots) {
             expect($seen)->toHaveKey($slug, "{$region} has spots on unseeded river {$slug}")
                 ->and(collect($spots)->pluck('name')->duplicates()->all())->toBe([]);
+        }
+    }
+});
+
+it('lists a river in other regions only where those regions are seeded, with its own spots there', function () {
+    $regions = array_keys(RiverSeeder::rivers());
+
+    foreach (RiverSeeder::rivers() as $region => $rivers) {
+        foreach ($rivers as $river) {
+            $spots = collect(SpotSeeder::spots()[$region][$river['slug']] ?? [])->map(fn (array $spot) => Str::slug($spot['name']))->all();
+
+            foreach ($river['also_runs_through'] ?? [] as $other => $spotSlugs) {
+                expect($other)->toBeIn($regions, "{$region}/{$river['slug']} runs through unseeded {$other}")
+                    ->and($other)->not->toBe($region)
+                    ->and($spotSlugs)->not->toBeEmpty("{$region}/{$river['slug']} names no spots in {$other}")
+                    ->and(array_diff($spotSlugs, $spots))->toBe([], "{$region}/{$river['slug']} names spots it does not have");
+            }
         }
     }
 });
