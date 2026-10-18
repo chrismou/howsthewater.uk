@@ -14,6 +14,7 @@ use App\Models\BathingWater;
 use App\Models\BathingWaterSample;
 use App\Models\Lake;
 use App\Models\River;
+use App\Models\OverflowMonitor;
 use App\Models\SpillEvent;
 use App\Models\Spot;
 use Illuminate\Support\Collection;
@@ -22,7 +23,8 @@ use Illuminate\Support\Collection;
  * Builds the RSS items for a spot or a river (each upstream overflow
  * starting and stopping, and each flood alert or warning in force) and for
  * a beach or lake (each nearby overflow starting and stopping, each new
- * bathing water sample and each increased pollution risk forecast). Items
+ * bathing water sample and each increased pollution risk forecast), and for
+ * one overflow (each of its spills starting and stopping). Items
  * describe what the monitors report, never whether the water is safe.
  */
 class ConditionsFeed
@@ -112,6 +114,25 @@ class ConditionsFeed
     }
 
     /**
+     * One overflow's spills: each start and stop over the last 30 days, linking to its page.
+     *
+     * @return Collection<int, FeedItem>
+     */
+    public function forOverflow(OverflowMonitor $monitor): Collection
+    {
+        $link = route('overflows.show', $monitor);
+
+        return $this->latest(SpillEvent::query()
+            ->where('overflow_monitor_id', $monitor->id)
+            ->where(fn ($query) => $query->whereNull('ended_at')->orWhere('ended_at', '>=', now()->subDays(self::HISTORY_DAYS)))
+            ->orderByDesc('started_at')
+            ->limit(self::MAX_ITEMS)
+            ->get()
+            ->each(fn (SpillEvent $event) => $event->setRelation('overflowMonitor', $monitor))
+            ->flatMap(fn (SpillEvent $event) => $this->spillItems($event, $link, '')));
+    }
+
+    /**
      * @param  Collection<int, FeedItem>  $items
      * @return Collection<int, FeedItem>
      */
@@ -153,8 +174,8 @@ class ConditionsFeed
 
                 return new FeedItem(
                     guid: "sample-{$sample->id}",
-                    title: $this->xmlText("Bathing water sample{$at} taken ".$sample->sampled_at->timezone($this->timezone())->format('j M')),
-                    description: $this->xmlText('The Environment Agency sample '.($counts === '' ? 'has no counts reported yet.' : "counted {$counts} per 100 ml.").' Read the full results: '.$summary->url()),
+                    title: self::xmlText("Bathing water sample{$at} taken ".$sample->sampled_at->timezone($this->timezone())->format('j M')),
+                    description: self::xmlText('The Environment Agency sample '.($counts === '' ? 'has no counts reported yet.' : "counted {$counts} per 100 ml.").' Read the full results: '.$summary->url()),
                     link: $link,
                     publishedAt: $sample->sampled_at,
                 );
@@ -164,8 +185,8 @@ class ConditionsFeed
         if ($summary->currentRisk() === PollutionRisk::Increased && $bathingWater->risk_expires_at !== null) {
             $items->push(new FeedItem(
                 guid: "risk-{$bathingWater->id}-{$bathingWater->risk_expires_at->getTimestamp()}",
-                title: $this->xmlText(PollutionRisk::Increased->label().$at),
-                description: $this->xmlText('The Environment Agency forecasts an increased risk of pollution'.$at.', usually after heavy rain, until '.$bathingWater->risk_expires_at->timezone($this->timezone())->format('j M, H:i').'. Read the forecast: '.$summary->url()),
+                title: self::xmlText(PollutionRisk::Increased->label().$at),
+                description: self::xmlText('The Environment Agency forecasts an increased risk of pollution'.$at.', usually after heavy rain, until '.$bathingWater->risk_expires_at->timezone($this->timezone())->format('j M, H:i').'. Read the forecast: '.$summary->url()),
                 link: $link,
                 // Forecasts are issued daily and only their expiry is kept, so date the item a day before it.
                 publishedAt: $bathingWater->risk_expires_at->copy()->subDay(),
@@ -192,11 +213,13 @@ class ConditionsFeed
     {
         $monitor = $event->overflowMonitor;
         $where = $distance.($monitor->river === null ? '' : ' on the '.$monitor->river->name);
+        // Named where the overflow has a name ("Ellerton CSO"), else by its monitor id.
+        $name = $monitor->titleName();
 
         $items = [new FeedItem(
             guid: "spill-{$event->id}-start",
-            title: $this->xmlText("Storm overflow {$monitor->external_id} started discharging{$where}"),
-            description: $this->xmlText('The water company monitor reported this storm overflow discharging from '.$event->started_at->timezone($this->timezone())->format('j M, H:i').'.'),
+            title: self::xmlText("{$name} started discharging{$where}"),
+            description: self::xmlText('The water company monitor reported this storm overflow discharging from '.$event->started_at->timezone($this->timezone())->format('j M, H:i').'.'),
             link: $link,
             publishedAt: $event->started_at,
         )];
@@ -204,8 +227,8 @@ class ConditionsFeed
         if ($event->ended_at !== null) {
             $items[] = new FeedItem(
                 guid: "spill-{$event->id}-end",
-                title: $this->xmlText("Storm overflow {$monitor->external_id} stopped discharging after {$event->durationLabel()}"),
-                description: $this->xmlText('The water company monitor reported this storm overflow stopped discharging at '.$event->ended_at->timezone($this->timezone())->format('j M, H:i').'.'),
+                title: self::xmlText("{$name} stopped discharging after {$event->durationLabel()}"),
+                description: self::xmlText('The water company monitor reported this storm overflow stopped discharging at '.$event->ended_at->timezone($this->timezone())->format('j M, H:i').'.'),
                 link: $link,
                 publishedAt: $event->ended_at,
             );
@@ -225,8 +248,8 @@ class ConditionsFeed
 
             return new FeedItem(
                 guid: "flood-{$warning->areaCode}-{$issuedAt->getTimestamp()}",
-                title: $this->xmlText("{$warning->severity->label()} in force: {$warning->areaLabel}"),
-                description: $this->xmlText(trim($warning->severity->meaning().' '.($warning->message ?? '').' '.$warning->urlLabel().': '.$warning->url())),
+                title: self::xmlText("{$warning->severity->label()} in force: {$warning->areaLabel}"),
+                description: self::xmlText(trim($warning->severity->meaning().' '.($warning->message ?? '').' '.$warning->urlLabel().': '.$warning->url())),
                 link: $link,
                 publishedAt: $issuedAt,
             );
@@ -237,7 +260,7 @@ class ConditionsFeed
      * Feed text with any character XML 1.0 forbids removed, so a stray
      * control character in an EA message cannot make the whole feed invalid.
      */
-    private function xmlText(string $text): string
+    public static function xmlText(string $text): string
     {
         return (string) preg_replace('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u', '', $text);
     }

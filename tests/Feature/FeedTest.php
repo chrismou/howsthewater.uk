@@ -182,3 +182,34 @@ it('404s beach and lake feeds from another region', function () {
     $this->get(route('beaches.feed', [$region, $beach]))->assertNotFound();
     $this->get(route('lakes.feed', [$region, $lake]))->assertNotFound();
 });
+
+it('gives each overflow a feed of its spills under its name, linking to its page', function () {
+    $region = Region::factory()->create();
+    $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe']);
+    $monitor = OverflowMonitor::factory()->create(['external_id' => 'YWS02215', 'return_name' => 'Ellerton CSO', 'river_id' => $river->id, 'river_metres' => 1000]);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours(5), 'ended_at' => now()->subHours(3)]);
+    $orphan = OverflowMonitor::factory()->create(['river_id' => null]);
+
+    $this->get(route('overflows.feed', $monitor))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/rss+xml; charset=UTF-8')
+        ->assertSee('<title>Ellerton CSO - ', false)
+        ->assertSee('Ellerton CSO started discharging on the River Wharfe')
+        ->assertSee('Ellerton CSO stopped discharging after 2 h 0 min')
+        ->assertSee('<link>'.route('overflows.show', $monitor).'</link>', false);
+    $this->get(route('overflows.feed', $orphan))->assertNotFound();
+    $this->get(route('overflows.show', $monitor))->assertSee(route('overflows.feed', $monitor), false);
+});
+
+it('keeps an overflow feed valid when a name carries a control character, and names unnamed overflows plainly', function () {
+    $region = Region::factory()->create();
+    $river = River::factory()->create(['region_id' => $region->id]);
+    $named = OverflowMonitor::factory()->create(['return_name' => "Bad\x0BName CSO", 'river_id' => $river->id]);
+    $unnamed = OverflowMonitor::factory()->create(['external_id' => 'YWS00008', 'company' => 'Anglian Water Services', 'river_id' => $river->id]);
+
+    $xml = $this->get(route('overflows.feed', $named))->assertOk()->getContent();
+
+    expect(simplexml_load_string($xml))->not->toBeFalse()
+        ->and($xml)->toContain('BadName CSO');
+    $this->get(route('overflows.feed', $unnamed))->assertSee('Each spill from Anglian Water storm overflow YWS00008 as its monitor reports');
+});

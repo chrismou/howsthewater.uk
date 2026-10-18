@@ -27,7 +27,8 @@
 
     <div class="mt-4 flex h-24 items-end gap-px" aria-hidden="true">
         @foreach ($days as $day)
-            @php($height = $day->spillMinutes > 0 ? max(4, (int) round($day->spillMinutes / $maxMinutes * 100)) : 0)
+            {{-- Any spill gets a bar, however short, so a day with spills never looks like one without. --}}
+            @php($height = $day->spillCount > 0 ? max(4, (int) round($day->spillMinutes / $maxMinutes * 100)) : 0)
             <div class="flex h-full flex-1 flex-col justify-end" title="{{ $day->date->format('D j M') }}: {{ $day->spillCount }} {{ \Illuminate\Support\Str::plural('spill', $day->spillCount) }}, {{ number_format($day->spillMinutes / 60, 1) }} h">
                 @if ($height > 0)
                     <div class="w-full rounded-t-sm bg-spill" style="height: {{ $height }}%"></div>

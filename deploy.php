@@ -84,6 +84,13 @@ task('artisan:share-images:generate', function () {
 })->desc('Draw share cards for new or changed spots, rivers, beaches and lakes');
 after('artisan:regions:refresh', 'artisan:share-images:generate');
 
+// Overflow cards are drawn by the scheduler, which runs as www-data, inside share/, which the deploy user owns. Their
+// folder is made here, group writable and setgid, so the scheduler can write to it.
+task('share-images:overflow-folder', function () {
+    run('mkdir -p {{deploy_path}}/shared/storage/app/public/share/overflows && chmod 2775 {{deploy_path}}/shared/storage/app/public/share/overflows');
+})->desc('Make the overflow share cards folder writable by the scheduler');
+after('artisan:share-images:generate', 'share-images:overflow-folder');
+
 // Imports the overflow annual returns on a deploy that has none, or whose matching rules changed
 // (ImportOverflowAnnualReturns::MATCHING_VERSION): about 80 requests to the Rivers Trust, a few minutes. A year that
 // fails to read keeps its old rows, and a failure never fails the deploy: the next deploy or the monthly run retries.

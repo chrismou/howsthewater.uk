@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -36,6 +37,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, OverflowAnnualReturn> $annualReturns
  * @property-read Collection<int, OverflowMonitorPlace> $places
  * @property-read Collection<int, OverflowOfflinePeriod> $offlinePeriods
+ * @property-read ShareImage|null $shareImage
  */
 class OverflowMonitor extends Model
 {
@@ -138,6 +140,12 @@ class OverflowMonitor extends Model
         return $this->hasMany(OverflowMonitorPlace::class);
     }
 
+    /** @return MorphOne<ShareImage, $this> */
+    public function shareImage(): MorphOne
+    {
+        return $this->morphOne(ShareImage::class, 'shareable');
+    }
+
     /** @return HasMany<OverflowOfflinePeriod, $this> */
     public function offlinePeriods(): HasMany
     {
@@ -151,6 +159,43 @@ class OverflowMonitor extends Model
     public function displayName(): ?string
     {
         return $this->name ?? $this->return_name;
+    }
+
+    /**
+     * The name to show it by: its own, else "Storm overflow YWS02215".
+     */
+    public function titleName(): string
+    {
+        return $this->displayName() ?? "Storm overflow {$this->external_id}";
+    }
+
+    /**
+     * The company without "Ltd", "plc" or "Services" ("Anglian Water Services" reads as Anglian Water).
+     */
+    public function companyName(): string
+    {
+        return (string) preg_replace('/\s+(Ltd|Limited|plc|Services)\.?$/i', '', $this->company);
+    }
+
+    /**
+     * "a Yorkshire Water storm overflow", "an Anglian Water storm overflow".
+     */
+    public function companyPhrase(): string
+    {
+        $company = $this->companyName();
+
+        return (preg_match('/^[aeiou]/i', $company) === 1 ? 'an ' : 'a ')."{$company} storm overflow";
+    }
+
+    /**
+     * "into the River Wharfe", "into Thornton Beck", "into Loch Gairloch": "the" only before a river. Null when it is
+     * not known. Load the river first.
+     */
+    public function intoPhrase(): ?string
+    {
+        $into = $this->intoName();
+
+        return $into === null ? null : 'into '.(preg_match('/^(River|Afon)\s/i', $into) === 1 ? 'the ' : '').$into;
     }
 
     /**

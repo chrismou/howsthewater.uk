@@ -2,6 +2,7 @@
 
 use App\Models\BathingWater;
 use App\Models\Lake;
+use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\ShareImage;
@@ -101,4 +102,38 @@ it('shares the page\'s own card, or the site card until it is drawn', function (
         ->assertSee('<meta name="twitter:image" content="'.$image->url().'">', false)
         ->assertSee('content="Ilkley on the River Wharfe, Yorkshire, marked on a map of the river from source to mouth"', false);
     $this->get(route('rivers.show', [$region, $river]))->assertSee($river->fresh()->shareImage->url(), false);
+});
+
+it('draws overflow cards in batches on their own run, which the place run leaves alone', function () {
+    Storage::fake('public');
+    [$region, $river] = shareablePlaces();
+    $monitors = OverflowMonitor::factory()->count(3)->create(['river_id' => $river->id, 'river_metres' => 1000]);
+    $monitors[0]->update(['return_name' => 'Ellerton CSO']);
+    $unshown = OverflowMonitor::factory()->create(['river_id' => null]);
+
+    $this->artisan('share-images:generate --overflows --limit=2')->expectsOutputToContain('Drew 2 overflow share cards, 0 unchanged, 0 removed, 1 waiting')->assertSuccessful();
+    $this->artisan('share-images:generate --overflows --limit=2')->expectsOutputToContain('Drew 1 overflow share cards, 2 unchanged');
+    $this->artisan('share-images:generate')->expectsOutputToContain('0 removed');
+
+    $card = $monitors[0]->fresh()->shareImage;
+
+    expect($card->path)->toStartWith("share/overflows/{$monitors[0]->id}-")
+        ->and($card->alt)->toBe('Ellerton CSO, a storm overflow into the River Wharfe, Yorkshire, marked on a map of the river from source to mouth')
+        ->and($unshown->shareImage()->exists())->toBeFalse();
+    Storage::disk('public')->assertExists($card->path);
+    $this->get(route('overflows.show', $monitors[0]))->assertSee('<meta property="og:image" content="'.$card->url().'">', false);
+});
+
+it('redraws every overflow card when forced, and pins one with no river on Britain under its place\'s region', function () {
+    Storage::fake('public');
+    [$region, $river] = shareablePlaces();
+    OverflowMonitor::factory()->count(3)->create(['river_id' => $river->id, 'river_metres' => 1000]);
+    $beach = BathingWater::factory()->create(['region_id' => $region->id, 'latitude' => 54.28, 'longitude' => -0.40]);
+    $nearBeach = OverflowMonitor::factory()->create(['external_id' => 'YWS07777', 'river_id' => null, 'receiving_watercourse' => 'North Sea', 'latitude' => 54.285, 'longitude' => -0.40]);
+    app(\App\Actions\Ingest\RefreshRegions::class)->handle([$region->id]);
+
+    $this->artisan('share-images:generate --overflows --limit=1')->expectsOutputToContain('Drew 1 overflow share cards');
+    $this->artisan('share-images:generate --overflows --limit=1 --force')->expectsOutputToContain('Drew 4 overflow share cards, 0 unchanged, 0 removed, 0 waiting');
+
+    expect($nearBeach->fresh()->shareImage->alt)->toBe('Storm overflow YWS07777 into North Sea, Yorkshire, marked on a map of Britain');
 });

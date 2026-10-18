@@ -7,7 +7,8 @@ use App\Models\RainfallStation;
 use Illuminate\Support\Carbon;
 
 /**
- * A rain gauge's total per UK day over the spill history window, for charts that set spills beside rainfall.
+ * A rain gauge's totals per UK day over the spill history window, or per month, for charts that set spills beside
+ * rainfall.
  */
 class DailyRainfall
 {
@@ -43,5 +44,31 @@ class DailyRainfall
         }
 
         return array_map(fn (?float $millimetres) => $millimetres === null ? null : round($millimetres, 1), $totals);
+    }
+
+    /**
+     * Rain in each period between consecutive boundaries (Unix timestamps), one summed query each: null for a period
+     * the gauge sent no readings in.
+     *
+     * @param  list<int>  $boundaries
+     * @return list<float|null>
+     */
+    public function forPeriods(RainfallStation $station, array $boundaries): array
+    {
+        $totals = [];
+
+        for ($period = 0; $period < count($boundaries) - 1; $period++) {
+            $row = RainfallReading::query()
+                ->where('rainfall_station_id', $station->id)
+                ->where('measured_at', '>', Carbon::createFromTimestamp($boundaries[$period], 'UTC'))
+                ->where('measured_at', '<=', Carbon::createFromTimestamp($boundaries[$period + 1], 'UTC'))
+                ->toBase()
+                ->selectRaw('count(*) as readings, coalesce(sum(millimetres), 0) as millimetres')
+                ->first();
+
+            $totals[] = (int) ($row->readings ?? 0) === 0 ? null : round((float) $row->millimetres, 1);
+        }
+
+        return $totals;
     }
 }

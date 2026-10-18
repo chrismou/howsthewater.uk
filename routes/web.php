@@ -35,6 +35,9 @@ Route::middleware($pageCaching)->group(function () {
     Route::get('/overflows/{monitor}', [OverflowController::class, 'show'])->name('overflows.show');
 });
 
+// An overflow's feed sits beside its page, rate limited and cached like the place feeds.
+Route::get('/overflows/{monitor}/feed', [FeedController::class, 'overflow'])->name('overflows.feed')->middleware(['throttle:public', 'cache.headers:public;max_age=300']);
+
 // Each query is its own URL, so search results are never stored: the edge would otherwise keep one copy per query.
 Route::get('/search', SearchController::class)->name('search')->middleware(['throttle:public', 'cache.headers:no_store;private']);
 
@@ -59,7 +62,8 @@ Route::scopeBindings()->group(function () use ($pageCaching) {
         Route::get('/{region}/rivers/{river}/{spot}/spills', [PlaceSpillsController::class, 'spot'])->name('spots.spills');
     });
 
-    // Feeds and the spot's extra overflow rows come before the spot route, which would otherwise take "feed" or
+    // Feeds (an overflow's feed sits at the top, outside the region routes) and the spot's extra overflow rows come
+    // before the spot route, which would otherwise take "feed" or
     // "monitors" as a spot slug.
     Route::middleware(['throttle:public', 'cache.headers:public;max_age=300'])->group(function () {
         Route::get('/{region}/beaches/{beach}/feed', [FeedController::class, 'beach'])->name('beaches.feed');

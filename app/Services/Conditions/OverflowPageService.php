@@ -16,6 +16,7 @@ use App\Models\Spot;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Builds an overflow's page from our own spill records, its annual returns and the rain gauge of the nearest place
@@ -27,6 +28,9 @@ class OverflowPageService
 {
     /** Spills per page of the log. */
     public const SPILLS_PER_PAGE = 50;
+
+    /** Months in the year chart. */
+    private const MONTHS_SHOWN = 12;
 
     /**
      * Offline periods were first recorded by the first poll after this (the deploy that added them), so uptime is
@@ -74,7 +78,47 @@ class OverflowPageService
             uptimePercent: $uptime['uptimePercent'],
             uptimeSince: $uptime['uptimeSince'],
             centreline: $monitor->river_id === null ? null : River::query()->whereKey($monitor->river_id)->first(['id', 'centreline'])?->centreline,
+            months: $this->months($spans, $recordingSince, $rainfallStation, $now),
+            monthsRecordedFrom: $recordingSince->copy()->max($now->copy()->timezone($this->timezone())->startOfMonth()->subMonths(self::MONTHS_SHOWN - 1)),
         );
+    }
+
+    /**
+     * The last MONTHS_SHOWN UK months, oldest first: spills and hours in each from when we started recording (the
+     * first spill held is often the feed's latest from before then, which the year's figures leave out too), whether
+     * we were recording by its end, and the rain gauge's total. Past months' rain is cached for an hour, as it no
+     * longer changes; the current month's is read each time.
+     *
+     * @param  list<array{0: int, 1: int}>  $spans
+     * @return list<array{month: Carbon, spills: int, hours: float, recorded: bool, rain: float|null}>
+     */
+    private function months(array $spans, Carbon $recordingSince, ?RainfallStation $station, Carbon $now): array
+    {
+        $first = $now->copy()->timezone($this->timezone())->startOfMonth()->subMonths(self::MONTHS_SHOWN - 1);
+        $starts = array_map(fn (int $offset) => $first->copy()->addMonths($offset), range(0, self::MONTHS_SHOWN - 1));
+        $boundaries = [...array_map(fn (Carbon $start) => $start->getTimestamp(), $starts), $now->getTimestamp()];
+        $recordedFrom = $recordingSince->getTimestamp();
+        $rain = $station === null ? array_fill(0, self::MONTHS_SHOWN, null) : [
+            ...Cache::remember(
+                "overflow-page:monthly-rain:{$station->id}:{$boundaries[0]}",
+                now()->addHour(),
+                fn () => $this->rainfall->forPeriods($station, array_slice($boundaries, 0, self::MONTHS_SHOWN)),
+            ),
+            ...$this->rainfall->forPeriods($station, array_slice($boundaries, self::MONTHS_SHOWN - 1)),
+        ];
+
+        return array_map(function (int $index) use ($starts, $boundaries, $spans, $recordedFrom, $rain) {
+            $recorded = $boundaries[$index + 1] > $recordedFrom;
+            $window = $recorded ? $this->window($spans, max($boundaries[$index], $recordedFrom), $boundaries[$index + 1]) : ['spills' => 0, 'hours' => 0.0];
+
+            return [
+                'month' => $starts[$index],
+                'spills' => $window['spills'],
+                'hours' => $window['hours'],
+                'recorded' => $recorded,
+                'rain' => $rain[$index],
+            ];
+        }, range(0, self::MONTHS_SHOWN - 1));
     }
 
     /**

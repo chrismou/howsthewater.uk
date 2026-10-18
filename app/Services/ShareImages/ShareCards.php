@@ -5,10 +5,12 @@ namespace App\Services\ShareImages;
 use App\Data\ShareCard;
 use App\Models\BathingWater;
 use App\Models\Lake;
+use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\Spot;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * What each kind of page's share card says. Cards name the place and what the page covers, never its live status,
@@ -82,6 +84,32 @@ class ShareCards
             tagline: $this->bathingTagline($region),
             alt: "{$lake->name}, {$region->name}, marked on a map of Britain",
             pin: [$lake->latitude, $lake->longitude],
+        );
+    }
+
+    /**
+     * An overflow's card: its river's line with the overflow pinned and the river's spots, or Britain with a pin for
+     * one on no river we draw (near a beach or lake). Says what the page covers, never whether it is spilling.
+     *
+     * @param  Collection<int, Spot>  $spotsOnRiver  The river's published spots
+     */
+    public function forOverflow(OverflowMonitor $monitor, ?River $river, Region $region, Collection $spotsOnRiver, bool $hasReturns): ShareCard
+    {
+        $monitor->setRelation('river', $river);
+        $name = $monitor->titleName();
+        // A long receiving watercourse ("Unnamed Culverted Trib Leading To ...") would push the region off the card.
+        $into = $monitor->intoName() === null ? null : Str::limit($monitor->intoName(), 40);
+        $onRiverLine = $river !== null && $river->hasCentreline();
+
+        return new ShareCard(
+            eyebrow: 'Storm overflow',
+            title: $name,
+            subtitle: $into !== null ? "{$into}, {$region->name}" : $region->name,
+            tagline: $hasReturns ? 'Every spill recorded, and its yearly returns' : 'Every spill recorded from its monitor',
+            alt: ($monitor->displayName() === null ? $name : "{$name}, a storm overflow").($monitor->intoPhrase() !== null ? ' '.$monitor->intoPhrase() : '').", {$region->name}, marked on a map of ".($onRiverLine ? 'the river from source to mouth' : 'Britain'),
+            riverLine: $onRiverLine ? $river->centreline : null,
+            riverSpots: $onRiverLine ? $this->positions($spotsOnRiver) : [],
+            pin: [$monitor->latitude, $monitor->longitude],
         );
     }
 

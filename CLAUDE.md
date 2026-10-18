@@ -334,7 +334,18 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   then) stays in the log, but the year's figures start at the record. An overflow with no name, no return and no
   spill is noindexed and left out of the sitemap
   (dated by its latest spill). Name an overflow with `components/overflow-link`; link a place with
-  `OverflowMonitorPlace::placeUrl()`.
+  `OverflowMonitorPlace::placeUrl()`. Overflow pages also chart the last 12 UK months (`components/spill-rain-months`)
+  beside the rain gauge's monthly totals (`DailyRainfall::forPeriods()`, one summed query a month; past months cached
+  for an hour), marking months before we started recording rather than drawing them empty; its hours, bar scale and
+  rain total cover only the recorded time, and any month with a spill gets a bar. Overflow pages have an RSS feed
+  (`overflows.feed`, `/overflows/{id}/feed`, `ConditionsFeed::forOverflow()`) of each spill starting and stopping;
+  feed text goes through `ConditionsFeed::xmlText()`, as names come from the companies' feeds. Name an overflow with
+  `OverflowMonitor::titleName()`, `companyName()`, `companyPhrase()` and `intoPhrase()` rather than building the
+  words again. Overflow pages have share cards too (`ShareCards::forOverflow()`: the river's line with the overflow
+  pinned, or Britain), but thousands of them would hold up a deploy, so `share-images:generate --overflows` draws
+  them hourly in the background, at most 500 a run (`--force` redraws them all), one river's line in memory at a
+  time, and the deploy's place run never touches them. The scheduler runs as www-data and the deploy user owns
+  `share/`, so the deploy makes `share/overflows` group writable (setgid, 2775).
 - The live bar's spill counts link to `/spills` (every region, `SpillsOverviewService`) or `/{region}/spills`
   (`#discharging`, `#spots`). "Discharging now" lists what the bar counts (overflows on the region's rivers,
   tributaries included), read live while the bar is rebuilt every 15 minutes, so the two can differ briefly after an

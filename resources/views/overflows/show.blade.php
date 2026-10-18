@@ -28,13 +28,14 @@
 
 <x-layouts.app :title="$page->title()" :description="$page->description()" :breadcrumbs="$breadcrumbs" :region="$page->region"
                :noindex="! $page->hasContent() || $spills->currentPage() > 1"
-               :date-modified="$monitor->source_updated_at">
+               :date-modified="$monitor->source_updated_at" :feed="route('overflows.feed', $monitor)" :share-image="$monitor->shareImage">
     <div class="mb-6">
         <x-breadcrumbs :items="$breadcrumbs" />
         <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $name }}</h1>
         <p class="mt-1 text-ink-2">
-            A {{ $page->company() }} storm overflow{{ $page->intoPhrase() ? ' '.$page->intoPhrase() : '' }}.
+            {{ ucfirst($monitor->companyPhrase()) }}{{ $page->intoPhrase() ? ' '.$page->intoPhrase() : '' }}.
             <span class="text-muted">Monitor <span class="font-mono text-xs">{{ $monitor->external_id }}</span>@if ($latestReturn?->permit_reference), permit <span class="font-mono text-xs">{{ $latestReturn->permit_reference }}</span>@endif.</span>
+            <a href="{{ route('overflows.feed', $monitor) }}" class="whitespace-nowrap text-accent hover:underline">Follow its spills by RSS</a>
         </p>
     </div>
 
@@ -85,6 +86,12 @@
                 <x-help term="history" />
             </div>
             <x-spill-rain-chart :days="$page->dailyHistory" :rainfall="$page->dailyRainfall" :gauge="$page->rainfallStation?->label" />
+
+            <div class="mt-8 mb-3 flex items-center gap-1.5">
+                <h2 class="font-display text-lg font-semibold">Last 12 months</h2>
+                <x-help term="our_record" />
+            </div>
+            <x-spill-rain-months :months="$page->months" :recorded-from="$page->monthsRecordedFrom" :gauge="$page->rainfallStation?->label" />
 
             <div class="mt-8 mb-3 flex items-center gap-1.5">
                 <h2 class="font-display text-lg font-semibold">Year by year</h2>

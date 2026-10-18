@@ -122,3 +122,29 @@ it('dates our record from when we first saw the overflow, works out uptime, and 
         ->assertSee('97.0%')
         ->assertSee($lake->name);
 });
+
+it('charts the last 12 months beside monthly rain, marking the months before we started recording', function () {
+    $this->travelTo('2026-10-17 12:00:00');
+    $region = Region::factory()->create();
+    $river = River::factory()->create(['region_id' => $region->id]);
+    $rain = RainfallStation::factory()->create(['label' => 'Ilkley']);
+    Spot::factory()->create(['river_id' => $river->id, 'river_metres' => 50000, 'rainfall_station_id' => $rain->id]);
+    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 40000, 'created_at' => '2026-09-20 09:00:00']);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => '2026-10-02 08:00:00', 'ended_at' => '2026-10-02 12:00:00']);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => '2026-09-25 08:00:00', 'ended_at' => '2026-09-25 09:30:00']);
+    RainfallReading::factory()->create(['rainfall_station_id' => $rain->id, 'measured_at' => '2026-10-02 07:00:00', 'millimetres' => 12.4]);
+    RainfallReading::factory()->create(['rainfall_station_id' => $rain->id, 'measured_at' => '2026-09-25 07:00:00', 'millimetres' => 3.6]);
+    // The feed's latest spill when we first saw the overflow, and rain from before then: neither counts.
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => '2026-09-18 08:00:00', 'ended_at' => '2026-09-18 11:00:00']);
+    RainfallReading::factory()->create(['rainfall_station_id' => $rain->id, 'measured_at' => '2026-08-10 07:00:00', 'millimetres' => 40.0]);
+    // A spill of seconds still counts.
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => '2026-10-09 08:00:00', 'ended_at' => '2026-10-09 08:00:20']);
+    app(RefreshRegions::class)->handle([$region->id]);
+
+    $this->get(route('overflows.show', $monitor))
+        ->assertOk()
+        ->assertSee('Recording since 20 September 2026: 5.5 hours of spilling in that time')
+        ->assertSee('and 16 mm of rain at the Ilkley gauge.')
+        ->assertSee('Before we started recording')
+        ->assertSeeInOrder(['Spills and rain per month', 'November 2025', 'not recorded', 'August 2026', 'not recorded', 'September 2026', '1', '1.5', '4 mm', 'October 2026 so far', '2', '4.0', '12 mm']);
+});

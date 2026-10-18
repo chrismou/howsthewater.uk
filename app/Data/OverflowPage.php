@@ -28,6 +28,8 @@ final readonly class OverflowPage
      * @param  array<string, float|null>|null  $dailyRainfall  Millimetres by UK date, oldest first; null for a day with no readings
      * @param  Collection<int, OverflowAnnualReturn>  $annualReturns  Newest first
      * @param  list<array{0: float, 1: float}>|null  $centreline  The river's line for the map, where it is on one
+     * @param  list<array{month: Carbon, spills: int, hours: float, recorded: bool, rain: float|null}>  $months  The last 12 UK months, oldest first
+     * @param  Carbon  $monthsRecordedFrom  When the chart's figures start: our record, or the first month shown
      */
     public function __construct(
         public OverflowMonitor $monitor,
@@ -45,6 +47,8 @@ final readonly class OverflowPage
         public ?float $uptimePercent,
         public ?Carbon $uptimeSince,
         public ?array $centreline,
+        public array $months,
+        public Carbon $monthsRecordedFrom,
     ) {
     }
 
@@ -53,29 +57,17 @@ final readonly class OverflowPage
      */
     public function name(): string
     {
-        return $this->monitor->displayName() ?? 'Storm overflow '.$this->monitor->external_id;
+        return $this->monitor->titleName();
     }
 
-    /**
-     * The company without "Ltd", "plc" or "Services" ("Anglian Water Services" reads as Anglian Water).
-     */
     public function company(): string
     {
-        return (string) preg_replace('/\s+(Ltd|Limited|plc|Services)\.?$/i', '', $this->monitor->company);
+        return $this->monitor->companyName();
     }
 
-    /**
-     * "into the River Wharfe", "into Thornton Beck", "into Loch Gairloch": "the" only before a river.
-     */
     public function intoPhrase(): ?string
     {
-        $into = $this->monitor->intoName();
-
-        if ($into === null) {
-            return null;
-        }
-
-        return 'into '.(preg_match('/^(River|Afon)\s/i', $into) === 1 ? 'the ' : '').$into;
+        return $this->monitor->intoPhrase();
     }
 
     /**
@@ -105,10 +97,10 @@ final readonly class OverflowPage
             default => '',
         };
         $into = $this->intoPhrase() !== null ? ' '.$this->intoPhrase() : '';
-        $intro = "{$this->name()}{$into}, a {$this->company()} storm overflow: each spill as its monitor reports it";
+        $intro = "{$this->name()}{$into}, {$this->monitor->companyPhrase()}: each spill as its monitor reports it";
 
-        return collect(["{$intro}{$returnFact}{$reaches}.", "{$intro}{$returnFact}.", "{$this->name()}, a {$this->company()} storm overflow: each spill as its monitor reports it."])
-            ->first(fn (string $candidate) => mb_strlen($candidate) <= 160, Str::limit("{$this->name()}, a {$this->company()} storm overflow.", 157));
+        return collect(["{$intro}{$returnFact}{$reaches}.", "{$intro}{$returnFact}.", "{$this->name()}, {$this->monitor->companyPhrase()}: each spill as its monitor reports it."])
+            ->first(fn (string $candidate) => mb_strlen($candidate) <= 160, Str::limit("{$this->name()}, {$this->monitor->companyPhrase()}.", 157));
     }
 
     /**

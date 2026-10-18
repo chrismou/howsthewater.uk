@@ -17,7 +17,7 @@
     <div class="mt-4 flex h-24 items-end gap-px" role="img" aria-label="Minutes of upstream spilling per day over the last {{ $days->count() }} days">
         @foreach ($days as $day)
             @php
-                $height = $day->spillMinutes > 0 ? max(4, (int) round($day->spillMinutes / $maxMinutes * 100)) : 0;
+                $height = $day->spillCount > 0 ? max(4, (int) round($day->spillMinutes / $maxMinutes * 100)) : 0;
             @endphp
             <div class="flex h-full flex-1 flex-col justify-end" title="{{ $day->date->format('D j M') }}: {{ $day->spillCount }} {{ \Illuminate\Support\Str::plural('spill', $day->spillCount) }}, {{ $day->spillMinutes }} min">
                 @if ($height > 0)
