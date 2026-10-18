@@ -24,7 +24,7 @@ it('shows every spill upstream of a spot, counting hours when overflows spill to
         ->assertOk()
         ->assertSee('<title>Ilkley, River Wharfe: spills upstream - How\'s the Water?</title>', false)
         ->assertSee('Spills upstream of Ilkley')
-        ->assertSee('since we started recording them on 13 October 2026')
+        ->assertSee('since 13 October 2026')
         ->assertSeeInOrder(['Last 7 days', '4.0 h', '2 spills'])
         ->assertSeeInOrder(['Busiest overflows upstream, since 13 Oct', 'Addingham CSO', '5.0 km', '1', '3.0', 'Bolton Abbey CSO', '20.0 km', '1', '2.0'])
         ->assertSeeInOrder(['Every spill recorded', 'Fri 16 Oct, 11:00', 'Bolton Abbey CSO', 'Fri 16 Oct, 09:00', 'Addingham CSO'])
@@ -86,7 +86,7 @@ it('dates the record from when the overflows were first seen, keeps months befor
 
     $this->get(route('spots.spills', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSee('since we started recording them on 13 October 2026')
+        ->assertSee('since 13 October 2026')
         ->assertSee('Monitor data is out of date.')
         ->assertSee('October 2026 so far')
         ->assertDontSee('August 2026')

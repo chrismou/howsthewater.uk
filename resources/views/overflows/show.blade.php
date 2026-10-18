@@ -22,6 +22,7 @@
     ]))->values();
 
     $recordedFrom = $page->recordingSince->copy()->timezone($timezone);
+    $hasPublishedLog = $page->coveredFrom->lessThan($page->recordingSince);
     $statusSince = $monitor->status_started_at?->copy()->timezone($timezone);
     $hours = fn (float $value) => $value >= 10 ? number_format($value) : number_format($value, 1);
 @endphp
@@ -53,7 +54,7 @@
         @endif
 
         <div class="mt-5 flex items-center gap-1.5">
-            <h2 class="text-xs uppercase tracking-wide text-muted">Our record, since {{ $recordedFrom->format('j F Y') }}</h2>
+            <h2 class="text-xs uppercase tracking-wide text-muted">Spills</h2>
             <x-help term="our_record" />
         </div>
         <dl class="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -95,7 +96,7 @@
                 <h2 class="font-display text-lg font-semibold">Last 12 months</h2>
                 <x-help term="our_record" />
             </div>
-            <x-spill-rain-months :months="$page->months" :recorded-from="$page->monthsRecordedFrom" :gauge="$page->rainfallStation?->label" />
+            <x-spill-rain-months :months="$page->months" :notes="$page->notes" :gauge="$page->rainfallStation?->label" />
 
             <div class="mt-8 mb-3 flex items-center gap-1.5">
                 <h2 class="font-display text-lg font-semibold">Year by year</h2>
@@ -159,7 +160,11 @@
     <section id="spills" class="mt-10 scroll-mt-24">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h2 class="font-display text-lg font-semibold">Every spill recorded <span class="font-mono tabular-nums text-muted">{{ $spills->total() }}</span></h2>
-            <span class="text-sm text-muted">Since we first saw this overflow on {{ $recordedFrom->format('j F Y') }}. Any earlier spill is the latest the feed reported then.</span>
+            @if ($hasPublishedLog)
+                <span class="text-sm text-muted">Newest first. From its live feed since {{ $recordedFrom->format('j F Y') }}, and from {{ $page->company() }}'s published records before that.</span>
+            @else
+                <span class="text-sm text-muted">Since we first saw this overflow on {{ $recordedFrom->format('j F Y') }}. Any earlier spill is the latest the feed reported then.</span>
+            @endif
         </div>
         @if ($spills->isEmpty())
             <p class="text-sm text-ink-2">No spill recorded yet.</p>

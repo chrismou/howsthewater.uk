@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $overflow_monitor_id
+ * @property int|null $overflow_spill_log_id  Null for spills from the live feeds
  * @property Carbon $started_at
  * @property Carbon|null $ended_at
  * @property Carbon|null $created_at
@@ -24,6 +25,7 @@ class SpillEvent extends Model
 
     protected $fillable = [
         'overflow_monitor_id',
+        'overflow_spill_log_id',
         'started_at',
         'ended_at',
     ];
@@ -40,6 +42,14 @@ class SpillEvent extends Model
     public function overflowMonitor(): BelongsTo
     {
         return $this->belongsTo(OverflowMonitor::class);
+    }
+
+    /**
+     * Whether the spill was imported from the company's published log rather than recorded from its live feed.
+     */
+    public function isFromPublishedLog(): bool
+    {
+        return $this->overflow_spill_log_id !== null;
     }
 
     public function isOngoing(): bool

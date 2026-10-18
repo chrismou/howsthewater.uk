@@ -32,7 +32,7 @@ it('shows an overflow\'s status, our record, its annual returns, the places it r
         ->assertDontSee('noindex')
         ->assertSee('permit')
         ->assertSee('YWUCD2/36')
-        ->assertSeeInOrder(['Our record, since 13 October 2026', 'Last 7 days', '2', '3.5 h', 'Days with a spill, last 30', '2', 'Longest spill', '3 h 0 min'])
+        ->assertSeeInOrder(['Where do these spills come from?', 'Last 7 days', '2', '3.5 h', 'Days with a spill, last 30', '2', 'Longest spill', '3 h 0 min'])
         ->assertSee('6.4 mm of rain at the Ilkley gauge')
         ->assertSeeInOrder(['Year by year', '2025', '52', '330', '95.8%', '2024', '84', '689'])
         ->assertSeeInOrder(['Places it reaches', 'Ilkley, River Wharfe', '2.5 km downstream'])
@@ -74,7 +74,7 @@ it('ends a spill still open on a monitor that has stopped reporting at its last 
     $this->travelTo('2026-10-17 12:00:00');
     $region = Region::factory()->create();
     $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe']);
-    $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'source_updated_at' => '2026-10-15 12:00:00']);
+    $monitor = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'source_updated_at' => '2026-10-15 12:00:00', 'created_at' => '2026-10-13 09:00:00']);
     SpillEvent::factory()->ongoing()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => '2026-10-15 10:00:00']);
 
     $this->get(route('overflows.show', $monitor))
@@ -116,7 +116,7 @@ it('dates our record from when we first saw the overflow, works out uptime, and 
         ->assertOk()
         ->assertSee('<title>Storm overflow NWL00001: spills - How\'s the Water?</title>', false)
         // The 8 October spill is the feed's latest when we first saw the overflow on the 15th: listed, not the start.
-        ->assertSee('Our record, since 15 October 2026')
+        ->assertSee('Since we first saw this overflow on 15 October 2026')
         ->assertSee('Thu 8 Oct 2026, 07:00')
         ->assertSee('Any earlier spill is the latest the feed reported then.')
         ->assertSee('97.0%')
@@ -143,8 +143,8 @@ it('charts the last 12 months beside monthly rain, marking the months before we 
 
     $this->get(route('overflows.show', $monitor))
         ->assertOk()
-        ->assertSee('Recording since 20 September 2026: 5.5 hours of spilling in that time')
+        ->assertSee('5.5 hours of spilling over the 2 months with data')
         ->assertSee('and 16 mm of rain at the Ilkley gauge.')
-        ->assertSee('Before we started recording')
-        ->assertSeeInOrder(['Spills and rain per month', 'November 2025', 'not recorded', 'August 2026', 'not recorded', 'September 2026', '1', '1.5', '4 mm', 'October 2026 so far', '2', '4.0', '12 mm']);
+        ->assertSee('No data')
+        ->assertSeeInOrder(['Spills and rain per month', 'November 2025', 'no data', 'August 2026', 'no data', 'September 2026', '1', '1.5', '4 mm', 'October 2026 so far', '2', '4.0', '12 mm']);
 });

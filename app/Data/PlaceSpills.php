@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 
 /**
  * The spill history of every overflow a place's page shows: those upstream of a spot, or within 3 km of a beach or
- * lake, since we started recording them. Hours are hours when at least one of them was spilling, so spills that
+ * lake, from their live feeds and, before we started reading them, their companies' published logs. Hours are hours when at least one of them was spilling, so spills that
  * overlap count once; the busiest list gives each overflow's own hours.
  */
 final readonly class PlaceSpills
@@ -25,14 +25,16 @@ final readonly class PlaceSpills
      * @param  array{7: array{spills: int, hours: float}, 30: array{spills: int, hours: float}, year: array{spills: int, hours: float}}  $record  The last 7 and 30 UK days, and the year from $yearFrom
      * @param  Collection<int, SpillHistoryDay>  $dailyHistory  Oldest first, UK days, minutes when any overflow was spilling
      * @param  array<string, float|null>|null  $dailyRainfall  Millimetres by UK date; null for a day with no readings
-     * @param  list<array{month: Carbon, spills: int, hours: float}>  $months  Oldest first, from the month recording began
+     * @param  Carbon|null  $coveredFrom  The earliest time we hold any of their spills for
+     * @param  list<array{month: Carbon, spills: int, hours: float, recorded: bool}>  $months  Oldest first, up to 12, from the first month we hold; recorded is false for a month with no data
+     * @param  list<string>  $notes  Where the spills come from and which months are missing (SpillCoverage::notes())
      * @param  list<array{monitor: OverflowMonitor, spills: int, hours: float}>  $busiest  Most hours first, from $yearFrom
      */
     public function __construct(
         public Spot|BathingWater|Lake $place,
         public Region $region,
         public array $distances,
-        public ?Carbon $recordingSince,
+        public ?Carbon $coveredFrom,
         public ?Carbon $dataUpdatedAt,
         public array $record,
         public Carbon $yearFrom,
@@ -42,6 +44,7 @@ final readonly class PlaceSpills
         public ?array $dailyRainfall,
         public array $months,
         public array $busiest,
+        public array $notes,
     ) {
     }
 
@@ -129,7 +132,7 @@ final readonly class PlaceSpills
     }
 
     /**
-     * "2026 so far", or "Since 13 Oct" when our record began this year, so a part year never reads as a whole one.
+     * "2026 so far", or "Since 13 Oct" when the spills we hold start this year, so a part year never reads as a whole one.
      */
     public function yearLabel(): string
     {
@@ -168,7 +171,7 @@ final readonly class PlaceSpills
         }
 
         $monitors = $this->monitorCount().' storm '.Str::plural('overflow', $this->monitorCount());
-        $since = $this->recordingSince ? ' since '.$this->recordingSince->copy()->timezone($this->timezone())->format('j F Y') : '';
+        $since = $this->coveredFrom ? ' since '.$this->coveredFrom->copy()->timezone($this->timezone())->format('j F Y') : '';
 
         return collect([
             "Every spill from the {$monitors} {$this->where()}{$since}: hours spilling by month and the busiest overflows.",

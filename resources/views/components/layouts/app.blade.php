@@ -199,7 +199,7 @@
             @if ($overflowFeeds->contains('driver', 'welsh_water'))
                 Overflow data from Dŵr Cymru Welsh Water.
             @endif
-            Storm overflow annual returns produced by The Rivers Trust from Environment Agency and Natural Resources Wales data, Open Government Licence v3.0.
+            Storm overflow annual returns produced by The Rivers Trust from Environment Agency and Natural Resources Wales data, Open Government Licence v3.0. Past storm overflow spills from the water companies' records via the Environment Agency, Open Government Licence v3.0.
             River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
             Weather forecasts from <a href="https://open-meteo.com/" rel="noopener" class="underline hover:text-ink">Open-Meteo</a>, CC BY 4.0.
             <a href="{{ route('about') }}" class="underline hover:text-ink">About the data and how it works</a>.

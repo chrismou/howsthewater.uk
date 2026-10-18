@@ -22,6 +22,10 @@ Schedule::command('ingest:weather')->cron('7 */3 * * *')->withoutOverlapping(60)
 Schedule::command('share-images:generate --overflows --limit=500')->hourlyAt(40)->withoutOverlapping(60)->runInBackground();
 // The annual returns come out once a year (spring), so a monthly read picks up a new year and any corrections.
 Schedule::command('ingest:overflow-annual-returns')->monthlyOn(2, '05:10');
+// The companies publish past spills monthly or yearly, so a daily read picks up new months within a day; a run that
+// finds nothing changed exits after a few requests. The first import is several million spills, so it runs in the
+// background rather than on deploy.
+Schedule::command('ingest:overflow-spill-logs')->dailyAt('05:25')->withoutOverlapping(60)->runInBackground();
 // Natural Resources Wales asks that its data is not kept over a year.
 Schedule::command('nrw:prune')->dailyAt('04:40');
 // Every minute, so its one read per turn keeps an even pace; most runs find it is not yet due and exit.

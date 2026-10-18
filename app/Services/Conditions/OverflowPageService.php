@@ -19,10 +19,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Builds an overflow's page from our own spill records, its annual returns and the rain gauge of the nearest place
- * linked to it. Totals come from each spill's start and end alone, so a monitor with thousands of spills stays cheap.
- * Hours are each spill's time within the window; a spill still open counts up to now, or only up to the monitor's last
- * report if it has stopped reporting.
+ * Builds an overflow's page from its spills, its annual returns and the rain gauge of the nearest place linked to it.
+ * Spills come from the live feed since we started reading it and, before that, from the company's published log
+ * (SpillCoverage); figures count only spills that start inside that time. Totals come from each spill's start and end
+ * alone, so a monitor with thousands of spills stays cheap. Hours are each spill's time within the window; a spill
+ * still open counts up to now, or only up to the monitor's last report if it has stopped reporting.
  */
 class OverflowPageService
 {
@@ -41,22 +42,26 @@ class OverflowPageService
     /** Uptime over less than this reads as more certain than it is, so it is not shown. */
     private const UPTIME_MINIMUM_DAYS = 7;
 
-    public function __construct(private RegionOverflows $overflows, private SpillHistoryService $history, private DailyRainfall $rainfall)
+    public function __construct(private RegionOverflows $overflows, private SpillHistoryService $history, private DailyRainfall $rainfall, private SpillCoverage $coverage)
     {
     }
 
     public function for(OverflowMonitor $monitor, Region $region): OverflowPage
     {
         $now = now();
-        $spans = $this->spans($monitor, SpillIntervals::openUntil($monitor, $now));
+        $allSpans = $this->spans($monitor, SpillIntervals::openUntil($monitor, $now));
         $places = $this->overflows->placesFor($monitor);
         $rainfallStation = $this->rainfallStationFor($places);
         $uptime = $this->uptime($monitor, $now);
-        // Our record runs from when we first saw the overflow. Its first spill is the feed's latest at that moment,
-        // often from long before, so it stays in the log but the year's figures start from the record.
         $recordingSince = ($monitor->created_at ?? $now)->copy();
-        $yearFrom = $now->copy()->timezone($this->timezone())->startOfYear()->utc()->max($recordingSince);
+        // A spill the feed showed when we first saw the overflow, from before any published log, stays in the spill
+        // log but not in the figures.
+        $coverage = $this->coverage->intervals($monitor->company, $recordingSince->getTimestamp());
+        $spans = array_values(array_filter($allSpans, fn (array $span) => SpillCoverage::counts($coverage, $span[0], $span[1])));
+        $coveredFrom = Carbon::createFromTimestamp($coverage[0][0], 'UTC');
+        $yearFrom = $now->copy()->timezone($this->timezone())->startOfYear()->utc()->max($coveredFrom);
         $days = SpillIntervals::dayBoundaries($now, SpillHistoryService::HISTORY_DAYS);
+        $monthsFrom = $now->copy()->timezone($this->timezone())->startOfMonth()->subMonths(self::MONTHS_SHOWN - 1);
 
         return new OverflowPage(
             monitor: $monitor,
@@ -69,35 +74,36 @@ class OverflowPageService
                 'year' => $this->window($spans, $yearFrom->getTimestamp(), $now->getTimestamp()),
             ],
             yearFrom: $yearFrom,
-            totalSpills: count($spans),
+            totalSpills: count($allSpans),
             longestSpillMinutes: $spans === [] ? null : (int) round(max(array_map(fn (array $span) => $span[1] - $span[0], $spans)) / 60),
-            dailyHistory: $this->history->dailyBreakdown($this->recentEvents($monitor, $now), $now),
+            dailyHistory: $this->history->dailyBreakdown($this->recentEvents($monitor, $now)->filter(fn (SpillEvent $event) => SpillCoverage::counts($coverage, $event->started_at->getTimestamp(), SpillIntervals::endOf($event, $now)->getTimestamp()))->values(), $now),
             rainfallStation: $rainfallStation,
             dailyRainfall: $rainfallStation === null ? null : $this->rainfall->forStation($rainfallStation, $now),
             annualReturns: $monitor->annualReturns()->get(),
             uptimePercent: $uptime['uptimePercent'],
             uptimeSince: $uptime['uptimeSince'],
             centreline: $monitor->river_id === null ? null : River::query()->whereKey($monitor->river_id)->first(['id', 'centreline'])?->centreline,
-            months: $this->months($spans, $recordingSince, $rainfallStation, $now),
-            monthsRecordedFrom: $recordingSince->copy()->max($now->copy()->timezone($this->timezone())->startOfMonth()->subMonths(self::MONTHS_SHOWN - 1)),
+            months: $this->months($spans, $coverage, $rainfallStation, $now),
+            coveredFrom: $coveredFrom,
+            notes: $this->coverage->notes([$monitor->company => $recordingSince->getTimestamp()], $monthsFrom->getTimestamp(), $now->getTimestamp()),
         );
     }
 
     /**
-     * The last MONTHS_SHOWN UK months, oldest first: spills and hours in each from when we started recording (the
-     * first spill held is often the feed's latest from before then, which the year's figures leave out too), whether
-     * we were recording by its end, and the rain gauge's total. Past months' rain is cached for an hour, as it no
-     * longer changes; the current month's is read each time.
+     * The last MONTHS_SHOWN UK months, oldest first: spills and hours in each, whether we hold any of its time (the
+     * company's published log or the live feed; a month in neither has no data rather than no spills), and the rain
+     * gauge's total. Past months' rain is cached for an hour, as it no longer changes; the current month's is read
+     * each time.
      *
-     * @param  list<array{0: int, 1: int}>  $spans
+     * @param  list<array{0: int, 1: int}>  $spans  Spills inside $coverage
+     * @param  list<array{0: int, 1: int}>  $coverage
      * @return list<array{month: Carbon, spills: int, hours: float, recorded: bool, rain: float|null}>
      */
-    private function months(array $spans, Carbon $recordingSince, ?RainfallStation $station, Carbon $now): array
+    private function months(array $spans, array $coverage, ?RainfallStation $station, Carbon $now): array
     {
         $first = $now->copy()->timezone($this->timezone())->startOfMonth()->subMonths(self::MONTHS_SHOWN - 1);
         $starts = array_map(fn (int $offset) => $first->copy()->addMonths($offset), range(0, self::MONTHS_SHOWN - 1));
         $boundaries = [...array_map(fn (Carbon $start) => $start->getTimestamp(), $starts), $now->getTimestamp()];
-        $recordedFrom = $recordingSince->getTimestamp();
         $rain = $station === null ? array_fill(0, self::MONTHS_SHOWN, null) : [
             ...Cache::remember(
                 "overflow-page:monthly-rain:{$station->id}:{$boundaries[0]}",
@@ -107,9 +113,9 @@ class OverflowPageService
             ...$this->rainfall->forPeriods($station, array_slice($boundaries, self::MONTHS_SHOWN - 1)),
         ];
 
-        return array_map(function (int $index) use ($starts, $boundaries, $spans, $recordedFrom, $rain) {
-            $recorded = $boundaries[$index + 1] > $recordedFrom;
-            $window = $recorded ? $this->window($spans, max($boundaries[$index], $recordedFrom), $boundaries[$index + 1]) : ['spills' => 0, 'hours' => 0.0];
+        return array_map(function (int $index) use ($starts, $boundaries, $spans, $coverage, $rain) {
+            $recorded = SpillCoverage::overlaps($coverage, $boundaries[$index], $boundaries[$index + 1]);
+            $window = $recorded ? $this->window($spans, $boundaries[$index], $boundaries[$index + 1]) : ['spills' => 0, 'hours' => 0.0];
 
             return [
                 'month' => $starts[$index],

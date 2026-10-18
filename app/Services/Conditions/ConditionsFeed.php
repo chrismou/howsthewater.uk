@@ -69,6 +69,7 @@ class ConditionsFeed
 
         $spillItems = SpillEvent::query()
             ->whereHas('overflowMonitor', fn ($query) => $query->whereIn('river_id', $this->overviews->riverFamilyIds($river)))
+            ->whereNull('overflow_spill_log_id')
             ->where(fn ($query) => $query->whereNull('ended_at')->orWhere('ended_at', '>=', $since))
             ->with(['overflowMonitor.river' => fn ($query) => $query->withoutCentreline()])
             ->orderByDesc('started_at')
@@ -124,6 +125,7 @@ class ConditionsFeed
 
         return $this->latest(SpillEvent::query()
             ->where('overflow_monitor_id', $monitor->id)
+            ->whereNull('overflow_spill_log_id')
             ->where(fn ($query) => $query->whereNull('ended_at')->orWhere('ended_at', '>=', now()->subDays(self::HISTORY_DAYS)))
             ->orderByDesc('started_at')
             ->limit(self::MAX_ITEMS)
@@ -205,12 +207,18 @@ class ConditionsFeed
     }
 
     /**
-     * One item when an overflow starts discharging and another when it stops.
+     * One item when an overflow starts discharging and another when it stops. None for a spill imported from the
+     * company's published log, which is from before we started reading the feed, so readers are never told of an old
+     * spill as news.
      *
      * @return array<int, FeedItem>
      */
     private function spillItems(SpillEvent $event, string $link, string $distance): array
     {
+        if ($event->isFromPublishedLog()) {
+            return [];
+        }
+
         $monitor = $event->overflowMonitor;
         $where = $distance.($monitor->river === null ? '' : ' on the '.$monitor->river->name);
         // Named where the overflow has a name ("Ellerton CSO"), else by its monitor id.

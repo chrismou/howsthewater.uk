@@ -174,7 +174,15 @@ class OverflowMonitor extends Model
      */
     public function companyName(): string
     {
-        return (string) preg_replace('/\s+(Ltd|Limited|plc|Services)\.?$/i', '', $this->company);
+        return self::shortCompanyName($this->company);
+    }
+
+    /**
+     * A company as the feeds name it, without "Ltd", "plc" or "Services".
+     */
+    public static function shortCompanyName(string $company): string
+    {
+        return (string) preg_replace('/\s+(Ltd|Limited|plc|Services)\.?$/i', '', $company);
     }
 
     /**

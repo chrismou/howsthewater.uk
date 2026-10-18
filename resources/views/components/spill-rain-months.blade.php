@@ -1,8 +1,10 @@
-@props(['months', 'recordedFrom', 'gauge' => null])
+@props(['months', 'notes' => [], 'gauge' => null])
 
-{{-- Hours spilling per month over the last year, with the rain gauge's monthly total below. Months before we started
-     recording are marked as such rather than drawn as empty, and the figures, the bar scale and the rain total cover
-     only the time we have recorded. A month the gauge sent nothing shows no rain bar. --}}
+{{-- Hours spilling per month over the last year, with the rain gauge's monthly total below. Months we hold no spills
+     for (neither the company's published log nor the live feed reaches them) are marked as having no data rather
+     than drawn as empty, and the figures, the bar scale and the rain total cover only the months with data. A month
+     the gauge sent nothing shows no rain bar. The notes say where the spills come from and which months are
+     missing. --}}
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
     $all = collect($months);
@@ -12,7 +14,6 @@
     $silentMonths = $recorded->count() - $recordedRain->count();
     $maxRain = max(10.0, (float) $recordedRain->max('rain'));
     $hasRain = $gauge !== null && $recordedRain->isNotEmpty();
-    $from = $recordedFrom->copy()->timezone($timezone);
     $thisMonth = now($timezone)->startOfMonth();
     $label = fn ($month) => $month['month']->format('F Y').($month['month']->isSameMonth($thisMonth) ? ' so far' : '');
 @endphp
@@ -20,7 +21,7 @@
 <div class="rounded-lg border border-line bg-surface p-5">
     <p class="text-sm text-ink-2">
         @if ($recorded->count() < $all->count())
-            Recording since {{ $from->format('j F Y') }}: {{ number_format($recorded->sum('hours'), 1) }} hours of spilling in that time
+            {{ number_format($recorded->sum('hours'), 1) }} hours of spilling over the {{ $recorded->count() }} {{ \Illuminate\Support\Str::plural('month', $recorded->count()) }} with data
         @else
             {{ number_format($recorded->sum('hours'), 1) }} hours of spilling over the last {{ $all->count() }} months
         @endif
@@ -35,7 +36,7 @@
         @foreach ($months as $month)
             {{-- Any spill gets a bar, however short, so a month with spills never looks like one without. --}}
             @php($height = $month['spills'] > 0 ? max(4, (int) round($month['hours'] / $maxHours * 100)) : 0)
-            <div class="flex h-full flex-1 flex-col justify-end" title="{{ $label($month) }}: {{ $month['recorded'] ? $month['spills'].' '.\Illuminate\Support\Str::plural('spill', $month['spills']).', '.number_format($month['hours'], 1).' h' : 'before we started recording' }}">
+            <div class="flex h-full flex-1 flex-col justify-end" title="{{ $label($month) }}: {{ $month['recorded'] ? $month['spills'].' '.\Illuminate\Support\Str::plural('spill', $month['spills']).', '.number_format($month['hours'], 1).' h' : 'no data' }}">
                 @if (! $month['recorded'])
                     <div class="h-full w-full rounded-t-sm border border-dashed border-line"></div>
                 @elseif ($height > 0)
@@ -74,12 +75,20 @@
     <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-hidden="true">
         <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-spill"></span>Hours spilling</li>
         @if ($recorded->count() < $all->count())
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm border border-dashed border-line"></span>Before we started recording</li>
+            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm border border-dashed border-line"></span>No data</li>
         @endif
         @if ($hasRain)
             <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-sm bg-accent opacity-60"></span>Rain, {{ $gauge }} gauge</li>
         @endif
     </ul>
+
+    @if ($notes !== [])
+        <div class="mt-3 grid gap-1 border-t border-line-2 pt-3 text-xs text-muted">
+            @foreach ($notes as $note)
+                <p>{{ $note }}</p>
+            @endforeach
+        </div>
+    @endif
 
     {{-- The same figures for screen readers, which skip the bars above. --}}
     <table class="sr-only">
@@ -98,10 +107,10 @@
             @foreach ($months as $month)
                 <tr>
                     <th scope="row">{{ $label($month) }}</th>
-                    <td>{{ $month['recorded'] ? $month['spills'] : 'not recorded' }}</td>
-                    <td>{{ $month['recorded'] ? number_format($month['hours'], 1) : 'not recorded' }}</td>
+                    <td>{{ $month['recorded'] ? $month['spills'] : 'no data' }}</td>
+                    <td>{{ $month['recorded'] ? number_format($month['hours'], 1) : 'no data' }}</td>
                     @if ($hasRain)
-                        <td>{{ ! $month['recorded'] ? 'not recorded' : ($month['rain'] === null ? 'no readings' : number_format($month['rain']).' mm') }}</td>
+                        <td>{{ ! $month['recorded'] ? 'no data' : ($month['rain'] === null ? 'no readings' : number_format($month['rain']).' mm') }}</td>
                     @endif
                 </tr>
             @endforeach

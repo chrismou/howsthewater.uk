@@ -61,6 +61,22 @@ return [
         2021 => 'https://services3.arcgis.com/Bb8lfThdhugyc4G3/arcgis/rest/services/Storm_Overflow_EDM_Annual_Returns_2021/FeatureServer/11',
     ],
 
+    // Every spill's start and stop as the companies published them after the fact, to fill the time before we started
+    // reading each overflow's live feed: the Environment Agency's start/stop files (OGL) and the companies' logs on
+    // Stream (CC BY 4.0). Spills before 'from' are left out (the glossary and /about name it, so change them too).
+    // Only Stream services on 'stream_hosts' are read, as the catalogue decides which URLs are fetched. Companies in
+    // 'unpublished' publish no past spills, which the pages say; other companies without a log say nothing about it.
+    'overflow_spill_logs' => [
+        'from' => '2024-01-01',
+        'stream_hosts' => ['arcgis.com'],
+        'unpublished' => ['Scottish Water', 'Dŵr Cymru Welsh Water'],
+        'environment_agency' => [
+            'dataset_url' => 'https://environment.data.gov.uk/dataset/e9677ac1-fd32-4ceb-88a0-2735be5f27c7',
+            'download_url' => 'https://environment.data.gov.uk/api/file/download?fileDataSetId=c95ecc47-fa70-4a24-b8cc-098232987526',
+        ],
+        'stream_catalogue_url' => 'https://www.streamwaterdata.co.uk/api/search/v1/collections/all/items',
+    ],
+
     'overflow_feeds' => [
         'yorkshire_water' => [
             'name' => 'Yorkshire Water',

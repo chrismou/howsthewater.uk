@@ -14,22 +14,25 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Everything an overflow's page shows apart from its paged spill log: our own record of its spills, the company's
- * official annual returns, the last 30 days beside the nearest rain gauge's rainfall, and the places whose pages show
- * it. A spill still open on a monitor that has stopped reporting counts only up to its last report.
+ * Everything an overflow's page shows apart from its paged spill log: its spills (from the live feed since we started
+ * reading it, and the company's published log before that), the company's official annual returns, the last 30 days
+ * beside the nearest rain gauge's rainfall, and the places whose pages show it. A spill still open on a monitor that
+ * has stopped reporting counts only up to its last report.
  */
 final readonly class OverflowPage
 {
     /**
      * @param  Collection<int, OverflowMonitorPlace>  $places  Nearest first, each place loaded
      * @param  array{7: array{spills: int, hours: float}, 30: array{spills: int, hours: float}, year: array{spills: int, hours: float}}  $record  The last 7 and 30 UK days, and the year from $yearFrom
-     * @param  Carbon  $yearFrom  The start of the year, or of our record if that began this year
+     * @param  Carbon  $recordingSince  When we started reading its live feed
+     * @param  Carbon  $yearFrom  The start of the year, or of the spills we hold if they start later
      * @param  Collection<int, SpillHistoryDay>  $dailyHistory  Oldest first, UK days
      * @param  array<string, float|null>|null  $dailyRainfall  Millimetres by UK date, oldest first; null for a day with no readings
      * @param  Collection<int, OverflowAnnualReturn>  $annualReturns  Newest first
      * @param  list<array{0: float, 1: float}>|null  $centreline  The river's line for the map, where it is on one
      * @param  list<array{month: Carbon, spills: int, hours: float, recorded: bool, rain: float|null}>  $months  The last 12 UK months, oldest first
-     * @param  Carbon  $monthsRecordedFrom  When the chart's figures start: our record, or the first month shown
+     * @param  Carbon  $coveredFrom  The earliest time we hold its spills for: its company's published log, or the record start
+     * @param  list<string>  $notes  Where the spills shown come from and which months are missing (SpillCoverage::notes())
      */
     public function __construct(
         public OverflowMonitor $monitor,
@@ -48,7 +51,8 @@ final readonly class OverflowPage
         public ?Carbon $uptimeSince,
         public ?array $centreline,
         public array $months,
-        public Carbon $monthsRecordedFrom,
+        public Carbon $coveredFrom,
+        public array $notes,
     ) {
     }
 
@@ -120,7 +124,7 @@ final readonly class OverflowPage
     }
 
     /**
-     * "2026 so far", or "Since 13 Oct" when our record began this year, so a part year never reads as a whole one.
+     * "2026 so far", or "Since 13 Oct" when the spills we hold start this year, so a part year never reads as a whole one.
      */
     public function yearLabel(): string
     {

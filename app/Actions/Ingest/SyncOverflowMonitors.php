@@ -213,7 +213,13 @@ class SyncOverflowMonitors
                 'overflow_monitor_id' => $monitor->id,
                 'started_at' => $data->latestEventStartedAt,
             ]);
+        }
 
+        if ($latest !== null && ! $latest->exists && $this->isHeldFromPublishedLog($monitor, $latest->started_at, $this->resolveEndedAt($data))) {
+            $latest = null;
+        }
+
+        if ($latest !== null) {
             $wasOpen = ! $latest->exists || $latest->ended_at === null;
 
             if (! $latest->exists) {
@@ -239,6 +245,25 @@ class SyncOverflowMonitors
         }
 
         return [$opened, $closed];
+    }
+
+    /**
+     * Whether the feed's latest spill is from before we started reading this overflow and its company's published
+     * log already holds it (ImportOverflowSpillLogs replaced the copy we took at first sight). Without this, every
+     * poll would add it back while it stays the feed's latest, and the log's times often differ by a few minutes.
+     */
+    private function isHeldFromPublishedLog(OverflowMonitor $monitor, Carbon $startedAt, ?Carbon $endedAt): bool
+    {
+        if ($monitor->wasRecentlyCreated || $monitor->created_at === null || $startedAt->greaterThanOrEqualTo($monitor->created_at)) {
+            return false;
+        }
+
+        return SpillEvent::query()
+            ->where('overflow_monitor_id', $monitor->id)
+            ->whereNotNull('overflow_spill_log_id')
+            ->where('started_at', '<=', ($endedAt ?? $startedAt)->copy()->addMinutes(15))
+            ->where('ended_at', '>=', $startedAt->copy()->subMinutes(15))
+            ->exists();
     }
 
     private function resolveEndedAt(OverflowMonitorData $data): ?Carbon

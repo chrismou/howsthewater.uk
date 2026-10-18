@@ -275,9 +275,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   of date", and each overflows table row (`components/overflow-status`, `OverflowMonitor::isStale()`) says when the
   monitor last reported instead of "Not discharging". Beach and lake summaries carry the same check for the Nearby
   section. The API exposes `data_stale` and `level.stale`.
-- Spill history (`SpillHistoryService`) is derived from `spill_events`, which only exist from the first ingest run
-  onwards. Don't backfill from the feed; it has no history. `dailyBreakdown()` buckets by UK day, as pages print
-  dates and rainfall is totalled.
+- Spill history (`SpillHistoryService`) is derived from `spill_events`: from the live feeds since each monitor was
+  first seen, and before that from the companies' published logs (`ingest:overflow-spill-logs`, below). Don't backfill
+  from the live feed; it has no history. `dailyBreakdown()` buckets by UK day, as pages print dates and rainfall is
+  totalled.
 
 ## Data sources
 
@@ -320,24 +321,60 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   stored or `ImportOverflowAnnualReturns::MATCHING_VERSION` (bump it whenever matching changes) differs from the
   version cached by the last complete import. These are the company's figures; never mix them with our own counts
   without saying which is which.
+- Past spills: the companies publish every spill's start and stop after the fact, so `ingest:overflow-spill-logs`
+  (`ImportOverflowSpillLogs`, daily in the background, never on deploy, as the first import is millions of rows)
+  fills the time before each overflow's record start (its `created_at`) from `services.overflow_spill_logs.from`
+  (2024): the Environment Agency's start/stop files for every English company (OGL; `SpillLogFilesClient`, whose file
+  list is only in the dataset page's embedded `__NEXT_DATA__`), and for years the Environment Agency has not
+  published, the companies' logs on Stream (CC BY 4.0; `Stream\SpillLogClient`, found through Stream's catalogue).
+  The Environment Agency's file wins wherever both hold a company's year, as it is what the annual returns are worked
+  out from; its arrival replaces Stream's spills for that year (a gap in hours is logged). The two copies matched
+  exactly where both were checked. Spills are shown as the companies give them, with one note per company on where
+  they come from (`SpillCoverage::notes()`), never labelled one by one. Each source is an `overflow_spill_logs` row
+  (fingerprint, the time it covers, its company) and each imported spill points at it (`overflow_spill_log_id`, null
+  for the live feed); a source is read again only when it changes, which replaces its spills, and a log clears the
+  spills the feed showed at first sight within the time it covers (the same spills, as the feed showed them). After
+  an overflow's record start the live feed is the record and later log data is ignored, so pages never change
+  afterwards; imported spills never appear in RSS feeds. Formats vary: CSV or XLSX (`spatie/simple-excel`, read by
+  position, type sniffed, as some ".csv" files are spreadsheets), ISO or slashed dates, a sheet a month; Anglian
+  Water's monthly Stream logs name their months in the title and some swap the day and month of the first 12 days,
+  so only spills inside the named months are taken, swapped back where that puts them inside. Logs with text dates
+  (Northumbrian's 2020-2024, Severn Trent's 2025 on Stream) are skipped; the Environment Agency covers those years.
+  Covered time runs between UK months, and a source's is only recorded once its spills are all in (cleared at the
+  start of a re-read), so a run that dies part way shows those months as no data until the next run. Spills are
+  deleted 5,000 at a time, as the live ingest writes to the same table. Rows stopping in the future or lasting over
+  92 days are rejected as typos, and a file's rows outside its own year are left to that year's file. Stream services
+  are only fetched on `stream_hosts` over HTTPS without redirects, since the catalogue decides the URLs. Coverage is
+  merged stretches per company, so a missing month inside them shows as no data with its own note; only companies in
+  `unpublished` (Scottish Water, Dŵr Cymru Welsh Water) are said to publish no past spills. The start date is
+  written into the glossary and `/about` too. While a replaced first-sight spill stays the feed's latest,
+  `SyncOverflowMonitors::isHeldFromPublishedLog()` stops each poll adding it back (the log's times differ by
+  minutes). A log with rows for overflows we did not hold is read again once its company has a newer overflow; a
+  file with no readable rows fails (and is tried each run) rather than counting as read; files the Environment
+  Agency no longer lists are dropped with their spills before any file is read. Place spills pages hold a year of
+  hundreds of overflows' spills as plain integer lists read 100 overflows at a time (800 overflows with 200 spills
+  each: under a second and about 40 MB), so keep new figures there in that form.
 - Overflow pages (`/overflows/{id}`, `OverflowController`, `OverflowPageService`, `OverflowPage`) are addressed by the
   feed's id in lower case (`OverflowMonitor::getRouteKey()`; binding upper-cases it back). An overflow has a page
   when some region's pages show it (`RegionOverflows::regionFor()`: on a river of a region with overflow data, or
-  linked to a place), else 404. The page shows its status, our record (7 days, 30 days, the year, days with a spill in the last 30, longest spill;
+  linked to a place), else 404. The page shows its status, its spills (7 days, 30 days, the year, days with a spill in the last 30, longest spill;
   hours are each spill's time inside the window), uptime from `overflow_offline_periods` once a week of it exists
   (`OverflowPageService::UPTIME_RECORDED_FROM`), the last 30 days beside the nearest linked place's rain gauge
   (`components/spill-rain-chart`), the annual returns labelled as the company's 12/24 hour counts, the places it
   reaches and the full spill log, 50 a page (later pages noindexed). Totals come from each spill's start and end
   alone, read as plain values. A spill still open on a stale monitor counts only up to its last report and shows as
   "open at last report" (`components/spill-duration`), never "ongoing"; a rain gauge with no readings on a day shows
-  as no data, never as a dry day. Our record runs from when we first saw the overflow; an earlier spill (the feed's latest
-  then) stays in the log, but the year's figures start at the record. An overflow with no name, no return and no
+  as no data, never as a dry day. Figures count only spills that start inside the time `SpillCoverage` says we hold
+  (the company's published log, then the live feed from when we first saw the overflow), or are still running when
+  that record starts (`SpillCoverage::counts()`); an earlier spill (the feed's latest then, where no log covers it)
+  stays in the log but out of the figures. An overflow with no name, no return and no
   spill is noindexed and left out of the sitemap
   (dated by its latest spill). Name an overflow with `components/overflow-link`; link a place with
   `OverflowMonitorPlace::placeUrl()`. Overflow pages also chart the last 12 UK months (`components/spill-rain-months`)
   beside the rain gauge's monthly totals (`DailyRainfall::forPeriods()`, one summed query a month; past months cached
-  for an hour), marking months before we started recording rather than drawing them empty; its hours, bar scale and
-  rain total cover only the recorded time, and any month with a spill gets a bar. Overflow pages have an RSS feed
+  for an hour), marking months we hold no spills for as no data rather than drawing them empty; its hours, bar scale
+  and rain total cover only the months with data, any month with a spill gets a bar, and `SpillCoverage::notes()`
+  under it says where the spills come from and which months the company has not published yet. Overflow pages have an RSS feed
   (`overflows.feed`, `/overflows/{id}/feed`, `ConditionsFeed::forOverflow()`) of each spill starting and stopping;
   feed text goes through `ConditionsFeed::xmlText()`, as names come from the companies' feeds. Name an overflow with
   `OverflowMonitor::titleName()`, `companyName()`, `companyPhrase()` and `intoPhrase()` rather than building the
@@ -360,10 +397,10 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   spills count once, so the total never exceeds the time that passed), days with a spill, the last 30 days beside
   the place's rain gauge, hours by month, the busiest overflows this year (each with its own hours) and every spill,
   50 a page (later pages noindexed). Spots say "upstream", beaches and lakes "nearby". Regions without overflow data
-  404, as do places with no overflows matched (noindexed, unlinked). Figures run from when we first saw the place's
-  monitors: the first spill held for each is the feed's latest at that moment, often months old, so it stays in the
-  log but the year (labelled "Since 13 Oct" while the record is younger than the year), the months and the busiest
-  list start at the record. Only spills inside the windows shown are read, and the figures are cached per place for
+  404, as do places with no overflows matched (noindexed, unlinked). Figures count each overflow's spills only inside
+  the time `SpillCoverage` holds for it (its company's published log, then its live feed); the year is labelled
+  "Since 13 Oct" while that time is younger than the year, months it does not reach show as no data, and the same
+  notes as the overflow pages sit under the months. Only spills inside the windows shown are read, and the figures are cached per place for
   10 minutes (as plain values), so the routes are not rate limited. A stale warning shows when no linked overflow
   has reported for 6 hours. The place pages list their latest 10 spills (`components/spill-history`,
   `components/nearby-overflows`) with a link to it, and link every overflow, in tables and map markers, to its page.

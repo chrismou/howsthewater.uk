@@ -4,7 +4,7 @@
     $relation = $history->relation();
     $today = now($timezone);
     $hours = fn (float $value) => $value >= 10 ? number_format($value) : number_format($value, 1);
-    $recordedFrom = $history->recordingSince?->copy()->timezone($timezone);
+    $coveredFrom = $history->coveredFrom?->copy()->timezone($timezone);
 @endphp
 
 <x-layouts.app :title="$history->title()" :description="$history->description()" :breadcrumbs="$history->breadcrumbs()" :region="$history->region"
@@ -14,7 +14,7 @@
         <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $history->heading() }}</h1>
         <p class="mt-1 max-w-2xl text-ink-2">
             @if ($history->monitorCount() > 0)
-                Every spill from the {{ $history->monitorCount() }} storm {{ \Illuminate\Support\Str::plural('overflow', $history->monitorCount()) }} {{ $history->where() }}@if ($recordedFrom), since we started recording them on {{ $recordedFrom->format('j F Y') }}@endif.
+                Every spill from the {{ $history->monitorCount() }} storm {{ \Illuminate\Support\Str::plural('overflow', $history->monitorCount()) }} {{ $history->where() }}@if ($coveredFrom), since {{ $coveredFrom->format('j F Y') }}@endif.
             @endif
             <a href="{{ $history->placeUrl() }}" class="text-accent hover:underline">Back to {{ $place->name }}</a>.
         </p>
@@ -81,13 +81,24 @@
                             @foreach (array_reverse($history->months) as $month)
                                 <tr>
                                     <th scope="row" class="px-4 py-2.5 text-left font-sans font-normal">{{ $month['month']->format('F Y') }}{{ $month['month']->isSameMonth($today) ? ' so far' : '' }}</th>
-                                    <td class="px-4 py-2.5">{{ $month['spills'] }}</td>
-                                    <td class="px-4 py-2.5">{{ $hours($month['hours']) }}</td>
+                                    @if ($month['recorded'])
+                                        <td class="px-4 py-2.5">{{ $month['spills'] }}</td>
+                                        <td class="px-4 py-2.5">{{ $hours($month['hours']) }}</td>
+                                    @else
+                                        <td class="px-4 py-2.5 font-sans text-muted" colspan="2">No data</td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
+                @if ($history->notes !== [])
+                    <div class="mt-3 grid gap-1 text-xs text-muted">
+                        @foreach ($history->notes as $note)
+                            <p>{{ $note }}</p>
+                        @endforeach
+                    </div>
+                @endif
             </aside>
         </div>
 
@@ -126,7 +137,7 @@
         <section id="spills" class="mt-10 scroll-mt-24">
             <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
                 <h2 class="font-display text-lg font-semibold">Every spill recorded <span class="font-mono tabular-nums text-muted">{{ $spills->total() }}</span></h2>
-                <span class="text-sm text-muted">Newest first. Any spill from before we started recording an overflow is the latest its feed reported then.</span>
+                <span class="text-sm text-muted">Newest first. Spills from before we started reading an overflow's live feed come from its company's published records, or where it publishes none, the latest its feed showed then.</span>
             </div>
             @if ($spills->isEmpty())
                 <p class="text-sm text-ink-2">No spill recorded yet.</p>
@@ -180,5 +191,5 @@
         </section>
     @endif
 
-    <p class="mt-8 text-xs text-muted">Monitors report when an overflow is discharging, not how much or what it carries. Our record is built from the water companies' live feeds, read every 15 minutes, so a spill that starts and stops between two reads can be missed.</p>
+    <p class="mt-8 text-xs text-muted">Monitors report when an overflow is discharging, not how much or what it carries. Spills come from the water companies' live feeds, read every 15 minutes, so one that starts and stops between two reads can be missed, and from before we started reading them, from the companies' own published records.</p>
 </x-layouts.app>

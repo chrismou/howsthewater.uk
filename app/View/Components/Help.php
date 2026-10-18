@@ -26,7 +26,7 @@ class Help extends Component
         ],
         'history' => [
             'label' => 'How is the 30 day history built?',
-            'text' => 'We record every spill the feed reports from the day a monitor was first seen. The feed itself has no history, so the chart only goes back as far as our own records.',
+            'text' => 'We record every spill the live feed reports from the day a monitor was first seen. Before that, spills come from the water company\'s own published records, where it publishes them; the feed itself keeps no history.',
         ],
         'annual_return' => [
             'label' => 'What is the annual return?',
@@ -45,8 +45,8 @@ class Help extends Component
             'text' => 'Hours when at least one of these overflows was spilling. When several spill at once, those hours count once, so the total is never more than the time that passed. Each overflow\'s own hours are on its page.',
         ],
         'our_record' => [
-            'label' => 'How is our record built?',
-            'text' => 'We read the water company\'s live feed every 15 minutes and keep every spill it reports, from the day we first saw this overflow. The feed keeps no history of its own, so our record starts then. A spill that starts and stops between two reads can be missed.',
+            'label' => 'Where do these spills come from?',
+            'text' => 'We read the water company\'s live feed every 15 minutes and keep every spill it reports, from the day we first saw this overflow; a spill that starts and stops between two reads can be missed. Spills before then, from January 2024, come from the company\'s own published records, which are recorded differently and may not match the live feed exactly. Some companies publish none, so for theirs the spills start when we first saw the overflow.',
         ],
         'upstream' => [
             'label' => 'Which monitors count as upstream?',
