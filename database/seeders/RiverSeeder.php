@@ -30,6 +30,7 @@ class RiverSeeder extends Seeder
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
             'east-of-england' => self::eastOfEngland(),
+            'south-west' => self::southWest(),
             'scotland' => self::scotland(),
             'wales' => self::wales(),
         ];
@@ -307,6 +308,102 @@ class RiverSeeder extends Seeder
     }
 
     /**
+     * South West Water's rivers, Devon and Cornwall: the Dartmoor rivers
+     * (Dart, Teign, Tavy, Plym, Erme, Avon), the Exe with the Barle, the
+     * Tamar, the Cornish Fowey and Camel, the Taw and Torridge, the Otter and
+     * Axe and the East Lyn. OS starts the Dart at Dartmeet, so the East Dart
+     * keeps its own pages and flows into it. The Avon shares its name with
+     * rivers across England, so its mouth hint matters.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     */
+    private static function southWest(): array
+    {
+        return [
+            // Dartmoor rivers
+            self::main('River Dart', 'Dartmoor rivers', [50.3450, -3.5700], ['River Dart Estuary', 'Dart Estuary', 'Dart River Estuary']),
+            self::tributary('Bidwell Brook', 'dart'),
+            self::tributary('West Dart River', 'dart'),
+            self::tributary('Blackbrook River', 'west-dart-river', ['Black Brook River']),
+            self::tributary('River Webburn', 'dart'),
+            self::tributary('East Webburn River', 'webburn'),
+            self::tributary('West Webburn River', 'webburn'),
+            self::tributary('River Mardle', 'dart'),
+            self::tributary('River Ashburn', 'dart'),
+            self::main('East Dart River', 'Dartmoor rivers', [50.5400, -3.8800], ['East Dart'], flowsInto: 'dart', slug: 'east-dart'),
+            self::main('River Teign', 'Dartmoor rivers', [50.5450, -3.5000], ['Teign Estuary', 'River Teign Estuary']),
+            self::tributary('Aller Brook', 'teign'),
+            self::tributary('North Teign River', 'teign'),
+            self::tributary('South Teign River', 'teign'),
+            self::tributary('River Bovey', 'teign'),
+            self::tributary('Wray Brook', 'bovey'),
+            self::tributary('River Lemon', 'teign'),
+            self::main('River Plym', 'Dartmoor rivers', [50.3650, -4.1200], ['River Plym Estuary', 'Plym Estuary']),
+            self::tributary('River Meavy', 'plym'),
+            self::main('River Erme', 'Dartmoor rivers', [50.3100, -3.9500], ['River Erm']),
+            self::main('River Avon', 'Dartmoor rivers', [50.2800, -3.8800], ['River Avon Estuary']),
+
+            // Exe, with the Barle from Exmoor
+            self::main('River Exe', 'Exe', [50.6150, -3.4250], ['Exe Estuary', 'River Exe Estuary']),
+            self::tributary('River Lowman', 'exe'),
+            self::tributary('River Haddeo', 'exe'),
+            self::tributary('River Batherm', 'exe'),
+            self::tributary('River Culm', 'exe'),
+            self::tributary('River Creedy', 'exe'),
+            // Three River Yeos, each nearest its own parent: Crediton's, Barnstaple's and Bideford's.
+            self::tributary('River Yeo', 'creedy', slug: 'yeo-creedy'),
+            self::tributary('River Clyst', 'exe'),
+            self::main('River Barle', 'Exe', [51.0100, -3.5400], flowsInto: 'exe'),
+
+            // Tamar, with the Tavy flowing into its estuary
+            self::main('River Tamar', 'Tamar', [50.3700, -4.1900], ['River Tamar Estuary', 'Tamar Estuary']),
+            self::tributary('River Deer', 'tamar'),
+            self::tributary('River Ottery', 'tamar'),
+            self::tributary('River Carey', 'tamar'),
+            self::tributary('River Kensey', 'tamar'),
+            self::tributary('River Lyd', 'tamar'),
+            self::tributary('River Thrushel', 'lyd'),
+            self::tributary('River Wolf', 'thrushel'),
+            self::tributary('River Inny', 'tamar'),
+            self::tributary('River Lynher', 'tamar', ['River Lyner', 'River Lynher Estuary']),
+            self::tributary('River Tiddy', 'lynher', ['Tiddy Brook']),
+            self::main('River Tavy', 'Tamar', [50.4400, -4.1900], flowsInto: 'tamar'),
+            self::tributary('River Walkham', 'tavy'),
+
+            // Cornwall
+            self::main('River Fowey', 'Cornish rivers', [50.3350, -4.6400], ['River Fowey Estuary', 'Fowey Estuary']),
+            self::tributary('St Neot River', 'fowey'),
+            self::main('River Camel', 'Cornish rivers', [50.5500, -4.9300], ['Camel Estuary', 'River Camel Estuary']),
+            self::tributary('De Lank River', 'camel'),
+            self::tributary('River Allen', 'camel'),
+
+            // North Devon: the Taw and Torridge share an estuary
+            self::main('River Taw', 'North Devon rivers', [51.0700, -4.1500], ['River Taw Estuary', 'Taw Estuary']),
+            self::tributary('Little Dart River', 'taw', ['Little Dart']),
+            self::tributary('River Mole', 'taw'),
+            self::tributary('River Bray', 'mole'),
+            self::tributary('River Yeo', 'taw', slug: 'yeo-taw'),
+            self::main('River Torridge', 'North Devon rivers', [51.0500, -4.2000], ['River Torridge Estuary', 'Torridge Estuary']),
+            self::tributary('River Waldon', 'torridge'),
+            self::tributary('River Lew', 'torridge'),
+            self::tributary('River Yeo', 'torridge', slug: 'yeo-torridge'),
+            self::tributary('River Okement', 'torridge'),
+            self::tributary('East Okement River', 'okement'),
+            self::tributary('West Okement River', 'okement', ['West Okement']),
+            self::main('East Lyn River', 'North Devon rivers', [51.2320, -3.8280], ['East Lyn'], slug: 'east-lyn'),
+            self::tributary('Hoaroak Water', 'east-lyn'),
+            self::tributary('West Lyn River', 'east-lyn'),
+
+            // East Devon
+            self::main('River Otter', 'East Devon rivers', [50.6300, -3.3000]),
+            self::tributary('River Tale', 'otter'),
+            self::main('River Axe', 'East Devon rivers', [50.7000, -3.0700], ['River Axe Estuary']),
+            self::tributary('River Yarty', 'axe'),
+            self::tributary('River Coly', 'axe'),
+        ];
+    }
+
+    /**
      * Anglian Water's rivers, Lincolnshire to Essex: the Great Ouse and the
      * rivers into the Wash, the Broads and the Suffolk and Essex rivers.
      * Several share names with rivers elsewhere (Stour, Colne, Blackwater,
@@ -339,7 +436,7 @@ class RiverSeeder extends Seeder
             self::tributary('The Black Bourn', 'little-ouse', ['Black Bourn'], slug: 'black-bourn'),
 
             // Nene, Welland and Witham, into the Wash
-            self::main('River Nene', 'Nene', [52.8400, 0.2100], ['R Nene']),
+            self::main('River Nene', 'Nene', [52.8400, 0.2100]),
             self::tributary('Bugbrooke Brook', 'nene'),
             self::tributary('Grendon Brook', 'nene'),
             self::tributary('River Ise', 'nene'),
@@ -385,7 +482,7 @@ class RiverSeeder extends Seeder
             self::tributary('River Wid', 'can'),
             self::tributary('River Ter', 'chelmer'),
             self::tributary('Sandon Brook', 'chelmer'),
-            self::main('River Crouch', 'Essex rivers', [51.6250, 0.8800], ['Upper River Crouch', 'R.Crouch']),
+            self::main('River Crouch', 'Essex rivers', [51.6250, 0.8800], ['Upper River Crouch']),
         ];
     }
 

@@ -151,8 +151,8 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands, East of England, Scotland, Wales). The site
-reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands, East of England, South West, Scotland, Wales).
+The site reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
 
@@ -181,6 +181,14 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   `WatercourseName` normalises, and many of its overflows discharge to Fen drains and streams no river page counts.
   A river's extra aliases are compared after that parsing, so write them as it leaves them ("South Calder", not
   "Unknown tributary of South Calder"); `SeederIntegrityTest` fails on any that can never match.
+  The South West has South West Water's rivers in Devon and Cornwall: the Dartmoor rivers (the Dart, with the East
+  Dart flowing into it at Dartmeet, where OS starts the Dart; the Teign, Plym, Erme and Avon), the Exe with the
+  Barle, the Tamar with the Tavy, the Fowey and Camel, the Taw and Torridge, the East Lyn, and the Otter and Axe,
+  plus beaches in Cornwall, Plymouth, the South Hams, Torbay, Teignbridge, East Devon, North Devon and Torridge. The
+  upper Axe, Yarty and Culm reach into Wessex Water's area, so its overflows there can count too, as Scottish Water's
+  do on the Tweed. Its two
+  Lyme Regis beaches are in Dorset, whose other beaches are Wessex Water's, so Dorset waits for a Wessex region (a
+  district belongs to one region). Many of its overflows name an estuary ("River Dart Estuary"), seeded as aliases, and many shorten "river" ("R. MOLE", "TRIB O RIV.TEIGN"), which `WatercourseName` expands.
   Scotland has Scottish Water's rivers, grouped by catchment: the Tay (with the
   Tummel, Garry, Braan and Earn flowing into it), Spey, Ness, Findhorn, Lossie, Dee, Don, Forth (with the Teith, Allan
   Water and Devon), the Lothian rivers (Water of Leith, Almond, Esk, Tyne), the Clyde (with the Kelvin and White
@@ -300,8 +308,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   implements `OverflowFeedReader` and maps its records into `OverflowMonitorData`, so the sync and everything after it
   never see the source format; a new company with other fields needs only a new reader. `ingest:overflows` polls every
   configured feed every 15 minutes, whether or not a region names it in `overflow_feeds`, because spill history that is
-  not recorded as it happens cannot be filled in later (Wessex, Southern, South West and Welsh Water are recorded
-  ahead of their regions). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
+  not recorded as it happens cannot be filled in later (Wessex, Southern and Welsh Water are recorded ahead of their
+  regions). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
   `/about` credit every polled feed. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
   share one table. The footer credits Stream feeds, Scottish Water and Welsh Water separately. South West Water's
   Stream fields are camelCase, so `OverflowMonitorData::fromArcGis()` matches names case-insensitively. Some services

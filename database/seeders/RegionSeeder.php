@@ -49,6 +49,13 @@ class RegionSeeder extends Seeder
                 'East Suffolk', 'Tendring', 'Colchester', 'Southend-on-Sea', 'Castle Point',
             ],
         ]);
+        // South West Water's area, Devon and Cornwall. Its two Lyme Regis beaches are in Dorset, whose other beaches are
+        // Wessex Water's, so Dorset is left for a Wessex region.
+        Region::query()->updateOrCreate(['slug' => 'south-west'], [
+            'name' => 'South West',
+            'overflow_feeds' => ['south_west_water'],
+            'bathing_water_districts' => ['Cornwall', 'City of Plymouth', 'South Hams', 'Torbay', 'Teignbridge', 'East Devon', 'North Devon', 'Torridge'],
+        ]);
         // Welsh Water's overflow feed is not read yet (see CLAUDE.md), so Wales has no overflow feeds and its places say
         // overflow data is not available rather than that there are no overflows. Bathing waters come from Wales's
         // register, which names councils as the Ordnance Survey does ("the Vale of Glamorgan").

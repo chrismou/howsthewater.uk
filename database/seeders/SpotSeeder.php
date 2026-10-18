@@ -30,6 +30,7 @@ class SpotSeeder extends Seeder
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
             'east-of-england' => self::eastOfEngland(),
+            'south-west' => self::southWest(),
             'scotland' => self::scotland(),
             'wales' => self::wales(),
         ];
@@ -298,6 +299,86 @@ class SpotSeeder extends Seeder
             'dee-galloway' => [
                 ['name' => 'Threave', 'latitude' => 54.9385, 'longitude' => -3.9698, 'description' => 'The river around Threave castle island.'],
                 ['name' => 'Tongland', 'latitude' => 54.8579, 'longitude' => -4.0383, 'description' => 'Below the bridge at Tongland.'],
+            ],
+        ];
+    }
+
+    /**
+     * Spots on South West Water's rivers, snapped onto the OS centreline.
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function southWest(): array
+    {
+        return [
+            'east-dart' => [
+                ['name' => 'Postbridge', 'latitude' => 50.5931, 'longitude' => -3.9104, 'description' => 'The clapper bridge in the middle of Dartmoor.'],
+                ['name' => 'Bellever', 'latitude' => 50.5764, 'longitude' => -3.8982, 'description' => 'The old bridge and forest below Bellever Tor.'],
+            ],
+            'dart' => [
+                ['name' => 'Dartmeet', 'latitude' => 50.5410, 'longitude' => -3.8750, 'description' => 'Where the East and West Dart meet.'],
+                ['name' => 'Spitchwick', 'latitude' => 50.5294, 'longitude' => -3.8149, 'description' => 'The common and pools by New Bridge.'],
+                ['name' => 'Holne Bridge', 'latitude' => 50.5215, 'longitude' => -3.7994, 'description' => 'The wooded valley by the old bridge.'],
+                ['name' => 'Buckfast', 'latitude' => 50.4871, 'longitude' => -3.7717, 'description' => 'The river below the abbey.'],
+                ['name' => 'Staverton', 'latitude' => 50.4617, 'longitude' => -3.7086, 'description' => 'The old bridge and the steam railway.'],
+                ['name' => 'Totnes', 'latitude' => 50.4317, 'longitude' => -3.6814, 'description' => 'The town at the head of the estuary.'],
+            ],
+            'teign' => [
+                ['name' => 'Chagford', 'latitude' => 50.6797, 'longitude' => -3.8387, 'description' => 'The meadows by Chagford Bridge.'],
+                ['name' => 'Fingle Bridge', 'latitude' => 50.6949, 'longitude' => -3.7838, 'description' => 'The packhorse bridge in the Teign Gorge.'],
+            ],
+            'plym' => [
+                ['name' => 'Shaugh Bridge', 'latitude' => 50.4541, 'longitude' => -4.0693, 'description' => 'Where the Meavy joins, below the Dewerstone.'],
+                ['name' => 'Plymbridge', 'latitude' => 50.4159, 'longitude' => -4.0808, 'description' => 'The woods on the edge of Plymouth.'],
+            ],
+            'erme' => [
+                ['name' => 'Ivybridge', 'latitude' => 50.3891, 'longitude' => -3.9201, 'description' => 'The river through the town.'],
+            ],
+            'avon' => [
+                ['name' => 'Shipley Bridge', 'latitude' => 50.4442, 'longitude' => -3.8578, 'description' => 'The moorland valley below the Avon Dam.'],
+                ['name' => 'Avonwick', 'latitude' => 50.4125, 'longitude' => -3.8188, 'description' => 'The bridge by the village.'],
+                ['name' => 'Aveton Gifford', 'latitude' => 50.3086, 'longitude' => -3.8395, 'description' => 'The tidal causeway at the head of the estuary.'],
+            ],
+            'barle' => [
+                ['name' => 'Withypool', 'latitude' => 51.1066, 'longitude' => -3.6505, 'description' => 'The bridge by the Exmoor village.'],
+                ['name' => 'Tarr Steps', 'latitude' => 51.0776, 'longitude' => -3.6183, 'description' => 'The ancient clapper bridge in the woods.'],
+                ['name' => 'Dulverton', 'latitude' => 51.0387, 'longitude' => -3.5528, 'description' => 'The bridge below the town.'],
+            ],
+            'exe' => [
+                ['name' => 'Tiverton', 'latitude' => 50.8966, 'longitude' => -3.4907, 'description' => 'The riverside in the town, below where the Lowman joins.'],
+                ['name' => 'Bickleigh', 'latitude' => 50.8510, 'longitude' => -3.5111, 'description' => 'The bridge and mill by the village.'],
+                ['name' => 'Exeter Quay', 'latitude' => 50.7179, 'longitude' => -3.5301, 'description' => 'The historic quay in the city.'],
+            ],
+            'tamar' => [
+                ['name' => 'Gunnislake', 'latitude' => 50.5158, 'longitude' => -4.2089, 'description' => 'Weir Head, where the river turns tidal.'],
+            ],
+            'tavy' => [
+                ['name' => 'Tavistock', 'latitude' => 50.5485, 'longitude' => -4.1441, 'description' => 'The meadows through the town.'],
+            ],
+            'fowey' => [
+                ['name' => 'Golitha Falls', 'latitude' => 50.4888, 'longitude' => -4.5097, 'description' => 'The wooded cascades below Bodmin Moor.'],
+                ['name' => 'Lostwithiel', 'latitude' => 50.4061, 'longitude' => -4.6683, 'description' => 'The medieval bridge at the head of the estuary.'],
+            ],
+            'camel' => [
+                ['name' => 'Dunmere', 'latitude' => 50.4731, 'longitude' => -4.7595, 'description' => 'The Camel Trail below Bodmin.'],
+                ['name' => 'Wadebridge', 'latitude' => 50.5174, 'longitude' => -4.8343, 'description' => 'The old bridge at the head of the estuary.'],
+            ],
+            'taw' => [
+                ['name' => 'Umberleigh', 'latitude' => 50.9945, 'longitude' => -3.9855, 'description' => 'The bridge by the village.'],
+            ],
+            'torridge' => [
+                ['name' => 'Torrington', 'latitude' => 50.9488, 'longitude' => -4.1441, 'description' => 'Taddiport bridge below the town.'],
+            ],
+            'east-lyn' => [
+                ['name' => 'Watersmeet', 'latitude' => 51.2243, 'longitude' => -3.7992, 'description' => 'Where Hoaroak Water joins, in the wooded gorge.'],
+                ['name' => 'Lynmouth', 'latitude' => 51.2304, 'longitude' => -3.8297, 'description' => 'The village where the river meets the sea.'],
+            ],
+            'otter' => [
+                ['name' => 'Ottery St Mary', 'latitude' => 50.7508, 'longitude' => -3.2854, 'description' => 'The riverside below the town.'],
+                ['name' => 'Otterton', 'latitude' => 50.6622, 'longitude' => -3.3021, 'description' => 'The mill and the riverside path to Budleigh.'],
+            ],
+            'axe' => [
+                ['name' => 'Axminster', 'latitude' => 50.7815, 'longitude' => -3.0031, 'description' => 'The riverside below the town.'],
             ],
         ];
     }

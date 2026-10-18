@@ -34,6 +34,15 @@ it('normalises qualifiers and casing', function (string $raw, string $expected, 
     ['River Trent', 'river trent', false],
     ['River Brent', 'river brent', false],
     ['Tributary River Thet NT', 'river thet', true],
+    ['TRIB OF R.DART(E) VIA SW SEWER', 'river dart', true],
+    ['TRIB O RIV.TEIGN VIA SW SEWER', 'river teign', true],
+    ['A TRIBUTARY OF THE RIVER OTTER', 'river otter', true],
+    ['R CULM (S)', 'river culm', false],
+    ['R. MOLE (S)', 'river mole', false],
+    ['RIVER TAMAR VIASWS (ESTUARINE)', 'river tamar', false],
+    // Only "R" on its own is short for river.
+    ['Red River', 'red river', false],
+    ['Rea Brook', 'rea brook', false],
 ]);
 
 it('returns null for empty or placeholder names', function (?string $raw) {
