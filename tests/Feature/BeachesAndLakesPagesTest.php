@@ -174,15 +174,16 @@ it('serves beaches and lakes from the API', function () {
 
 it('renders the menus from one cached lookup however many regions there are', function () {
     waterBodies();
-    $this->get(route('search'))->assertOk();
+    $this->get(route('about'))->assertOk();
 
     foreach (range(1, 3) as $index) {
         Lake::factory()->create(['region_id' => Region::factory()->create(['slug' => "extra-{$index}"])->id]);
     }
 
     DB::enableQueryLog();
-    $this->get(route('search'))->assertOk();
-    $menuQueries = collect(DB::getQueryLog())->filter(fn (array $query) => str_contains($query['query'], 'from `lakes`') || str_contains($query['query'], 'from `bathing_waters`'));
+    $this->get(route('about'))->assertOk();
+    // SQLite quotes names with double quotes and MySQL with backticks, so both are stripped before matching.
+    $menuQueries = collect(DB::getQueryLog())->filter(fn (array $query) => preg_match('/from (lakes|bathing_waters)\b/', str_replace(['`', '"'], '', $query['query'])) === 1);
 
     expect($menuQueries)->toBeEmpty();
 });
