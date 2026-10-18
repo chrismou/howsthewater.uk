@@ -180,14 +180,15 @@ class AnnualReturnTotals
             ->whereNotNull('overflow_annual_returns.total_hours')
             ->when($year !== null, fn ($query) => $query->where('overflow_annual_returns.year', $year))
             ->toBase()
-            ->selectRaw(($groupBy !== null ? "{$groupBy} as grouping, " : '').'count(*) as reporting, coalesce(sum(overflow_annual_returns.counted_spills), 0) as spills, coalesce(sum(overflow_annual_returns.total_hours), 0) as hours');
+            // Not "grouping", which MySQL 8 reserves (SQLite, which the tests run on, does not).
+            ->selectRaw(($groupBy !== null ? "{$groupBy} as group_key, " : '').'count(*) as reporting, coalesce(sum(overflow_annual_returns.counted_spills), 0) as spills, coalesce(sum(overflow_annual_returns.total_hours), 0) as hours');
 
         if ($groupBy !== null) {
             $query->groupBy($groupBy);
         }
 
         return $query->get()->mapWithKeys(fn (object $row) => [
-            ($row->grouping ?? 0) => [(int) $row->reporting, (int) $row->spills, round((float) $row->hours, 1)],
+            ($row->group_key ?? 0) => [(int) $row->reporting, (int) $row->spills, round((float) $row->hours, 1)],
         ]);
     }
 
