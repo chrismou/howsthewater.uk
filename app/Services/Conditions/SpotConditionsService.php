@@ -65,9 +65,10 @@ class SpotConditionsService
         $spot->loadMissing(['river.region', 'gaugeStation', 'rainfallStation']);
         $spot->setRelation('river', $this->withoutCentreline($spot->river));
 
-        // Where we do not read the overflow feed (Wales), monitors recorded ahead of the region are left out entirely.
+        // Where we do not read the overflow feed, monitors recorded ahead of the region are left out entirely.
         $monitors = $spot->river->region->hasOverflowData() ? $this->upstreamMonitors->for($spot) : collect();
         $recentEvents = $this->spillHistory->recentEvents($monitors);
+        $countedEvents = $this->spillHistory->counted($recentEvents);
 
         $byStatus = fn (OverflowStatus $status) => $monitors->filter(fn (UpstreamMonitorSummary $summary) => $summary->status === $status)->count();
         $dischargingNow = $byStatus(OverflowStatus::Discharging);
@@ -79,10 +80,10 @@ class SpotConditionsService
             upstreamMonitors: $monitors,
             dischargingNowCount: $dischargingNow,
             offlineCount: $offline,
-            spillsLast48HoursCount: $this->countEventsSince($recentEvents, now()->subHours(48)),
-            spillsLast30DaysCount: $recentEvents->count(),
+            spillsLast48HoursCount: $this->countEventsSince($countedEvents, now()->subHours(48)),
+            spillsLast30DaysCount: $countedEvents->count(),
             recentSpillEvents: $recentEvents,
-            dailyHistory: $this->spillHistory->dailyBreakdown($recentEvents),
+            dailyHistory: $this->spillHistory->dailyBreakdown($countedEvents, recordedFrom: $this->spillHistory->recordedFrom($monitors->map(fn (UpstreamMonitorSummary $summary) => $summary->monitor))),
             level: $spot->gaugeStation !== null ? $this->levelSummariser->summarise($spot->gaugeStation) : null,
             rainfall: $spot->rainfallStation !== null ? $this->rainfallSummariser->summarise($spot, $spot->rainfallStation) : null,
             dataUpdatedAt: $monitors->max(fn (UpstreamMonitorSummary $summary) => $summary->monitor->source_updated_at),

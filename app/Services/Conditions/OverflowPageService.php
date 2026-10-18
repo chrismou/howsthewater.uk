@@ -76,7 +76,7 @@ class OverflowPageService
             yearFrom: $yearFrom,
             totalSpills: count($allSpans),
             longestSpillMinutes: $spans === [] ? null : (int) round(max(array_map(fn (array $span) => $span[1] - $span[0], $spans)) / 60),
-            dailyHistory: $this->history->dailyBreakdown($this->recentEvents($monitor, $now)->filter(fn (SpillEvent $event) => SpillCoverage::counts($coverage, $event->started_at->getTimestamp(), SpillIntervals::endOf($event, $now)->getTimestamp()))->values(), $now),
+            dailyHistory: $this->history->dailyBreakdown($this->recentEvents($monitor, $now)->filter(fn (SpillEvent $event) => SpillCoverage::counts($coverage, $event->started_at->getTimestamp(), SpillIntervals::endOf($event, $now)->getTimestamp()))->values(), $now, $coverage[0][0]),
             rainfallStation: $rainfallStation,
             dailyRainfall: $rainfallStation === null ? null : $this->rainfall->forStation($rainfallStation, $now),
             annualReturns: $monitor->annualReturns()->get(),

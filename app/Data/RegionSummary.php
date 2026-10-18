@@ -18,7 +18,7 @@ final readonly class RegionSummary
      * @param  Collection<int, RiverSummary>  $rivers  In seed order, which runs through the catchments
      * @param  Collection<int, WaterBodySummary>  $beaches  By name
      * @param  Collection<int, WaterBodySummary>  $lakes  By name
-     * @param  bool  $hasOverflowData  False for a region whose water company feed we do not read yet (Wales, for now)
+     * @param  bool  $hasOverflowData  False for a region whose water company feed we do not read yet
      */
     public function __construct(
         public ?string $slug,

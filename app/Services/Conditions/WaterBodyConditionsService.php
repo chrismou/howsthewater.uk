@@ -6,6 +6,7 @@ use App\Data\BathingWaterSummary;
 use App\Data\BeachConditions;
 use App\Data\LakeConditions;
 use App\Data\NearbyMonitorSummary;
+use App\Data\SpillHistoryDay;
 use App\Data\NearbyOverflows;
 use App\Data\RainfallSummary;
 use App\Enums\OverflowStatus;
@@ -147,10 +148,11 @@ class WaterBodyConditionsService
      */
     private function overflowsNear(array $points, bool $covered): NearbyOverflows
     {
-        // Where we do not read the overflow feed (Wales), monitors recorded ahead of the region are left out entirely,
-        // as on spots: they would show without context and link to overflows that have no page.
+        // Where we do not read the overflow feed, monitors recorded ahead of the region are left out entirely, as on
+        // spots: they would show without context and link to overflows that have no page.
         $monitors = $covered ? $this->monitors->near($points, self::NEARBY_RADIUS_METRES) : collect();
         $recentEvents = $this->spillHistory->recentEventsForMonitors($monitors->map(fn (NearbyMonitorSummary $summary) => $summary->monitor->id));
+        $countedEvents = $this->spillHistory->counted($recentEvents);
 
         $byStatus = fn (OverflowStatus $status) => $monitors->filter(fn (NearbyMonitorSummary $summary) => $summary->status === $status)->count();
         $dischargingNow = $byStatus(OverflowStatus::Discharging);
@@ -169,9 +171,10 @@ class WaterBodyConditionsService
             ),
             dischargingNowCount: $dischargingNow,
             offlineCount: $offline,
-            spillsLast48HoursCount: $recentEvents->filter(fn (SpillEvent $event) => $event->ended_at === null || $event->ended_at->greaterThanOrEqualTo(now()->subHours(48)))->count(),
-            spillsLast30DaysCount: $recentEvents->count(),
+            spillsLast48HoursCount: $countedEvents->filter(fn (SpillEvent $event) => $event->ended_at === null || $event->ended_at->greaterThanOrEqualTo(now()->subHours(48)))->count(),
+            spillsLast30DaysCount: $countedEvents->count(),
             recentSpillEvents: $recentEvents,
+            daysWithSpillsLast30: $this->spillHistory->dailyBreakdown($countedEvents)->filter(fn (SpillHistoryDay $day) => $day->spillCount > 0)->count(),
             dataUpdatedAt: $monitors->max(fn (NearbyMonitorSummary $summary) => $summary->monitor->source_updated_at),
         );
     }

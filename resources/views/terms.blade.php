@@ -28,7 +28,7 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">Reusing the data</h2>
-                <p>You can reuse the underlying data under its original licence, crediting the source as that licence asks:</p>
+                <p>Where a source states a licence, you can reuse its data under it, crediting the source as that licence asks:</p>
                 <ul class="grid gap-2">
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Environment Agency flood, river level, rainfall and bathing water data: <a
                                 href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="noopener" class="text-accent hover:underline">Open Government Licence v3.0</a>.</span></li>
@@ -39,6 +39,7 @@
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data published by the water companies through Stream: <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener"
                                 class="text-accent hover:underline">CC BY 4.0</a>.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data from Scottish Water: published by Scottish Water for reuse, crediting Scottish Water as the source.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data from Dŵr Cymru Welsh Water: Welsh Water's public storm overflow map states no licence or terms of use, so we do not claim one. Ask Welsh Water before reusing its data, and credit it as the source.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>River centrelines from OS Open Rivers: Open Government Licence v3.0, contains OS data © Crown copyright and database right.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Map tiles: © OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" rel="noopener"
                                 class="text-accent hover:underline">ODbL</a>.</span></li>

@@ -4,6 +4,7 @@ namespace App\Services\Conditions;
 
 use App\Data\SpillHistoryDay;
 use App\Data\UpstreamMonitorSummary;
+use App\Models\OverflowMonitor;
 use App\Models\SpillEvent;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -15,6 +16,42 @@ use Illuminate\Support\Collection;
 class SpillHistoryService
 {
     public const HISTORY_DAYS = 30;
+
+    public function __construct(private SpillCoverage $coverage)
+    {
+    }
+
+    /**
+     * The events that count in figures: those inside the time we hold their
+     * overflow's spills for (its company's published log, then its live
+     * feed, SpillCoverage::counts()). The feed's latest spill when we first
+     * saw an overflow, from before that, stays in lists but not in counts.
+     *
+     * @param  Collection<int, SpillEvent>  $events  With their overflowMonitor loaded
+     * @return Collection<int, SpillEvent>
+     */
+    public function counted(Collection $events, ?Carbon $now = null): Collection
+    {
+        $now ??= now();
+
+        return $events->filter(fn (SpillEvent $event) => SpillCoverage::counts(
+            $this->coverage->intervals($event->overflowMonitor->company, ($event->overflowMonitor->created_at ?? $now)->getTimestamp()),
+            $event->started_at->getTimestamp(),
+            SpillIntervals::endOf($event, $now)->getTimestamp(),
+        ))->values();
+    }
+
+    /**
+     * When the earliest of these overflows' records starts, or null for none.
+     *
+     * @param  Collection<int, OverflowMonitor>  $monitors
+     */
+    public function recordedFrom(Collection $monitors): ?int
+    {
+        $starts = $monitors->map(fn (OverflowMonitor $monitor) => $this->coverage->intervals($monitor->company, ($monitor->created_at ?? now())->getTimestamp())[0][0]);
+
+        return $starts->isEmpty() ? null : (int) $starts->min();
+    }
 
     /**
      * Spill events from the given monitors that overlap the history window,
@@ -57,8 +94,9 @@ class SpillHistoryService
      *
      * @param  Collection<int, SpillEvent>  $events
      * @return Collection<int, SpillHistoryDay>
+     * @param  int|null  $recordedFrom  When the record starts, so days before it are marked as no data
      */
-    public function dailyBreakdown(Collection $events, ?Carbon $until = null): Collection
+    public function dailyBreakdown(Collection $events, ?Carbon $until = null, ?int $recordedFrom = null): Collection
     {
         // Days are UK days, as the pages print them and as rainfall is totalled, so a spill just after midnight in
         // summer lands on the day it happened.
@@ -84,6 +122,7 @@ class SpillHistoryService
             Carbon::createFromTimestamp($boundaries[$day], $timezone),
             $counts[$day],
             (int) round(SpillIntervals::unionSeconds($intervals[$day], $boundaries[$day], $boundaries[$day + 1]) / 60),
+            $recordedFrom === null || $boundaries[$day + 1] > $recordedFrom,
         ));
     }
 }

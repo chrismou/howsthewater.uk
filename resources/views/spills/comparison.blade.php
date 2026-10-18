@@ -50,7 +50,7 @@
         </table>
     </div>
     <p class="mt-2 text-xs text-muted">
-        From the water companies' {{ $year }} annual returns to the Environment Agency, which count spills in 12 and 24 hour blocks, as published by The Rivers Trust (Open Government Licence).
+        From the water companies' {{ $year }} annual returns to the Environment Agency and Natural Resources Wales, which count spills in 12 and 24 hour blocks, as published by The Rivers Trust (Open Government Licence).
         Hours per overflow divide by the overflows with a return.
         {{ $region ? 'Each river counts its tributaries, not main rivers that flow into it.' : 'Each region counts the overflows on its rivers and near its beaches and lakes.' }}
         @if ($withoutReturns)

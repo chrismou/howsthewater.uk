@@ -51,7 +51,7 @@ Ness, Findhorn, Lossie, Dee, Don, Forth (with the Teith, Allan Water and Devon),
 and White Cart), Leven, Irvine, Ayr, Doon, Fife Eden, Angus North and South Esk, Nith, Annan and Galloway Dee, from Scottish Water's overflows and SEPA's levels and rainfall. Wales has the Taff, Usk,
 Wye (with the Irfon, Ithon, Lugg and Monnow), Tawe, Neath (with the Mellte), Towy, Teifi, Western Cleddau, Dovey, Mawddach
 (with the Wnion), Glaslyn, Conwy (with the Llugwy) and Dee (with the Tryweryn), with Natural Resources Wales's levels,
-rainfall, flood warnings and bathing waters; its pages say overflow data is not available until Welsh Water's feed is added. A main river that joins another (the Ure into the Ouse, the North
+rainfall, flood warnings and bathing waters, and Dŵr Cymru Welsh Water's storm overflow map. A main river that joins another (the Ure into the Ouse, the North
 Tyne into the Tyne) keeps its own pages, and its overflows count upstream of the river it joins. Each main river carries the named
 tributaries that hold water company monitors (the Colne, Holme, Rother, Dearne, Sheaf, Loxley, Rye, Foss, Skell and around fifty becks and
 brooks). Tributaries don't get pages; their monitors count as upstream of any spot below the confluence, and distances

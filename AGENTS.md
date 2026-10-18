@@ -171,8 +171,8 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   Water, plus Scottish Water for the Tweed, which runs mostly through Scotland; its Scottish stretch has overflows and
   SEPA levels and rainfall but no flood warnings yet). The Midlands has Severn
   Trent's rivers: the Trent, with the Soar and the Peak District's Derwent, Wye, Dove and Manifold flowing into it, and
-  the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn (Hafren Dyfrdwy) are not on
-  Stream, so they do not count yet. The East of England has Anglian Water's rivers, Lincolnshire to Essex: the Great
+  the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn and the Vyrnwy, and around
+  Knighton on the Teme (Hafren Dyfrdwy), are not on Stream, so they do not count yet. The East of England has Anglian Water's rivers, Lincolnshire to Essex: the Great
   Ouse (with the Cam, Lark and Little Ouse flowing into it, and the Wissey and Nar as tributaries, since OS splits the
   lower Wissey where it crosses the Cut-off Channel), the Nene, Welland and Witham into the Wash, the Broads (the
   Wensum, Bure and Waveney flowing into the Yare), Suffolk's Stour, Gipping, Deben and Alde, and Essex's Colne,
@@ -240,9 +240,14 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   and Western Cleddau, the Dovey, Mawddach (with the Wnion), Glaslyn, Conwy (with the Llugwy) and the Dee (with the
   Tryweryn, running on to Chester). Welsh rivers take their OS name: the English alternative where there is one
   (River Usk), the Welsh name where that is the only one (Afon Teifi), with the other form as an alias; slugs drop
-  "River" or "Afon". Wales has bathing waters (Wales's register, `Agency::NaturalResourcesWales`) and NRW's levels,
-  rainfall and flood warnings, but no overflows yet: Dŵr Cymru Welsh Water's storm overflow map is recorded
-  (`welsh_water`) but Wales's `overflow_feeds` stays empty, so nothing shows, until it is switched on.
+  "River" or "Afon". Wales has bathing waters (Wales's register, `Agency::NaturalResourcesWales`), NRW's levels,
+  rainfall and flood warnings, and Dŵr Cymru Welsh Water's storm overflow map (`welsh_water`), polled since
+  17 October 2026 and shown from 18 October; Welsh Water publishes no past spills, so its history starts on the 17th. Hafren Dyfrdwy, which publishes
+  no live feed, serves mid-Wales, but its overflows (Lake Vyrnwy, Llanfyllin, Llansilin) drain to the Severn, not to
+  Wales's seeded rivers. Welsh Water's map states no licence, so the terms page says to check with it before reuse.
+  Welsh Water names rivers its own ways ("Afon Lliw" for both the Llugwy and the Lugg, "Rhondda Fawr River"), seeded
+  as aliases, and the Welsh tributaries that hold its overflows are seeded (the Rhondda Fach, Morlais, Twrch, Brân,
+  Gwenlais, Afon Lwyd, Yazor Brook and others) so the spots below count them.
   Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
@@ -296,14 +301,14 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   which would otherwise take "feed" or "monitors" as a spot slug. Spot, river, beach and lake pages pass `feed` to the layout for the `<link rel="alternate">`.
 - `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
   green "no spills". Keep that distinction for any new status. A region without overflow feeds
-  (`Region::hasOverflowData()`, Wales for now) gives `SpillRecency::NotCovered`: pages say "Overflow data not available
+  (`Region::hasOverflowData()`; no region at present) gives `SpillRecency::NotCovered`: pages say "Overflow data not available
   here yet" and show dashes, never zero counts, "no monitored overflows" or a 30-day history, and `RegionSummary`
   carries `hasOverflowData` for the live bar, region page and cards. Every company's overflows are recorded ahead of
   its region, so monitors can be positioned on such a region's rivers; `SpotConditionsService`,
   `RiverOverviewService` and `RegionSummaries` count none there, so nothing (the combined live bar included) adds
   them in until the region's feed is switched on. Where `services.unread_overflow_maps` names the
-  region's company and map (Dŵr Cymru Welsh Water), those messages also link it (`Region::unreadOverflowMap()`,
-  `components/overflow-map-link`).
+  region's company and map (empty now; Wales used it for Dŵr Cymru Welsh Water's), those messages also link it
+  (`Region::unreadOverflowMap()`, `components/overflow-map-link`).
 - Tributaries have no pages. Use the `main()` scope wherever rivers are listed, and `Spot::onMainRiver()` wherever spots
   are listed; the spot controllers 404 a spot on a tributary.
 - Rivers belong to a `Region` and URLs are region-scoped (`/{region}/rivers/{river}/{spot}`, API `/api/v1/regions/...`) with
@@ -338,7 +343,11 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
 - Spill history (`SpillHistoryService`) is derived from `spill_events`: from the live feeds since each monitor was
   first seen, and before that from the companies' published logs (`ingest:overflow-spill-logs`, below). Don't backfill
   from the live feed; it has no history. `dailyBreakdown()` buckets by UK day, as pages print dates and rainfall is
-  totalled.
+  totalled. Every figure (spot, beach, lake, overflow and place spills pages, and the headlines' "spills on N of
+  the last 30 days") counts only spills inside the time `SpillCoverage` holds for their overflow
+  (`SpillHistoryService::counted()`); the feed's latest spill when we first saw an overflow stays in the lists. Days
+  before the record starts are `SpillHistoryDay::$recorded` false and show as no data ("We hold no spills before
+  17 Oct"), never as quiet days, which matters for companies that publish no past spills (Scottish and Welsh Water).
 
 ## Data sources
 
@@ -350,8 +359,7 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   implements `OverflowFeedReader` and maps its records into `OverflowMonitorData`, so the sync and everything after it
   never see the source format; a new company with other fields needs only a new reader. `ingest:overflows` polls every
   configured feed every 15 minutes, whether or not a region names it in `overflow_feeds`, because spill history that is
-  not recorded as it happens cannot be filled in later (Welsh Water's is recorded ahead of Wales's overflows being
-  switched on). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
+  not recorded as it happens cannot be filled in later. A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
   `/about` credit every polled feed. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
   share one table. The footer credits Stream feeds, Scottish Water and Welsh Water separately. South West Water's
   Stream fields are camelCase, so `OverflowMonitorData::fromArcGis()` matches names case-insensitively. Some services
@@ -479,7 +487,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   regions show none, and Scotland (no Scottish Water returns) says so instead. River pages show the river's years
   and, where two or more rivers have returns, its place ("the most", "the joint 3rd most"). Figures are cached as
   plain values (slugs and ids, never URLs, so links follow the host serving the page) for a day under a generation
-  number that `ImportOverflowAnnualReturns` bumps. Regions without overflow data are left out. Compare places; never
+  number (`AnnualReturnTotals::startNewGeneration()`) that `ImportOverflowAnnualReturns` bumps, as does
+  `RefreshRegions` when it links or unlinks an overflow and a place, since the totals count the overflows each region's
+  pages show. Regions without overflow data are left out. Compare places; never
   call any "worst". Local authority and constituency totals are deliberately left out.
 - `overflow_monitor_places` links each overflow to the places whose page shows it: spots it is upstream of (distance
   along the water) and beaches and lakes it is near. `RefreshRegions` rewrites a place's links from the conditions

@@ -10,6 +10,7 @@ use App\Data\LakeConditions;
 use App\Data\LevelSummary;
 use App\Data\NearbyMonitorSummary;
 use App\Data\RainfallSummary;
+use App\Data\SpillHistoryDay;
 use App\Data\SpotConditions;
 use App\Data\UpstreamMonitorSummary;
 use App\Data\WeatherHour;
@@ -52,7 +53,7 @@ class PlaceHeadline
 
         $sentences = array_values(array_filter([
             ...$this->bathingWaterSentences($conditions->bathingWater),
-            $this->overflowSentence($conditions->spillRecency, 'upstream', $monitors->count(), $conditions->offlineCount, $conditions->dischargingNowCount, $conditions->spillsLast48HoursCount, $conditions->recentSpillEvents, $conditions->overflowDataIsStale(), $conditions->dataUpdatedAt, $this->companies($monitors)),
+            $this->overflowSentence($conditions->spillRecency, 'upstream', $monitors->count(), $conditions->offlineCount, $conditions->dischargingNowCount, $conditions->spillsLast48HoursCount, $conditions->recentSpillEvents, $conditions->dailyHistory->filter(fn (SpillHistoryDay $day) => $day->spillCount > 0)->count(), $conditions->overflowDataIsStale(), $conditions->dataUpdatedAt, $this->companies($monitors)),
             $this->levelSentence('The '.$this->shortRiverName($river->name), $conditions->level),
             $this->floodSentence($conditions->floodWarnings),
         ]));
@@ -76,7 +77,7 @@ class PlaceHeadline
 
         $sentences = array_values(array_filter([
             ...$this->bathingWaterSentences($conditions->bathingWater),
-            $this->overflowSentence($overflows->spillRecency, $this->within($overflows->radiusMetres), $overflows->monitors->count(), $overflows->offlineCount, $overflows->dischargingNowCount, $overflows->spillsLast48HoursCount, $overflows->recentSpillEvents, $overflows->isStale(), $overflows->dataUpdatedAt, $this->companies($overflows->monitors)),
+            $this->overflowSentence($overflows->spillRecency, $this->within($overflows->radiusMetres), $overflows->monitors->count(), $overflows->offlineCount, $overflows->dischargingNowCount, $overflows->spillsLast48HoursCount, $overflows->recentSpillEvents, $overflows->daysWithSpillsLast30, $overflows->isStale(), $overflows->dataUpdatedAt, $this->companies($overflows->monitors)),
         ]));
 
         [$notes, $forecastAt] = $this->notes($conditions->rainfall, $weather, 'overflows spill most after rain, and it can lower water quality for a day or two', windy: true);
@@ -98,7 +99,7 @@ class PlaceHeadline
 
         $sentences = array_values(array_filter([
             $this->lakeClassificationSentence($conditions->bathingWaters),
-            $this->overflowSentence($overflows->spillRecency, $this->within($overflows->radiusMetres), $overflows->monitors->count(), $overflows->offlineCount, $overflows->dischargingNowCount, $overflows->spillsLast48HoursCount, $overflows->recentSpillEvents, $overflows->isStale(), $overflows->dataUpdatedAt, $this->companies($overflows->monitors)),
+            $this->overflowSentence($overflows->spillRecency, $this->within($overflows->radiusMetres), $overflows->monitors->count(), $overflows->offlineCount, $overflows->dischargingNowCount, $overflows->spillsLast48HoursCount, $overflows->recentSpillEvents, $overflows->daysWithSpillsLast30, $overflows->isStale(), $overflows->dataUpdatedAt, $this->companies($overflows->monitors)),
             $this->levelSentence($conditions->lake->name, $conditions->level),
         ]));
 
@@ -182,9 +183,10 @@ class PlaceHeadline
      *
      * @param  string  $where  "upstream" or "within 3 km"
      * @param  Collection<int, SpillEvent>  $events  The last 30 days' spills
+     * @param  int  $daysWithSpills  UK days in the last 30 with a counted spill running
      * @return list<array{0: string, 1: bool}>
      */
-    private function overflowSentence(SpillRecency $recency, string $where, int $monitorCount, int $offline, int $dischargingNow, int $spillsLast48Hours, Collection $events, bool $stale, ?Carbon $updatedAt, string $companies): array
+    private function overflowSentence(SpillRecency $recency, string $where, int $monitorCount, int $offline, int $dischargingNow, int $spillsLast48Hours, Collection $events, int $daysWithSpills, bool $stale, ?Carbon $updatedAt, string $companies): array
     {
         $upstream = $where === 'upstream';
         $spills = fn (int $count) => $count.' '.Str::plural('spill', $count).' in the last 48 hours';
@@ -238,7 +240,7 @@ class PlaceHeadline
             SpillRecency::Within24Hours, SpillRecency::Within48Hours => $this->lastSpillSentence($upstream ? 'Last upstream spill' : "Last spill {$where}", $events, $spillsLast48Hours, $spills),
             default => [
                 ["No spills reported {$where} in the last 48 hours", true],
-                ...($this->daysWithSpills($events) >= self::BUSY_MONTH_DAYS ? [[', but ', false], ['spills on '.$this->daysWithSpills($events).' of the last 30 days', true]] : []),
+                ...($daysWithSpills >= self::BUSY_MONTH_DAYS ? [[', but ', false], ['spills on '.$daysWithSpills.' of the last 30 days', true]] : []),
                 ['.', false],
             ],
         }, ...$offlineNote];
@@ -359,20 +361,6 @@ class PlaceHeadline
         }
 
         return [$notes, count($notes) > $gaugeNotes ? $weather->fetchedAt : null];
-    }
-
-    /**
-     * The days in the last 30 on which a spill started.
-     *
-     * @param  Collection<int, SpillEvent>  $events
-     */
-    private function daysWithSpills(Collection $events): int
-    {
-        return $events
-            ->filter(fn (SpillEvent $event) => $event->started_at->greaterThanOrEqualTo(now()->subDays(30)))
-            ->map(fn (SpillEvent $event) => $event->started_at->copy()->timezone($this->timezone())->toDateString())
-            ->unique()
-            ->count();
     }
 
     /**

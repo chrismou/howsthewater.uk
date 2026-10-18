@@ -38,7 +38,7 @@ class PlaceSpillsService
     private const CACHE_MINUTES = 10;
 
     /** Bump whenever the cached figures change shape, so a deploy never reads the old release's. */
-    private const CACHE_VERSION = 2;
+    private const CACHE_VERSION = 3;
 
     public function __construct(private DailyRainfall $rainfall, private SpillCoverage $coverage)
     {
@@ -75,7 +75,7 @@ class PlaceSpillsService
             record: $figures['record'],
             yearFrom: $at($figures['yearFrom']),
             daysWithSpillLast30: count(array_filter($figures['daily'], fn (array $day) => $day[1] > 0)),
-            dailyHistory: collect($figures['daily'])->map(fn (array $day) => new SpillHistoryDay(Carbon::createFromTimestamp($day[0], $timezone), $day[1], $day[2])),
+            dailyHistory: collect($figures['daily'])->map(fn (array $day) => new SpillHistoryDay(Carbon::createFromTimestamp($day[0], $timezone), $day[1], $day[2], $day[3])),
             rainfallStation: $figures['rainfallStationId'] === null ? null : RainfallStation::query()->find($figures['rainfallStationId']),
             dailyRainfall: $figures['rainfall'],
             months: array_map(fn (array $month) => ['month' => Carbon::createFromTimestamp($month[0], $timezone), 'spills' => $month[1], 'hours' => $month[2], 'recorded' => $month[3]], $figures['months']),
@@ -106,7 +106,7 @@ class PlaceSpillsService
     /**
      * The figures behind the page as plain values, so they cache cheaply.
      *
-     * @return array{distances: array<int, int>, coveredFrom: int|null, dataUpdatedAt: int|null, record: array{7: array{spills: int, hours: float}, 30: array{spills: int, hours: float}, year: array{spills: int, hours: float}}, yearFrom: int, daily: list<array{0: int, 1: int, 2: int}>, months: list<array{0: int, 1: int, 2: float, 3: bool}>, notes: list<string>, busiest: list<array{0: int, 1: int, 2: float}>, rainfallStationId: int|null, rainfall: array<string, float|null>|null}
+     * @return array{distances: array<int, int>, coveredFrom: int|null, dataUpdatedAt: int|null, record: array{7: array{spills: int, hours: float}, 30: array{spills: int, hours: float}, year: array{spills: int, hours: float}}, yearFrom: int, daily: list<array{0: int, 1: int, 2: int, 3: bool}>, months: list<array{0: int, 1: int, 2: float, 3: bool}>, notes: list<string>, busiest: list<array{0: int, 1: int, 2: float}>, rainfallStationId: int|null, rainfall: array<string, float|null>|null}
      */
     private function figures(Spot|BathingWater|Lake $place): array
     {
@@ -131,7 +131,8 @@ class PlaceSpillsService
 
         for ($day = 0; $day < SpillHistoryService::HISTORY_DAYS; $day++) {
             [$count, $seconds] = $this->overlap($spills, $days[$day], $days[$day + 1]);
-            $daily[] = [$days[$day], $count, (int) round($seconds / 60)];
+            // A day before every overflow's record starts shows as no data, never as a day without spills.
+            $daily[] = [$days[$day], $count, (int) round($seconds / 60), $coveredFrom === null || $days[$day + 1] > $coveredFrom->getTimestamp()];
         }
 
         $months = [];

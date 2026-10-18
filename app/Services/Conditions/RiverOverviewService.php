@@ -87,7 +87,7 @@ class RiverOverviewService
 
         $spots = $this->spotConditions->forMany($spots);
         $riverIds = $this->riverFamilyIds($river);
-        // Where we do not read the overflow feed (Wales), monitors can still be positioned on the rivers, as every
+        // Where we do not read the overflow feed, monitors can still be positioned on the rivers, as every
         // company is recorded ahead of its region; they count for nothing until the region's feed is switched on.
         $countedRiverIds = $river->region->hasOverflowData() ? $riverIds : [];
         $monitorsByStatus = OverflowMonitor::query()->whereIn('river_id', $countedRiverIds)->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');

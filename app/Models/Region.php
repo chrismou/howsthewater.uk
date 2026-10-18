@@ -95,8 +95,8 @@ class Region extends Model
 
     /**
      * Whether we read any water company overflow feed for this region. A
-     * region without one (Wales, until Welsh Water's feed is added) says
-     * its overflow data is not available, never that there are no spills.
+     * region without one says its overflow data is not available, never
+     * that there are no spills.
      */
     public function hasOverflowData(): bool
     {

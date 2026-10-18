@@ -26,6 +26,8 @@ class OverflowMonitorFactory extends Factory
             'latest_event_started_at' => now()->subDays(4),
             'latest_event_ended_at' => now()->subDays(3),
             'source_updated_at' => now(),
+            // Seen for a while, so test spills from the last 30 days fall inside its record (SpillCoverage).
+            'created_at' => now()->subDays(60),
         ];
     }
 

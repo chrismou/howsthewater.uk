@@ -80,12 +80,12 @@ class RegionSeeder extends Seeder
             'overflow_feeds' => ['south_west_water'],
             'bathing_water_districts' => ['Cornwall', 'City of Plymouth', 'South Hams', 'Torbay', 'Teignbridge', 'East Devon', 'North Devon', 'Torridge'],
         ]);
-        // Welsh Water's overflow feed is not read yet (see CLAUDE.md), so Wales has no overflow feeds and its places say
-        // overflow data is not available rather than that there are no overflows. Bathing waters come from Wales's
-        // register, which names councils as the Ordnance Survey does ("the Vale of Glamorgan").
+        // Dŵr Cymru Welsh Water's own storm overflow map. Hafren Dyfrdwy publishes no feed, but its overflows drain to the
+        // Severn, not to Wales's rivers. Bathing waters come from Wales's register, which names councils as the Ordnance
+        // Survey does ("the Vale of Glamorgan").
         Region::query()->updateOrCreate(['slug' => 'wales'], [
             'name' => 'Wales',
-            'overflow_feeds' => [],
+            'overflow_feeds' => ['welsh_water'],
             'bathing_water_districts' => [
                 'Isle of Anglesey', 'Gwynedd', 'Conwy', 'Denbighshire', 'Flintshire', 'Wrexham', 'Ceredigion', 'Powys',
                 'Pembrokeshire', 'Carmarthenshire', 'Swansea', 'Neath Port Talbot', 'Bridgend', 'the Vale of Glamorgan',

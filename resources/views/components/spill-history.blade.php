@@ -5,6 +5,9 @@
     $totalMinutes = $days->sum(fn ($day) => $day->spillMinutes);
     $activeDays = $days->filter(fn ($day) => $day->spillCount > 0)->count();
     $listedEvents = $events->take(10);
+    // Days before the record starts are no data, not quiet days; the list below can still show the feed's earlier spills.
+    $firstRecorded = $days->first(fn ($day) => $day->recorded);
+    $unrecordedDays = $days->reject(fn ($day) => $day->recorded)->count();
 @endphp
 
 <div class="rounded-lg border border-line bg-surface p-5">
@@ -12,6 +15,9 @@
         Upstream overflows were discharging on
         <span class="font-medium text-ink">{{ $activeDays }} of the last {{ $days->count() }} days</span>,
         for {{ number_format($totalMinutes / 60, 1) }} hours in total.
+        @if ($unrecordedDays > 0 && $firstRecorded !== null)
+            We hold no spills before {{ $firstRecorded->date->format('j M') }}.
+        @endif
     </p>
 
     <div class="mt-4 flex h-24 items-end gap-px" role="img" aria-label="Minutes of upstream spilling per day over the last {{ $days->count() }} days">
@@ -19,8 +25,10 @@
             @php
                 $height = $day->spillCount > 0 ? max(4, (int) round($day->spillMinutes / $maxMinutes * 100)) : 0;
             @endphp
-            <div class="flex h-full flex-1 flex-col justify-end" title="{{ $day->date->format('D j M') }}: {{ $day->spillCount }} {{ \Illuminate\Support\Str::plural('spill', $day->spillCount) }}, {{ $day->spillMinutes }} min">
-                @if ($height > 0)
+            <div class="flex h-full flex-1 flex-col justify-end" title="{{ $day->date->format('D j M') }}: {{ $day->recorded ? $day->spillCount.' '.\Illuminate\Support\Str::plural('spill', $day->spillCount).', '.$day->spillMinutes.' min' : 'no spill data' }}">
+                @if (! $day->recorded)
+                    <div class="w-full border-b border-dashed border-line"></div>
+                @elseif ($height > 0)
                     <div class="w-full rounded-t-sm {{ $loop->last ? 'bg-alert' : 'bg-spill' }}" style="height: {{ $height }}%"></div>
                 @else
                     <div class="w-full border-b border-line"></div>

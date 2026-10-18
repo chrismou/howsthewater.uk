@@ -12,12 +12,18 @@
     $silentDays = $rainfall === null ? 0 : $rainfall->count() - $reportedDays->count();
     $totalHours = $days->sum(fn ($day) => $day->spillMinutes) / 60;
     $activeDays = $days->filter(fn ($day) => $day->spillCount > 0)->count();
+    // Days before the record starts (no company log and before we first saw the overflows) are no data, not quiet days.
+    $firstRecorded = $days->first(fn ($day) => $day->recorded);
+    $unrecordedDays = $days->reject(fn ($day) => $day->recorded)->count();
 @endphp
 
 <div class="rounded-lg border border-line bg-surface p-5">
     <p class="text-sm text-ink-2">
         Spilling on <span class="font-medium text-ink">{{ $activeDays }} of the last {{ $days->count() }} days</span>,
         for {{ number_format($totalHours, 1) }} hours in total.
+        @if ($unrecordedDays > 0 && $firstRecorded !== null)
+            We hold no spills before {{ $firstRecorded->date->format('j M') }}.
+        @endif
         @if ($rainfall !== null && ! $hasRain)
             The {{ $gauge }} rain gauge sent no readings in this time.
         @elseif ($hasRain)
@@ -29,8 +35,10 @@
         @foreach ($days as $day)
             {{-- Any spill gets a bar, however short, so a day with spills never looks like one without. --}}
             @php($height = $day->spillCount > 0 ? max(4, (int) round($day->spillMinutes / $maxMinutes * 100)) : 0)
-            <div class="flex h-full flex-1 flex-col justify-end" title="{{ $day->date->format('D j M') }}: {{ $day->spillCount }} {{ \Illuminate\Support\Str::plural('spill', $day->spillCount) }}, {{ number_format($day->spillMinutes / 60, 1) }} h">
-                @if ($height > 0)
+            <div class="flex h-full flex-1 flex-col justify-end" title="{{ $day->date->format('D j M') }}: {{ $day->recorded ? $day->spillCount.' '.\Illuminate\Support\Str::plural('spill', $day->spillCount).', '.number_format($day->spillMinutes / 60, 1).' h' : 'no spill data' }}">
+                @if (! $day->recorded)
+                    <div class="w-full border-b border-dashed border-line"></div>
+                @elseif ($height > 0)
                     <div class="w-full rounded-t-sm bg-spill" style="height: {{ $height }}%"></div>
                 @else
                     <div class="w-full border-b border-line"></div>
@@ -83,8 +91,8 @@
             @foreach ($days as $day)
                 <tr>
                     <th scope="row">{{ $day->date->format('D j M') }}</th>
-                    <td>{{ $day->spillCount }}</td>
-                    <td>{{ number_format($day->spillMinutes / 60, 1) }}</td>
+                    <td>{{ $day->recorded ? $day->spillCount : 'no data' }}</td>
+                    <td>{{ $day->recorded ? number_format($day->spillMinutes / 60, 1) : 'no data' }}</td>
                     @if ($rainfall !== null)
                         @php($millimetres = $rainfall->get($day->date->toDateString()))
                         <td>{{ $millimetres === null ? 'no readings' : number_format($millimetres, 1).' mm' }}</td>

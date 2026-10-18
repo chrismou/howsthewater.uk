@@ -63,7 +63,7 @@ it('has no spills page where we do not read the overflow feed, and never counts 
     $wales = Region::factory()->create(['name' => 'Wales', 'slug' => 'wales', 'overflow_feeds' => []]);
     $taff = River::factory()->create(['region_id' => $wales->id, 'name' => 'River Taff', 'slug' => 'taff']);
     Spot::factory()->create(['river_id' => $taff->id, 'river_metres' => 50000]);
-    // Welsh Water is recorded ahead of Wales, so its overflows sit on Welsh rivers.
+    // A company recorded ahead of its region's feed being read, so its overflows sit on that region's rivers.
     OverflowMonitor::factory()->discharging()->create(['external_id' => 'DCWW1003', 'company' => 'Dŵr Cymru Welsh Water', 'river_id' => $taff->id, 'river_metres' => 40000]);
     app(RefreshRegions::class)->handle([$yorkshire->id, $wales->id]);
 

@@ -45,11 +45,11 @@ return [
     // Storm overflow feeds, one per water company. Stream publishes an ArcGIS feature service for each English company,
     // all with the same fields; Scottish Water publishes its own API. The driver picks the reader, and regions list the
     // keys they need in `overflow_feeds`; only those feeds are polled.
-    // Water companies whose overflow data is not read yet, by region slug. Places there name the company and link its
-    // own live map, so "not available" still points somewhere.
-    'unread_overflow_maps' => [
-        'wales' => ['name' => 'Dŵr Cymru Welsh Water', 'url' => 'https://corporate.dwrcymru.com/en/community/environment/storm-overflow-map'],
-    ],
+
+    // Water companies whose overflow data is not read yet, by region slug ('wales' => ['name' => ..., 'url' => ...]).
+    // Places there name the company and link its own live map, so "not available" still points somewhere. Every region
+    // reads its feed at present, so it is empty.
+    'unread_overflow_maps' => [],
 
     // Each year's event duration monitoring annual returns for England and Wales, as the Rivers Trust republishes them
     // (OGL). 2020 carries no ids or coordinates, so it is left out.

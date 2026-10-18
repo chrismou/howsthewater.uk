@@ -272,3 +272,23 @@ it('caches conditions without river centrelines', function () {
         ->and($spot->river->centreline)->toBeNull()
         ->and($river->centreline)->not->toBeNull();
 });
+
+it('leaves spills from before an overflow\'s record out of the counts, and marks those days as no data', function () {
+    $this->travelTo('2026-10-19 12:00:00');
+    $river = River::factory()->create();
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'river_metres' => 50000]);
+    // First seen two days ago, from a company that publishes no past spills, with the feed's latest spill from before.
+    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 40000, 'company' => 'Dŵr Cymru Welsh Water', 'created_at' => '2026-10-17 21:45:00']);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => '2026-10-09 06:00:00', 'ended_at' => '2026-10-09 08:00:00']);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => '2026-10-18 06:00:00', 'ended_at' => '2026-10-18 07:00:00']);
+
+    $conditions = app(SpotConditionsService::class)->build($spot);
+
+    expect($conditions->recentSpillEvents)->toHaveCount(2)
+        ->and($conditions->spillsLast30DaysCount)->toBe(1)
+        ->and($conditions->dailyHistory->filter(fn ($day) => $day->spillCount > 0)->count())->toBe(1)
+        ->and($conditions->dailyHistory->reject(fn ($day) => $day->recorded)->count())->toBe(27)
+        ->and($conditions->dailyHistory->first(fn ($day) => $day->recorded)->date->toDateString())->toBe('2026-10-17');
+
+    $this->get(route('spots.show', [$river->region, $river, $spot]))->assertOk()->assertSee('We hold no spills before 17 Oct.');
+});

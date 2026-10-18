@@ -86,7 +86,7 @@ class ImportOverflowAnnualReturns
         }
 
         // River and region totals are cached per generation; a new one makes them read the new returns at once.
-        Cache::forever(AnnualReturnTotals::GENERATION_KEY, (int) Cache::get(AnnualReturnTotals::GENERATION_KEY, 0) + 1);
+        AnnualReturnTotals::startNewGeneration();
 
         return $totals;
     }

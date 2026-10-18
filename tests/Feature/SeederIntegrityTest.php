@@ -80,6 +80,16 @@ it('gives a mouth hint to each tributary sharing its name with another of the sa
     }
 });
 
+it('reads each region\'s overflow data from feeds that exist', function () {
+    (new RegionSeeder())->run();
+
+    foreach (Region::query()->get() as $region) {
+        expect(array_diff($region->overflow_feeds ?? [], array_keys(config('services.overflow_feeds'))))->toBe([], "{$region->slug} names a feed that is not configured");
+    }
+
+    expect(Region::query()->where('slug', 'wales')->sole()->hasOverflowData())->toBeTrue();
+});
+
 it('gives each bathing water district to one region only', function () {
     (new RegionSeeder())->run();
 

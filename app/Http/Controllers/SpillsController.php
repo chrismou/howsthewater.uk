@@ -30,7 +30,7 @@ class SpillsController extends Controller
     }
 
     /**
-     * A region whose overflow feed we do not read (Wales) has no spills page: it would have nothing to list.
+     * A region whose overflow feed we do not read has no spills page: it would have nothing to list.
      */
     public function region(Region $region, SpillsOverviewService $spills, RegionSummaries $summaries, AnnualReturnTotals $totals): View
     {

@@ -9,10 +9,12 @@ use App\Models\SpillEvent;
 use App\Models\Spot;
 use App\Actions\Ingest\RefreshRegions;
 use Illuminate\Console\Scheduling\Schedule;
+use App\Services\Conditions\AnnualReturnTotals;
 use App\Services\Conditions\ChangedRegions;
 use App\Services\Conditions\RegionSummaries;
 use App\Services\Conditions\SpotConditionsService;
 use App\Services\Conditions\WaterBodyConditionsService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -120,4 +122,22 @@ it('runs the refresh after every ingest, with overlap locks that cannot outlive 
     expect($events->last()->command)->toContain('regions:refresh')
         ->and($events->filter->withoutOverlapping)->each(fn ($event) => $event->expiresAt->toBeLessThanOrEqual(60))
         ->and($events->filter->withoutOverlapping->count())->toBe(10);
+});
+
+it('makes the river and region comparisons work out again when the overflows a region shows change', function () {
+    $region = Region::factory()->create(['slug' => 'yorkshire']);
+    $river = River::factory()->create(['region_id' => $region->id]);
+    Spot::factory()->create(['river_id' => $river->id, 'river_metres' => 50000]);
+    $generation = fn () => (int) Cache::get(AnnualReturnTotals::GENERATION_KEY, 0);
+
+    app(RefreshRegions::class)->handle([$region->id]);
+    $before = $generation();
+
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 40000]);
+    app(RefreshRegions::class)->handle([$region->id]);
+    expect($generation())->toBe($before + 1);
+
+    // Nothing linked or unlinked: the cached comparisons stand.
+    app(RefreshRegions::class)->handle([$region->id]);
+    expect($generation())->toBe($before + 1);
 });

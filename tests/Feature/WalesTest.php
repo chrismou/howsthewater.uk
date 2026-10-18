@@ -113,13 +113,13 @@ it('dates Welsh spots and their river and region in the sitemap from their gauge
     $this->get(route('spots.show', [$wales, $river, $spot]))->assertSee('"dateModified":"'.$reading->measured_at->copy()->utc()->toIso8601String(), false);
 });
 
-it('names Dŵr Cymru Welsh Water and links its own overflow map wherever Welsh overflow data is not available', function () {
+it('names the water company and links its own overflow map wherever a region\'s overflow data is not read yet', function () {
+    $map = 'https://corporate.dwrcymru.com/en/community/environment/storm-overflow-map';
+    config(['services.unread_overflow_maps.wales' => ['name' => 'Dŵr Cymru Welsh Water', 'url' => $map]]);
     $wales = wales();
     $river = River::factory()->create(['region_id' => $wales->id, 'name' => 'River Wye', 'slug' => 'wye']);
     $spot = Spot::factory()->create(['river_id' => $river->id, 'name' => 'Hay-on-Wye', 'slug' => 'hay-on-wye']);
     $beach = BathingWater::factory()->create(['region_id' => $wales->id, 'agency' => Agency::NaturalResourcesWales, 'name' => 'Penarth Beach', 'slug' => 'penarth-beach']);
-    $map = config('services.unread_overflow_maps.wales.url');
-
     foreach ([route('spots.show', [$wales, $river, $spot]), route('beaches.show', [$wales, $beach]), route('rivers.show', [$wales, $river])] as $url) {
         $this->get($url)->assertOk()
             ->assertSeeText('Dŵr Cymru Welsh Water shows the live status of its overflows on its storm overflow map.')

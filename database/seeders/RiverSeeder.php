@@ -878,43 +878,55 @@ class RiverSeeder extends Seeder
     {
         return [
             // South East Wales
+            // Welsh Water writes the Rhondda Fawr several ways, and the Lugg as "Afon Lliw" like the Llugwy.
             self::main('River Taff', 'South East Wales', [51.4640, -3.1690], ['Afon Taf']),
-            self::tributary('Afon Rhondda', 'taff', ['Rhondda River', 'River Rhondda']),
+            self::tributary('Afon Rhondda', 'taff', ['Rhondda River', 'River Rhondda', 'Rhondda Fawr River', 'Rhondda Fawr', 'River Rhondda Fawr', 'Rhondda River Fawr']),
+            self::tributary('Afon Rhondda Fach', 'rhondda', ['Rhondda Fach River', 'Rhondda Fach', 'River Rhondda Fach'], slug: 'rhondda-fach'),
             self::tributary('Afon Cynon', 'taff', ['River Cynon']),
             self::tributary('Bargod Taf', 'taff'),
-            self::main('River Usk', 'South East Wales', [51.5450, -2.9750], ['Afon Wysg']),
+            self::tributary('Nant Morlais', 'taff', ['Morlais Brook']),
+            self::tributary('Nant Clydach', 'taff'),
+            self::main('River Usk', 'South East Wales', [51.5450, -2.9750], ['Afon Wysg', 'Usk Estuary', 'River Usk Estuary']),
+            self::tributary('Afon Lwyd', 'usk'),
 
             // Wye
-            self::main('River Wye', 'Wye', [51.6100, -2.6600], ['Afon Gwy'], alsoRunsThrough: ['midlands' => ['hereford', 'ross-on-wye', 'symonds-yat']]),
+            self::main('River Wye', 'Wye', [51.6100, -2.6600], ['Afon Gwy', 'River Wye Estuary', 'Wye Estuary'], alsoRunsThrough: ['midlands' => ['hereford', 'ross-on-wye', 'symonds-yat']]),
             self::tributary('Irfon', 'wye', ['Afon Irfon', 'River Irfon']),
             self::tributary('River Ithon', 'wye', ['Afon Ieithon']),
             self::tributary('Afon Llynfi', 'wye', ['Llynfi River', 'River Llynfi']),
-            self::tributary('River Lugg', 'wye'),
+            self::tributary('River Lugg', 'wye', ['Afon Lliw', 'River Llugwy', 'Lugg Rheay']),
             self::tributary('River Monnow', 'wye', ['Afon Mynwy']),
+            self::tributary('Yazor Brook', 'wye'),
+            self::tributary('Rudhall Brook', 'wye'),
 
             // South West Wales
             self::main('River Tawe', 'South West Wales', [51.6150, -3.9250], ['Afon Tawe']),
-            self::main('River Neath', 'South West Wales', [51.6050, -3.8400], ['Afon Nedd']),
+            self::tributary('Afon Twrch', 'tawe', ['River Twrch'], slug: 'twrch'),
+            self::main('River Neath', 'South West Wales', [51.6050, -3.8400], ['Afon Nedd', 'Neath Estuary', 'Estuarial Waters of Afon Nedd']),
             self::main('Afon Mellte', 'South West Wales', [51.7580, -3.5960], ['River Mellte'], flowsInto: 'neath'),
             self::tributary('Afon Hepste', 'mellte'),
             self::main('River Towy', 'South West Wales', [51.7700, -4.3750], ['Afon Tywi']),
+            self::tributary('Afon Bran', 'towy', ['Afon Brân'], slug: 'bran'),
+            self::tributary('Afon Gwenlais', 'towy', ['River Gwenlais'], slug: 'gwenlais'),
             self::main('Afon Teifi', 'South West Wales', [52.0950, -4.6850], ['River Teifi']),
-            self::main('Western Cleddau', 'South West Wales', [51.7900, -4.9600], ['Cleddau Wen']),
+            self::main('Western Cleddau', 'South West Wales', [51.7900, -4.9600], ['Cleddau Wen', 'Waters of the Western Cleddau']),
 
             // Mid and North Wales
             self::main('River Dovey', 'Mid and North Wales', [52.5600, -3.9500], ['Afon Dyfi']),
             self::main('Afon Mawddach', 'Mid and North Wales', [52.7500, -3.9400], ['River Mawddach']),
             self::main('Afon Wnion', 'Mid and North Wales', [52.7500, -3.9000], ['River Wnion'], flowsInto: 'mawddach'),
-            self::main('Afon Glaslyn', 'Mid and North Wales', [52.9200, -4.1200], ['River Glaslyn']),
-            self::main('River Conwy', 'Mid and North Wales', [53.2800, -3.8300], ['Afon Conwy']),
-            self::main('Afon Llugwy', 'Mid and North Wales', [53.0880, -3.7950], ['River Llugwy'], flowsInto: 'conwy'),
+            self::main('Afon Glaslyn', 'Mid and North Wales', [52.9200, -4.1200], ['River Glaslyn', 'Glaslyn Estuary']),
+            self::main('River Conwy', 'Mid and North Wales', [53.2800, -3.8300], ['Afon Conwy', 'Conwy Estuary']),
+            self::main('Afon Llugwy', 'Mid and North Wales', [53.0880, -3.7950], ['River Llugwy', 'Afon Lliw'], flowsInto: 'conwy'),
             self::tributary('Afon Lledr', 'conwy', ['River Lledr']),
 
             // Dee
-            self::main('River Dee', 'Dee', [53.2200, -3.0700], ['Afon Dyfrdwy'], alsoRunsThrough: ['north-west' => ['chester-meadows']]),
+            self::main('River Dee', 'Dee', [53.2200, -3.0700], ['Afon Dyfrdwy', 'Dee Estuary', 'River Dee Estuary'], alsoRunsThrough: ['north-west' => ['chester-meadows']]),
             self::main('Afon Tryweryn', 'Dee', [52.9100, -3.6000], ['River Tryweryn'], flowsInto: 'dee'),
             self::tributary('Afon Alwen', 'dee', ['River Alwen']),
             self::tributary('River Ceiriog', 'dee', ['Afon Ceiriog']),
+            self::tributary('Afon Eitha', 'dee', ['River Eitha'], slug: 'eitha'),
+            self::tributary('Pulford Brook', 'dee'),
         ];
     }
 

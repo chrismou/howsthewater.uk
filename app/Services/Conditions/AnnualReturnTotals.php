@@ -193,6 +193,15 @@ class AnnualReturnTotals
     }
 
     /**
+     * Starts a new generation, so every river and region total is worked out again on its next read: after a new
+     * import, or when the overflows a region's pages show change.
+     */
+    public static function startNewGeneration(): void
+    {
+        Cache::forever(self::GENERATION_KEY, (int) Cache::get(self::GENERATION_KEY, 0) + 1);
+    }
+
+    /**
      * @param  Closure(): array<mixed>  $build
      * @return array<mixed>
      */

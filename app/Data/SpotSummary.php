@@ -84,7 +84,7 @@ final readonly class SpotSummary
 
     /**
      * The newest of the overflow, level and rain data behind the spot, for lastmod: places without overflow data
-     * (Wales) or without monitors upstream still change with their gauges.
+     * or without monitors upstream still change with their gauges.
      */
     public function latestDataAt(): ?Carbon
     {
