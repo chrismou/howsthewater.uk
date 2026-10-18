@@ -56,7 +56,7 @@
             <h2 class="text-xs uppercase tracking-wide text-muted">Our record, since {{ $recordedFrom->format('j F Y') }}</h2>
             <x-help term="our_record" />
         </div>
-        <dl class="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <dl class="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             <div>
                 <dt class="text-xs text-muted">Last 7 days</dt>
                 <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">{{ $page->record[7]['spills'] }} <span class="font-sans text-sm font-normal text-muted">{{ \Illuminate\Support\Str::plural('spill', $page->record[7]['spills']) }}, {{ $hours($page->record[7]['hours']) }} h</span></dd>
@@ -68,6 +68,10 @@
             <div>
                 <dt class="text-xs text-muted">{{ $page->yearLabel() }}</dt>
                 <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">{{ $page->record['year']['spills'] }} <span class="font-sans text-sm font-normal text-muted">{{ \Illuminate\Support\Str::plural('spill', $page->record['year']['spills']) }}, {{ $hours($page->record['year']['hours']) }} h</span></dd>
+            </div>
+            <div>
+                <dt class="text-xs text-muted">Days with a spill, last 30</dt>
+                <dd class="mt-1 font-mono text-2xl font-semibold tabular-nums">{{ $page->daysWithSpillLast30() }}</dd>
             </div>
             <div>
                 <dt class="text-xs text-muted">Longest spill</dt>

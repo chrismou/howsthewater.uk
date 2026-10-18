@@ -32,7 +32,7 @@ it('shows an overflow\'s status, our record, its annual returns, the places it r
         ->assertDontSee('noindex')
         ->assertSee('permit')
         ->assertSee('YWUCD2/36')
-        ->assertSeeInOrder(['Our record, since 13 October 2026', 'Last 7 days', '2', '3.5 h', 'Longest spill', '3 h 0 min'])
+        ->assertSeeInOrder(['Our record, since 13 October 2026', 'Last 7 days', '2', '3.5 h', 'Days with a spill, last 30', '2', 'Longest spill', '3 h 0 min'])
         ->assertSee('6.4 mm of rain at the Ilkley gauge')
         ->assertSeeInOrder(['Year by year', '2025', '52', '330', '95.8%', '2024', '84', '689'])
         ->assertSeeInOrder(['Places it reaches', 'Ilkley, River Wharfe', '2.5 km downstream'])

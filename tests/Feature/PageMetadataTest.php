@@ -169,7 +169,7 @@ it('says when monitors are offline or their data is old, and never counts offlin
 it('serves the about page ahead of region slugs, links it from every page and lists it in the sitemap', function () {
     Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
 
-    $this->get('/about')->assertOk()->assertSee('About the data and how it works')->assertSee('What it does not do');
+    $this->get('/about')->assertOk()->assertSee('About the data and how it works')->assertSee('What it does not do')->assertSee('It can miss short spills');
     $this->get(route('home'))->assertSee(route('about'));
     $this->get(route('sitemap'))->assertSee(route('about'));
 });

@@ -323,7 +323,7 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
 - Overflow pages (`/overflows/{id}`, `OverflowController`, `OverflowPageService`, `OverflowPage`) are addressed by the
   feed's id in lower case (`OverflowMonitor::getRouteKey()`; binding upper-cases it back). An overflow has a page
   when some region's pages show it (`RegionOverflows::regionFor()`: on a river of a region with overflow data, or
-  linked to a place), else 404. The page shows its status, our record (7 days, 30 days, the year, longest spill;
+  linked to a place), else 404. The page shows its status, our record (7 days, 30 days, the year, days with a spill in the last 30, longest spill;
   hours are each spill's time inside the window), uptime from `overflow_offline_periods` once a week of it exists
   (`OverflowPageService::UPTIME_RECORDED_FROM`), the last 30 days beside the nearest linked place's rain gauge
   (`components/spill-rain-chart`), the annual returns labelled as the company's 12/24 hour counts, the places it

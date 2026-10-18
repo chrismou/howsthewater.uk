@@ -130,6 +130,14 @@ final readonly class OverflowPage
         return $from->isSameDay($from->copy()->startOfYear()) ? $from->year.' so far' : 'Since '.$from->format('j M');
     }
 
+    /**
+     * UK days in the last 30 on which a spill was running.
+     */
+    public function daysWithSpillLast30(): int
+    {
+        return $this->dailyHistory->filter(fn (SpillHistoryDay $day) => $day->spillCount > 0)->count();
+    }
+
     public function longestSpillLabel(): ?string
     {
         return $this->longestSpillMinutes === null ? null : SpillEvent::labelForMinutes($this->longestSpillMinutes);

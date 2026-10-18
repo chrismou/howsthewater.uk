@@ -64,6 +64,7 @@
                     <li class="flex gap-3"><span class="text-muted">-</span><span>It does not say whether water is safe or clean.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>It does not know how much an overflow released or how dirty it was, only when and for how long it operated.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>It does not know about spills from monitors that are offline, or from anything the water companies do not monitor.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span>It can miss short spills. Most feeds only give each overflow's latest spill, so one that starts and stops between two of our 15 minute reads, with another starting before the next, is never seen. Scottish Water's feed also gives the spill before the latest, so fewer are missed there.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>It does not validate the data. The feeds are near real-time and unchecked, and the agencies and water companies may correct them later.</span></li>
                 </ul>
             </section>
