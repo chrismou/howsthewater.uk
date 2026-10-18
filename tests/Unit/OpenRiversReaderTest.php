@@ -101,6 +101,49 @@ it('joins fragments of the same river across a reservoir-sized gap', function ()
         ->and(end($centreline))->toEqualWithDelta(BritishNationalGrid::toLatLng(412000, 450000), 0.0001);
 });
 
+it('joins a piece running alongside from its nearest point, so the line never doubles back', function () {
+    $path = openRiversFixture([
+        // From the source to a break at (405000, 450000).
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [405000, 450000]]],
+        // A parallel channel of the same name, starting 2 km back up the valley and running on to the sea.
+        ['name' => 'River Test', 'start' => 'x', 'end' => 'y', 'points' => [[403000, 450100], [405000, 450100], [409000, 450100]]],
+    ]);
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('River Test', null, BritishNationalGrid::toLatLng(409000, 450100));
+    $longitudes = array_column($centreline, 1);
+
+    expect($longitudes)->toBe(collect($longitudes)->sort()->values()->all())
+        ->and(end($centreline))->toEqualWithDelta(BritishNationalGrid::toLatLng(409000, 450100), 0.0001);
+
+    // The same when the parallel piece is the one joined downstream: the seed runs on past where it starts.
+    $path = openRiversFixture([
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [403000, 450000], [405000, 450000]]],
+        ['name' => 'River Test', 'start' => 'x', 'end' => 'y', 'points' => array_map(fn (int $easting) => [$easting, 450100], range(403000, 409000, 500))],
+    ]);
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('River Test', null, BritishNationalGrid::toLatLng(409000, 450100));
+    $longitudes = array_column($centreline, 1);
+
+    expect($longitudes)->toBe(collect($longitudes)->sort()->values()->all())
+        ->and($centreline[0])->toEqualWithDelta(BritishNationalGrid::toLatLng(400000, 450000), 0.0001)
+        ->and(end($centreline))->toEqualWithDelta(BritishNationalGrid::toLatLng(409000, 450100), 0.0001);
+});
+
+it('never cuts the chain back to a short same-named piece beside it', function () {
+    $path = openRiversFixture([
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => array_map(fn (int $easting) => [$easting, 450000], range(400000, 409000, 500))],
+        // A 400 m side fragment 100 m off the river, 2 km above its mouth.
+        ['name' => 'River Test', 'start' => 'x', 'end' => 'y', 'points' => [[406800, 450100], [407200, 450100]]],
+    ]);
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('River Test', null, BritishNationalGrid::toLatLng(409000, 450000));
+
+    $metres = (new App\Services\Geo\PolylineProjector($centreline))->lengthMetres();
+
+    expect($centreline[0])->toEqualWithDelta(BritishNationalGrid::toLatLng(400000, 450000), 0.0001)
+        ->and($metres)->toBeGreaterThanOrEqual(9000);
+});
+
 it('follows the main stem past a dead-end side channel carrying the same name', function () {
     $path = openRiversFixture([
         ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [401000, 450000]]],

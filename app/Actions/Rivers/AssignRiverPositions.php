@@ -80,7 +80,8 @@ class AssignRiverPositions
             ->whereBetween('latitude', [min($latitudes) - $latitudePadding, max($latitudes) + $latitudePadding])
             ->whereBetween('longitude', [min($longitudes) - $longitudePadding, max($longitudes) + $longitudePadding])
             ->each(function (OverflowMonitor $monitor) use ($river, $projector, &$count) {
-                if (! $river->matchesWatercourse($monitor->receiving_watercourse)) {
+                // Bare names count too ("MEDWAY", as Southern Water writes them), as they do for gauges.
+                if (! $river->matchesBareName($monitor->receiving_watercourse)) {
                     return;
                 }
 

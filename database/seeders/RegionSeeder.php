@@ -32,6 +32,16 @@ class RegionSeeder extends Seeder
             'overflow_feeds' => ['wessex_water'],
             'bathing_water_districts' => ['Dorset', 'Bournemouth, Christchurch and Poole', 'Somerset', 'North Somerset'],
         ]);
+        // Southern Water's area: Kent, Sussex, Hampshire and the Isle of Wight, with the New Forest's beaches.
+        Region::query()->updateOrCreate(['slug' => 'south-east'], [
+            'name' => 'South East',
+            'overflow_feeds' => ['southern_water'],
+            'bathing_water_districts' => [
+                'New Forest', 'Isle of Wight', 'Fareham', 'Gosport', 'City of Portsmouth', 'Havant', 'Chichester', 'Arun',
+                'Worthing', 'Adur', 'The City of Brighton and Hove', 'Lewes', 'Eastbourne', 'Wealden', 'Rother', 'Hastings',
+                'Folkestone and Hythe', 'Dover', 'Thanet', 'Canterbury', 'Swale',
+            ],
+        ]);
         // Thames Water's London rivers, which all join the Thames below Teddington, where the Thames Valley's stop.
         Region::query()->updateOrCreate(['slug' => 'london'], [
             'name' => 'London',

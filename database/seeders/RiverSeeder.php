@@ -33,6 +33,7 @@ class RiverSeeder extends Seeder
             'east-of-england' => self::eastOfEngland(),
             'south-west' => self::southWest(),
             'wessex' => self::wessex(),
+            'south-east' => self::southEast(),
             'scotland' => self::scotland(),
             'wales' => self::wales(),
         ];
@@ -306,6 +307,71 @@ class RiverSeeder extends Seeder
             self::tributary('Wooler Water', 'till'),
             self::tributary('River Glen', 'till'),
             self::tributary('Bowmont Water', 'glen'),
+        ];
+    }
+
+    /**
+     * Southern Water's rivers: Kent's Medway and Great Stour (to Plucks
+     * Gutter; OS's lower River Stour misses Sandwich), Sussex's
+     * Rother, Cuckmere, Ouse, Adur and Arun (with the Western Rother, which
+     * shares OS's name with the Rother), Hampshire's Itchen, Test, Meon and
+     * Lymington River, and the Isle of Wight's Medina and Eastern Yar.
+     * Southern Water often writes a river bare ("MEDWAY", "ROTHER E").
+     *
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     */
+    private static function southEast(): array
+    {
+        return [
+            // Medway, from the Weald through Tonbridge and Maidstone to its estuary
+            self::main('River Medway', 'Medway', [51.4400, 0.7300], ['River Medway Estuary', 'Medway Estuary']),
+            self::tributary('River Eden', 'medway'),
+            self::tributary('Hilden Brook', 'medway'),
+            self::tributary('River Teise', 'medway'),
+            self::tributary('River Beult', 'medway'),
+            self::tributary('River Len', 'medway'),
+
+            // Great Stour, through Ashford and Canterbury to Plucks Gutter, below which OS calls it the River Stour
+            self::main('Great Stour', 'Stour', [51.3270, 1.2700], ['Stour']),
+            self::tributary('East Stour River', 'great-stour', ['East Stour']),
+
+            // Sussex
+            self::main('River Rother', 'Sussex rivers', [50.9350, 0.7700], ['Rother', 'Rother E', 'Lower Rother', 'Eastern Rother']),
+            self::tributary('River Dudwell', 'rother'),
+            self::tributary('Kent Ditch', 'rother'),
+            self::tributary('Hexden Channel', 'rother'),
+            self::tributary('River Tillingham', 'rother'),
+            self::tributary('River Brede', 'rother'),
+            self::main('Cuckmere River', 'Sussex rivers', [50.7630, 0.1520], ['River Cuckmere', 'Cuckmere'], slug: 'cuckmere'),
+            self::main('River Ouse', 'Sussex rivers', [50.7850, 0.0570], ['Sussex Ouse']),
+            self::tributary('River Uck', 'ouse'),
+            self::tributary('Framfield Stream', 'uck'),
+            self::tributary('Glynde Reach', 'ouse', ['Glynde Reach/ River Ouse']),
+            self::tributary('Cockhaise Brook', 'ouse', ['Lywood Stream']),
+            self::tributary('Scrase Stream', 'ouse', ['Scrase Bridge Stream']),
+            self::main('River Adur', 'Sussex rivers', [50.8320, -0.2650]),
+            self::main('River Arun', 'Sussex rivers', [50.8050, -0.5450]),
+            self::tributary('River Rother', 'arun', ['Western Rother', 'Rother W', 'Rother'], slug: 'western-rother'),
+            self::tributary('River Kird', 'arun'),
+            self::tributary('River Stor', 'arun'),
+
+            // Hampshire's chalk streams and the New Forest
+            self::main('River Itchen', 'Hampshire rivers', [50.8980, -1.3880]),
+            self::tributary('River Alre', 'itchen', ['River Arle']),
+            self::tributary('Monks Brook', 'itchen'),
+            self::main('River Test', 'Hampshire rivers', [50.9180, -1.4700]),
+            self::tributary('River Anton', 'test'),
+            self::tributary('River Dever', 'test'),
+            self::tributary('Bourne Rivulet', 'test'),
+            self::tributary('Wallop Brook', 'test'),
+            self::tributary('Tadburn Lake', 'test'),
+            self::tributary('Bartley Water', 'test'),
+            self::main('River Meon', 'Hampshire rivers', [50.8180, -1.2350], ['Shedfield Stream']),
+            self::main('Lymington River', 'Hampshire rivers', [50.7500, -1.5300], ['Lymington'], slug: 'lymington'),
+
+            // Isle of Wight
+            self::main('River Medina', 'Isle of Wight', [50.7620, -1.2950]),
+            self::main('Eastern Yar', 'Isle of Wight', [50.6880, -1.0950], ['Yar'], osName: 'River Yar'),
         ];
     }
 

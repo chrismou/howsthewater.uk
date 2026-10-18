@@ -31,8 +31,9 @@ final readonly class WatercourseName
         // "NT" is Anglian Water's "non-tidal" and "SWS" Wessex Water's surface water sewer; "the" and "tidal" never change which river it is.
         $name = trim((string) preg_replace(['/^the\s+/', '/^tidal\s+/', '/\s+nt$/', '/\s+sws$/'], '', $name));
 
-        // "Trib of River X", or Anglian Water's "Trib River X" and "Unknown trib. River X" without the "of".
-        $isTributary = (bool) preg_match('/^(?:a\s+)?(?:culverted\s+)?(?:unnamed\s+|unknown\s+)?trib(?:utary)?\.?\s+(?:(?:of|to|o)\s+)?(?:the\s+)?(.+)$/', $name, $matches);
+        // "Trib of River X", or Anglian Water's "Trib River X" and "Unknown trib. River X" without the "of", or Southern
+        // Water's "An un-named tributary of the River X" and "Unamed tributary - River X".
+        $isTributary = (bool) preg_match('/^(?:an?\s+)?(?:culverted\s+)?(?:un-?n?amed\s+|unknown\s+)?trib(?:utary)?\.?\s+(?:-\s+)?(?:(?:of|to|o)\s+)?(?:the\s+)?(.+)$/', $name, $matches);
 
         if ($isTributary) {
             $name = trim($matches[1]);

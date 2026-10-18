@@ -89,6 +89,28 @@ it('positions monitors on unnamed tributaries of the river with extra slack', fu
         ->and($tooFarMonitor->fresh()->river_id)->toBeNull();
 });
 
+it('positions monitors that name the river bare, as Southern Water writes them', function () {
+    $river = River::factory()->withCentreline()->create(['name' => 'River Test', 'aliases' => ['River Test']]);
+    $bare = OverflowMonitor::factory()->create(['receiving_watercourse' => 'TEST', 'latitude' => 53.925, 'longitude' => -1.850]);
+    $other = OverflowMonitor::factory()->create(['receiving_watercourse' => 'OTHER', 'latitude' => 53.925, 'longitude' => -1.850]);
+    $tributary = OverflowMonitor::factory()->create(['receiving_watercourse' => 'TRIBUTARY OF THE TEST', 'latitude' => 53.925, 'longitude' => -1.850]);
+
+    app(AssignRiverPositions::class)->handle($river);
+
+    expect($bare->fresh()->river_id)->toBe($river->id)
+        ->and($tributary->fresh()->river_id)->toBe($river->id)
+        ->and($other->fresh()->river_id)->toBeNull();
+
+    // A river of the same name elsewhere never takes it, as it is beyond the offset from that river's line.
+    $elsewhere = River::factory()->create(['name' => 'River Test', 'aliases' => ['River Test'], 'centreline' => [[51.00, -1.00], [51.10, -1.10]]]);
+    $farBare = OverflowMonitor::factory()->create(['receiving_watercourse' => 'TEST', 'latitude' => 53.9, 'longitude' => -1.8]);
+
+    app(AssignRiverPositions::class)->handle($elsewhere);
+
+    expect($farBare->fresh()->river_id)->toBeNull()
+        ->and($bare->fresh()->river_id)->toBe($river->id);
+});
+
 it('does nothing for a river without a centreline', function () {
     $river = River::factory()->create();
 

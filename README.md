@@ -1,7 +1,7 @@
 # How's the Water?
 
 [howsthewater.uk](https://howsthewater.uk) shows upstream storm overflow spills and river levels for popular swimming,
-paddling and fishing spots on rivers in Yorkshire, the Thames Valley, London, the North West, the North East, the Midlands, the East of England, the South West, Wessex, Scotland and Wales. Pick a spot and it tells you which sewage overflows upstream have
+paddling and fishing spots on rivers in Yorkshire, the Thames Valley, London, the North West, the North East, the Midlands, the East of England, the South West, Wessex, the South East, Scotland and Wales. Pick a spot and it tells you which sewage overflows upstream have
 discharged recently, whether any are discharging now, and what the nearest river gauge is reading.
 
 It reports what the monitors say. It does not say whether the water is safe or clean, and all copy on the site should
@@ -44,7 +44,9 @@ Gipping, Deben, Alde, Colne, Blackwater, Chelmer and Crouch, plus Rutland Water 
 South West Water's rivers in Devon and Cornwall: the Dart and East Dart, Teign, Plym, Erme, Avon, Exe and Barle, Tamar and Tavy, Fowey, Camel,
 Taw, Torridge, East Lyn, Otter and Axe, and its beaches. Wessex has Wessex Water's rivers: the Bristol Avon with the
 Somerset Frome, the Parrett with the Tone, the Brue, the Dorset Stour, Frome and Piddle, and the Hampshire Avon, plus
-Henleaze Lake and beaches from Weston-super-Mare to Bournemouth. Scotland has the Tay (with the Tummel, Garry, Braan and Earn), Spey,
+Henleaze Lake and beaches from Weston-super-Mare to Bournemouth. The South East has Southern Water's rivers: the
+Medway, Great Stour, Rother, Cuckmere, Sussex Ouse, Adur and Arun, the Itchen, Test, Meon and Lymington River, and the
+Isle of Wight's Medina and Eastern Yar, with beaches from the New Forest round the coast to Whitstable and Sheppey. Scotland has the Tay (with the Tummel, Garry, Braan and Earn), Spey,
 Ness, Findhorn, Lossie, Dee, Don, Forth (with the Teith, Allan Water and Devon), Water of Leith, Almond, Esk, Tyne, Clyde (with the Kelvin
 and White Cart), Leven, Irvine, Ayr, Doon, Fife Eden, Angus North and South Esk, Nith, Annan and Galloway Dee, from Scottish Water's overflows and SEPA's levels and rainfall. Wales has the Taff, Usk,
 Wye (with the Irfon, Ithon, Lugg and Monnow), Tawe, Neath (with the Mellte), Towy, Teifi, Western Cleddau, Dovey, Mawddach

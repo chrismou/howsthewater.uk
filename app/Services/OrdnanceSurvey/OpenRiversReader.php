@@ -22,6 +22,12 @@ class OpenRiversReader
      */
     private const GAP_METRES = 4000;
 
+    /**
+     * How close a piece's end must come to the chain, short of the chain's
+     * own end, to count as a parallel channel rather than a gap.
+     */
+    private const PARALLEL_METRES = 300;
+
     public function __construct(private string $geoPackagePath)
     {
         if (! is_file($geoPackagePath)) {
@@ -139,12 +145,75 @@ class OpenRiversReader
                 break;
             }
 
-            $candidate = $chains[$nearest['index']];
-            $chain = $nearest['side'] === 'upstream' ? [...$candidate, ...$chain] : [...$chain, ...$candidate];
+            // Where the pieces run alongside each other (parallel channels OS names the same, like the Itchen and its
+            // Navigation), the chain is cut back to the point the new piece leaves it, so the line never doubles back.
+            // A piece beside the chain that does not run on past its end is a side fragment, so it is joined as it is,
+            // without cutting the chain.
+            $candidate = array_values($chains[$nearest['index']]);
             unset($chains[$nearest['index']]);
+            $chain = array_values($chain);
+            $last = count($chain) - 1;
+
+            if ($nearest['side'] === 'upstream') {
+                $cut = $this->nearestPointNearEnd($chain, end($candidate), fromStart: true);
+
+                if ($cut !== 0 && $this->distance($candidate[0], $chain[$cut]) <= $this->distance($chain[0], $chain[$cut])) {
+                    $cut = 0;
+                }
+
+                $chain = [...$candidate, ...array_slice($chain, $cut)];
+            } else {
+                $cut = $this->nearestPointNearEnd($chain, $candidate[0], fromStart: false);
+
+                if ($cut !== $last && $this->distance(end($candidate), $chain[$cut]) <= $this->distance($chain[$last], $chain[$cut])) {
+                    $cut = $last;
+                }
+
+                $chain = [...array_slice($chain, 0, $cut + 1), ...$candidate];
+            }
         }
 
         return array_values($chain);
+    }
+
+    /**
+     * Where to cut the chain when joining a piece at that end: the chain's
+     * own end, unless the piece starts (or ends) within PARALLEL_METRES of a
+     * point further along the chain, within GAP_METRES of its end, and much
+     * nearer it than to the end, so a gap such as a reservoir is never cut.
+     *
+     * @param  array<int, array{0: float, 1: float}>  $chain
+     * @param  array{0: float, 1: float}  $target
+     */
+    private function nearestPointNearEnd(array $chain, array $target, bool $fromStart): int
+    {
+        $chain = array_values($chain);
+        $indexes = $fromStart ? array_keys($chain) : array_reverse(array_keys($chain));
+        $end = $indexes[0];
+        $endDistance = $this->distance($chain[$end], $target);
+        $nearest = $end;
+        $nearestDistance = INF;
+        $walked = 0.0;
+        $previous = null;
+
+        foreach ($indexes as $index) {
+            $walked += $previous === null ? 0.0 : $this->distance($chain[$previous], $chain[$index]);
+
+            if ($walked > self::GAP_METRES) {
+                break;
+            }
+
+            $distance = $this->distance($chain[$index], $target);
+
+            if ($distance < $nearestDistance) {
+                $nearest = $index;
+                $nearestDistance = $distance;
+            }
+
+            $previous = $index;
+        }
+
+        return $nearestDistance <= self::PARALLEL_METRES && $nearestDistance * 3 < $endDistance ? $nearest : $end;
     }
 
     /**

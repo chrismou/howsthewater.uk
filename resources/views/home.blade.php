@@ -179,15 +179,9 @@
     </section>
 
     <section class="py-12">
-        <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div class="flex flex-col gap-3">
-                <div class="h-[3px] w-14 rounded bg-accent"></div>
-                <h2 class="font-display text-3xl font-semibold tracking-tight">Regions</h2>
-            </div>
-            <p class="max-w-md text-sm text-muted">
-                {{ $regions->count() === 1 ? 'One so far' : $regions->count().' so far' }}, with more on the way.
-                <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="whitespace-nowrap font-semibold text-accent hover:underline">Suggest a region/river →</a>
-            </p>
+        <div class="mb-6 flex flex-col gap-3">
+            <div class="h-[3px] w-14 rounded bg-accent"></div>
+            <h2 class="font-display text-3xl font-semibold tracking-tight">Regions</h2>
         </div>
         <div class="grid gap-5 lg:grid-cols-2">
             @foreach ($regions as $region)

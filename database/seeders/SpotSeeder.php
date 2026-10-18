@@ -33,6 +33,7 @@ class SpotSeeder extends Seeder
             'east-of-england' => self::eastOfEngland(),
             'south-west' => self::southWest(),
             'wessex' => self::wessex(),
+            'south-east' => self::southEast(),
             'scotland' => self::scotland(),
             'wales' => self::wales(),
         ];
@@ -301,6 +302,81 @@ class SpotSeeder extends Seeder
             'dee-galloway' => [
                 ['name' => 'Threave', 'latitude' => 54.9385, 'longitude' => -3.9698, 'description' => 'The river around Threave castle island.'],
                 ['name' => 'Tongland', 'latitude' => 54.8579, 'longitude' => -4.0383, 'description' => 'Below the bridge at Tongland.'],
+            ],
+        ];
+    }
+
+    /**
+     * Spots on Southern Water's rivers, snapped onto the OS centreline.
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function southEast(): array
+    {
+        return [
+            'medway' => [
+                ['name' => 'Penshurst', 'latitude' => 51.1710, 'longitude' => 0.1851, 'description' => 'The river by Penshurst Place.'],
+                ['name' => 'Tonbridge', 'latitude' => 51.1956, 'longitude' => 0.2741, 'description' => 'The river below Tonbridge Castle.'],
+                ['name' => 'Yalding', 'latitude' => 51.2277, 'longitude' => 0.4215, 'description' => 'Twyford Bridge, where the Beult and Teise join.'],
+                ['name' => 'Teston', 'latitude' => 51.2496, 'longitude' => 0.4442, 'description' => 'The country park by the medieval bridge.'],
+                ['name' => 'Maidstone', 'latitude' => 51.2745, 'longitude' => 0.5179, 'description' => 'The river by the Archbishop\'s Palace.'],
+                ['name' => 'Aylesford', 'latitude' => 51.3033, 'longitude' => 0.4778, 'description' => 'The medieval bridge below the priory.'],
+            ],
+            'great-stour' => [
+                ['name' => 'Wye', 'latitude' => 51.1861, 'longitude' => 0.9320, 'description' => 'The village bridge below the downs.'],
+                ['name' => 'Chartham', 'latitude' => 51.2556, 'longitude' => 1.0208, 'description' => 'The water meadows below the village.'],
+                ['name' => 'Canterbury', 'latitude' => 51.2809, 'longitude' => 1.0741, 'description' => 'Westgate Gardens in the city.'],
+                ['name' => 'Fordwich', 'latitude' => 51.2961, 'longitude' => 1.1269, 'description' => 'The tiny old town and its quay below Canterbury.'],
+            ],
+            'rother' => [
+                ['name' => 'Etchingham', 'latitude' => 51.0119, 'longitude' => 0.4428, 'description' => 'The water meadows by Etchingham.'],
+                ['name' => 'Bodiam', 'latitude' => 51.0000, 'longitude' => 0.5428, 'description' => 'The river below the castle.'],
+                ['name' => 'Newenden', 'latitude' => 51.0155, 'longitude' => 0.6193, 'description' => 'The bridge on the Kent and Sussex border.'],
+            ],
+            'cuckmere' => [
+                ['name' => 'Alfriston', 'latitude' => 50.8056, 'longitude' => 0.1580, 'description' => 'The village and its white bridge.'],
+                ['name' => 'Exceat', 'latitude' => 50.7738, 'longitude' => 0.1462, 'description' => 'The meanders at the head of Cuckmere Haven.'],
+            ],
+            'ouse' => [
+                ['name' => 'Isfield', 'latitude' => 50.9367, 'longitude' => 0.0549, 'description' => 'The river below Isfield and its heritage railway.'],
+                ['name' => 'Barcombe Mills', 'latitude' => 50.9150, 'longitude' => 0.0390, 'description' => 'The weirs and pools at the old mill site.'],
+                ['name' => 'Lewes', 'latitude' => 50.8737, 'longitude' => 0.0162, 'description' => 'The river through the county town.'],
+            ],
+            'adur' => [
+                ['name' => 'Bramber', 'latitude' => 50.8848, 'longitude' => -0.3084, 'description' => 'The river below the castle mound.'],
+                ['name' => 'Shoreham-by-Sea', 'latitude' => 50.8312, 'longitude' => -0.2757, 'description' => 'The tidal river by the old toll bridge.'],
+            ],
+            'arun' => [
+                ['name' => 'Stopham Bridge', 'latitude' => 50.9577, 'longitude' => -0.5342, 'description' => 'The medieval bridge just above where the Rother joins.'],
+                ['name' => 'Pulborough', 'latitude' => 50.9540, 'longitude' => -0.5113, 'description' => 'The river below the village and the Brooks.'],
+                ['name' => 'Amberley', 'latitude' => 50.8993, 'longitude' => -0.5457, 'description' => 'Houghton Bridge below the South Downs.'],
+                ['name' => 'Arundel', 'latitude' => 50.8534, 'longitude' => -0.5533, 'description' => 'The river below the castle.'],
+            ],
+            'itchen' => [
+                ['name' => 'Ovington', 'latitude' => 51.0845, 'longitude' => -1.2010, 'description' => 'The chalk stream by the village.'],
+                ['name' => 'Winchester', 'latitude' => 51.0589, 'longitude' => -1.3077, 'description' => 'The water meadows below the city.'],
+                ['name' => 'Shawford', 'latitude' => 51.0224, 'longitude' => -1.3260, 'description' => 'The water meadows below Shawford Down.'],
+                ['name' => 'Itchen Valley Country Park', 'latitude' => 50.9415, 'longitude' => -1.3521, 'description' => 'The meadows and woods by Eastleigh.'],
+            ],
+            'test' => [
+                ['name' => 'Stockbridge', 'latitude' => 51.1131, 'longitude' => -1.4979, 'description' => 'The chalk stream through the town.'],
+                ['name' => 'Mottisfont', 'latitude' => 51.0397, 'longitude' => -1.5346, 'description' => 'The river by the abbey gardens.'],
+                ['name' => 'Romsey', 'latitude' => 50.9886, 'longitude' => -1.5041, 'description' => 'The river by the abbey town.'],
+            ],
+            'meon' => [
+                ['name' => 'Droxford', 'latitude' => 50.9608, 'longitude' => -1.1346, 'description' => 'The chalk stream through the village.'],
+                ['name' => 'Wickham', 'latitude' => 50.8978, 'longitude' => -1.1885, 'description' => 'The river below the village square.'],
+                ['name' => 'Titchfield', 'latitude' => 50.8478, 'longitude' => -1.2322, 'description' => 'The village near the river\'s mouth at Titchfield Haven.'],
+            ],
+            'lymington' => [
+                ['name' => 'Balmer Lawn', 'latitude' => 50.8239, 'longitude' => -1.5637, 'description' => 'The New Forest lawn by Brockenhurst.'],
+            ],
+            'medina' => [
+                ['name' => 'Newport', 'latitude' => 50.7011, 'longitude' => -1.2898, 'description' => 'The quay at the head of the estuary.'],
+            ],
+            'eastern-yar' => [
+                ['name' => 'Alverstone', 'latitude' => 50.6645, 'longitude' => -1.1700, 'description' => 'The marshes and nature reserve at Alverstone Mead.'],
+                ['name' => 'Brading', 'latitude' => 50.6770, 'longitude' => -1.1393, 'description' => 'The marshes below the old town.'],
             ],
         ];
     }

@@ -191,19 +191,29 @@ class River extends Model
     }
 
     /**
-     * Whether a river name as SEPA and NRW usually write it, without "River"
-     * or "Afon" ("Tweed", "Teifi", "Rhondda"), refers to this river. Names
-     * that do carry either ("River Cynon") match whichever form we seeded.
+     * Whether a river name as SEPA, NRW and Southern Water usually write it,
+     * without "River" or "Afon" ("Tweed", "Teifi", "MEDWAY", "Tributary of
+     * the Medway"), refers to this river. Names that do carry either ("River
+     * Cynon") match whichever form we seeded.
      */
     public function matchesBareName(?string $name): bool
     {
-        $bare = trim((string) preg_replace('/^(?:river|afon)\s+/i', '', trim((string) $name)));
+        $parsed = WatercourseName::parse($name);
 
-        if ($bare === '') {
+        if ($parsed === null) {
             return false;
         }
 
-        return $this->matchesWatercourse($bare) || $this->matchesWatercourse('River '.$bare) || $this->matchesWatercourse('Afon '.$bare);
+        $bare = (string) preg_replace('/^(?:river|afon)\s+/', '', $parsed->name);
+        $forms = [$bare, 'river '.$bare, 'afon '.$bare];
+
+        foreach ($this->aliases ?? [] as $alias) {
+            if (in_array(mb_strtolower(trim($alias)), $forms, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

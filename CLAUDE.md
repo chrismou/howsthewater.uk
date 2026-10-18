@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, London, North West, North East, Midlands, East of England, South West, Wessex, Scotland, Wales).
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, London, North West, North East, Midlands, East of England, South West, Wessex, South East, Scotland, Wales).
 The site reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -215,9 +215,16 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   `RiverSeeder`), which `rivers:centrelines` looks up and which is also an alias. Bristol's Frome is a tributary of
   the same Avon as Somerset's, so it takes a mouth hint. Wessex Water writes square brackets, brackets it never
   closes and "SWS" ("RIVER AVON [BLACK ROCKS] SWS", "Bristol Avon (By Bk to Netham W"), which `WatercourseName`
-  drops. OS draws the Dorset Frome back through a parallel channel near Woodsford, so distances below it read about
-  5 km long; positions upstream are unaffected. Search matches a river's OS name too ("River Frome"). Highcliffe, in
-  Bournemouth, Christchurch and Poole, is Southern Water's but a Wessex beach.
+  drops. Search matches a river's OS name too ("River Frome"). Highcliffe, in Bournemouth, Christchurch and Poole, is
+  Southern Water's but a Wessex beach.
+  The South East has Southern Water's rivers: Kent's Medway and Great Stour (OS's name down to Plucks Gutter; its
+  lower River Stour runs through the Stonar Cut, missing Sandwich, so it is not seeded), Sussex's Rother, Cuckmere,
+  Ouse, Adur and Arun (with the Western Rother, OS's other "River Rother", as a tributary), Hampshire's Itchen, Test,
+  Meon and Lymington River, and the Isle of Wight's Medina and Eastern Yar (OS's "River Yar"), plus beaches from the
+  New Forest round the coast to Whitstable and Sheppey. Southern Water often names a river bare ("MEDWAY", "ROTHER E") and writes "un-named
+  tributary", so overflows match bare names as gauges do (`River::matchesBareName()`), and `WatercourseName` reads
+  "un-named" as unnamed. Its estuary and harbour outfalls (Gillingham, Portsmouth and Chichester harbours, the
+  Solent) sit beyond the river lines, so they are not placed.
   Scotland has Scottish Water's rivers, grouped by catchment: the Tay (with the
   Tummel, Garry, Braan and Earn flowing into it), Spey, Ness, Findhorn, Lossie, Dee, Don, Forth (with the Teith, Allan
   Water and Devon), the Lothian rivers (Water of Leith, Almond, Esk, Tyne), the Clyde (with the Kelvin and White
@@ -338,8 +345,8 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   implements `OverflowFeedReader` and maps its records into `OverflowMonitorData`, so the sync and everything after it
   never see the source format; a new company with other fields needs only a new reader. `ingest:overflows` polls every
   configured feed every 15 minutes, whether or not a region names it in `overflow_feeds`, because spill history that is
-  not recorded as it happens cannot be filled in later (Wessex, Southern and Welsh Water are recorded ahead of their
-  regions). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
+  not recorded as it happens cannot be filled in later (Welsh Water's is recorded ahead of Wales's overflows being
+  switched on). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
   `/about` credit every polled feed. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
   share one table. The footer credits Stream feeds, Scottish Water and Welsh Water separately. South West Water's
   Stream fields are camelCase, so `OverflowMonitorData::fromArcGis()` matches names case-insensitively. Some services
@@ -530,7 +537,10 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   in Wales carry their Welsh name first (`Afon Hafren`, alternative `River Severn`), so links are matched on
   `watercourse_name` or `watercourse_name_alternative`. A tributary sharing its name with another of the same parent
   (two Yeos join the Taw) takes a mouth hint (`mouth:` on `RiverSeeder::tributary()`), which wins over the parent's
-  line. Seed parents before
+  line. Where OS names two parallel channels the same (the Itchen and its Navigation, braids at Romsey and on the
+  Dorset Frome), the reader cuts the chain back to where the joined piece leaves it (within 300 m, and 4 km of the
+  chain's end), so a line never doubles back; a migration clears an existing river's centreline to apply it. Seed
+  parents before
   tributaries; `rivers:centrelines` orders them that way. It only fetches rivers without a centreline, so a fix that
   should reach an existing river needs a migration that clears its `centreline` (deploys then refetch it).
 - The Environment Agency also names rivers nationally, so `SyncGaugeStations` drops stations more than 2 km from the
