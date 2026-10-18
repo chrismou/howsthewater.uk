@@ -29,6 +29,7 @@ class RiverSeeder extends Seeder
             'north-west' => self::northWest(),
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
+            'east-of-england' => self::eastOfEngland(),
             'scotland' => self::scotland(),
             'wales' => self::wales(),
         ];
@@ -306,6 +307,89 @@ class RiverSeeder extends Seeder
     }
 
     /**
+     * Anglian Water's rivers, Lincolnshire to Essex: the Great Ouse and the
+     * rivers into the Wash, the Broads and the Suffolk and Essex rivers.
+     * Several share names with rivers elsewhere (Stour, Colne, Blackwater,
+     * Glen), so each main river's mouth hint matters.
+     *
+     * @return array<int, array{name: string, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null}>
+     */
+    private static function eastOfEngland(): array
+    {
+        return [
+            // Great Ouse, with the Cam, Lark and Little Ouse flowing into it. The Wissey and Nar only add their
+            // overflows: OS splits the lower Wissey from the rest where it crosses the Cut-off Channel.
+            self::main('River Great Ouse', 'Great Ouse', [52.7600, 0.3900], ['Great Ouse', 'Great River Ouse', 'River Ouse']),
+            self::tributary('River Tove', 'great-ouse'),
+            self::tributary('River Ouzel', 'great-ouse'),
+            self::tributary('River Ivel', 'great-ouse'),
+            self::tributary('River Hiz', 'ivel'),
+            self::tributary('River Flit', 'ivel'),
+            self::tributary('River Kym', 'great-ouse'),
+            self::tributary('River Wissey', 'great-ouse'),
+            self::tributary('River Nar', 'great-ouse'),
+            self::tributary('Gaywood River', 'great-ouse'),
+            self::main('River Cam', 'Great Ouse', [52.3520, 0.2310], ['River Rhee'], flowsInto: 'great-ouse'),
+            self::tributary('River Granta', 'cam'),
+            self::main('River Lark', 'Great Ouse', [52.4300, 0.3300], flowsInto: 'great-ouse'),
+            self::tributary('River Linnet', 'lark'),
+            self::tributary('River Kennett', 'lark'),
+            self::main('Little Ouse River', 'Great Ouse', [52.5000, 0.3600], ['River Little Ouse', 'Little Ouse'], flowsInto: 'great-ouse', slug: 'little-ouse'),
+            self::tributary('River Thet', 'little-ouse'),
+            self::tributary('The Black Bourn', 'little-ouse', ['Black Bourn'], slug: 'black-bourn'),
+
+            // Nene, Welland and Witham, into the Wash
+            self::main('River Nene', 'Nene', [52.8400, 0.2100], ['R Nene']),
+            self::tributary('Bugbrooke Brook', 'nene'),
+            self::tributary('Grendon Brook', 'nene'),
+            self::tributary('River Ise', 'nene'),
+            self::tributary('Willow Brook', 'nene'),
+            self::tributary('River Nene Brampton Branch', 'nene', ['Brampton Branch R.Nene'], slug: 'nene-brampton-branch'),
+            self::main('River Welland', 'Welland', [52.8700, 0.0400]),
+            self::tributary('Langton Brook', 'welland'),
+            self::tributary('River Gwash', 'welland'),
+            self::tributary('River Chater', 'welland'),
+            self::tributary('River Glen', 'welland'),
+            self::main('River Witham', 'Witham', [52.9800, -0.0200]),
+            self::tributary('River Brant', 'witham'),
+            self::tributary('River Bain', 'witham', ['Old River Bain']),
+            self::tributary('River Slea', 'witham'),
+
+            // The Broads: the Wensum, Bure and Waveney flow into the Yare
+            self::main('River Yare', 'Broads', [52.5750, 1.7350]),
+            self::tributary('River Tas', 'yare'),
+            self::tributary('River Chet', 'yare'),
+            self::main('River Wensum', 'Broads', [52.6200, 1.3200], flowsInto: 'yare'),
+            self::main('River Bure', 'Broads', [52.6100, 1.7200], flowsInto: 'yare'),
+            self::tributary('River Ant', 'bure'),
+            self::tributary('River Thurne', 'bure'),
+            self::main('River Waveney', 'Broads', [52.5800, 1.6600], flowsInto: 'yare'),
+
+            // Suffolk, with the Stour on the Essex border
+            self::main('River Stour', 'Suffolk rivers', [51.9500, 1.2700]),
+            self::tributary('River Glem', 'stour'),
+            self::tributary('River Box', 'stour'),
+            self::tributary('River Brett', 'stour'),
+            self::main('River Gipping', 'Suffolk rivers', [52.0500, 1.1520], ['River Orwell']),
+            self::main('River Deben', 'Suffolk rivers', [51.9900, 1.3900]),
+            self::main('River Alde', 'Suffolk rivers', [52.1500, 1.5700], ['River Ore']),
+
+            // Essex: the Chelmer flows into the Blackwater at Maldon
+            self::main('River Colne', 'Essex rivers', [51.8000, 1.0200], ['Colne Estuary']),
+            self::tributary('Salary Brook', 'colne'),
+            self::main('River Blackwater', 'Essex rivers', [51.7350, 0.7000], ['River Blackwtaer']),
+            self::tributary('River Pant', 'blackwater'),
+            self::tributary('River Brain', 'blackwater'),
+            self::main('River Chelmer', 'Essex rivers', [51.7300, 0.6900], flowsInto: 'blackwater'),
+            self::tributary('River Can', 'chelmer'),
+            self::tributary('River Wid', 'can'),
+            self::tributary('River Ter', 'chelmer'),
+            self::tributary('Sandon Brook', 'chelmer'),
+            self::main('River Crouch', 'Essex rivers', [51.6250, 0.8800], ['Upper River Crouch', 'R.Crouch']),
+        ];
+    }
+
+    /**
      * Severn Trent's rivers: the Peak District rivers and the Soar flowing
      * into the Trent, and the Teme and Warwickshire Avon into the Severn.
      * OS names the Severn and Teme in Welsh first; the reader matches their
@@ -319,13 +403,13 @@ class RiverSeeder extends Seeder
     {
         return [
             // Trent
-            self::main('River Trent', 'Trent', [53.7000, -0.6900], ['River Trent Via Beckvalley Cul']),
+            self::main('River Trent', 'Trent', [53.7000, -0.6900]),
             self::tributary('River Tame', 'trent'),
             self::tributary('River Rea', 'tame'),
             self::tributary('River Cole', 'tame'),
             self::tributary('Ford Brook', 'tame'),
             self::tributary('River Anker', 'tame'),
-            self::tributary('River Blythe', 'tame', ['River Blythe (Trib)']),
+            self::tributary('River Blythe', 'tame'),
             self::tributary('River Sow', 'trent'),
             self::tributary('River Penk', 'sow', ['River Penk/Wergs Brook']),
             self::tributary('River Erewash', 'trent'),
@@ -337,8 +421,8 @@ class RiverSeeder extends Seeder
             self::tributary('River Poulter', 'idle'),
             self::tributary('River Ryton', 'idle'),
             self::main('River Soar', 'Trent', [52.8640, -1.2620], ['River Soar Or Tribs', 'Various Sites River Soar'], flowsInto: 'trent'),
-            self::tributary('River Wreake', 'soar', ['River Wreake (Eye) Trib']),
-            self::tributary('River Sence', 'soar', ['River Sence (Soar)']),
+            self::tributary('River Wreake', 'soar', ['River Wreake Trib']),
+            self::tributary('River Sence', 'soar'),
 
             // Peak District rivers, all flowing into the Trent
             self::main('River Derwent', 'Peak District', [52.8700, -1.3700], flowsInto: 'trent'),
@@ -441,7 +525,7 @@ class RiverSeeder extends Seeder
             self::tributary('River Nethan', 'clyde'),
             self::tributary('Avon Water', 'clyde'),
             self::tributary('Cadzow Burn', 'clyde'),
-            self::tributary('South Calder Water', 'clyde', ['Unknown tributary of South Calder']),
+            self::tributary('South Calder Water', 'clyde', ['South Calder']),
             self::tributary('North Calder Water', 'clyde'),
             self::tributary('Rotten Calder', 'clyde', ['Rotten Calder Water']),
             self::tributary('Tollcross Burn', 'clyde'),

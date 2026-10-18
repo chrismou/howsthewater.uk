@@ -29,6 +29,7 @@ class SpotSeeder extends Seeder
             'north-west' => self::northWest(),
             'north-east' => self::northEast(),
             'midlands' => self::midlands(),
+            'east-of-england' => self::eastOfEngland(),
             'scotland' => self::scotland(),
             'wales' => self::wales(),
         ];
@@ -297,6 +298,110 @@ class SpotSeeder extends Seeder
             'dee-galloway' => [
                 ['name' => 'Threave', 'latitude' => 54.9385, 'longitude' => -3.9698, 'description' => 'The river around Threave castle island.'],
                 ['name' => 'Tongland', 'latitude' => 54.8579, 'longitude' => -4.0383, 'description' => 'Below the bridge at Tongland.'],
+            ],
+        ];
+    }
+
+    /**
+     * Spots on Anglian Water's rivers, snapped onto the OS centreline.
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function eastOfEngland(): array
+    {
+        return [
+            'great-ouse' => [
+                ['name' => 'Olney', 'latitude' => 52.1490, 'longitude' => -0.7015, 'description' => 'The riverside recreation ground below the town.'],
+                ['name' => 'Bedford Embankment', 'latitude' => 52.1345, 'longitude' => -0.4622, 'description' => 'The Embankment gardens by the town bridge.'],
+                ['name' => 'St Neots', 'latitude' => 52.2283, 'longitude' => -0.2729, 'description' => 'Riverside Park, by the town bridge.'],
+                ['name' => 'Houghton Mill', 'latitude' => 52.3305, 'longitude' => -0.1215, 'description' => 'The National Trust watermill and its meadow.'],
+                ['name' => 'Hemingford Meadow', 'latitude' => 52.3231, 'longitude' => -0.1011, 'description' => 'The meadow between the Hemingfords and St Ives.'],
+                ['name' => 'St Ives', 'latitude' => 52.3223, 'longitude' => -0.0749, 'description' => 'The quay by the medieval bridge chapel.'],
+                ['name' => 'Ely', 'latitude' => 52.3954, 'longitude' => 0.2702, 'description' => 'The riverside below the cathedral.'],
+            ],
+            'cam' => [
+                ['name' => 'Byron\'s Pool', 'latitude' => 52.1713, 'longitude' => 0.0993, 'description' => 'The nature reserve pool above Grantchester.'],
+                ['name' => 'Grantchester Meadows', 'latitude' => 52.1865, 'longitude' => 0.1020, 'description' => 'The meadows between Grantchester and Newnham.'],
+                ['name' => 'Sheep\'s Green', 'latitude' => 52.1957, 'longitude' => 0.1166, 'description' => 'Designated bathing water by the Newnham riverside.'],
+                ['name' => 'Clayhithe', 'latitude' => 52.2645, 'longitude' => 0.2075, 'description' => 'The bridge and towpath below Waterbeach.'],
+            ],
+            'lark' => [
+                ['name' => 'Mildenhall', 'latitude' => 52.3406, 'longitude' => 0.5114, 'description' => 'The riverside walk below the town.'],
+                ['name' => 'Isleham', 'latitude' => 52.3520, 'longitude' => 0.4207, 'description' => 'The lock and marina north of the village.'],
+            ],
+            'little-ouse' => [
+                ['name' => 'Thetford', 'latitude' => 52.4141, 'longitude' => 0.7451, 'description' => 'The riverside in the town, below where the Thet joins.'],
+                ['name' => 'Santon Downham', 'latitude' => 52.4587, 'longitude' => 0.6731, 'description' => 'The bridge in Thetford Forest.'],
+                ['name' => 'Brandon', 'latitude' => 52.4498, 'longitude' => 0.6195, 'description' => 'The bridge and riverside below the town.'],
+            ],
+            'nene' => [
+                ['name' => 'Thrapston', 'latitude' => 52.3944, 'longitude' => -0.5434, 'description' => 'The medieval bridge between Thrapston and Islip.'],
+                ['name' => 'Wadenhoe', 'latitude' => 52.4376, 'longitude' => -0.5117, 'description' => 'The mill and meadows below the village.'],
+                ['name' => 'Oundle', 'latitude' => 52.4780, 'longitude' => -0.4718, 'description' => 'The riverside below the town.'],
+                ['name' => 'Fotheringhay', 'latitude' => 52.5242, 'longitude' => -0.4402, 'description' => 'The bridge below the church and castle mound.'],
+                ['name' => 'Wansford', 'latitude' => 52.5778, 'longitude' => -0.4155, 'description' => 'The old bridge by the village.'],
+                ['name' => 'Peterborough Embankment', 'latitude' => 52.5682, 'longitude' => -0.2400, 'description' => 'The Embankment in the city centre.'],
+            ],
+            'welland' => [
+                ['name' => 'Duddington', 'latitude' => 52.5949, 'longitude' => -0.5426, 'description' => 'The mill and bridge by the village.'],
+                ['name' => 'Stamford Meadows', 'latitude' => 52.6496, 'longitude' => -0.4808, 'description' => 'The town meadows below the old bridge.'],
+                ['name' => 'Market Deeping', 'latitude' => 52.6748, 'longitude' => -0.3182, 'description' => 'The riverside through the town.'],
+            ],
+            'witham' => [
+                ['name' => 'Lincoln', 'latitude' => 53.2280, 'longitude' => -0.5433, 'description' => 'The river through the city centre.'],
+                ['name' => 'Kirkstead', 'latitude' => 53.1393, 'longitude' => -0.2404, 'description' => 'The bridge between Woodhall Spa and Martin.'],
+            ],
+            'wensum' => [
+                ['name' => 'Lyng', 'latitude' => 52.7184, 'longitude' => 1.0659, 'description' => 'The mill and bridge by the village.'],
+                ['name' => 'Drayton', 'latitude' => 52.6727, 'longitude' => 1.2181, 'description' => 'The riverside on the edge of Norwich.'],
+                ['name' => 'Norwich', 'latitude' => 52.6332, 'longitude' => 1.2984, 'description' => 'The river through the city centre.'],
+            ],
+            'yare' => [
+                ['name' => 'Bawburgh', 'latitude' => 52.6333, 'longitude' => 1.1845, 'description' => 'The bridge and mill by the village.'],
+                ['name' => 'Brundall', 'latitude' => 52.6181, 'longitude' => 1.4299, 'description' => 'The riverside and boatyards below the village.'],
+            ],
+            'bure' => [
+                ['name' => 'Aylsham', 'latitude' => 52.8000, 'longitude' => 1.2587, 'description' => 'The mill and old navigation head by the town.'],
+                ['name' => 'Coltishall', 'latitude' => 52.7300, 'longitude' => 1.3551, 'description' => 'The common and staithe by the village.'],
+                ['name' => 'Wroxham', 'latitude' => 52.7132, 'longitude' => 1.4070, 'description' => 'The bridge between Wroxham and Hoveton.'],
+                ['name' => 'Horning', 'latitude' => 52.7031, 'longitude' => 1.4630, 'description' => 'The staithe in the village.'],
+            ],
+            'waveney' => [
+                ['name' => 'Hoxne', 'latitude' => 52.3573, 'longitude' => 1.2060, 'description' => 'The riverside below the village.'],
+                ['name' => 'Homersfield', 'latitude' => 52.4202, 'longitude' => 1.3565, 'description' => 'The old concrete bridge by the village.'],
+                ['name' => 'Bungay', 'latitude' => 52.4566, 'longitude' => 1.4413, 'description' => 'Falcon Meadow and Outney Common, with a designated bathing water.'],
+                ['name' => 'Geldeston', 'latitude' => 52.4634, 'longitude' => 1.5144, 'description' => 'The old lock below the village.'],
+                ['name' => 'Beccles', 'latitude' => 52.4615, 'longitude' => 1.5626, 'description' => 'The quay below the town.'],
+            ],
+            'stour' => [
+                ['name' => 'Clare', 'latitude' => 52.0760, 'longitude' => 0.5810, 'description' => 'The country park below the castle.'],
+                ['name' => 'Sudbury', 'latitude' => 52.0361, 'longitude' => 0.7213, 'description' => 'Friars Meadow, a designated bathing water.'],
+                ['name' => 'Nayland', 'latitude' => 51.9694, 'longitude' => 0.8704, 'description' => 'The bridge by the village.'],
+                ['name' => 'Dedham', 'latitude' => 51.9614, 'longitude' => 0.9924, 'description' => 'The bridge and boatyard by the village.'],
+                ['name' => 'Flatford', 'latitude' => 51.9574, 'longitude' => 1.0219, 'description' => 'The mill and lock painted by Constable.'],
+            ],
+            'gipping' => [
+                ['name' => 'Needham Market', 'latitude' => 52.1548, 'longitude' => 1.0543, 'description' => 'Needham Lake and the riverside path.'],
+            ],
+            'deben' => [
+                ['name' => 'Wickham Market', 'latitude' => 52.1557, 'longitude' => 1.3699, 'description' => 'The riverside below the town.'],
+                ['name' => 'Woodbridge', 'latitude' => 52.0936, 'longitude' => 1.3251, 'description' => 'The tidal quay by the Tide Mill.'],
+            ],
+            'alde' => [
+                ['name' => 'Snape Maltings', 'latitude' => 52.1651, 'longitude' => 1.4946, 'description' => 'The tidal river by the concert hall.'],
+            ],
+            'colne' => [
+                ['name' => 'Colchester', 'latitude' => 51.8941, 'longitude' => 0.9029, 'description' => 'Castle Park and the riverside below the town.'],
+            ],
+            'blackwater' => [
+                ['name' => 'Coggeshall', 'latitude' => 51.8696, 'longitude' => 0.6901, 'description' => 'The abbey mill and riverside by the town.'],
+            ],
+            'crouch' => [
+                ['name' => 'Battlesbridge', 'latitude' => 51.6226, 'longitude' => 0.5663, 'description' => 'The old tide mill village at the head of the estuary.'],
+            ],
+            'chelmer' => [
+                ['name' => 'Chelmsford', 'latitude' => 51.7292, 'longitude' => 0.4812, 'description' => 'The riverside in the city, below where the Can joins.'],
+                ['name' => 'Ulting', 'latitude' => 51.7427, 'longitude' => 0.6134, 'description' => 'The navigation and towpath by the riverside church.'],
             ],
         ];
     }

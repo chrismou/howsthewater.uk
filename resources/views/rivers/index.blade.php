@@ -29,7 +29,7 @@
 @endphp
 
 <x-layouts.app :date-modified="$summary->dataUpdatedAt" :title="$summary->name.' rivers: swimming, levels and spills'"
-               :description="'Storm overflow spills, river levels and rainfall for swimming, paddling and fishing spots on '.$summary->name.'\'s rivers, listed source to mouth.'"
+               :description="'Storm overflow spills, river levels and rainfall for swimming, paddling and fishing spots on '.$region->nameInSentence().'\'s rivers, listed source to mouth.'"
                :breadcrumbs="$breadcrumbs"
                :region="$region"
                :structured-data="app(\App\Services\StructuredData::class)->itemList($summary->name.' rivers', $summary->rivers->map(fn ($river) => [$river->name, route('rivers.show', [$summary->slug, $river->slug])]))">

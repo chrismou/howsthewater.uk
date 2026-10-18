@@ -39,6 +39,16 @@ class RegionSeeder extends Seeder
             'overflow_feeds' => ['severn_trent'],
             'bathing_water_districts' => [],
         ]);
+        // Anglian Water's area, Lincolnshire to Essex. Its beaches run from Cleethorpes to Southend, whose Thames estuary
+        // sites are Anglian Water's sewerage too.
+        Region::query()->updateOrCreate(['slug' => 'east-of-england'], [
+            'name' => 'East of England',
+            'overflow_feeds' => ['anglian_water'],
+            'bathing_water_districts' => [
+                'North East Lincolnshire', 'East Lindsey', "King's Lynn and West Norfolk", 'North Norfolk', 'Great Yarmouth',
+                'East Suffolk', 'Tendring', 'Colchester', 'Southend-on-Sea', 'Castle Point',
+            ],
+        ]);
         // Welsh Water's overflow feed is not read yet (see CLAUDE.md), so Wales has no overflow feeds and its places say
         // overflow data is not available rather than that there are no overflows. Bathing waters come from Wales's
         // register, which names councils as the Ordnance Survey does ("the Vale of Glamorgan").

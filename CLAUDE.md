@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands, Scotland, Wales). The site
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, North West, North East, Midlands, East of England, Scotland, Wales). The site
 reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -171,7 +171,17 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   SEPA levels and rainfall but no flood warnings yet). The Midlands has Severn
   Trent's rivers: the Trent, with the Soar and the Peak District's Derwent, Wye, Dove and Manifold flowing into it, and
   the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn (Hafren Dyfrdwy) are not on
-  Stream, so they do not count yet. Scotland has Scottish Water's rivers, grouped by catchment: the Tay (with the
+  Stream, so they do not count yet. The East of England has Anglian Water's rivers, Lincolnshire to Essex: the Great
+  Ouse (with the Cam, Lark and Little Ouse flowing into it, and the Wissey and Nar as tributaries, since OS splits the
+  lower Wissey where it crosses the Cut-off Channel), the Nene, Welland and Witham into the Wash, the Broads (the
+  Wensum, Bure and Waveney flowing into the Yare), Suffolk's Stour, Gipping, Deben and Alde, and Essex's Colne,
+  Blackwater (with the Chelmer flowing into it) and Crouch, plus Rutland Water, and beaches from Cleethorpes to
+  Southend and Canvey Island (Thames estuary sites whose sewerage is Anglian Water's). Anglian Water writes receiving
+  watercourses many ways ("THE RIVER WENSUM", "Tidal River Great Ouse", "Trib River Nene", "River Wid NT"), which
+  `WatercourseName` normalises, and many of its overflows discharge to Fen drains and streams no river page counts.
+  A river's extra aliases are compared after that parsing, so write them as it leaves them ("South Calder", not
+  "Unknown tributary of South Calder"); `SeederIntegrityTest` fails on any that can never match.
+  Scotland has Scottish Water's rivers, grouped by catchment: the Tay (with the
   Tummel, Garry, Braan and Earn flowing into it), Spey, Ness, Findhorn, Lossie, Dee, Don, Forth (with the Teith, Allan
   Water and Devon), the Lothian rivers (Water of Leith, Almond, Esk, Tyne), the Clyde (with the Kelvin and White
   Cart), the Dunbartonshire Leven, the Ayrshire rivers (Irvine, Ayr, Doon), the Fife Eden, the Angus North and South
@@ -290,8 +300,8 @@ reports what monitors say; it never claims water is safe or clean. Keep that dis
   implements `OverflowFeedReader` and maps its records into `OverflowMonitorData`, so the sync and everything after it
   never see the source format; a new company with other fields needs only a new reader. `ingest:overflows` polls every
   configured feed every 15 minutes, whether or not a region names it in `overflow_feeds`, because spill history that is
-  not recorded as it happens cannot be filled in later (Anglian, Wessex, Southern, South West and Welsh Water are
-  recorded ahead of their regions). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
+  not recorded as it happens cannot be filled in later (Wessex, Southern, South West and Welsh Water are recorded
+  ahead of their regions). A region's `overflow_feeds` still decides `hasOverflowData()` and its company names; the footer and
   `/about` credit every polled feed. A failing feed is logged and skipped so the others still sync. Monitor IDs are prefixed by company (`YWS`, `NWL`, `UUP`, `SW`...) so feeds
   share one table. The footer credits Stream feeds, Scottish Water and Welsh Water separately. South West Water's
   Stream fields are camelCase, so `OverflowMonitorData::fromArcGis()` matches names case-insensitively. Some services

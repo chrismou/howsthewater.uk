@@ -29,6 +29,9 @@ class LakeSeeder extends Seeder
             'midlands' => [
                 ['name' => 'Colwick Country Park', 'latitude' => 52.9452, 'longitude' => -1.0982, 'description' => 'A former gravel pit lake beside the Trent in Nottingham.', 'gauge_reference' => null],
             ],
+            'east-of-england' => [
+                ['name' => 'Rutland Water', 'latitude' => 52.6510, 'longitude' => -0.6400, 'description' => 'The large reservoir near Oakham, with bathing waters at Whitwell Creek and Sykes Lane.', 'gauge_reference' => null],
+            ],
             'scotland' => [
                 ['name' => 'Loch Lomond', 'latitude' => 56.0800, 'longitude' => -4.6000, 'description' => 'The largest loch by area in Britain, with the bathing water at Luss Bay.', 'gauge_reference' => null],
                 ['name' => 'Loch Ness', 'latitude' => 57.3000, 'longitude' => -4.4500, 'description' => 'The long, deep loch of the Great Glen, with the bathing water at Dores.', 'gauge_reference' => null],

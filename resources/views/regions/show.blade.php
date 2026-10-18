@@ -26,7 +26,7 @@
 @endphp
 
 <x-layouts.app :date-modified="$summary->dataUpdatedAt" :title="$title"
-               :description="'Storm overflow spills, river levels, rainfall, flood warnings and bathing water results for '.$summary->name.'\'s '.$typeList.'.'"
+               :description="'Storm overflow spills, river levels, rainfall, flood warnings and bathing water results for '.$region->nameInSentence().'\'s '.$typeList.'.'"
                :breadcrumbs="$breadcrumbs"
                :region="$region"
                :structured-data="app(\App\Services\StructuredData::class)->regionPage($region, $types->map(fn ($type) => [$summary->name.' '.$type, route($type.'.index', $region)]))">

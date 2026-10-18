@@ -4,7 +4,7 @@
 @endphp
 
 <x-layouts.app :date-modified="$lakes->map(fn ($conditions) => $conditions->overflows->dataUpdatedAt)->filter()->max()" :region="$region" :title="$region->name.' lakes: swimming and water quality'"
-               :description="'Bathing water results, lake levels and nearby storm overflows for swimming and paddling at lakes in '.$region->name.'.'"
+               :description="'Bathing water results, lake levels and nearby storm overflows for swimming and paddling at lakes in '.$region->nameInSentence().'.'"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->itemList($region->name.' lakes', $lakes->map(fn ($conditions) => [$conditions->lake->name, route('lakes.show', [$region, $conditions->lake])]))">
     <div class="mb-6">
