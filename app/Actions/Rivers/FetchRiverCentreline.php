@@ -22,12 +22,12 @@ class FetchRiverCentreline
     {
         $parentCentreline = $river->parent?->hasCentreline() === true ? $river->parent->centreline : null;
 
-        return $this->store($river, (new OpenRiversReader($geoPackagePath))->riverCentreline($river->name, $parentCentreline, $river->mouthHint()));
+        return $this->store($river, (new OpenRiversReader($geoPackagePath))->riverCentreline($river->os_name ?? $river->name, $parentCentreline, $river->mouthHint()));
     }
 
     public function fromOpenStreetMap(River $river): River
     {
-        return $this->store($river, $this->overpass->riverCentreline($river->name));
+        return $this->store($river, $this->overpass->riverCentreline($river->os_name ?? $river->name));
     }
 
     /**

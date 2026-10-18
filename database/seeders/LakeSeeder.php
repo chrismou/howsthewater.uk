@@ -41,6 +41,9 @@ class LakeSeeder extends Seeder
                 ['name' => 'Llyn Padarn', 'latitude' => 53.1290, 'longitude' => -4.1250, 'description' => 'The lake below Snowdon at Llanberis, with the bathing water on its northern shore.', 'gauge_reference' => null],
                 ['name' => 'Llanishen Reservoir', 'latitude' => 51.5310, 'longitude' => -3.1740, 'description' => 'The reopened reservoir in north Cardiff, used for open water swimming.', 'gauge_reference' => null],
             ],
+            'wessex' => [
+                ['name' => 'Henleaze Lake', 'latitude' => 51.4946, 'longitude' => -2.6057, 'description' => 'A former limestone quarry in north Bristol, swum in by its members\' club.', 'gauge_reference' => null],
+            ],
             'thames-valley' => [
                 ['name' => 'Cotswold Country Park', 'latitude' => 51.6610, 'longitude' => -1.9609, 'description' => 'A former gravel pit lake near Cricklade with a sand beach.', 'gauge_reference' => null],
                 ['name' => 'Frensham Great Pond', 'latitude' => 51.1573, 'longitude' => -0.7918, 'description' => 'Heathland pond with a sandy shore near Farnham.', 'gauge_reference' => null],

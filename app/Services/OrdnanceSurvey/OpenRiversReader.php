@@ -32,11 +32,13 @@ class OpenRiversReader
     /**
      * Reservoirs and brief changes of name split a river into several
      * disconnected sets of links, and unrelated rivers across Britain can
-     * share a name. The caller passes either the parent river's centreline
-     * (for a tributary) or an approximate mouth (for a main river); the set
-     * whose mouth lies nearest is used as the seed, then any other set that
-     * ends within GAP_METRES of the seed's source, or starts within it of
-     * the seed's mouth, is joined on. With no hint every link is chained.
+     * share a name. The caller passes the parent river's centreline (for a
+     * tributary), an approximate mouth (for a main river), or both (for a
+     * tributary sharing its name with another of the same parent, where the
+     * mouth is used instead of the parent's line). The set whose mouth lies
+     * nearest is used as the seed, then any other set that ends within
+     * GAP_METRES of the seed's source, or starts within it of the seed's
+     * mouth, is joined on. With no hint every link is chained.
      *
      * @param  array<int, array{0: float, 1: float}>|null  $flowsInto  The parent river's centreline, if any
      * @param  array{0: float, 1: float}|null  $mouthHint  Roughly where the river ends, as [lat, lng]
@@ -75,9 +77,9 @@ class OpenRiversReader
 
         $parent = $flowsInto !== null ? new PolylineProjector($flowsInto) : null;
 
-        $distanceToMouth = $parent !== null
-            ? fn (array $mouth) => $parent->project($mouth[0], $mouth[1])->offsetMetres
-            : fn (array $mouth) => Coordinates::distanceMetres($mouth[0], $mouth[1], $mouthHint[0], $mouthHint[1]);
+        $distanceToMouth = $mouthHint !== null
+            ? fn (array $mouth) => Coordinates::distanceMetres($mouth[0], $mouth[1], $mouthHint[0], $mouthHint[1])
+            : fn (array $mouth) => $parent->project($mouth[0], $mouth[1])->offsetMetres;
 
         $chains = array_map(fn (array $component) => $this->mainStem($component, $distanceToMouth), $this->connectedComponents($links));
 

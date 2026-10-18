@@ -157,6 +157,10 @@ it('finds spots and rivers by name', function () {
         ->assertSee('River Wharfe')
         ->assertSee('/yorkshire/rivers/wharfe"', false);
 
+    // A river the site names differently from OS is found by either name.
+    $river->update(['name' => 'Bristol Avon', 'os_name' => 'River Avon']);
+    $this->get(route('search', ['q' => 'river avon']))->assertOk()->assertSee('Bristol Avon');
+
     $this->get(route('search', ['q' => 'zzz']))->assertOk()->assertSee('Nothing matched');
 });
 

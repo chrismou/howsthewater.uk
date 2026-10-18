@@ -3,42 +3,6 @@
 use App\Services\Geo\BritishNationalGrid;
 use App\Services\OrdnanceSurvey\OpenRiversReader;
 
-/**
- * Encodes a lat/lng polyline as a GeoPackage LineString blob in BNG,
- * using the inverse of the projection constants closely enough for a
- * small local test (points are given directly as easting/northing).
- *
- * @param  array<int, array{0: float, 1: float}>  $points  [easting, northing] pairs
- */
-function geoPackageLineString(array $points): string
-{
-    $header = 'GP'.chr(0).chr(0b00000001).pack('V', 27700);
-    $wkb = chr(1).pack('V', 2).pack('V', count($points));
-
-    foreach ($points as [$easting, $northing]) {
-        $wkb .= pack('e', $easting).pack('e', $northing);
-    }
-
-    return $header.$wkb;
-}
-
-/**
- * @param  array<int, array{name: string, alternative?: string, start: string, end: string, points: array<int, array{0: float, 1: float}>}>  $links
- */
-function openRiversFixture(array $links): string
-{
-    $path = tempnam(sys_get_temp_dir(), 'oprvrs').'.gpkg';
-    $pdo = new PDO('sqlite:'.$path);
-    $pdo->exec('CREATE TABLE watercourse_link (id TEXT, geometry BLOB, flow_direction TEXT, start_node TEXT, end_node TEXT, watercourse_name TEXT, watercourse_name_alternative TEXT)');
-    $insert = $pdo->prepare('INSERT INTO watercourse_link VALUES (?, ?, ?, ?, ?, ?, ?)');
-
-    foreach ($links as $index => $link) {
-        $insert->execute(["link-{$index}", geoPackageLineString($link['points']), 'in direction', $link['start'], $link['end'], $link['name'], $link['alternative'] ?? null]);
-    }
-
-    return $path;
-}
-
 it('chains the links of a named watercourse from source to mouth', function () {
     $path = openRiversFixture([
         ['name' => 'Test Beck', 'start' => 'b', 'end' => 'c', 'points' => [[401000, 450000], [402000, 450000]]],
@@ -94,6 +58,18 @@ it('picks the same-named watercourse whose mouth is nearest the parent river', f
 
     expect($centreline)->toHaveCount(3)
         ->and(end($centreline))->toEqualWithDelta($confluence, 0.0001);
+});
+
+it('prefers a mouth hint to the parent river, for two same-named tributaries joining one parent', function () {
+    $path = openRiversFixture([
+        ['name' => 'Test Beck', 'start' => 'a', 'end' => 'b', 'points' => [[401000, 452000], [401000, 450000]]],
+        ['name' => 'Test Beck', 'start' => 'x', 'end' => 'y', 'points' => [[403000, 452000], [403000, 450000]]],
+    ]);
+    $parent = [BritishNationalGrid::toLatLng(400000, 450000), BritishNationalGrid::toLatLng(404000, 450000)];
+
+    $centreline = (new OpenRiversReader($path))->riverCentreline('Test Beck', $parent, BritishNationalGrid::toLatLng(403000, 450100));
+
+    expect(end($centreline))->toEqualWithDelta(BritishNationalGrid::toLatLng(403000, 450000), 0.0001);
 });
 
 it('uses the mouth hint to pick between same-named rivers in different places', function () {

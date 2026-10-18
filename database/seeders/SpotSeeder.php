@@ -32,6 +32,7 @@ class SpotSeeder extends Seeder
             'midlands' => self::midlands(),
             'east-of-england' => self::eastOfEngland(),
             'south-west' => self::southWest(),
+            'wessex' => self::wessex(),
             'scotland' => self::scotland(),
             'wales' => self::wales(),
         ];
@@ -300,6 +301,72 @@ class SpotSeeder extends Seeder
             'dee-galloway' => [
                 ['name' => 'Threave', 'latitude' => 54.9385, 'longitude' => -3.9698, 'description' => 'The river around Threave castle island.'],
                 ['name' => 'Tongland', 'latitude' => 54.8579, 'longitude' => -4.0383, 'description' => 'Below the bridge at Tongland.'],
+            ],
+        ];
+    }
+
+    /**
+     * Spots on Wessex Water's rivers, snapped onto the OS centreline. The river bathing waters (Farleigh Hungerford,
+     * French Weir, Queen Elizabeth Gardens and Fordingbridge) each have a spot beside them. Queen Elizabeth Gardens
+     * and Keynsham sit just below the Nadder and Chew, so those rivers count upstream.
+     *
+     * @return array<string, array<int, array{name: string, latitude: float, longitude: float, description: string}>>
+     */
+    private static function wessex(): array
+    {
+        return [
+            'bristol-avon' => [
+                ['name' => 'Malmesbury', 'latitude' => 51.5856, 'longitude' => -2.0973, 'description' => 'The river looping round the hilltop town.'],
+                ['name' => 'Chippenham', 'latitude' => 51.4596, 'longitude' => -2.1167, 'description' => 'Monkton Park and the river through the town.'],
+                ['name' => 'Lacock', 'latitude' => 51.4144, 'longitude' => -2.1155, 'description' => 'The river by the National Trust village.'],
+                ['name' => 'Bradford-on-Avon', 'latitude' => 51.3445, 'longitude' => -2.2556, 'description' => 'The town bridge with its old lock-up.'],
+                ['name' => 'Avoncliff', 'latitude' => 51.3392, 'longitude' => -2.2816, 'description' => 'The aqueduct carrying the canal over the river.'],
+                ['name' => 'Warleigh Weir', 'latitude' => 51.3786, 'longitude' => -2.2998, 'description' => 'The weir and meadow above Bath.'],
+                ['name' => 'Bath', 'latitude' => 51.3799, 'longitude' => -2.3549, 'description' => 'The river through the city centre.'],
+                ['name' => 'Saltford', 'latitude' => 51.4062, 'longitude' => -2.4491, 'description' => 'The lock and weir at Saltford.'],
+                ['name' => 'Keynsham', 'latitude' => 51.4202, 'longitude' => -2.4926, 'description' => 'Where the Chew joins the Avon.'],
+                ['name' => 'Conham River Park', 'latitude' => 51.4451, 'longitude' => -2.5330, 'description' => 'The wooded riverside park at Hanham.'],
+            ],
+            'somerset-frome' => [
+                ['name' => 'Frome', 'latitude' => 51.2328, 'longitude' => -2.3216, 'description' => 'The river through the town.'],
+                ['name' => 'Farleigh Hungerford', 'latitude' => 51.3179, 'longitude' => -2.2809, 'description' => 'The river swimming club\'s meadow near the castle.'],
+            ],
+            'tone' => [
+                ['name' => 'Bradford on Tone', 'latitude' => 50.9995, 'longitude' => -3.1844, 'description' => 'The village bridge over the Tone.'],
+                ['name' => 'French Weir', 'latitude' => 51.0181, 'longitude' => -3.1129, 'description' => 'The park and weir in Taunton.'],
+            ],
+            'parrett' => [
+                ['name' => 'Langport', 'latitude' => 51.0354, 'longitude' => -2.8293, 'description' => 'The old river port on the Levels.'],
+                ['name' => 'Burrowbridge', 'latitude' => 51.0689, 'longitude' => -2.9177, 'description' => 'Below Burrow Mump, where the Tone joins the Parrett.'],
+            ],
+            'brue' => [
+                ['name' => 'Bruton', 'latitude' => 51.1119, 'longitude' => -2.4529, 'description' => 'The river through the town below the dovecote.'],
+                ['name' => 'Glastonbury', 'latitude' => 51.1355, 'longitude' => -2.7163, 'description' => 'Pomparles Bridge, on the Levels below the Tor.'],
+            ],
+            'stour' => [
+                ['name' => 'Sturminster Newton', 'latitude' => 50.9222, 'longitude' => -2.3056, 'description' => 'The mill and the old town bridge.'],
+                ['name' => 'Blandford Forum', 'latitude' => 50.8534, 'longitude' => -2.1687, 'description' => 'The meadows below the Georgian town.'],
+                ['name' => 'Wimborne Minster', 'latitude' => 50.7946, 'longitude' => -1.9919, 'description' => 'The river by the minster town.'],
+                ['name' => 'Tuckton', 'latitude' => 50.7312, 'longitude' => -1.7944, 'description' => 'The bridge and tea gardens near Christchurch.'],
+            ],
+            'dorset-frome' => [
+                ['name' => 'Maiden Newton', 'latitude' => 50.7767, 'longitude' => -2.5735, 'description' => 'The river through the village.'],
+                ['name' => 'Dorchester', 'latitude' => 50.7185, 'longitude' => -2.4296, 'description' => 'Grey\'s Bridge and the water meadows.'],
+                ['name' => 'Wool', 'latitude' => 50.6833, 'longitude' => -2.2221, 'description' => 'The old bridge by Woolbridge Manor.'],
+                ['name' => 'Wareham', 'latitude' => 50.6840, 'longitude' => -2.1102, 'description' => 'The quay on the edge of Poole Harbour.'],
+            ],
+            'piddle' => [
+                ['name' => 'Puddletown', 'latitude' => 50.7502, 'longitude' => -2.3446, 'description' => 'The village in the Piddle valley.'],
+                ['name' => 'Tolpuddle', 'latitude' => 50.7482, 'longitude' => -2.2942, 'description' => 'The village of the Tolpuddle Martyrs.'],
+            ],
+            'hampshire-avon' => [
+                ['name' => 'Upavon', 'latitude' => 51.2935, 'longitude' => -1.8058, 'description' => 'The young river in the Vale of Pewsey.'],
+                ['name' => 'Amesbury', 'latitude' => 51.1716, 'longitude' => -1.7853, 'description' => 'The river near Stonehenge.'],
+                ['name' => 'Queen Elizabeth Gardens', 'latitude' => 51.0648, 'longitude' => -1.8021, 'description' => 'The gardens in Salisbury with the view of the cathedral, just below where the Nadder joins.'],
+                ['name' => 'Downton', 'latitude' => 50.9917, 'longitude' => -1.7464, 'description' => 'The river through the village.'],
+                ['name' => 'Fordingbridge', 'latitude' => 50.9264, 'longitude' => -1.7888, 'description' => 'The recreation ground by the medieval bridge.'],
+                ['name' => 'Ringwood', 'latitude' => 50.8485, 'longitude' => -1.7963, 'description' => 'The water meadows by the town.'],
+                ['name' => 'Christchurch', 'latitude' => 50.7333, 'longitude' => -1.7729, 'description' => 'The quay where the Avon meets the harbour.'],
             ],
         ];
     }

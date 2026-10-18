@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $parent_river_id
  * @property int|null $flows_into_river_id
  * @property string $name
+ * @property string|null $os_name
  * @property string $slug
  * @property string|null $catchment
  * @property array<int, string>|null $aliases
@@ -47,6 +48,7 @@ class River extends Model
         'parent_river_id',
         'flows_into_river_id',
         'name',
+        'os_name',
         'slug',
         'catchment',
         'aliases',
@@ -136,7 +138,7 @@ class River extends Model
      */
     public function scopeWithoutCentreline(Builder $query): Builder
     {
-        return $query->select(['id', 'region_id', 'parent_river_id', 'flows_into_river_id', 'name', 'slug', 'catchment', 'also_runs_through', 'aliases', 'mouth_latitude', 'mouth_longitude', 'length_metres', 'joins_at_metres', 'created_at', 'updated_at']);
+        return $query->select(['id', 'region_id', 'parent_river_id', 'flows_into_river_id', 'name', 'os_name', 'slug', 'catchment', 'also_runs_through', 'aliases', 'mouth_latitude', 'mouth_longitude', 'length_metres', 'joins_at_metres', 'created_at', 'updated_at']);
     }
 
     public function isTributary(): bool

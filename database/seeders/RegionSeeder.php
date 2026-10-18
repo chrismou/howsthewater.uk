@@ -24,6 +24,14 @@ class RegionSeeder extends Seeder
             'overflow_feeds' => ['thames_water'],
             'bathing_water_districts' => [],
         ]);
+        // Wessex Water's area: Bristol, Bath, Somerset, Dorset, Wiltshire and the Hampshire Avon. Dorset's two Lyme Regis
+        // beaches are South West Water's and Highcliffe is Southern Water's, but a district belongs to one region. New Forest waits for the South East, as its
+        // beaches are Southern Water's.
+        Region::query()->updateOrCreate(['slug' => 'wessex'], [
+            'name' => 'Wessex',
+            'overflow_feeds' => ['wessex_water'],
+            'bathing_water_districts' => ['Dorset', 'Bournemouth, Christchurch and Poole', 'Somerset', 'North Somerset'],
+        ]);
         // Thames Water's London rivers, which all join the Thames below Teddington, where the Thames Valley's stop.
         Region::query()->updateOrCreate(['slug' => 'london'], [
             'name' => 'London',
@@ -56,7 +64,7 @@ class RegionSeeder extends Seeder
             ],
         ]);
         // South West Water's area, Devon and Cornwall. Its two Lyme Regis beaches are in Dorset, whose other beaches are
-        // Wessex Water's, so Dorset is left for a Wessex region.
+        // Wessex Water's, so they are Wessex's.
         Region::query()->updateOrCreate(['slug' => 'south-west'], [
             'name' => 'South West',
             'overflow_feeds' => ['south_west_water'],

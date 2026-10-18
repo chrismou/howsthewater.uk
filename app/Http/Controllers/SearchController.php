@@ -42,7 +42,7 @@ class SearchController extends Controller
             ->with('region')
             ->orderBy('name')
             ->get()
-            ->filter(fn (River $river) => $matches($river->name))
+            ->filter(fn (River $river) => $matches($river->name) || ($river->os_name !== null && $matches($river->os_name)))
             ->take(self::MAX_RESULTS);
 
         $beaches = BathingWater::query()

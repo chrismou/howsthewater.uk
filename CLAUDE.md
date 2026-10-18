@@ -151,7 +151,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # How's the Water
 
-Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, London, North West, North East, Midlands, East of England, South West, Scotland, Wales).
+Live storm overflow spills and river levels for swimming, paddling and fishing spots, by region (Yorkshire, Thames Valley, London, North West, North East, Midlands, East of England, South West, Wessex, Scotland, Wales).
 The site reports what monitors say; it never claims water is safe or clean. Keep that distinction in all copy and labels.
 
 ## Architecture
@@ -199,13 +199,31 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   plus beaches in Cornwall, Plymouth, the South Hams, Torbay, Teignbridge, East Devon, North Devon and Torridge. The
   upper Axe, Yarty and Culm reach into Wessex Water's area, so its overflows there can count too, as Scottish Water's
   do on the Tweed. Its two
-  Lyme Regis beaches are in Dorset, whose other beaches are Wessex Water's, so Dorset waits for a Wessex region (a
-  district belongs to one region). Many of its overflows name an estuary ("River Dart Estuary"), seeded as aliases, and many shorten "river" ("R. MOLE", "TRIB O RIV.TEIGN"), which `WatercourseName` expands.
+  Lyme Regis beaches are in Dorset, whose other beaches are Wessex Water's, so they are Wessex's (a district belongs
+  to one region). Many of its overflows name an estuary ("River Dart Estuary"), seeded as aliases, and many shorten
+  "river" ("R. MOLE", "TRIB O RIV.TEIGN"), which `WatercourseName` expands. Four River Yeos are seeded: Crediton's and
+  Bideford's, each nearest its own parent, and Barnstaple's and Lapford's (`yeo-lapford`), which both join the Taw and
+  so take mouth hints.
+  Wessex has Wessex Water's rivers: the Bristol Avon (from Malmesbury through Bath to Avonmouth, with Somerset's
+  Frome flowing into it), the Somerset Levels' Parrett (with the Tone from Taunton) and Brue, Dorset's Stour, Frome
+  and Piddle, and the Hampshire Avon from the Vale of Pewsey to Christchurch, plus Henleaze Lake in Bristol and
+  beaches in Dorset, Bournemouth, Christchurch and Poole, Somerset and North Somerset. New Forest's beaches are
+  Southern Water's, so New Forest waits for a South East region. Its four river bathing waters (Farleigh Hungerford,
+  French Weir in Taunton, Queen Elizabeth Gardens in Salisbury and Fordingbridge) each have a spot beside them. OS
+  calls both Avons "River Avon" and all three Fromes "River Frome", so the site names them as people do (Bristol
+  Avon, Hampshire Avon, Somerset Frome, Dorset Frome), with OS's name in `rivers.os_name` (`osName:` in
+  `RiverSeeder`), which `rivers:centrelines` looks up and which is also an alias. Bristol's Frome is a tributary of
+  the same Avon as Somerset's, so it takes a mouth hint. Wessex Water writes square brackets, brackets it never
+  closes and "SWS" ("RIVER AVON [BLACK ROCKS] SWS", "Bristol Avon (By Bk to Netham W"), which `WatercourseName`
+  drops. OS draws the Dorset Frome back through a parallel channel near Woodsford, so distances below it read about
+  5 km long; positions upstream are unaffected. Search matches a river's OS name too ("River Frome"). Highcliffe, in
+  Bournemouth, Christchurch and Poole, is Southern Water's but a Wessex beach.
   Scotland has Scottish Water's rivers, grouped by catchment: the Tay (with the
   Tummel, Garry, Braan and Earn flowing into it), Spey, Ness, Findhorn, Lossie, Dee, Don, Forth (with the Teith, Allan
   Water and Devon), the Lothian rivers (Water of Leith, Almond, Esk, Tyne), the Clyde (with the Kelvin and White
   Cart), the Dunbartonshire Leven, the Ayrshire rivers (Irvine, Ayr, Doon), the Fife Eden, the Angus North and South
-  Esk, and the Nith, Annan and Galloway Dee (slug `dee-galloway`). Many share names with English
+  Esk, and the Nith, Annan and Galloway Dee (slug `dee-galloway`; the other is the Aberdeenshire Dee, slug `dee`, both
+  OS's "River Dee" in `os_name`). Many share names with English
   or other Scottish rivers, so each main river's mouth hint matters. Scotland has SEPA levels, rainfall and bathing
   waters (with samples while switched on) but no flood warnings yet. Wales has the Taff and Usk, the Wye (with the
   Irfon, Ithon, Lugg and Monnow, running on into England to Monmouth), the Tawe, Neath (with the Mellte), Towy, Teifi
@@ -510,7 +528,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   connected links the main stem runs from the flow sink nearest the parent or hint to the node furthest from it along
   the links, ignoring recorded flow directions, which OS often draws backwards in braided reaches. Rivers that rise
   in Wales carry their Welsh name first (`Afon Hafren`, alternative `River Severn`), so links are matched on
-  `watercourse_name` or `watercourse_name_alternative`. Seed parents before
+  `watercourse_name` or `watercourse_name_alternative`. A tributary sharing its name with another of the same parent
+  (two Yeos join the Taw) takes a mouth hint (`mouth:` on `RiverSeeder::tributary()`), which wins over the parent's
+  line. Seed parents before
   tributaries; `rivers:centrelines` orders them that way. It only fetches rivers without a centreline, so a fix that
   should reach an existing river needs a migration that clears its `centreline` (deploys then refetch it).
 - The Environment Agency also names rivers nationally, so `SyncGaugeStations` drops stations more than 2 km from the

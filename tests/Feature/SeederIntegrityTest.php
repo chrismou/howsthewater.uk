@@ -68,6 +68,18 @@ it('lists a river in other regions only where those regions are seeded, with its
     }
 });
 
+it('gives a mouth hint to each tributary sharing its name with another of the same parent', function () {
+    foreach (RiverSeeder::rivers() as $region => $rivers) {
+        $shared = collect($rivers)->filter(fn (array $river) => isset($river['parent']))
+            ->groupBy(fn (array $river) => $river['parent'].'|'.($river['os_name'] ?? $river['name']))
+            ->filter(fn ($tributaries) => $tributaries->count() > 1);
+
+        foreach ($shared->flatten(1) as $river) {
+            expect($river['mouth'])->not->toBeNull("{$region}/{$river['slug']} shares its name with another tributary of {$river['parent']}");
+        }
+    }
+});
+
 it('gives each bathing water district to one region only', function () {
     (new RegionSeeder())->run();
 
