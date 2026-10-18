@@ -190,8 +190,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   the Graveney's are too far from the Wandle to place, as OS does not map it. A main river can also be listed in
   other regions it runs through (`alsoRunsThrough:` in `RiverSeeder`, region slug to the slugs of its spots there,
   stored in `rivers.also_runs_through`; `Region::riversAlsoRunningThrough()`): the Thames in London (Hampton Court
-  to Putney), the Tweed in Scotland, Wales's Dee in the North West (Chester) and the Hampshire Avon in the South East
-  (Fordingbridge and Ringwood). Those regions' rivers page (`components/river-spots-card`, showing all those spots and
+  to Putney), the Tweed in Scotland, Wales's Dee in the North West (Chester), Wales's Wye in the Midlands (Hereford
+  to Symonds Yat; the Midlands' own is named the Derbyshire Wye, OS's "River Wye") and the Hampshire Avon in the South
+  East (Fordingbridge and Ringwood). Those regions' rivers page (`components/river-spots-card`, showing all those spots and
   no others), overview and Rivers menu link to its one page under its own region, and never add it to their figures.
   Guessed addresses under the listing region (`/london/rivers/thames`, its spots, `/london/thames`) 301 there through
   the routes' `missing()` (`LegacyRiverRedirectController::riverElsewhere()`).

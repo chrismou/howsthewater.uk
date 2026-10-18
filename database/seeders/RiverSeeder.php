@@ -730,7 +730,7 @@ class RiverSeeder extends Seeder
             self::tributary('River Amber', 'derwent'),
             self::tributary('River Ecclesbourne', 'derwent'),
             self::tributary('Markeaton Brook', 'derwent'),
-            self::main('River Wye', 'Peak District', [53.1880, -1.6160], flowsInto: 'derwent'),
+            self::main('Derbyshire Wye', 'Peak District', [53.1880, -1.6160], flowsInto: 'derwent', slug: 'wye', osName: 'River Wye'),
             self::tributary('River Lathkill', 'wye'),
             self::tributary('River Bradford', 'lathkill'),
             self::main('River Dove', 'Peak District', [52.8300, -1.5800], flowsInto: 'trent'),
@@ -885,7 +885,7 @@ class RiverSeeder extends Seeder
             self::main('River Usk', 'South East Wales', [51.5450, -2.9750], ['Afon Wysg']),
 
             // Wye
-            self::main('River Wye', 'Wye', [51.6100, -2.6600], ['Afon Gwy']),
+            self::main('River Wye', 'Wye', [51.6100, -2.6600], ['Afon Gwy'], alsoRunsThrough: ['midlands' => ['hereford', 'ross-on-wye', 'symonds-yat']]),
             self::tributary('Irfon', 'wye', ['Afon Irfon', 'River Irfon']),
             self::tributary('River Ithon', 'wye', ['Afon Ieithon']),
             self::tributary('Afon Llynfi', 'wye', ['Llynfi River', 'River Llynfi']),
