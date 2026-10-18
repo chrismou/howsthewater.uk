@@ -160,7 +160,9 @@ class RiverSeeder extends Seeder
     private static function thamesValley(): array
     {
         return [
-            self::main('River Thames', 'Thames', [51.5055, -0.0880], ['River Isis', 'Seacourt Stream', 'Shill Brook'], alsoRunsThrough: ['london' => ['hampton-court', 'kingston-upon-thames', 'teddington-lock']]),
+            // Never clear the Thames's centreline: OS splits the tidal Thames into pieces the reader cannot rebuild (it runs
+            // them backwards from Erith), so its stored line, source to London Bridge, came from an earlier reader.
+            self::main('River Thames', 'Thames', [51.5055, -0.0880], ['River Isis', 'Seacourt Stream', 'Shill Brook'], alsoRunsThrough: ['london' => ['hampton-court', 'kingston-upon-thames', 'teddington-lock', 'richmond', 'kew', 'hammersmith', 'putney']]),
             self::tributary('River Churn', 'thames'),
             self::tributary('River Coln', 'thames'),
             self::tributary('River Leach', 'thames'),
@@ -443,7 +445,7 @@ class RiverSeeder extends Seeder
             self::main('River Piddle', 'Dorset rivers', [50.6930, -2.0950]),
 
             // Hampshire Avon, from the Vale of Pewsey through Salisbury to Christchurch
-            self::main('Hampshire Avon', 'Hampshire Avon', [50.7330, -1.7720], ['Hampshire Avon River', 'Hampshire Avon, River'], osName: 'River Avon'),
+            self::main('Hampshire Avon', 'Hampshire Avon', [50.7330, -1.7720], ['Hampshire Avon River', 'Hampshire Avon, River'], alsoRunsThrough: ['south-east' => ['fordingbridge', 'ringwood']], osName: 'River Avon'),
             self::tributary('River Nadder', 'hampshire-avon'),
             self::tributary('River Wylye', 'nadder'),
             self::tributary('River Bourne', 'hampshire-avon'),
@@ -909,7 +911,7 @@ class RiverSeeder extends Seeder
             self::tributary('Afon Lledr', 'conwy', ['River Lledr']),
 
             // Dee
-            self::main('River Dee', 'Dee', [53.2200, -3.0700], ['Afon Dyfrdwy']),
+            self::main('River Dee', 'Dee', [53.2200, -3.0700], ['Afon Dyfrdwy'], alsoRunsThrough: ['north-west' => ['chester-meadows']]),
             self::main('Afon Tryweryn', 'Dee', [52.9100, -3.6000], ['River Tryweryn'], flowsInto: 'dee'),
             self::tributary('Afon Alwen', 'dee', ['River Alwen']),
             self::tributary('River Ceiriog', 'dee', ['Afon Ceiriog']),

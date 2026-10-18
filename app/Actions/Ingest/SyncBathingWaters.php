@@ -18,7 +18,8 @@ use Illuminate\Support\Str;
 
 /**
  * Reads the whole bathing water register in one request and keeps the
- * sites we cover up to date: beaches in a region's districts, lake sites
+ * sites we cover up to date: beaches in a region's districts (or, with no
+ * district, near a beach that is), lake sites
  * on a seeded lake, and river sites on one of our spots. Each run stores
  * the latest sample, so sample history builds up between history fetches.
  * Scotland's sites come from SEPA's map service, without samples, which
@@ -30,6 +31,12 @@ class SyncBathingWaters
      * A river bathing water further than this from every spot is not ours.
      */
     public const MAX_SPOT_DISTANCE_METRES = 1500;
+
+    /**
+     * A beach the register gives no district (Canvey Island Foreshore) takes
+     * the region of the nearest placed beach within this distance.
+     */
+    public const NEAREST_BEACH_METRES = 15000;
 
     public function __construct(private BathingWaterClient $client, private SepaBathingWaterClient $sepa)
     {
@@ -77,9 +84,10 @@ class SyncBathingWaters
 
         $sites = 0;
         $samples = 0;
+        $placements = $register->mapWithKeys(fn (BathingWaterData $data) => [$data->eubwid => $this->placement($data, $regions, $lakes, $spots)]);
 
         foreach ($register as $data) {
-            $placement = $this->placement($data, $regions, $lakes, $spots);
+            $placement = $placements[$data->eubwid] ?? $this->nearestBeachPlacement($data, $register, $placements);
 
             if ($placement === null) {
                 continue;
@@ -154,6 +162,30 @@ class SyncBathingWaters
         ])->all();
 
         return $rows === [] ? 0 : BathingWaterSample::query()->insertOrIgnore($rows);
+    }
+
+    /**
+     * For a beach without a district, the region of the nearest beach the
+     * register did place, within NEAREST_BEACH_METRES.
+     *
+     * @param  Collection<int, BathingWaterData>  $register
+     * @param  Collection<string, array{region_id: int, lake_id: int|null, spot_id: int|null}|null>  $placements
+     * @return array{region_id: int, lake_id: int|null, spot_id: int|null}|null
+     */
+    private function nearestBeachPlacement(BathingWaterData $data, Collection $register, Collection $placements): ?array
+    {
+        if ($data->kind?->isBeach() !== true || $data->districts !== []) {
+            return null;
+        }
+
+        $nearest = $register
+            ->filter(fn (BathingWaterData $other) => $other->kind?->isBeach() === true && ($placements[$other->eubwid] ?? null) !== null)
+            ->map(fn (BathingWaterData $other) => ['eubwid' => $other->eubwid, 'distance' => Coordinates::distanceMetres($data->latitude, $data->longitude, $other->latitude, $other->longitude)])
+            ->filter(fn (array $candidate) => $candidate['distance'] <= self::NEAREST_BEACH_METRES)
+            ->sortBy('distance')
+            ->first();
+
+        return $nearest === null ? null : $placements[$nearest['eubwid']];
     }
 
     /**

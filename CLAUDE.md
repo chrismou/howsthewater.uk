@@ -163,8 +163,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
 - Data is ingested in the background by scheduled artisan commands (see `routes/console.php`) and served from MySQL.
   Pages never call third-party APIs at request time.
 - Rivers are seeded per region: Yorkshire's main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse,
-  Esk, Hull) and the Thames (source to Teddington, mouth hint in central London because the tidal Thames is split into
-  pieces too far apart to join), the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
+  Esk, Hull) and the Thames (source to London Bridge, with tidal spots below Teddington from Richmond to Putney, mouth
+  hint in central London because the tidal Thames is split into pieces too far apart to join; today's reader would
+  build it backwards from Erith, so its stored line must never be cleared), the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
   Utilities, mouths at the head of each estuary), and the North East's Tyne (with the North and South Tyne flowing
   into it), Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Tweed, with the Till flowing into the Tweed (Northumbrian
   Water, plus Scottish Water for the Tweed, which runs mostly through Scotland; its Scottish stretch has overflows and
@@ -184,13 +185,14 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   London has Thames Water's rivers that join the tidal Thames below Teddington, where the Thames Valley's spots stop,
   so none flows into a Thames Valley spot: the Lea (OS's name; Thames Water writes "River Lee"), with the Stort, Rib,
   Ash, Beane, Mimram and Pymme's Brook, the Roding, the Brent and Crane, the Wandle, Beverley Brook and Ravensbourne,
-  and Kent's Darent with the Cray. It has no designated bathing waters. Brooks OS does not map (Dagenham, Stonebridge,
+  and Kent's Darent with the Cray, plus Hampstead Heath's three bathing ponds as one lake. Brooks OS does not map (Dagenham, Stonebridge,
   Mitchell, Decoy, Edgware) are aliases of the river they run into, as their overflows sit within the distance check;
   the Graveney's are too far from the Wandle to place, as OS does not map it. A main river can also be listed in
   other regions it runs through (`alsoRunsThrough:` in `RiverSeeder`, region slug to the slugs of its spots there,
   stored in `rivers.also_runs_through`; `Region::riversAlsoRunningThrough()`): the Thames in London (Hampton Court
-  down) and the Tweed in Scotland. Those regions' rivers page (`components/river-spots-card`, showing only those
-  spots), overview and Rivers menu link to its one page under its own region, and never add it to their figures.
+  to Putney), the Tweed in Scotland, Wales's Dee in the North West (Chester) and the Hampshire Avon in the South East
+  (Fordingbridge and Ringwood). Those regions' rivers page (`components/river-spots-card`, showing all those spots and
+  no others), overview and Rivers menu link to its one page under its own region, and never add it to their figures.
   Guessed addresses under the listing region (`/london/rivers/thames`, its spots, `/london/thames`) 301 there through
   the routes' `missing()` (`LegacyRiverRedirectController::riverElsewhere()`).
   The South West has South West Water's rivers in Devon and Cornwall: the Dartmoor rivers (the Dart, with the East
@@ -268,7 +270,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   gives each Scottish site its council area (the Scotland region's `bathing_water_districts`) and names the loch for
   the three inland sites (`lakeName`, since Luss Bay does not start with Loch Lomond). Bathing waters carry an
   `agency`; the EA history backfill skips SEPA sites. `BathingWater` holds every site we track:
-  beaches (coastal and estuary) belong to the region whose `bathing_water_districts` lists their district, lake sites
+  beaches (coastal and estuary) belong to the region whose `bathing_water_districts` lists their district (one the
+  register gives no district, like Canvey Island Foreshore, takes the region of the nearest placed beach within
+  15 km, `SyncBathingWaters::NEAREST_BEACH_METRES`), lake sites
   to a seeded `Lake` (`LakeSeeder`, matched by name prefix), and river sites to a spot within 1.5 km, which then shows
   them. `WaterBodyConditionsService` builds `BeachConditions` and `LakeConditions` (cached through
   `ConditionsCache::remember()`): the bathing water record plus `NearbyOverflows`, every monitor within 3 km by
@@ -542,7 +546,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   chain's end), so a line never doubles back; a migration clears an existing river's centreline to apply it. Seed
   parents before
   tributaries; `rivers:centrelines` orders them that way. It only fetches rivers without a centreline, so a fix that
-  should reach an existing river needs a migration that clears its `centreline` (deploys then refetch it).
+  should reach an existing river needs a migration that clears its `centreline` (deploys then refetch it). Before
+  clearing one, compare the reader's new line with the stored one (ends, length, largest jump), as stored lines come
+  from several readers; never clear the Thames's.
 - The Environment Agency also names rivers nationally, so `SyncGaugeStations` drops stations more than 2 km from the
   centreline. Rivers are only searched for gauges once they have a centreline.
 - New rivers, spots and monitors need no manual commands. Rivers record `gauges_discovered_at` and spots

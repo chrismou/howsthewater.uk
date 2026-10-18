@@ -96,6 +96,21 @@ it('tracks beaches in a region, lake sites on a lake and river sites on a spot, 
         ->and(BathingWater::query()->where('name', 'like', 'Wharfe%')->value('spot_id'))->toBe($spot->id);
 });
 
+it('places a beach the register gives no district in the region of the nearest placed beach', function () {
+    $east = Region::factory()->create(['slug' => 'east-of-england', 'bathing_water_districts' => ['Southend-on-Sea']]);
+
+    fakeBathingWaterApi([
+        bathingWaterItem('uke0000-06000', 'Southend Jubilee Beach', 'CoastalBathingWater', ['Southend-on-Sea'], 51.533, 0.716),
+        bathingWaterItem('uke0000-07000', 'Canvey Island Foreshore', 'CoastalBathingWater', [], 51.511, 0.593),
+        bathingWaterItem('uke0000-08000', 'Far Away Foreshore', 'CoastalBathingWater', [], 50.0, -5.0),
+    ]);
+
+    $this->artisan('ingest:bathing-waters --quick')->assertSuccessful();
+
+    expect(BathingWater::query()->where('name', 'Canvey Island Foreshore')->value('region_id'))->toBe($east->id)
+        ->and(BathingWater::query()->where('name', 'Far Away Foreshore')->exists())->toBeFalse();
+});
+
 it('skips the history backfill with --quick, leaving it for a later run', function () {
     Region::factory()->create(['slug' => 'yorkshire', 'bathing_water_districts' => ['North Yorkshire']]);
     fakeBathingWaterApi([bathingWaterItem('uke0000-01000', 'Scarborough South Bay', 'CoastalBathingWater', ['North Yorkshire'], 54.28, -0.40)]);

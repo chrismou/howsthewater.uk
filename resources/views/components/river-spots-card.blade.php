@@ -6,7 +6,8 @@
 @props(['river', 'regionSlug', 'spotSlugs' => []])
 
 @php
-    $shownSpots = ($spotSlugs === [] ? $river->spots : $river->spots->whereIn('slug', $spotSlugs)->values())->take(6);
+    // A river's spots in another region are a short list picked for it, so they all show; otherwise its first six.
+    $shownSpots = $spotSlugs === [] ? $river->spots->take(6) : $river->spots->whereIn('slug', $spotSlugs)->values();
 @endphp
 
 <div class="overflow-hidden rounded-lg border border-line bg-surface">

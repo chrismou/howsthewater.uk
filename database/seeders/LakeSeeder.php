@@ -41,6 +41,9 @@ class LakeSeeder extends Seeder
                 ['name' => 'Llyn Padarn', 'latitude' => 53.1290, 'longitude' => -4.1250, 'description' => 'The lake below Snowdon at Llanberis, with the bathing water on its northern shore.', 'gauge_reference' => null],
                 ['name' => 'Llanishen Reservoir', 'latitude' => 51.5310, 'longitude' => -3.1740, 'description' => 'The reopened reservoir in north Cardiff, used for open water swimming.', 'gauge_reference' => null],
             ],
+            'london' => [
+                ['name' => 'Hampstead Heath', 'latitude' => 51.5610, 'longitude' => -0.1640, 'description' => 'The Heath\'s three swimming ponds: the Ladies\', the Men\'s and the Mixed.', 'gauge_reference' => null],
+            ],
             'wessex' => [
                 ['name' => 'Henleaze Lake', 'latitude' => 51.4946, 'longitude' => -2.6057, 'description' => 'A former limestone quarry in north Bristol, swum in by its members\' club.', 'gauge_reference' => null],
             ],

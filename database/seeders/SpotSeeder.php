@@ -934,6 +934,7 @@ class SpotSeeder extends Seeder
                 ['name' => 'Tadpole Bridge', 'latitude' => 51.7112, 'longitude' => -1.4631, 'description' => 'Quiet upper Thames reach by the Trout inn.'],
                 ['name' => 'Newbridge', 'latitude' => 51.7099, 'longitude' => -1.4180, 'description' => 'Where the Windrush meets the Thames.'],
                 ['name' => 'Bablock Hythe', 'latitude' => 51.7362, 'longitude' => -1.3736, 'description' => 'Old ferry crossing west of Oxford.'],
+                ['name' => 'Wolvercote', 'latitude' => 51.7792, 'longitude' => -1.2994, 'description' => 'The Thames by Wolvercote and Godstow, above Port Meadow.'],
                 ['name' => 'Port Meadow, Oxford', 'latitude' => 51.7663, 'longitude' => -1.2792, 'description' => 'Common land and a long-standing swimming spot.'],
                 ['name' => 'Sandford Lock', 'latitude' => 51.7113, 'longitude' => -1.2329, 'description' => 'Below Oxford, by the lasher.'],
                 ['name' => 'Abingdon', 'latitude' => 51.6685, 'longitude' => -1.2805, 'description' => 'Abbey Meadows and the town bridge.'],
@@ -953,6 +954,11 @@ class SpotSeeder extends Seeder
                 ['name' => 'Hampton Court', 'latitude' => 51.4026, 'longitude' => -0.3400, 'description' => 'By the palace, below the Mole.'],
                 ['name' => 'Kingston upon Thames', 'latitude' => 51.4110, 'longitude' => -0.3089, 'description' => 'Canbury Gardens and the town bridge.'],
                 ['name' => 'Teddington Lock', 'latitude' => 51.4303, 'longitude' => -0.3226, 'description' => 'The tidal limit of the Thames.'],
+                // The tidal Thames through London, listed in London too (RiverSeeder's alsoRunsThrough).
+                ['name' => 'Richmond', 'latitude' => 51.4576, 'longitude' => -0.3074, 'description' => 'The riverside below Richmond Hill.'],
+                ['name' => 'Kew', 'latitude' => 51.4870, 'longitude' => -0.2870, 'description' => 'Strand-on-the-Green by Kew Bridge.'],
+                ['name' => 'Hammersmith', 'latitude' => 51.4880, 'longitude' => -0.2300, 'description' => 'The bridge and the riverside at Hammersmith.'],
+                ['name' => 'Putney', 'latitude' => 51.4677, 'longitude' => -0.2150, 'description' => 'The embankment where the Boat Race starts.'],
             ],
         ];
     }
@@ -1025,6 +1031,7 @@ class SpotSeeder extends Seeder
                 ['name' => 'Hampsthwaite', 'latitude' => 54.0277, 'longitude' => -1.6035, 'description' => 'Village bridge and riverside green.'],
                 ['name' => 'Nidd Gorge', 'latitude' => 54.0208, 'longitude' => -1.5237, 'description' => 'Wooded gorge between Bilton and Knaresborough.'],
                 ['name' => 'Knaresborough', 'latitude' => 54.0075, 'longitude' => -1.4706, 'description' => 'Waterside below the castle and viaduct.'],
+                ['name' => 'Knaresborough Lido', 'latitude' => 53.9982, 'longitude' => -1.4517, 'description' => 'The riverside lido below the town, a designated bathing water.'],
                 ['name' => 'Cattal', 'latitude' => 53.9812, 'longitude' => -1.3169, 'description' => 'Cattal bridge and the lower Nidd.'],
                 ['name' => 'Nun Monkton', 'latitude' => 54.0144, 'longitude' => -1.2183, 'description' => 'Where the Nidd meets the Ouse.'],
             ],
