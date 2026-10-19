@@ -47,6 +47,9 @@
         <div class="mt-4 h-24 text-accent" data-sparkline="{{ json_encode($sparkline) }}"></div>
         <p class="mt-2 text-xs text-muted">
             {{ $level->station->label }} gauge, read {{ $level->latestAt->diffForHumans() }}. 48 hour trend.
+            @if ($level->station->agencyPageUrl() !== null)
+                <a href="{{ $level->station->agencyPageUrl() }}" rel="noopener" class="text-accent hover:underline">Longer history on {{ $level->station->agencyPageName() }}</a>.
+            @endif
         </p>
         @if ($level->isStale())
             <p class="mt-3 rounded-md border border-warn-line bg-warn-bg px-3 py-2 text-sm text-warn-text" role="status">

@@ -33,6 +33,18 @@ class RainfallStation extends Model
     /** @use HasFactory<RainfallStationFactory> */
     use HasFactory;
 
+    /**
+     * The gauge's name as it reads in a sentence ("the Otley gauge"), or
+     * "nearby" for a gauge the agency gives no name.
+     */
+    public function nameInSentence(): string
+    {
+        return $this->label === self::UNNAMED_LABEL ? 'nearby' : $this->label;
+    }
+
+    /** The label we store when the agency gives a gauge no name, as it does for most EA rain gauges. */
+    public const string UNNAMED_LABEL = 'Rainfall station';
+
     protected $fillable = [
         'external_id',
         'network',

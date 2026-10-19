@@ -90,6 +90,14 @@ it('joins each page into one graph whose WebPage points at its place, trail and 
     expect($trail)->toBe(['All rivers', 'Scotland', 'Rivers', 'River Tay', 'Dunkeld']);
     $response->assertSeeInOrder(['aria-label="Breadcrumb"', 'All rivers', 'Scotland', 'Rivers', 'River Tay', '</nav>'], false);
 
-    expect(structuredData($this->get(route('about'))))->toHaveKey('AboutPage');
+    // Every page names the site's publisher, writes the home page's address one way, and /about has its trail too.
+    expect($graph['WebSite']['publisher']['@id'])->toBe(url('/').'/#organization')
+        ->and($graph['BreadcrumbList']['itemListElement'][0]['item'])->toBe(route('hubs.rivers'));
+
+    $about = structuredData($this->get(route('about')));
+    expect($about)->toHaveKey('AboutPage')
+        ->and(collect($about['BreadcrumbList']['itemListElement'])->pluck('item')->all())->toBe([url('/').'/', route('about')])
+        ->and($about['AboutPage']['breadcrumb']['@id'])->toBe($about['BreadcrumbList']['@id']);
+    expect(structuredData($this->get(route('home')))['WebPage']['url'])->toBe(url('/').'/');
     $this->get(route('search', ['q' => 'x']))->assertDontSee('application/ld+json', false);
 });

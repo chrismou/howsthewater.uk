@@ -100,7 +100,7 @@ it('keeps place descriptions short for long names, and ends every title with the
     }
 
     expect(pageMetadata($this->get(route('spots.show', [$region, $river, $short])))['title'])->toBe('Alston, River South Tyne: swimming, river level and spills - '.config('app.name'))
-        ->and(pageMetadata($this->get(route('beaches.show', [$region, $scottish])))['description'])->toStartWith('SEPA classification and sample results');
+        ->and(pageMetadata($this->get(route('beaches.show', [$region, $scottish])))['description'])->toStartWith('Aberdour Harbour (Black Sands) beach: rated Good in 2025 by SEPA');
 });
 
 it('leads with the overflow state and names the time and source of the monitor data', function () {
@@ -122,6 +122,21 @@ it('leads with the overflow state and names the time and source of the monitor d
         ->assertSee('<strong class="font-semibold text-ink">1 overflow upstream is discharging now</strong>, with <strong class="font-semibold text-ink">2 spills in the last 48 hours</strong>.', false)
         ->assertSeeText('2 Yorkshire Water monitors upstream, data from 08:58 BST.')
         ->assertSee('<time datetime="2026-10-16T07:58:00+00:00">', false);
+});
+
+it('dates a source line from the previous UK day in the hour after midnight, when UTC is still on that day', function () {
+    $region = Region::factory()->create(['slug' => 'yorkshire']);
+    $river = River::factory()->create(['region_id' => $region->id, 'name' => 'River Wharfe', 'slug' => 'wharfe']);
+    $spot = Spot::factory()->create(['river_id' => $river->id, 'name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 50000]);
+    $this->travelTo(Carbon::parse('2026-10-17 00:30', 'Europe/London'));
+    OverflowMonitor::factory()->create([
+        'river_id' => $river->id, 'river_metres' => 40000, 'company' => 'Yorkshire Water',
+        'source_updated_at' => Carbon::parse('2026-10-16 23:50', 'Europe/London')->utc(),
+    ]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSeeText('data from 23:50 BST, 16 October 2026.');
 });
 
 it('says when monitors are offline or their data is old, and never counts offline ones as not discharging', function () {
@@ -206,6 +221,7 @@ it('asks training-only AI crawlers to stay away and leaves search and answer cra
     expect($blocked)->toContain('User-agent: ClaudeBot')->toContain('Disallow: /')
         ->and($blocked)->not->toContain('OAI-SearchBot')->not->toContain('PerplexityBot')->not->toContain('Googlebot')->not->toContain('User-agent: Google-Extended')
         ->and($robots)->toContain("User-agent: *\nDisallow:\n")
+        ->and($robots)->toContain('Content-Signal: search=yes, ai-input=yes, ai-train=no')
         ->and($robots)->toContain('Sitemap: https://howsthewater.uk/sitemap.xml');
 });
 

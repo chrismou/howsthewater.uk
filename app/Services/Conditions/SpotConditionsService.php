@@ -83,6 +83,7 @@ class SpotConditionsService
             spillsLast48HoursCount: $this->countEventsSince($countedEvents, now()->subHours(48)),
             spillsLast30DaysCount: $countedEvents->count(),
             recentSpillEvents: $recentEvents,
+            countedSpillsByMonitor: $countedEvents->countBy('overflow_monitor_id'),
             dailyHistory: $this->spillHistory->dailyBreakdown($countedEvents, recordedFrom: $this->spillHistory->recordedFrom($monitors->map(fn (UpstreamMonitorSummary $summary) => $summary->monitor))),
             level: $spot->gaugeStation !== null ? $this->levelSummariser->summarise($spot->gaugeStation) : null,
             rainfall: $spot->rainfallStation !== null ? $this->rainfallSummariser->summarise($spot, $spot->rainfallStation) : null,

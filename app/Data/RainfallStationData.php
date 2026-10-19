@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Enums\Agency;
+use App\Models\RainfallStation;
 
 final readonly class RainfallStationData
 {
@@ -43,7 +44,7 @@ final readonly class RainfallStationData
     {
         return new self(
             externalId: GaugeStationData::NRW_PREFIX.$station['location'],
-            label: is_string($station['nameEN'] ?? null) && $station['nameEN'] !== '' ? $station['nameEN'] : 'Rainfall station',
+            label: is_string($station['nameEN'] ?? null) && $station['nameEN'] !== '' ? $station['nameEN'] : RainfallStation::UNNAMED_LABEL,
             gridReference: is_string($station['ngr'] ?? null) && $station['ngr'] !== '' ? $station['ngr'] : null,
             latitude: (float) $station['latitude'],
             longitude: (float) $station['longitude'],
@@ -60,7 +61,7 @@ final readonly class RainfallStationData
     {
         return new self(
             externalId: (string) ($item['stationReference'] ?? $item['notation']),
-            label: self::firstString($item['label'] ?? 'Rainfall station'),
+            label: self::firstString($item['label'] ?? RainfallStation::UNNAMED_LABEL),
             gridReference: self::firstStringOrNull($item['gridReference'] ?? null),
             latitude: (float) self::firstScalar($item['lat']),
             longitude: (float) self::firstScalar($item['long']),

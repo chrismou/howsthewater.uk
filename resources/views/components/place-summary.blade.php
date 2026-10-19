@@ -7,8 +7,9 @@
 
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
+    // Today is a UK day, so a reading from late yesterday never loses its date in the hour after midnight.
     $time = fn ($moment) => '<time datetime="'.$moment->copy()->utc()->toIso8601String().'">'
-        .e($moment->copy()->timezone($timezone)->format($moment->isSameDay(now()) ? 'H:i T' : 'H:i T, j F Y')).'</time>';
+        .e($moment->copy()->timezone($timezone)->format($moment->copy()->timezone($timezone)->isSameDay(now($timezone)) ? 'H:i T' : 'H:i T, j F Y')).'</time>';
     // Each run is escaped; bold runs are the headline facts.
     $render = fn (array $runs) => implode('', array_map(fn (array $run) => $run[1] ? '<strong class="font-semibold text-ink">'.e($run[0]).'</strong>' : e($run[0]), $runs));
     $sources = array_values(array_filter([

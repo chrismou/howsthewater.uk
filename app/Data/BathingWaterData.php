@@ -103,7 +103,7 @@ final readonly class BathingWaterData
             eubwid: (string) $item['eubwidNotation'],
             samplingPoint: basename((string) ($point['_about'] ?? '')),
             kind: BathingWaterKind::fromTypes(is_array($types) ? $types : [$types]),
-            name: (string) self::text($item['name'] ?? $item['label'] ?? ''),
+            name: self::siteName((string) self::text($item['name'] ?? $item['label'] ?? '')),
             districts: array_values(array_filter(array_map(
                 fn ($district) => is_array($district) ? self::text($district['name'] ?? null) : null,
                 is_array($item['district'] ?? null) ? $item['district'] : [],
@@ -147,6 +147,15 @@ final readonly class BathingWaterData
         $text = self::text($value);
 
         return $text === null ? null : Carbon::parse($text)->startOfDay();
+    }
+
+    /**
+     * "Paignton Paignton Sands" reads as "Paignton Sands": the register
+     * sometimes puts the town before a site already named after it.
+     */
+    private static function siteName(string $name): string
+    {
+        return (string) preg_replace('/^(\S+)\s+(?=\1\s)/iu', '', trim($name));
     }
 
     /**

@@ -196,3 +196,16 @@ it('paces history requests between sites', function () {
 
     Sleep::assertSleptTimes(2);
 });
+
+it('drops a town the register repeats before a site already named after it', function () {
+    Region::factory()->create(['slug' => 'south-west', 'bathing_water_districts' => ['Torbay']]);
+
+    fakeBathingWaterApi([
+        bathingWaterItem('uke0000-06000', 'Paignton Paignton Sands', 'CoastalBathingWater', ['Torbay'], 50.43, -3.56),
+        bathingWaterItem('uke0000-07000', 'Paignton Preston Sands', 'CoastalBathingWater', ['Torbay'], 50.45, -3.56),
+    ]);
+
+    $this->artisan('ingest:bathing-waters --quick')->assertSuccessful();
+
+    expect(BathingWater::query()->orderBy('name')->pluck('slug', 'name')->all())->toBe(['Paignton Preston Sands' => 'paignton-preston-sands', 'Paignton Sands' => 'paignton-sands']);
+});

@@ -28,10 +28,12 @@
                 <dt class="sr-only">Upstream monitors</dt>
                 <dd>{{ $conditions->upstreamMonitors->count() }} upstream {{ \Illuminate\Support\Str::plural('monitor', $conditions->upstreamMonitors->count()) }}</dd>
             </div>
-            <div>
-                <dt class="sr-only">Spills in last 30 days</dt>
-                <dd>{{ $conditions->spillsLast30DaysCount }} {{ \Illuminate\Support\Str::plural('spill', $conditions->spillsLast30DaysCount) }} in 30 days</dd>
-            </div>
+            @if ($conditions->upstreamMonitors->isNotEmpty())
+                <div>
+                    <dt class="sr-only">Spills in last 30 days</dt>
+                    <dd>{{ $conditions->spillsLast30DaysCount }} {{ \Illuminate\Support\Str::plural('spill', $conditions->spillsLast30DaysCount) }} in 30 days</dd>
+                </div>
+            @endif
         @endif
         <div>
             <dt class="sr-only">River level</dt>

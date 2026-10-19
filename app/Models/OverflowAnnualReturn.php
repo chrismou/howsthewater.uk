@@ -62,6 +62,16 @@ class OverflowAnnualReturn extends Model
         ];
     }
 
+    /**
+     * The latest year any return is held for, or null before the first import.
+     */
+    public static function latestYear(): ?int
+    {
+        $year = once(fn () => self::query()->max('year'));
+
+        return $year === null ? null : (int) $year;
+    }
+
     /** @return BelongsTo<OverflowMonitor, $this> */
     public function overflowMonitor(): BelongsTo
     {

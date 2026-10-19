@@ -15,6 +15,7 @@ final readonly class NearbyOverflows
     /**
      * @param  Collection<int, NearbyMonitorSummary>  $monitors  Nearest first
      * @param  Collection<int, SpillEvent>  $recentSpillEvents  Most recent first, including the feed's latest when we first saw an overflow
+     * @param  Collection<int, int>  $countedSpillsByMonitor  Counted spills in the last 30 days, by monitor id
      * @param  int  $daysWithSpillsLast30  UK days in the last 30 with a counted spill running
      */
     public function __construct(
@@ -26,6 +27,7 @@ final readonly class NearbyOverflows
         public int $spillsLast48HoursCount,
         public int $spillsLast30DaysCount,
         public Collection $recentSpillEvents,
+        public Collection $countedSpillsByMonitor,
         public ?Carbon $dataUpdatedAt,
         public int $daysWithSpillsLast30 = 0,
     ) {

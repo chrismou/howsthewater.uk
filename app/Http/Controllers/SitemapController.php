@@ -88,8 +88,8 @@ class SitemapController extends Controller
     }
 
     /**
-     * Every overflow some region's pages show, leaving out those whose page says nothing of its own yet (no name, no
-     * annual return and no spill recorded), which are noindexed.
+     * Every overflow some region's pages show, leaving out those whose page has too little of its own for search
+     * results (OverflowMonitor::isWorthIndexing()), which are noindexed.
      *
      * @param  Collection<int, Region>  $regions
      * @return Collection<int, OverflowMonitor>
@@ -98,7 +98,7 @@ class SitemapController extends Controller
     {
         return OverflowMonitor::query()
             ->where(fn ($query) => $query->whereIn('river_id', $regionOverflows->riverIdsQuery($regions))->orWhereIn('id', OverflowMonitorPlace::query()->select('overflow_monitor_id')))
-            ->where(fn ($query) => $query->whereNotNull('name')->orWhereNotNull('return_name')->orWhereHas('annualReturns')->orWhereHas('spillEvents'))
+            ->worthIndexing()
             ->orderBy('external_id')
             ->get(['id', 'external_id', 'latest_event_started_at', 'latest_event_ended_at']);
     }

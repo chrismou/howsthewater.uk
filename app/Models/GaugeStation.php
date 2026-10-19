@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Data\GaugeStationData;
 use App\Enums\Agency;
 use Database\Factories\GaugeStationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,10 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
  * @property string $external_id
+ * @property string|null $rloi_id The Environment Agency's River Levels on the Internet id, for its own gauge page
  * @property Agency $network
  * @property int|null $river_id
  * @property string $label
@@ -37,6 +40,7 @@ class GaugeStation extends Model
 
     protected $fillable = [
         'external_id',
+        'rloi_id',
         'network',
         'river_id',
         'label',
@@ -71,6 +75,31 @@ class GaugeStation extends Model
     public function isAboveOrdnanceDatum(): bool
     {
         return strcasecmp((string) $this->unit, 'mAOD') === 0;
+    }
+
+    /**
+     * The agency's own public page for this gauge, with its history, or null where we do not know its address yet
+     * (an Environment Agency gauge before station discovery has read its RLOI id).
+     */
+    public function agencyPageUrl(): ?string
+    {
+        return match ($this->network) {
+            Agency::EnvironmentAgency => $this->rloi_id === null ? null : 'https://check-for-flooding.service.gov.uk/station/'.rawurlencode($this->rloi_id),
+            Agency::Sepa => 'https://waterlevels.sepa.org.uk/Station/'.rawurlencode(Str::after($this->external_id, 'SEPA')),
+            Agency::NaturalResourcesWales => 'https://rivers-and-seas.naturalresources.wales/Station/'.rawurlencode(Str::after($this->external_id, GaugeStationData::NRW_PREFIX)),
+        };
+    }
+
+    /**
+     * Who runs the gauge's own page, as a link reads ("on GOV.UK").
+     */
+    public function agencyPageName(): string
+    {
+        return match ($this->network) {
+            Agency::EnvironmentAgency => 'GOV.UK',
+            Agency::Sepa => "SEPA's site",
+            Agency::NaturalResourcesWales => "Natural Resources Wales's site",
+        };
     }
 
     /**

@@ -52,14 +52,23 @@ it('pages the spill log, keeping later pages out of search results', function ()
     $this->get(route('overflows.show', $monitor).'?page=3')->assertNotFound();
 });
 
-it('has pages only for overflows some region shows, and keeps nameless ones with nothing recorded out of search', function () {
+it('has pages only for overflows some region shows, and keeps those without a spill in the last year or two returns out of search', function () {
     $wales = Region::factory()->create(['slug' => 'wales', 'overflow_feeds' => []]);
     $welshRiver = River::factory()->create(['region_id' => $wales->id]);
     $welsh = OverflowMonitor::factory()->create(['external_id' => 'DCWW710', 'river_id' => $welshRiver->id]);
     $unplaced = OverflowMonitor::factory()->create(['river_id' => null]);
     $region = Region::factory()->create();
     $river = River::factory()->create(['region_id' => $region->id]);
-    $quiet = OverflowMonitor::factory()->create(['external_id' => 'YWS09999', 'river_id' => $river->id]);
+    $longAgo = ['latest_event_started_at' => now()->subYears(2), 'latest_event_ended_at' => now()->subYears(2)->addHour()];
+    $quiet = OverflowMonitor::factory()->create(['external_id' => 'YWS09999', 'river_id' => $river->id, ...$longAgo]);
+    // A name and an old return with spills are not enough on their own.
+    $named = OverflowMonitor::factory()->create(['name' => 'Ilkley Road CSO', 'river_id' => $river->id, ...$longAgo]);
+    OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $named->id, 'year' => 2023, 'counted_spills' => 12]);
+    $returned = OverflowMonitor::factory()->create(['river_id' => $river->id, ...$longAgo]);
+    OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $returned->id, 'year' => 2024, 'counted_spills' => 3]);
+    OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $quiet->id, 'year' => 2025, 'counted_spills' => 0]);
+    $recent = OverflowMonitor::factory()->create(['river_id' => $river->id]);
+    $discharging = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'latest_event_started_at' => null]);
 
     $this->get(route('overflows.show', $welsh))->assertNotFound();
     $this->get(route('overflows.show', $unplaced))->assertNotFound();
@@ -67,7 +76,18 @@ it('has pages only for overflows some region shows, and keeps nameless ones with
         ->assertOk()
         ->assertSee('<h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">Storm overflow YWS09999</h1>', false)
         ->assertSee('<meta name="robots" content="noindex">', false);
-    $this->get(route('sitemap'))->assertDontSee(route('overflows.show', $quiet));
+    $this->get(route('overflows.show', $named))->assertOk()->assertSee('<meta name="robots" content="noindex">', false);
+
+    foreach ([$returned, $recent, $discharging] as $indexed) {
+        $this->get(route('overflows.show', $indexed))->assertOk()->assertDontSee('<meta name="robots" content="noindex">', false);
+    }
+
+    $this->get(route('sitemap'))
+        ->assertDontSee(route('overflows.show', $quiet))
+        ->assertDontSee(route('overflows.show', $named))
+        ->assertSee(route('overflows.show', $returned))
+        ->assertSee(route('overflows.show', $recent))
+        ->assertSee(route('overflows.show', $discharging));
 });
 
 it('ends a spill still open on a monitor that has stopped reporting at its last report, and never shows it as live', function () {
@@ -97,6 +117,23 @@ it('says when the rain gauge sent nothing, rather than showing a dry month', fun
         ->assertOk()
         ->assertSee('The Inverewe Garden rain gauge sent no readings in this time.')
         ->assertDontSee('0.0 mm of rain');
+});
+
+it('calls a rain gauge the agency gives no name the nearby gauge, and hides the screen reader tables in a wrapper', function () {
+    $region = Region::factory()->create();
+    $river = River::factory()->create(['region_id' => $region->id]);
+    $rain = RainfallStation::factory()->create(['label' => RainfallStation::UNNAMED_LABEL]);
+    Spot::factory()->create(['river_id' => $river->id, 'river_metres' => 50000, 'rainfall_station_id' => $rain->id]);
+    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 40000]);
+    app(RefreshRegions::class)->handle([$region->id]);
+
+    // A table will not shrink to sr-only's 1px, so on the table itself it widened the page on phones.
+    $this->get(route('overflows.show', $monitor))
+        ->assertOk()
+        ->assertSee('The nearby rain gauge sent no readings in this time.')
+        ->assertDontSee('Rainfall station')
+        ->assertDontSee('<table class="sr-only">', false)
+        ->assertSee('<div class="sr-only">', false);
 });
 
 it('dates our record from when we first saw the overflow, works out uptime, and survives a deleted nearest place', function () {

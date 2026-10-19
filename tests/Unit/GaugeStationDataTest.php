@@ -63,3 +63,10 @@ it('falls back to an mAOD stage when that is all the station has', function () {
     expect($station->measureId)->toBe('L1707A-level-stage-i-15_min-mAOD')
         ->and($station->unit)->toBe('mAOD');
 });
+
+it('keeps the station\'s River Levels on the Internet id for its GOV.UK page', function () {
+    $station = GaugeStationData::fromEnvironmentAgency([...environmentAgencyStation([]), 'RLOIid' => '8276']);
+
+    expect($station->rloiId)->toBe('8276')
+        ->and(GaugeStationData::fromEnvironmentAgency(environmentAgencyStation([]))->rloiId)->toBeNull();
+});

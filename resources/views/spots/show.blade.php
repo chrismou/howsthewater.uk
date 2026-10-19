@@ -30,6 +30,8 @@
 
     // Places whose water company feed we do not read yet show dashes, never zeros that would read as "no spills".
     $covered = $conditions->spillRecency !== \App\Enums\SpillRecency::NotCovered;
+    // With no monitor matched upstream, zero counts would read as a clean record, so spill figures show dashes.
+    $hasMonitors = $covered && $conditions->upstreamMonitors->isNotEmpty();
 
     // The longest title that fits search results' 60 characters: the full one, then a shorter topic, then just the place.
     $place = $spot->name.', '.$spot->river->name;
@@ -85,6 +87,9 @@
             <h2 class="font-display mb-3 text-lg font-semibold">Designated bathing water</h2>
             <x-bathing-water :summary="$conditions->bathingWater" heading />
         </section>
+    @else
+        {{-- Says why there are no samples, so their absence never reads as a clean result. --}}
+        <p class="mb-8 text-sm text-ink-2">Not a designated bathing water, so there are no official water quality samples here. <x-help term="bathing_classification" /></p>
     @endif
 
     <section class="mb-8 rounded-lg border border-line bg-surface p-5">
@@ -113,15 +118,15 @@
         <dl class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Discharging upstream <x-help term="discharging_now" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $conditions->dischargingNowCount > 0 ? 'text-alert' : '' }}">{{ $covered ? $conditions->dischargingNowCount : '-' }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $conditions->dischargingNowCount > 0 ? 'text-alert' : '' }}">{{ $hasMonitors ? $conditions->dischargingNowCount : '-' }}</dd>
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 48h <x-help term="spill" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $covered ? $conditions->spillsLast48HoursCount : '-' }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $hasMonitors ? $conditions->spillsLast48HoursCount : '-' }}</dd>
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 30 days <x-help term="history" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $covered ? $conditions->spillsLast30DaysCount : '-' }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $hasMonitors ? $conditions->spillsLast30DaysCount : '-' }}</dd>
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Upstream monitors <x-help term="upstream" /></dt>
@@ -163,9 +168,11 @@
                 <h2 class="font-display text-lg font-semibold">Last 30 days</h2>
                 <x-help term="history" />
             </div>
-            @if ($covered)
+            @if ($hasMonitors)
                 <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" :recency="$conditions->spillRecency"
                                  :all-url="$conditions->upstreamMonitors->isNotEmpty() ? route('spots.spills', [$spot->river->region, $spot->river, $spot]) : null" />
+            @elseif ($covered)
+                <p class="rounded-lg border border-line bg-surface p-5 text-sm text-ink-2">No spill history, as no storm overflow monitor is matched upstream of this spot.</p>
             @else
                 <p class="rounded-lg border border-line bg-surface p-5 text-sm text-ink-2">No spill history, as we do not read the water company's overflow data here yet. <x-help term="not_covered" /> <x-overflow-map-link :region="$spot->river->region" /></p>
             @endif

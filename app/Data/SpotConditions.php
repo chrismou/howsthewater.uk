@@ -21,6 +21,7 @@ final readonly class SpotConditions
     /**
      * @param  Collection<int, UpstreamMonitorSummary>  $upstreamMonitors  Nearest upstream first
      * @param  Collection<int, SpillEvent>  $recentSpillEvents  Most recent first, within the history window
+     * @param  Collection<int, int>  $countedSpillsByMonitor  Counted spills in the history window, by monitor id
      * @param  Collection<int, SpillHistoryDay>  $dailyHistory  Oldest day first
      * @param  Collection<int, FloodWarningSummary>  $floodWarnings  Most severe first
      */
@@ -33,6 +34,7 @@ final readonly class SpotConditions
         public int $spillsLast48HoursCount,
         public int $spillsLast30DaysCount,
         public Collection $recentSpillEvents,
+        public Collection $countedSpillsByMonitor,
         public Collection $dailyHistory,
         public ?LevelSummary $level,
         public ?RainfallSummary $rainfall,
@@ -43,13 +45,14 @@ final readonly class SpotConditions
     }
 
     /**
-     * Spills each upstream monitor recorded in the history window, by monitor id.
+     * Spills each upstream monitor recorded in the history window, by monitor
+     * id, counting only those the headline counts (SpillHistoryService::counted()).
      *
      * @return Collection<int, int>
      */
     public function spillCountsByMonitor(): Collection
     {
-        return $this->recentSpillEvents->countBy('overflow_monitor_id');
+        return $this->countedSpillsByMonitor;
     }
 
     /**

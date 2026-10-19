@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\DischargingOrder;
 use App\Models\SpillEvent;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -15,13 +16,14 @@ use Illuminate\Support\Collection;
 final readonly class SpillsOverview
 {
     /**
-     * @param  Collection<int, OverflowListing>  $dischargingNow  Longest running first
-     * @param  Collection<int, OverflowListing>  $dischargingNearWaterBodies  Longest running first
+     * @param  Collection<int, OverflowListing>  $dischargingNow  In $order
+     * @param  Collection<int, OverflowListing>  $dischargingNearWaterBodies  In $order
      * @param  Collection<int, SpotSummary>  $spotsWithSpill  Discharging upstream first
      * @param  Collection<int, SpillEvent>  $recentSpills  Most recent first, with the monitor and its river loaded
      */
     public function __construct(
         public string $name,
+        public DischargingOrder $order,
         public Collection $dischargingNow,
         public int $dischargingNowTotal,
         public Collection $dischargingNearWaterBodies,

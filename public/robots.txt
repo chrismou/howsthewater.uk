@@ -16,5 +16,7 @@ Disallow: /
 # training, it decides whether Gemini and Vertex AI can ground their answers in these pages.
 User-agent: *
 Disallow:
+# The same policy as a content signal (contentsignals.org): search and AI answers yes, training no.
+Content-Signal: search=yes, ai-input=yes, ai-train=no
 
 Sitemap: https://howsthewater.uk/sitemap.xml

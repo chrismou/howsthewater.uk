@@ -174,6 +174,7 @@ class WaterBodyConditionsService
             spillsLast48HoursCount: $countedEvents->filter(fn (SpillEvent $event) => $event->ended_at === null || $event->ended_at->greaterThanOrEqualTo(now()->subHours(48)))->count(),
             spillsLast30DaysCount: $countedEvents->count(),
             recentSpillEvents: $recentEvents,
+            countedSpillsByMonitor: $countedEvents->countBy('overflow_monitor_id'),
             daysWithSpillsLast30: $this->spillHistory->dailyBreakdown($countedEvents)->filter(fn (SpillHistoryDay $day) => $day->spillCount > 0)->count(),
             dataUpdatedAt: $monitors->max(fn (NearbyMonitorSummary $summary) => $summary->monitor->source_updated_at),
         );

@@ -175,6 +175,7 @@ class SyncGaugeStations
     {
         $attributes = [
             'network' => $data->network,
+            'rloi_id' => $data->rloiId,
             'river_id' => $river->id,
             'label' => $data->label,
             'river_name' => $data->riverName,

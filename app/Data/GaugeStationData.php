@@ -23,6 +23,7 @@ final readonly class GaugeStationData
         public ?float $typicalRangeHigh,
         public bool $isActive,
         public Agency $network = Agency::EnvironmentAgency,
+        public ?string $rloiId = null,
     ) {
     }
 
@@ -103,6 +104,7 @@ final readonly class GaugeStationData
             typicalRangeLow: isset($item['stageScale']['typicalRangeLow']) ? (float) $item['stageScale']['typicalRangeLow'] : null,
             typicalRangeHigh: isset($item['stageScale']['typicalRangeHigh']) ? (float) $item['stageScale']['typicalRangeHigh'] : null,
             isActive: str_ends_with((string) ($item['status'] ?? ''), 'statusActive'),
+            rloiId: self::firstStringOrNull($item['RLOIid'] ?? null),
         );
     }
 

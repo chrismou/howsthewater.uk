@@ -208,3 +208,34 @@ it('reads a region\'s beach conditions from the cache in one batch', function ()
 
     expect(count(DB::getQueryLog()))->toBeLessThan(12);
 });
+
+it('leads a beach\'s description with its own classification and nearby overflows', function () {
+    [$region, $beach] = waterBodies();
+    $beach->update(['classification_year' => 2025]);
+
+    $this->get(route('beaches.show', [$region, $beach]))
+        ->assertOk()
+        ->assertSee('<meta name="description" content="Blackpool North beach: rated Poor in 2025 by the Environment Agency, with 1 storm overflow within 3 km. Samples, pollution forecasts and nearby spills.">', false);
+});
+
+it('moves the London lakes out of Thames Valley, and redirects their old addresses and Paignton Sands\'s', function () {
+    $london = Region::factory()->create(['slug' => 'london']);
+    $thamesValley = Region::factory()->create(['slug' => 'thames-valley']);
+    $heath = Lake::factory()->create(['region_id' => $london->id, 'name' => 'Hampstead Heath', 'slug' => 'hampstead-heath']);
+    $ponds = Lake::factory()->create(['region_id' => $thamesValley->id, 'name' => 'Hampstead Heath Ponds', 'slug' => 'hampstead-heath-ponds']);
+    $serpentine = Lake::factory()->create(['region_id' => $thamesValley->id, 'name' => 'The Serpentine', 'slug' => 'the-serpentine']);
+    $ladies = BathingWater::factory()->kind(BathingWaterKind::Lake)->create(['region_id' => $thamesValley->id, 'lake_id' => $ponds->id, 'name' => 'Hampstead Heath (Ladies Pond)']);
+    $hydePark = BathingWater::factory()->kind(BathingWaterKind::Lake)->create(['region_id' => $thamesValley->id, 'lake_id' => $serpentine->id, 'name' => 'The Serpentine - Hyde Park']);
+
+    (require database_path('migrations/2026_10_19_075157_move_the_london_lakes_out_of_thames_valley.php'))->up();
+
+    expect(Lake::query()->find($ponds->id))->toBeNull()
+        ->and($ladies->fresh()->only(['lake_id', 'region_id']))->toBe(['lake_id' => $heath->id, 'region_id' => $london->id])
+        ->and($serpentine->fresh()->region_id)->toBe($london->id)
+        ->and($hydePark->fresh()->region_id)->toBe($london->id);
+
+    $this->get('/thames-valley/lakes/hampstead-heath-ponds')->assertRedirect('/london/lakes/hampstead-heath')->assertStatus(301);
+    $this->get('/thames-valley/lakes/the-serpentine/spills')->assertRedirect('/london/lakes/the-serpentine/spills')->assertStatus(301);
+    $this->get('/south-west/beaches/paignton-paignton-sands/feed')->assertRedirect('/south-west/beaches/paignton-sands/feed')->assertStatus(301);
+    $this->get(route('lakes.show', [$london, $serpentine]))->assertOk();
+});

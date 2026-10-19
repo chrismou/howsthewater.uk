@@ -29,7 +29,7 @@
 
 <x-layouts.app :title="$page->title()" :description="$page->description()" :breadcrumbs="$breadcrumbs" :region="$page->region"
                :noindex="! $page->hasContent() || $spills->currentPage() > 1"
-               :date-modified="$monitor->source_updated_at" :feed="route('overflows.feed', $monitor)" :share-image="$monitor->shareImage">
+               :date-modified="$monitor->latest_event_ended_at ?? $monitor->latest_event_started_at" :feed="route('overflows.feed', $monitor)" :share-image="$monitor->shareImage">
     <div class="mb-6">
         <x-breadcrumbs :items="$breadcrumbs" />
         <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $name }}</h1>
@@ -90,13 +90,13 @@
                 <h2 class="font-display text-lg font-semibold">Last 30 days</h2>
                 <x-help term="history" />
             </div>
-            <x-spill-rain-chart :days="$page->dailyHistory" :rainfall="$page->dailyRainfall" :gauge="$page->rainfallStation?->label" />
+            <x-spill-rain-chart :days="$page->dailyHistory" :rainfall="$page->dailyRainfall" :gauge="$page->rainfallStation?->nameInSentence()" />
 
             <div class="mt-8 mb-3 flex items-center gap-1.5">
                 <h2 class="font-display text-lg font-semibold">Last 12 months</h2>
                 <x-help term="our_record" />
             </div>
-            <x-spill-rain-months :months="$page->months" :notes="$page->notes" :gauge="$page->rainfallStation?->label" />
+            <x-spill-rain-months :months="$page->months" :notes="$page->notes" :gauge="$page->rainfallStation?->nameInSentence()" />
 
             <div class="mt-8 mb-3 flex items-center gap-1.5">
                 <h2 class="font-display text-lg font-semibold">Year by year</h2>

@@ -185,7 +185,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   London has Thames Water's rivers that join the tidal Thames below Teddington, where the Thames Valley's spots stop,
   so none flows into a Thames Valley spot: the Lea (OS's name; Thames Water writes "River Lee"), with the Stort, Rib,
   Ash, Beane, Mimram and Pymme's Brook, the Roding, the Brent and Crane, the Wandle, Beverley Brook and Ravensbourne,
-  and Kent's Darent with the Cray, plus Hampstead Heath's three bathing ponds as one lake. Brooks OS does not map (Dagenham, Stonebridge,
+  and Kent's Darent with the Cray, plus Hampstead Heath's three bathing ponds as one lake and the Serpentine (both
+  first seeded under Thames Valley; their old addresses 301 through `$movedPlaces` in `routes/web.php`, which also
+  takes any later move or rename of a beach or lake). Brooks OS does not map (Dagenham, Stonebridge,
   Mitchell, Decoy, Edgware) are aliases of the river they run into, as their overflows sit within the distance check;
   the Graveney's are too far from the Wandle to place, as OS does not map it. A main river can also be listed in
   other regions it runs through (`alsoRunsThrough:` in `RiverSeeder`, region slug to the slugs of its spots there,
@@ -301,12 +303,16 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   which would otherwise take "feed" or "monitors" as a spot slug. Spot, river, beach and lake pages pass `feed` to the layout for the `<link rel="alternate">`.
 - `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
   green "no spills". Keep that distinction for any new status. A spot is never itself "discharging": wording on
-  spots and rivers says where ("Discharging upstream", "Upstream spill"), counts of monitors say "overflows
-  discharging", beaches and lakes say "nearby", and only an overflow's own status (`OverflowStatus::label()`,
-  `components/overflow-status`) says "Discharging now". A region without overflow feeds
+  spots and rivers says where ("Discharging upstream", "Upstream spill"; on the spills page the heading says it),
+  counts of monitors say "overflows discharging", beaches and lakes say "nearby", and only an overflow's own status
+  (`OverflowStatus::label()`, `components/overflow-status`) says "Discharging now". Anything red that means a
+  discharge right now (the "discharging now" spill badge, an overflow's status, the spills page's "Happening now")
+  starts with `components/live-dot`, a pulsing dot that stays still for reduced motion. A region without overflow feeds
   (`Region::hasOverflowData()`; no region at present) gives `SpillRecency::NotCovered`: pages say "Overflow data not available
   here yet" and show dashes, never zero counts, "no monitored overflows" or a 30-day history, and `RegionSummary`
-  carries `hasOverflowData` for the live bar, region page and cards. Every company's overflows are recorded ahead of
+  carries `hasOverflowData` for the live bar, region page and cards. A covered spot with no monitor matched upstream
+  (and a beach or lake with none nearby) shows dashes for its spill figures too, never a clean-looking zero. Spots
+  that are not designated bathing waters say there are no official samples there. Every company's overflows are recorded ahead of
   its region, so monitors can be positioned on such a region's rivers; `SpotConditionsService`,
   `RiverOverviewService` and `RegionSummaries` count none there, so nothing (the combined live bar included) adds
   them in until the region's feed is switched on. Where `services.unread_overflow_maps` names the
@@ -337,6 +343,8 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   route-bound river, never from `$conditions->spot->river`.
 - Gauges carry a `unit` (`m` for stage above the gauge datum, `mAOD` for height above sea level). Spots link the nearest gauge within 25 km
   along the river (none beyond that, rather than a reading far away) and prefer `m` gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
+  The level card links the agency's own page for the gauge (`GaugeStation::agencyPageUrl()`): GOV.UK's needs the
+  Environment Agency's RLOI id (`rloi_id`, read by station discovery), SEPA's and NRW's take the station number.
 - Stale data: `SpotConditions::overflowDataIsStale()` and `LevelSummary::isStale()` compare the feed timestamp or latest
   reading against `STALE_AFTER_HOURS` (6) at read time, so cached conditions still go stale on schedule. Show the
   warning and the neutral badge wherever a spill status or level is printed: the badge then reads "Overflow data out
@@ -438,9 +446,10 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   as no data, never as a dry day. Figures count only spills that start inside the time `SpillCoverage` says we hold
   (the company's published log, then the live feed from when we first saw the overflow), or are still running when
   that record starts (`SpillCoverage::counts()`); an earlier spill (the feed's latest then, where no log covers it)
-  stays in the log but out of the figures. An overflow with no name, no return and no
-  spill is noindexed and left out of the sitemap
-  (dated by its latest spill). Name an overflow with `components/overflow-link`; link a place with
+  stays in the log but out of the figures. An overflow page is indexed and in the sitemap only while it is
+  discharging, has spilled in the last 12 months or counted spills in either of the two latest returns
+  (`OverflowMonitor::isWorthIndexing()`, `scopeWorthIndexing()` for the sitemap); the rest are noindexed. The sitemap
+  and the page's `dateModified` both date it by its latest spill. Name an overflow with `components/overflow-link`; link a place with
   `OverflowMonitorPlace::placeUrl()`. Overflow pages also chart the last 12 UK months (`components/spill-rain-months`)
   beside the rain gauge's monthly totals (`DailyRainfall::forPeriods()`, one summed query a month; past months cached
   for an hour), marking months we hold no spills for as no data rather than drawing them empty; its hours, bar scale
@@ -457,9 +466,13 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
 - The live bar's spill counts link to `/spills` (every region, `SpillsOverviewService`) or `/{region}/spills`
   (`#discharging`, `#spots`). "Discharging now" lists what the bar counts (overflows on the region's rivers,
   tributaries included), read live while the bar is rebuilt every 15 minutes, so the two can differ briefly after an
-  ingest; overflows discharging near beaches and lakes are listed apart; both show the 100 longest running with the
-  total. Spots come from the cached region summaries; then every spill running or ended in the last 24 hours (the
-  latest 200). The page warns when no overflow behind it has reported for 6 hours, so an empty list never reads as
+  ingest; overflows discharging near beaches and lakes are listed apart. Both show the first 50, newest first so each
+  visit shows what has just started, or longest running first with `?order=longest` (`DischargingOrder`, a plain link
+  above the table). Spots come from the cached region summaries, under a heading that says "upstream", so their pills
+  say only when ("Happening now", "Earlier"); then every spill running or ended in the last 24 hours (the first 100,
+  newest first, found through the index on `spill_events.ended_at`, as the published logs hold millions of spills).
+  Each long list loads its next 200 rows in place (`spills/more-rows`, `more-rows.js`) from `spills.rows` or
+  `spills.region.rows` (`/spills/rows/{list}?offset=`, rows only), which take the same order. The page warns when no overflow behind it has reported for 6 hours, so an empty list never reads as
   "none right now". A region without overflow data has no spills page (404), and the combined page describes its
   coverage rather than naming countries. `spills` and `overflows` are in `Region::RESERVED_SLUGS`.
 - Each spot, beach and lake has a spills page (`spots.spills`, `beaches.spills`, `lakes.spills`, at `.../spills`;
@@ -533,7 +546,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
 - Rainfall: the Environment Agency API's tipping bucket rain gauges (and SEPA's), `ingest:rainfall`. Each spot, beach and lake links to the
   nearest gauge within 20 km (`LinkNearestRainfallStations`, also run by `rivers:positions`); gauge discovery searches
   around all three per region, readings are fetched for any gauge `inUse()`, and totals are sums of 15 minute readings.
-  Spots, beaches and lakes each record `rain_gauges_searched_at`, so new ones are picked up by the next run.
+  Spots, beaches and lakes each record `rain_gauges_searched_at`, so new ones are picked up by the next run. Most EA
+  rain gauges have no name, stored as `RainfallStation::UNNAMED_LABEL`; sentences call those "the nearby gauge"
+  (`RainfallStation::nameInSentence()`).
 - Flood alerts and warnings: the same API's `/id/floods`, `ingest:floods`. `SyncFloodAreas` links each spot to the flood
   areas whose outline comes within 1 km and whose `riverOrSea` names the spot's river (`River::matchesWatercourse()`).
   The whole national feed is read every 15 minutes and `flood_warnings` is replaced with what is in force for linked
@@ -582,7 +597,8 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
 - Bathing waters: the EA register at `environment.data.gov.uk/doc/bathing-water.json`, `ingest:bathing-waters` (hourly).
   One request returns every site's latest classification, sample and pollution risk forecast; each run stores the
   latest sample, and sample and classification history is backfilled per site on first sight (and weekly with
-  `--history`). The same command links each lake to its EA level gauge by `gauge_reference`; the gauge readings sync
+  `--history`). A site the register names with its town twice ("Paignton Paignton Sands") drops the repeat
+  (`BathingWaterData::siteName()`). The same command links each lake to its EA level gauge by `gauge_reference`; the gauge readings sync
   keeps it current. Forecasts only run 15 May to 30 Sep; `BathingWaterSummary::currentRisk()` returns null outside the
   season or once the forecast expires. Copy reports classifications, counts and forecasts, never that water is safe.
 - Ingest failures are logged at `error` level, which the `rollbar` log channel forwards in production (it ignores
@@ -627,8 +643,8 @@ replacing the local database with a copy of live rather than backfilling.
 - Explain data terms with `<x-help term="..." />`, whose glossary lives in `App\View\Components\Help`. Add a term there
   rather than writing one-off explanations in views. The component renders only the `?` button, placed beside a heading
   (heading and button in a flex row), never inside it;
-  each term's text goes once into a hidden glossary at the end of the page, and `tooltip.js` shows it in one shared
-  panel kept on screen, so headings never contain the explanations.
+  each term's text goes once into a hidden glossary at the end of the page (`data-nosnippet`, so search snippets skip
+  it), and `tooltip.js` shows it in one shared panel kept on screen, so headings never contain the explanations.
 - Phones keep the header to two rows: the search box sits behind a search button (`search.js`; without JavaScript it
   links to `/search`, which has its own box on phones). Controls people tap (menus, buttons, the theme toggle) are at
   least 44px tall on phones; small inline ones (help buttons, breadcrumb links) reach further than they are drawn.
@@ -646,7 +662,8 @@ replacing the local database with a copy of live rather than backfilling.
   character limit applies to that unique part, not the site name: search results show about 60 characters, so if they
   cut a title it is the site name that goes, never the place or topic. `og:title` and `twitter:title` leave the site
   name off, since share previews show `og:site_name` or the domain beside them. Meta descriptions stay within 160
-  characters and lead with the place's own facts, since share previews cut them sooner (often around 125). The
+  characters and lead with the place's own facts, since share previews cut them sooner (often around 125): beaches
+  lead with their classification and the overflows within 3 km. The
   layout prints titles, descriptions and image alt text in the head through `$meta`, which escapes `&`, `<`, `>` and
   `"` but leaves apostrophes as typed: Google's AI Overview source cards show an escaped one as "&#039;".
 - Spot H1s name the river ("Ilkley, River Wharfe"), and spot descriptions carry the spot's own facts (distance from
@@ -672,7 +689,8 @@ replacing the local database with a copy of live rather than backfilling.
 - `public/robots.txt` welcomes search engines and AI crawlers that search or fetch pages to answer questions (and
   cite them), and asks training-only crawlers (GPTBot, ClaudeBot, Applebot-Extended, CCBot and others) not to crawl.
   Google-Extended is not in that group: it also controls whether Gemini and Vertex AI ground answers in the pages.
-  Add new training-only crawlers to that group, never to `*`.
+  Add new training-only crawlers to that group, never to `*`. The `*` group also states the policy as a
+  Content-Signal line (search and AI answers yes, training no).
 - Levels are described in everyday words on pages: "at its usual level", "higher than usual", "lower than usual"
   (`LevelSummary::usualPhrase()`), never "typical range". The API keeps its `within typical range` values. `/about` explains the sources and methods; keep it in step with Data sources below.
 - `/about`, `/privacy` and `/terms` show a "Last updated" date from `app.pages_updated`, which also goes into their
@@ -711,8 +729,8 @@ replacing the local database with a copy of live rather than backfilling.
   quoting (SQLite's double quotes, MySQL's backticks). A push to `main` that passes both then runs `dep deploy` from CI via `deployphp/action`, using the GitHub `production` environment
   (secrets `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; variables `DEPLOY_IP`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`).
 - Pages are the same for every visitor (no cookies, sessions or accounts), so page routes send
-  `cache.headers:public;max_age=60;s_maxage=300` (`$pageCaching` in `routes/web.php`) and a Cloudflare cache rule keeps
-  them at the edge for five minutes; only successful responses are marked cacheable. Never add per-visitor content
+  `cache.headers:public;max_age=60;s_maxage=300;stale_while_revalidate=300` (`$pageCaching` in `routes/web.php`) and a
+  Cloudflare cache rule keeps them at the edge for five minutes, serving the last copy while it fetches a new one; only successful responses are marked cacheable. Never add per-visitor content
   or cookies to a page without taking it out of that group. `/search` is outside it and sends `no-store`, as every
   query is its own URL. After each deploy CI purges the Cloudflare cache
   (variable `CLOUDFLARE_ZONE_ID`, secret `CLOUDFLARE_API_TOKEN`; skipped while unset), so cached pages never ask for

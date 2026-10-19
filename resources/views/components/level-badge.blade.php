@@ -14,9 +14,9 @@
         <span class="font-medium text-ink">{{ number_format($level->latestValue, 2) }} {{ $level->station->unitLabel() }}</span>
         <span aria-hidden="true">{!! $arrow !!}</span>
         <span>{{ strtolower($level->trend->label()) }}</span>
-        @if ($level->relativeToTypical)
+        @if ($level->relativeToUsual())
             <span class="text-faint">&middot;</span>
-            <span>{{ $level->relativeToTypical }}</span>
+            <span>{{ $level->relativeToUsual() }}</span>
         @endif
         @if ($level->isStale())
             <span class="text-faint">&middot;</span>

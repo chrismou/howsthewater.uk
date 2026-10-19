@@ -38,6 +38,7 @@ class SyncLakeGauges
 
             $station = GaugeStation::query()->updateOrCreate(['external_id' => $data->externalId], [
                 'label' => $data->label,
+                'rloi_id' => $data->rloiId,
                 'river_name' => $data->riverName ?? $lake->name,
                 'town' => $data->town,
                 'latitude' => $data->latitude,

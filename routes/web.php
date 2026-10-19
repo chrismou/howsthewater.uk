@@ -18,8 +18,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Pages are the same for every visitor (no cookies or accounts), so Cloudflare may keep them for five minutes and
-// browsers for one. Data changes every 15 minutes at most, and only successful responses are marked cacheable.
-$pageCaching = 'cache.headers:public;max_age=60;s_maxage=300';
+// browsers for one, and serve a copy up to five minutes older while it fetches a new one. Data changes every 15
+// minutes at most, and only successful responses are marked cacheable.
+$pageCaching = 'cache.headers:public;max_age=60;s_maxage=300;stale_while_revalidate=300';
 
 Route::middleware($pageCaching)->group(function () {
     Route::get('/', HomeController::class)->name('home');
@@ -39,10 +40,26 @@ Route::middleware($pageCaching)->group(function () {
 // An overflow's feed sits beside its page, rate limited and cached like the place feeds.
 Route::get('/overflows/{monitor}/feed', [FeedController::class, 'overflow'])->name('overflows.feed')->middleware(['throttle:public', 'cache.headers:public;max_age=300']);
 
+// More rows for /spills' long lists, which show their first rows only.
+Route::get('/spills/rows/{list}', [SpillsController::class, 'rows'])->whereIn('list', ['discharging', 'near', 'recent'])->name('spills.rows')->middleware(['throttle:public', 'cache.headers:public;max_age=60;s_maxage=300']);
+
 // Each query is its own URL, so search results are never stored: the edge would otherwise keep one copy per query.
 Route::get('/search', SearchController::class)->name('search')->middleware(['throttle:public', 'cache.headers:no_store;private']);
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap')->middleware('cache.headers:public;max_age=3600');
+
+// Places that moved region or were renamed, with their spills pages and feeds, before the routes that would 404 them.
+$movedPlaces = [
+    '/thames-valley/lakes/hampstead-heath-ponds' => '/london/lakes/hampstead-heath',
+    '/thames-valley/lakes/the-serpentine' => '/london/lakes/the-serpentine',
+    '/south-west/beaches/paignton-paignton-sands' => '/south-west/beaches/paignton-sands',
+];
+
+foreach ($movedPlaces as $from => $to) {
+    foreach (['', '/spills', '/feed'] as $suffix) {
+        Route::permanentRedirect($from.$suffix, $to.$suffix);
+    }
+}
 
 // Rivers, beaches and lakes are scoped to their region, since names repeat across Britain. The region page is an
 // overview linking to each.
@@ -72,6 +89,8 @@ Route::scopeBindings()->group(function () use ($pageCaching) {
         Route::get('/{region}/rivers/{river}/feed', [FeedController::class, 'river'])->name('rivers.feed');
         Route::get('/{region}/rivers/{river}/{spot}/feed', [FeedController::class, 'spot'])->name('spots.feed');
         Route::get('/{region}/rivers/{river}/{spot}/monitors', [SpotController::class, 'monitors'])->name('spots.monitors');
+        // More rows for the spills pages' long lists, which show their first rows only.
+        Route::get('/{region}/spills/rows/{list}', [SpillsController::class, 'regionRows'])->whereIn('list', ['discharging', 'near', 'recent'])->name('spills.region.rows');
     });
 
     // A river listed under another region but running through this one (the Thames through London) redirects there.

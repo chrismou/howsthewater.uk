@@ -60,7 +60,7 @@
                 <dt class="text-xs uppercase tracking-wide text-muted">Lake level <x-help term="level" /></dt>
                 <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $level?->latestValue !== null ? number_format($level->latestValue, 2).' '.$level->station->unitLabel() : '-' }}</dd>
                 @if ($level?->latestValue !== null)
-                    <dd class="text-xs text-muted">{{ strtolower($level->trend->label()) }}{{ $level->relativeToTypical ? ', '.$level->relativeToTypical : '' }}</dd>
+                    <dd class="text-xs text-muted">{{ strtolower($level->trend->label()) }}{{ $level->relativeToUsual() ? ', '.$level->relativeToUsual() : '' }}</dd>
                 @endif
             </div>
             <div>
@@ -83,7 +83,7 @@
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Spills nearby, 30 days</dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $overflows->isCovered() ? $overflows->spillsLast30DaysCount : '-' }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $overflows->isCovered() && $overflows->monitors->isNotEmpty() ? $overflows->spillsLast30DaysCount : '-' }}</dd>
             </div>
         </dl>
     </section>

@@ -2,9 +2,8 @@
 @props(['overflows', 'region' => null, 'allUrl' => null])
 
 @php
-    $spilledMonitorIds = $overflows->recentSpillEvents->pluck('overflow_monitor_id')->unique();
-    [$active, $quiet] = $overflows->monitors->partition(fn ($summary) => $summary->status === \App\Enums\OverflowStatus::Discharging || $spilledMonitorIds->contains($summary->monitor->id));
-    $spillCounts = $overflows->recentSpillEvents->countBy('overflow_monitor_id');
+    $spillCounts = $overflows->countedSpillsByMonitor;
+    [$active, $quiet] = $overflows->monitors->partition(fn ($summary) => $summary->status === \App\Enums\OverflowStatus::Discharging || $spillCounts->has($summary->monitor->id));
 @endphp
 
 <section {{ $attributes }}>

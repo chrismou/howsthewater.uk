@@ -24,7 +24,7 @@
     $breadcrumbs = [['Home', route('home')], [$copy['heading'], route('hubs.'.$type)]];
 @endphp
 
-<x-layouts.app :title="$copy['title']" :description="$copy['description']" :breadcrumbs="$breadcrumbs"
+<x-layouts.app :date-modified="$regions->max('dataUpdatedAt')" :title="$copy['title']" :description="$copy['description']" :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->itemList($copy['heading'], $regions->map(fn ($region) => [$region->name, route($type.'.index', $region->slug)]))">
     <div class="mb-8 max-w-2xl">
         <x-breadcrumbs :items="$breadcrumbs" />
@@ -37,7 +37,7 @@
     @else
         <div class="grid gap-5 lg:grid-cols-2">
             @foreach ($regions as $region)
-                <x-region-card :summary="$region" :type="$type" />
+                <x-region-card :summary="$region" :type="$type" :under-heading="false" />
             @endforeach
         </div>
     @endif

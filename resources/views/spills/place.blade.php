@@ -62,7 +62,7 @@
                     <h2 class="font-display text-lg font-semibold">Last 30 days</h2>
                     <x-help term="history" />
                 </div>
-                <x-spill-rain-chart :days="$history->dailyHistory" :rainfall="$history->dailyRainfall" :gauge="$history->rainfallStation?->label" />
+                <x-spill-rain-chart :days="$history->dailyHistory" :rainfall="$history->dailyRainfall" :gauge="$history->rainfallStation?->nameInSentence()" />
             </div>
 
             <aside class="lg:col-span-2">

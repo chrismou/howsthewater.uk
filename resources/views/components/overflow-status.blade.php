@@ -9,7 +9,7 @@
         {{ $monitor->isDischarging() ? 'Discharging at last report' : 'No recent report' }}@if ($monitor->source_updated_at), {{ $monitor->source_updated_at->timezone(config('app.display_timezone', 'Europe/London'))->format($monitor->source_updated_at->isSameYear(now()) ? 'j M' : 'j M Y') }}@endif
     </span>
 @elseif ($monitor->isDischarging())
-    <span class="font-medium text-alert">Discharging now</span>
+    <span class="inline-flex items-center gap-1.5 font-medium text-alert"><x-live-dot />Discharging now</span>
 @elseif ($spilledRecently)
     <span class="font-medium text-pill-amber-text">Spilled in the last 48h</span>
 @else

@@ -148,11 +148,10 @@ final readonly class OverflowPage
     }
 
     /**
-     * Whether the page has anything of its own to say yet. A page with no name, no annual return and no spill recorded
-     * is kept out of search results.
+     * Whether the page has enough of its own for search results (OverflowMonitor::isWorthIndexing()).
      */
     public function hasContent(): bool
     {
-        return $this->monitor->displayName() !== null || $this->annualReturns->isNotEmpty() || $this->totalSpills > 0;
+        return $this->monitor->setRelation('annualReturns', $this->annualReturns)->isWorthIndexing();
     }
 }

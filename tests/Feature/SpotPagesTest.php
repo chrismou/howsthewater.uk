@@ -366,8 +366,8 @@ it('shows a helpful 404 page in the site layout', function () {
 it('lets Cloudflare keep pages for five minutes, but never errors, redirects or search results', function () {
     [$region, $river, $spot] = spotWithUrl(['slug' => 'ilkley'], ['slug' => 'wharfe']);
 
-    $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300');
-    $this->get(route('home'))->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300');
+    $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300, stale-while-revalidate=300');
+    $this->get(route('home'))->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300, stale-while-revalidate=300');
     $search = $this->get(route('search', ['q' => 'Ilkley']))->assertOk();
     expect((string) $search->headers->get('Cache-Control'))->toContain('no-store')->not->toContain('public');
     $missing = $this->get('/yorkshire/rivers/wharfe/nowhere')->assertNotFound();
@@ -519,4 +519,54 @@ it('names the river in a spot heading and gives each spot its own facts in its d
         ->assertOk()
         ->assertSee('>Ilkley<span class="text-2xl font-medium text-muted sm:text-3xl">, River Wharfe</span></h1>', false)
         ->assertSee('<meta name="description" content="Ilkley on the River Wharfe, 53 km from the source: spills from 2 storm overflows upstream, river level and rainfall, for swimming, paddling and fishing.">', false);
+});
+
+it('counts only the spills inside an overflow\'s record in its row, as the headline does', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    // The feed's latest spill when we first saw the overflow, from before its record starts, with no published log.
+    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 45000, 'company' => 'Scottish Water', 'created_at' => now()->subDays(5)]);
+    SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subDays(10), 'ended_at' => now()->subDays(10)->addHour()]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSeeInOrder(['Spills, last 30 days', '0</dd>'], false)
+        ->assertSee('0 in 30 days')
+        ->assertDontSee('1 in 30 days');
+});
+
+it('shows dashes rather than zero spills for a spot with no monitored overflow upstream', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSeeInOrder(['Discharging upstream', '-</dd>', 'Spills, last 48h', '-</dd>', 'Spills, last 30 days', '-</dd>', 'Upstream monitors', '0'], false)
+        ->assertSee('No spill history, as no storm overflow monitor is matched upstream of this spot.')
+        ->assertDontSee('of the last 30 days');
+
+    $this->get(route('rivers.show', [$region, $river]))->assertOk()->assertSee('0 upstream monitors')->assertDontSee('spills in 30 days');
+});
+
+it('says a spot that is not a designated bathing water has no official samples', function () {
+    [$region, $river, $spot] = spotWithUrl();
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee('Not a designated bathing water, so there are no official water quality samples here.');
+});
+
+it('describes the level in everyday words and links each agency\'s own page for the gauge', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    $station = GaugeStation::factory()->create(['river_id' => $river->id, 'rloi_id' => '8276']);
+    $spot->update(['gauge_station_id' => $station->id]);
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subMinutes(15), 'value' => 0.8]);
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee('href="https://check-for-flooding.service.gov.uk/station/8276"', false)
+        ->assertSee('Longer history on GOV.UK');
+    $this->get(route('rivers.show', [$region, $river]))->assertOk()->assertSee('at its usual level')->assertDontSee('within typical range');
+
+    expect(GaugeStation::factory()->make(['rloi_id' => null, 'network' => \App\Enums\Agency::EnvironmentAgency])->agencyPageUrl())->toBeNull()
+        ->and(GaugeStation::factory()->sepa()->make(['external_id' => 'SEPA14973'])->agencyPageUrl())->toBe('https://waterlevels.sepa.org.uk/Station/14973')
+        ->and(GaugeStation::factory()->make(['external_id' => 'NRW4061', 'network' => \App\Enums\Agency::NaturalResourcesWales])->agencyPageUrl())->toBe('https://rivers-and-seas.naturalresources.wales/Station/4061');
 });

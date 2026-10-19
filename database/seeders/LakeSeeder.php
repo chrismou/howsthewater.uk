@@ -43,6 +43,7 @@ class LakeSeeder extends Seeder
             ],
             'london' => [
                 ['name' => 'Hampstead Heath', 'latitude' => 51.5610, 'longitude' => -0.1640, 'description' => 'The Heath\'s three swimming ponds: the Ladies\', the Men\'s and the Mixed.', 'gauge_reference' => null],
+                ['name' => 'The Serpentine', 'latitude' => 51.5049, 'longitude' => -0.1691, 'description' => 'The lake in Hyde Park, with a summer swimming area.', 'gauge_reference' => null],
             ],
             'wessex' => [
                 ['name' => 'Henleaze Lake', 'latitude' => 51.4946, 'longitude' => -2.6057, 'description' => 'A former limestone quarry in north Bristol, swum in by its members\' club.', 'gauge_reference' => null],
@@ -50,8 +51,6 @@ class LakeSeeder extends Seeder
             'thames-valley' => [
                 ['name' => 'Cotswold Country Park', 'latitude' => 51.6610, 'longitude' => -1.9609, 'description' => 'A former gravel pit lake near Cricklade with a sand beach.', 'gauge_reference' => null],
                 ['name' => 'Frensham Great Pond', 'latitude' => 51.1573, 'longitude' => -0.7918, 'description' => 'Heathland pond with a sandy shore near Farnham.', 'gauge_reference' => null],
-                ['name' => 'Hampstead Heath Ponds', 'latitude' => 51.5633, 'longitude' => -0.1610, 'description' => "The Ladies', Men's and Mixed bathing ponds on Hampstead Heath.", 'gauge_reference' => null],
-                ['name' => 'The Serpentine', 'latitude' => 51.5049, 'longitude' => -0.1691, 'description' => 'The lake in Hyde Park, with a summer swimming area.', 'gauge_reference' => null],
             ],
         ];
     }

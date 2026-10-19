@@ -28,10 +28,26 @@
     $title = collect([': bathing water quality and swimming', ': bathing water quality', ''])
         ->map(fn (string $topic) => $beach->beachSearchName().$topic)
         ->first(fn (string $candidate) => mb_strlen($candidate) <= 60, $beach->beachSearchName());
+
+    // Leads with the beach's own facts, so no two beaches' descriptions read alike; the closing line goes if it runs long.
+    $isSepa = $beach->agency === \App\Enums\Agency::Sepa;
+    $agencyName = ($isSepa ? '' : 'the ').$beach->agency->label();
+    $rated = $beach->classification !== null
+        ? 'rated '.$beach->classification->value.($beach->classification_year !== null ? ' in '.$beach->classification_year : '').' by '.$agencyName
+        : 'not yet classified by '.$agencyName;
+    $overflowCount = $overflows->monitors->count();
+    $within = ' within '.($overflows->radiusMetres / 1000).' km';
+    $overflowsPhrase = ! $overflows->isCovered() ? '' : ($overflowCount > 0 ? ', with '.$overflowCount.' storm '.\Illuminate\Support\Str::plural('overflow', $overflowCount).$within : ', with no monitored storm overflows'.$within);
+    $closing = $overflowCount > 0
+        ? ($isSepa ? ' Sample results' : ' Samples, pollution forecasts').' and nearby spills.'
+        : ($isSepa ? ' Sample results.' : ' Samples and pollution forecasts.');
+    $description = collect([$closing, ''])
+        ->map(fn (string $more) => $beach->beachSearchName().': '.$rated.$overflowsPhrase.'.'.$more)
+        ->first(fn (string $candidate) => mb_strlen($candidate) <= 160, $beach->beachSearchName().': '.$rated.'.');
 @endphp
 
 <x-layouts.app :share-image="$shareImage" :date-modified="collect([$overflows->dataUpdatedAt, $conditions->bathingWater->latestSample()?->sampled_at])->filter()->max()" :region="$region" :feed="route('beaches.feed', [$region, $beach])" :title="$title"
-               :description="$beach->agency->label().($beach->agency === \App\Enums\Agency::Sepa ? ' classification and sample results' : ' classification, samples and pollution forecasts').' for swimming at '.$beach->beachSearchName().', plus storm overflows nearby.'"
+:description="$description"
                :breadcrumbs="$breadcrumbs"
                :structured-data="app(\App\Services\StructuredData::class)->beach($beach, $region)">
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -95,7 +111,7 @@
             </div>
             <div>
                 <dt class="text-xs uppercase tracking-wide text-muted">Spills nearby, 30 days</dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $overflows->isCovered() ? $overflows->spillsLast30DaysCount : '-' }}</dd>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $overflows->isCovered() && $overflows->monitors->isNotEmpty() ? $overflows->spillsLast30DaysCount : '-' }}</dd>
             </div>
         </dl>
     </section>

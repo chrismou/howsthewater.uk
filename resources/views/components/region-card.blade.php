@@ -4,7 +4,7 @@
     home page, the Rivers, Beaches and Lakes pages and each region's overview, where inRegion titles the card by kind
     of place instead of by region. summary: a RegionSummary.
 --}}
-@props(['summary', 'type' => 'rivers', 'inRegion' => false])
+@props(['summary', 'type' => 'rivers', 'inRegion' => false, 'underHeading' => true])
 
 @php
     $place = fn ($item) => ['lat' => $item->latitude, 'lng' => $item->longitude, 'label' => $item->name];
@@ -54,9 +54,11 @@
     <div class="h-56 border-b border-line bg-water" aria-hidden="true" data-map data-map-static data-map-markers="{{ json_encode($markers->values()) }}"></div>
     <div class="flex flex-1 flex-col gap-4 p-6">
         <span class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $inRegion ? $summary->name : 'Region' }}</span>
-        {{-- On a region's overview the cards sit straight under its H1, so they are H2s; elsewhere they sit under a section heading. --}}
+        {{-- Cards straight under the page's H1 (a region's overview, the hubs) are H2s; on the home page they sit under a section heading. --}}
         @if ($inRegion)
             <h2 class="font-display text-3xl font-semibold tracking-tight">{{ \Illuminate\Support\Str::ucfirst($type) }}</h2>
+        @elseif (! $underHeading)
+            <h2 class="font-display text-3xl font-semibold tracking-tight">{{ $summary->name }}</h2>
         @else
             <h3 class="font-display text-3xl font-semibold tracking-tight">{{ $summary->name }}</h3>
         @endif

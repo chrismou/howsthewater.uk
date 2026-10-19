@@ -74,31 +74,34 @@
         @endif
     </ul>
 
-    {{-- The same figures for screen readers, which skip the bars above. --}}
-    <table class="sr-only">
-        <caption>Spills and rain per day over the last {{ $days->count() }} days</caption>
-        <thead>
-            <tr>
-                <th scope="col">Day</th>
-                <th scope="col">Spills</th>
-                <th scope="col">Hours spilling</th>
-                @if ($rainfall !== null)
-                    <th scope="col">Rain</th>
-                @endif
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($days as $day)
+    {{-- The same figures for screen readers, which skip the bars above. A table will not shrink to sr-only's 1px, so a
+         wrapper hides it; on the table itself it widened the page on phones. --}}
+    <div class="sr-only">
+        <table>
+            <caption>Spills and rain per day over the last {{ $days->count() }} days</caption>
+            <thead>
                 <tr>
-                    <th scope="row">{{ $day->date->format('D j M') }}</th>
-                    <td>{{ $day->recorded ? $day->spillCount : 'no data' }}</td>
-                    <td>{{ $day->recorded ? number_format($day->spillMinutes / 60, 1) : 'no data' }}</td>
+                    <th scope="col">Day</th>
+                    <th scope="col">Spills</th>
+                    <th scope="col">Hours spilling</th>
                     @if ($rainfall !== null)
-                        @php($millimetres = $rainfall->get($day->date->toDateString()))
-                        <td>{{ $millimetres === null ? 'no readings' : number_format($millimetres, 1).' mm' }}</td>
+                        <th scope="col">Rain</th>
                     @endif
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach ($days as $day)
+                    <tr>
+                        <th scope="row">{{ $day->date->format('D j M') }}</th>
+                        <td>{{ $day->recorded ? $day->spillCount : 'no data' }}</td>
+                        <td>{{ $day->recorded ? number_format($day->spillMinutes / 60, 1) : 'no data' }}</td>
+                        @if ($rainfall !== null)
+                            @php($millimetres = $rainfall->get($day->date->toDateString()))
+                            <td>{{ $millimetres === null ? 'no readings' : number_format($millimetres, 1).' mm' }}</td>
+                        @endif
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 </div>

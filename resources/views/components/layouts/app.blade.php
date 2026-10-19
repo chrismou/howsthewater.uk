@@ -10,7 +10,7 @@
     // Spot, river, beach and lake pages pass their own card (GenerateShareImages); every other page, or one whose
     // card is not drawn yet, shares the site's.
     $ogImage = $shareImage?->url() ?? asset('og-image.png');
-    $ogImageAlt = $shareImage?->alt ?? "How's the Water? What's the river doing right now? Storm overflow spills upstream, river levels and rainfall for swimming, paddling and fishing spots, every 15 minutes.";
+    $ogImageAlt = $shareImage?->alt ?? "How's the Water? card asking: what's the river doing right now?";
     // Built from the route and its bound models, so /Yorkshire (which the case-insensitive database still finds)
     // names /yorkshire as canonical. Only the URL's own parameters go in: Route::view() keeps its view and status as
     // defaults, which route() would otherwise append as a query string.
@@ -80,15 +80,18 @@
             $mainEntity = $nodes->first(fn (array $node) => ! in_array($node['@type'], ['WebSite', 'Organization'], true));
 
             if (! $nodes->contains('@id', $siteId)) {
-                $nodes->push(['@type' => 'WebSite', '@id' => $siteId, 'url' => rtrim(route('home'), '/').'/', 'name' => config('app.name')]);
+                $nodes->push(['@type' => 'WebSite', '@id' => $siteId, 'url' => rtrim(route('home'), '/').'/', 'name' => config('app.name'), 'publisher' => ['@id' => rtrim(route('home'), '/').'/#organization']]);
             }
+
+            // The home page's address is written one way everywhere in the graph, with the site's trailing slash.
+            $graphUrl = fn (string $url) => $url === rtrim(route('home'), '/') ? $url.'/' : $url;
 
             if ($breadcrumbs !== []) {
                 $nodes->push([
                     '@type' => 'BreadcrumbList',
                     '@id' => $idBase.'#breadcrumb',
                     'itemListElement' => collect($breadcrumbs)
-                        ->map(fn (array $crumb, int $index) => ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $crumb[0], 'item' => $crumb[1]])
+                        ->map(fn (array $crumb, int $index) => ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $crumb[0], 'item' => $graphUrl($crumb[1])])
                         ->all(),
                 ]);
             }
@@ -96,7 +99,7 @@
             $nodes->prepend(array_filter([
                 '@type' => $pageType,
                 '@id' => $idBase.'#webpage',
-                'url' => $canonical,
+                'url' => $graphUrl($canonical),
                 'name' => $pageTitle,
                 'description' => $pageDescription,
                 'inLanguage' => 'en-GB',
@@ -224,7 +227,7 @@
 {{-- The regions and places in the Rivers, Beaches and Lakes menus, which nav.js builds when a menu first opens. --}}
 <script type="application/json" id="nav-menus">{!! app(\App\Services\Conditions\NavigationMenus::class)->menusJson() !!}</script>
 {{-- Explanations for the page's help buttons (each button's aria-describedby), shown in the panel below by tooltip.js. --}}
-<div hidden>@stack('help-glossary')</div>
+<div hidden data-nosnippet>@stack('help-glossary')</div>
 <div data-help-panel role="tooltip" aria-hidden="true" hidden
      class="pointer-events-none fixed left-0 top-0 z-[1100] w-72 max-w-[calc(100vw-2rem)] rounded-md bg-ink px-3.5 py-2.5 text-left text-[13px] leading-snug text-ground shadow-lg"></div>
 </body>

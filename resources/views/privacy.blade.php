@@ -2,7 +2,7 @@
     $lastUpdated = \Illuminate\Support\Carbon::parse(config('app.pages_updated.privacy'), config('app.display_timezone', 'Europe/London'));
 @endphp
 
-<x-layouts.app :date-modified="$lastUpdated" title="Privacy" description="What How's the Water records about visitors, why, and for how long.">
+<x-layouts.app :breadcrumbs="[['Home', route('home')], ['Privacy', route('privacy')]]" :date-modified="$lastUpdated" title="Privacy" description="What How's the Water records about visitors, why, and for how long.">
     <article class="max-w-2xl">
         <p class="text-sm text-muted">Last updated <time datetime="{{ $lastUpdated->toDateString() }}">{{ $lastUpdated->format('j F Y') }}</time></p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">Privacy</h1>

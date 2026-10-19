@@ -90,30 +90,33 @@
         </div>
     @endif
 
-    {{-- The same figures for screen readers, which skip the bars above. --}}
-    <table class="sr-only">
-        <caption>Spills and rain per month over the last {{ $all->count() }} months</caption>
-        <thead>
-            <tr>
-                <th scope="col">Month</th>
-                <th scope="col">Spills</th>
-                <th scope="col">Hours spilling</th>
-                @if ($hasRain)
-                    <th scope="col">Rain</th>
-                @endif
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($months as $month)
+    {{-- The same figures for screen readers, which skip the bars above. A table will not shrink to sr-only's 1px, so a
+         wrapper hides it; on the table itself it widened the page on phones. --}}
+    <div class="sr-only">
+        <table>
+            <caption>Spills and rain per month over the last {{ $all->count() }} months</caption>
+            <thead>
                 <tr>
-                    <th scope="row">{{ $label($month) }}</th>
-                    <td>{{ $month['recorded'] ? $month['spills'] : 'no data' }}</td>
-                    <td>{{ $month['recorded'] ? number_format($month['hours'], 1) : 'no data' }}</td>
+                    <th scope="col">Month</th>
+                    <th scope="col">Spills</th>
+                    <th scope="col">Hours spilling</th>
                     @if ($hasRain)
-                        <td>{{ ! $month['recorded'] ? 'no data' : ($month['rain'] === null ? 'no readings' : number_format($month['rain']).' mm') }}</td>
+                        <th scope="col">Rain</th>
                     @endif
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach ($months as $month)
+                    <tr>
+                        <th scope="row">{{ $label($month) }}</th>
+                        <td>{{ $month['recorded'] ? $month['spills'] : 'no data' }}</td>
+                        <td>{{ $month['recorded'] ? number_format($month['hours'], 1) : 'no data' }}</td>
+                        @if ($hasRain)
+                            <td>{{ ! $month['recorded'] ? 'no data' : ($month['rain'] === null ? 'no readings' : number_format($month['rain']).' mm') }}</td>
+                        @endif
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 </div>

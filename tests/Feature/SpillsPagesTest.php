@@ -7,6 +7,7 @@ use App\Models\Region;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
+use App\Services\Conditions\SpillsOverviewService;
 
 /**
  * Yorkshire with a spot on the Wharfe below one discharging overflow and one that spilled this morning.
@@ -36,8 +37,8 @@ it('lists what the live bar counts: overflows discharging now, spots with a spil
         ->assertOk()
         ->assertSee('<title>Storm overflow spills in Yorkshire now - How\'s the Water?</title>', false)
         ->assertSeeInOrder(['id="discharging"', 'Addingham CSO', 'YWS00100', 'Ilkley', '5.0 km', 'id="spots"', 'Ilkley', 'id="recent"', 'Addingham CSO', 'ongoing', 'YWS00200'], false)
-        // A spot is never itself discharging: its pill says the overflow is upstream.
-        ->assertSeeInOrder(['id="spots"', 'Ilkley', 'Discharging upstream', 'id="recent"'], false)
+        // A spot is never itself discharging: the heading says the overflow is upstream, the pill when.
+        ->assertSeeInOrder(['id="spots"', 'Spots with an overflow spilling upstream in the last 24 hours', 'Ilkley', 'motion-safe:animate-live', 'Happening now', 'id="recent"'], false)
         ->assertSee(route('overflows.show', $discharging), false)
         ->assertSee(route('overflows.show', $spilled), false);
 
@@ -57,7 +58,7 @@ it('lists overflows discharging near beaches apart from those on rivers', functi
 
     $this->get(route('spills.region', $region))
         ->assertOk()
-        ->assertSeeInOrder(['Overflows discharging now', 'is reporting a discharge right now', 'Discharging near beaches and lakes', 'Runswick CSO', 'Runswick Bay']);
+        ->assertSeeInOrder(['Overflows discharging right now', 'is reporting a discharge right now', 'Discharging near beaches and lakes', 'Runswick CSO', 'Runswick Bay']);
 });
 
 it('has no spills page where we do not read the overflow feed, and never counts overflows recorded there', function () {
@@ -96,3 +97,40 @@ it('warns that the lists are out of date when no overflow has reported for hours
 it('keeps spills and overflows out of region slugs', function (string $slug) {
     Region::factory()->create(['slug' => $slug]);
 })->with(['spills', 'overflows'])->throws(InvalidArgumentException::class);
+
+it('lists overflows discharging newest first or longest running first, and loads the rest of a long list in batches', function () {
+    [$region] = spillingRegion();
+    $river = $region->rivers()->first();
+    OverflowMonitor::factory()->discharging()->create(['external_id' => 'YWS00300', 'river_id' => $river->id, 'status_started_at' => now()->subDays(2)]);
+    OverflowMonitor::factory()->discharging()->create(['external_id' => 'YWS00400', 'river_id' => $river->id, 'status_started_at' => now()->subMinutes(10)]);
+
+    $this->get(route('spills.region', $region))
+        ->assertOk()
+        ->assertSeeInOrder(['Overflows discharging right now', 'YWS00400', 'YWS00100', 'YWS00300', 'id="spots"'], false)
+        ->assertSee('href="'.route('spills.region', [$region, 'order' => 'longest']).'#discharging"', false)
+        ->assertDontSee('data-more-rows=', false);
+    $this->get(route('spills.region', [$region, 'order' => 'longest']))
+        ->assertOk()
+        ->assertSeeInOrder(['Overflows discharging right now', 'YWS00300', 'YWS00100', 'YWS00400', 'id="spots"'], false);
+
+    // The next batch after those shown, in the same order, as rows only.
+    $this->get(route('spills.region.rows', [$region, 'discharging', 'order' => 'longest', 'offset' => 1]))
+        ->assertOk()
+        ->assertSeeInOrder(['YWS00100', 'YWS00400'])
+        ->assertDontSee('YWS00300')
+        ->assertDontSee('<html', false);
+    $this->get(route('spills.region.rows', [$region, 'recent', 'offset' => 0]))->assertOk()->assertSee('YWS00200');
+    $this->get(route('spills.rows', ['discharging']))->assertOk()->assertSee('YWS00400');
+    $this->get(route('spills.region', $region).'/rows/everything')->assertNotFound();
+});
+
+it('offers the next batch under a list longer than its first rows', function () {
+    [$region] = spillingRegion();
+    $river = $region->rivers()->first();
+    OverflowMonitor::factory()->discharging()->count(SpillsOverviewService::DISCHARGING_SHOWN + 5)->create(['river_id' => $river->id]);
+
+    $this->get(route('spills.region', $region))
+        ->assertOk()
+        ->assertSee('data-more-rows="'.route('spills.region.rows', [$region, 'discharging']).'"', false)
+        ->assertSeeInOrder(['Showing the latest', '50', 'of 56.', 'Show the other 6'], false);
+});

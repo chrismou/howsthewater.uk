@@ -17,8 +17,11 @@ it('lists every region with rivers, beaches or lakes on its own page, ahead of r
     $millport = BathingWater::factory()->create(['region_id' => $scotland->id, 'name' => 'Millport Bay', 'latitude' => 55.7500, 'longitude' => -4.9200, 'classification' => BathingWaterClassification::Good]);
     OverflowMonitor::factory()->discharging()->create(['latitude' => $millport->latitude, 'longitude' => $millport->longitude]);
 
+    // The cards sit straight under the H1, so they are H2s rather than skipping a level.
     $this->get(route('hubs.rivers'))->assertOk()
         ->assertSee('<h1', false)
+        ->assertSee('<h2 class="font-display text-3xl font-semibold tracking-tight">Yorkshire</h2>', false)
+        ->assertDontSee('<h3', false)
         ->assertSee(route('regions.show', $yorkshire))
         ->assertDontSee(route('regions.show', $scotland));
 

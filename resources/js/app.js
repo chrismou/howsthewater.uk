@@ -1,4 +1,5 @@
 import { initAnalyticsConsent } from './analytics';
+import { initMoreRows } from './more-rows';
 import { initNavMenus } from './nav';
 import { initSearchToggle } from './search';
 import { initShareControls } from './share';
@@ -16,4 +17,5 @@ initSearchToggle();
 initThemeToggle();
 initTooltips();
 initShareControls();
+initMoreRows();
 initAnalyticsConsent();
