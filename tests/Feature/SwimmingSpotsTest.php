@@ -41,7 +41,7 @@ it('lists what is happening at popular swimming spots first, most pressing first
     OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 80000]);
 
     $response = $this->get(route('home'))
-        ->assertSeeInOrder(['Right now at popular swimming spots', 'Every spill now', 'with anything happening there first', 'Runswick Bay', 'Beach, Yorkshire', 'Overflow discharging nearby now', 'Cromwheel', 'River Wharfe, Yorkshire', 'Burnsall'])
+        ->assertSeeInOrder(['Right now at popular swimming spots', 'All swimming spots', 'with anything happening there first', 'Runswick Bay', 'Beach, Yorkshire', 'Overflow discharging nearby now', 'Cromwheel', 'River Wharfe, Yorkshire', 'Burnsall'])
         ->assertSee(route('beaches.show', [$region, $beach]), false);
 
     // Only popular spots: the ordinary one is on the spills pages instead.
@@ -67,4 +67,49 @@ it('notes an increased pollution risk forecast in force at a beach in the bathin
         ->assertSeeInOrder(['Right now at popular swimming spots', 'Tynemouth Long Sands', 'Increased pollution risk forecast today']);
 
     expect(swimmingSpotsSection($response))->not->toContain('Bamburgh Castle');
+});
+
+it('shows a block per region on the swimming page, and serves every place with its status for the map and near me', function () {
+    $yorkshire = Region::factory()->create(['name' => 'Yorkshire', 'slug' => 'yorkshire']);
+    $northEast = Region::factory()->create(['name' => 'North East', 'slug' => 'north-east']);
+    $river = River::factory()->create(['region_id' => $yorkshire->id, 'name' => 'River Wharfe', 'slug' => 'wharfe']);
+    Spot::factory()->create(['river_id' => $river->id, 'name' => 'Otley', 'slug' => 'otley', 'river_metres' => 50000]);
+    Spot::factory()->create(['river_id' => $river->id, 'name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 40000]);
+    OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 30000]);
+    BathingWater::factory()->create(['region_id' => $northEast->id, 'name' => 'Tynemouth Long Sands', 'slug' => 'tynemouth-long-sands', 'district' => 'North Tyneside']);
+
+    $this->get(route('swimming'))
+        ->assertOk()
+        ->assertSee('<title>Swimming spots near you: bathing water quality and spills - How\'s the Water?</title>', false)
+        // A block per region, by name, linking to the region and the listings it has; no place rows in the page.
+        ->assertSeeInOrder(['By region', 'North East', '1 beach', 'No overflow discharging upstream or nearby now', 'Full region', 'Beaches', 'Yorkshire', '2 river spots', '2 with an overflow discharging upstream or nearby now', 'Full region', 'Rivers'])
+        ->assertSee('href="'.route('beaches.index', $northEast).'"', false)
+        ->assertDontSee('href="'.route('rivers.index', $northEast).'"', false)
+        ->assertDontSee('href="/yorkshire/rivers/wharfe/otley"', false)
+        ->assertSee('data-map-markers-url="'.route('swimming.places').'"', false)
+        // The controls and the nearest-first list wait for JavaScript and the visitor's location.
+        ->assertSee('data-swimming-controls hidden', false)
+        ->assertSee('data-swimming-nearest hidden', false);
+
+    $places = $this->get(route('swimming.places'))->assertOk()->assertHeader('Cache-Control', 'max-age=60, public, s-maxage=300, stale-while-revalidate=300')->json();
+
+    expect(collect($places)->pluck('label')->all())->toBe(['Tynemouth Long Sands', 'Ilkley', 'Otley'])
+        ->and(collect($places)->firstWhere('label', 'Otley'))->toBe([
+            'lat' => round(Spot::query()->where('slug', 'otley')->value('latitude'), 5),
+            'lng' => round(Spot::query()->where('slug', 'otley')->value('longitude'), 5),
+            'label' => 'Otley',
+            'url' => '/yorkshire/rivers/wharfe/otley',
+            'kind' => 'spot',
+            'recency' => 'discharging_now',
+            'type' => 'river',
+            'region' => 'Yorkshire',
+            'detail' => 'River Wharfe',
+            'pill' => 'Discharging upstream now',
+            'tone' => 'red',
+        ])
+        ->and(collect($places)->firstWhere('label', 'Tynemouth Long Sands'))->toMatchArray(['type' => 'beach', 'detail' => 'Beach, classified Good', 'region' => 'North East']);
+
+    $this->get(route('home'))->assertSee('href="'.route('swimming').'"', false);
+    $this->get(route('sitemap'))->assertSee('<loc>'.route('swimming').'</loc>', false)->assertDontSee('places.json');
+    $this->get(route('privacy'))->assertSee('Your location is never sent to the site or stored.');
 });

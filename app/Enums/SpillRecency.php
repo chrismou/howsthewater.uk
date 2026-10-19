@@ -36,6 +36,20 @@ enum SpillRecency: string
     }
 
     /**
+     * The pill colour it shows in: red while discharging, amber after a recent spill, green when none was reported and
+     * grey when there is no data to go on.
+     */
+    public function tone(): string
+    {
+        return match ($this) {
+            self::DischargingNow => 'red',
+            self::Within24Hours, self::Within48Hours => 'amber',
+            self::None => 'green',
+            self::Offline, self::NoData, self::NotCovered => 'grey',
+        };
+    }
+
+    /**
      * The same summary for a beach or lake, where monitors are near the
      * water rather than upstream of it.
      */

@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 final readonly class SwimmingSpotsNow
 {
     /**
-     * @param  Collection<int, SwimmingSpotNow>  $spots  Happening first, then quiet well-known spots
+     * @param  Collection<int, SwimmingSpot>  $spots  Happening first, then quiet well-known spots
      * @param  int  $popularCount  How many popular spots were checked
      */
     public function __construct(
@@ -22,6 +22,6 @@ final readonly class SwimmingSpotsNow
 
     public function anythingHappening(): bool
     {
-        return $this->spots->contains(fn (SwimmingSpotNow $spot) => $spot->isHappening());
+        return $this->spots->contains(fn (SwimmingSpot $spot) => $spot->isHappening());
     }
 }

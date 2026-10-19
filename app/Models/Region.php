@@ -36,7 +36,7 @@ class Region extends Model
      * Top-level pages whose routes sit before /{region}, so a region with
      * one of these slugs could never be reached.
      */
-    public const RESERVED_SLUGS = ['rivers', 'beaches', 'lakes', 'about', 'privacy', 'terms', 'search', 'spills', 'overflows'];
+    public const RESERVED_SLUGS = ['rivers', 'beaches', 'lakes', 'about', 'privacy', 'terms', 'search', 'spills', 'overflows', 'swimming'];
 
     protected $fillable = [
         'name',

@@ -5,19 +5,20 @@ namespace App\Services\Conditions;
 use App\Data\FloodWarningSummary;
 use App\Data\RegionSummary;
 use App\Data\SpotSummary;
-use App\Data\SwimmingSpotNow;
+use App\Data\SwimmingSpot;
 use App\Data\SwimmingSpotsNow;
 use App\Data\WaterBodySummary;
 use App\Enums\SpillRecency;
 use Illuminate\Support\Collection;
 
 /**
- * What is happening at popular swimming spots, for the home page. Popular means a designated bathing water (sites
- * where a large number of people bathe: every beach and lake site, and river spots that are one) or a river spot
- * the home page suggests as well known (`SpotSeeder::FEATURED`). Read from the cached region summaries, so it adds no
- * queries.
+ * Places to swim with their live status, read from the cached region summaries, so it adds no queries: every river
+ * spot, beach and lake for the swimming page (all()), and what is happening at popular ones for the home page
+ * (popularNow()). Popular means a designated bathing water (sites where a large number of people bathe: every beach
+ * and lake site, and river spots that are one) or a river spot the home page suggests as well known
+ * (`SpotSeeder::FEATURED`).
  */
-class PopularSwimmingSpots
+class SwimmingSpots
 {
     public const SHOWN = 5;
 
@@ -30,13 +31,30 @@ class PopularSwimmingSpots
     public const RANK_RECENT_SPILL = 3;
 
     /**
-     * The spots where something is happening, most pressing first and spread across rivers, beaches and lakes, then
-     * the well-known river spots as they are, up to $limit.
+     * Every river spot, beach and lake, by region (in the order given) and then by name.
+     *
+     * @param  Collection<int, RegionSummary>  $regions
+     * @return Collection<int, SwimmingSpot>
+     */
+    public function all(Collection $regions): Collection
+    {
+        return $regions->flatMap(fn (RegionSummary $region) => $region->spots()
+            ->map(fn (SpotSummary $spot) => $this->fromSpot($spot, $region))
+            ->concat($region->beaches->map(fn (WaterBodySummary $beach) => $this->fromWaterBody($beach, $region, 'beach')))
+            ->concat($region->lakes->map(fn (WaterBodySummary $lake) => $this->fromWaterBody($lake, $region, 'lake')))
+            ->sortBy(fn (SwimmingSpot $spot) => mb_strtolower($spot->name))
+            ->values())
+            ->values();
+    }
+
+    /**
+     * The popular spots where something is happening, most pressing first and spread across rivers, beaches and
+     * lakes, then the well-known river spots as they are, up to $limit.
      *
      * @param  Collection<int, RegionSummary>  $regions
      * @param  Collection<int, SpotSummary>  $wellKnown  The river spots the home page suggests (HomeController)
      */
-    public function now(Collection $regions, Collection $wellKnown, int $limit = self::SHOWN): SwimmingSpotsNow
+    public function popularNow(Collection $regions, Collection $wellKnown, int $limit = self::SHOWN): SwimmingSpotsNow
     {
         $wellKnownIds = $wellKnown->pluck('id')->flip();
         $spots = $regions->flatMap(fn (RegionSummary $region) => $region->spots()
@@ -67,8 +85,8 @@ class PopularSwimmingSpots
     /**
      * Rivers, beaches and lakes in turn, so one kind never fills the list; well-known spots first within each.
      *
-     * @param  Collection<int, array{spot: SwimmingSpotNow, featured: bool}>  $candidates
-     * @return Collection<int, SwimmingSpotNow>
+     * @param  Collection<int, array{spot: SwimmingSpot, featured: bool}>  $candidates
+     * @return Collection<int, SwimmingSpot>
      */
     private function interleaveKinds(Collection $candidates): Collection
     {
@@ -90,38 +108,50 @@ class PopularSwimmingSpots
         return $interleaved;
     }
 
-    private function fromSpot(SpotSummary $spot, RegionSummary $region): SwimmingSpotNow
+    private function fromSpot(SpotSummary $spot, RegionSummary $region): SwimmingSpot
     {
         $stale = $spot->overflowDataIsStale();
         $floodWarning = $spot->floodWarnings->first(fn (FloodWarningSummary $warning) => ! $warning->isStale());
 
-        return new SwimmingSpotNow(
+        return new SwimmingSpot(
             name: $spot->name,
-            detail: $spot->riverName.', '.$region->name,
+            detail: $spot->riverName,
             url: route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]),
+            latitude: $spot->latitude,
+            longitude: $spot->longitude,
+            regionSlug: (string) $region->slug,
+            regionName: $region->name,
+            kind: 'river',
+            designated: $spot->isBathingWater,
+            classification: null,
             spillRecency: $spot->spillRecency,
             stale: $stale,
             nearbyWording: false,
             note: $floodWarning?->severity->label(),
             rank: $this->rank($spot->spillRecency, $stale, false, $floodWarning !== null),
-            kind: 'river',
         );
     }
 
-    private function fromWaterBody(WaterBodySummary $waterBody, RegionSummary $region, string $kind): SwimmingSpotNow
+    private function fromWaterBody(WaterBodySummary $waterBody, RegionSummary $region, string $kind): SwimmingSpot
     {
         $stale = $waterBody->overflowDataIsStale();
 
-        return new SwimmingSpotNow(
+        return new SwimmingSpot(
             name: $waterBody->name,
-            detail: ($kind === 'beach' ? 'Beach' : 'Lake').', '.$region->name,
+            detail: $kind === 'beach' ? 'Beach' : 'Lake',
             url: route($kind === 'beach' ? 'beaches.show' : 'lakes.show', [$region->slug, $waterBody->slug]),
+            latitude: $waterBody->latitude,
+            longitude: $waterBody->longitude,
+            regionSlug: (string) $region->slug,
+            regionName: $region->name,
+            kind: $kind,
+            designated: $waterBody->bathingSiteCount > 0,
+            classification: $waterBody->classification,
             spillRecency: $waterBody->nearbySpillRecency,
             stale: $stale,
             nearbyWording: true,
             note: $waterBody->hasIncreasedRisk() ? 'Increased pollution risk forecast today' : null,
             rank: $this->rank($waterBody->nearbySpillRecency, $stale, $waterBody->hasIncreasedRisk(), false),
-            kind: $kind,
         );
     }
 

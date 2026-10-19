@@ -253,12 +253,23 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
-- The home page's "Right now at popular swimming spots" (`PopularSwimmingSpots`, `components/swimming-spots-now`, under
+- The home page's "Right now at popular swimming spots" (`SwimmingSpots::popularNow()`, `components/swimming-spots-now`, under
   the hero search) lists what is happening at designated bathing waters (every beach and lake site, and spots that are
   one: `SpotSummary::$isBathingWater`) and the suggested well-known spots: an overflow discharging upstream or nearby,
   then an increased pollution risk forecast (`WaterBodySummary::hasIncreasedRisk()`), a flood warning and a spill in
   the last 24 hours, rivers, beaches and lakes in turn, five at most, topped up with the well-known spots as they are.
   On a quiet day it says nothing is happening before listing them. It reads only the cached region summaries.
+- `/swimming` (`SwimmingController`, `swimming/index`) maps every river spot, beach and lake and keeps the page itself
+  light: a block per region with its counts, what is discharging there and links to the region and its listings. The
+  places come from `/swimming/places.json` (`swimming.places`, `SwimmingSpots::all()`, `SwimmingSpot::toMapPlace()`),
+  cached at the edge like the pages, which the map loads when it comes into view (`data-map-markers-url`) and "Show
+  spots near me" (`swimming.js`) reads through the same fetch (`json-cache.js`). Near me asks the browser for the
+  visitor's location, which never leaves the device, and lists the nearest 20 with their distances, 20 more a click;
+  Rivers, Beaches and Lakes buttons filter the list and the map. The controls stay hidden without JavaScript. Its rows
+  are drawn by the script, so their styles are set once on the list, with pills coloured by `data-pill`
+  (`SpillRecency::tone()`, as `components/spill-badge` is). `map.js` draws maps of over 300 markers on canvas with
+  small markers, and hands each map and its markers to the page's own script (`element.leafletMap`, the `map:ready`
+  event).
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) and on main rivers that flow into it
   (`flows_into_river_id`, set by `flowsInto:` in `RiverSeeder`, e.g. the Ure into the Ouse) that join at or above the
@@ -298,7 +309,7 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   (`components/region-card`, also used on the home page), so the menus work without JavaScript. The regions and places
   come from `NavigationMenus::menusJson()`, embedded once per page as `#nav-menus`, and `nav.js` builds each menu from it
   when it first opens, so the header stays small and the content comes early in the HTML. The hub routes, `/about`,
-  `/privacy`, `/terms` and `/search` sit before `/{region}`, so `Region::RESERVED_SLUGS` lists them and saving a region
+  `/privacy`, `/terms`, `/search` and `/swimming` sit before `/{region}`, so `Region::RESERVED_SLUGS` lists them and saving a region
   with one throws. `RegionSummary` carries each region's beaches and lakes as plain `WaterBodySummary` values for the
   Beaches and Lakes hubs.
 - RSS feeds for each spot, river, beach and lake (`spots.feed`, `rivers.feed`, `beaches.feed`, `lakes.feed`, at

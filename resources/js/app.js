@@ -4,6 +4,7 @@ import { initNavMenus } from './nav';
 import { initSearchToggle } from './search';
 import { initShareControls } from './share';
 import { initSparklines } from './sparkline';
+import { initSwimming } from './swimming';
 import { initThemeToggle } from './theme';
 import { initTooltips } from './tooltip';
 
@@ -18,4 +19,5 @@ initThemeToggle();
 initTooltips();
 initShareControls();
 initMoreRows();
+initSwimming();
 initAnalyticsConsent();
