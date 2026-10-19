@@ -30,9 +30,10 @@ it('shows every spill upstream of a spot, counting hours when overflows spill to
         ->assertSeeInOrder(['Every spill recorded', 'Fri 16 Oct, 11:00', 'Bolton Abbey CSO', 'Fri 16 Oct, 09:00', 'Addingham CSO'])
         ->assertSee(route('overflows.show', $near), false);
 
-    // The spot page lists the latest spills, links each overflow and the full history.
+    // The spot page lists the latest spills, links each overflow and the full history, and its figures open them.
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertSee(route('spots.spills', [$region, $river, $spot]), false)
+        ->assertSeeInOrder(['href="#overflows"', 'Discharging upstream', 'href="'.route('spots.spills', [$region, $river, $spot]).'"', 'Spills, last 48h', 'id="overflows"'], false)
         ->assertSeeInOrder(['Latest spills upstream', 'Bolton Abbey CSO', 'Addingham CSO'])
         ->assertSee(route('overflows.show', $far), false);
 });

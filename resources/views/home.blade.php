@@ -54,24 +54,24 @@
                     </div>
                     <dl class="mt-4 grid grid-cols-2 gap-5">
                         <div>
-                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $allRegions->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $allRegions->dischargingNowCount() }}</dd>
-                            <dt class="mt-1.5 text-sm text-ink-2">{{ \Illuminate\Support\Str::plural('overflow', $allRegions->dischargingNowCount()) }} discharging now <x-help term="discharging_now" /></dt>
+                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $allRegions->dischargingNowCount() > 0 ? 'text-alert' : '' }}"><x-figure-link :url="route('spills.index').'#discharging'" figure>{{ $allRegions->dischargingNowCount() }}</x-figure-link></dd>
+                            <dt class="mt-1.5 text-sm text-ink-2"><x-figure-link :url="route('spills.index').'#discharging'">{{ \Illuminate\Support\Str::plural('overflow', $allRegions->dischargingNowCount()) }} discharging now</x-figure-link> <x-help term="discharging_now" /></dt>
                         </div>
                         <div>
-                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $allRegions->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $allRegions->spotsWithSpillLast24HoursCount() }}</dd>
-                            <dt class="mt-1.5 text-sm text-ink-2">spots with a spill upstream in the last 24h</dt>
+                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $allRegions->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}"><x-figure-link :url="route('spills.index').'#spots'" figure>{{ $allRegions->spotsWithSpillLast24HoursCount() }}</x-figure-link></dd>
+                            <dt class="mt-1.5 text-sm text-ink-2"><x-figure-link :url="route('spills.index').'#spots'">spots with a spill upstream in the last 24h</x-figure-link></dt>
                         </div>
                     </dl>
                     {{-- Higher than usual is rare and means a river in spate; rising moves through the day, so both show. Phones
                          are too narrow for three, so rainfall takes its own row there. --}}
                     <dl class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
                         <div>
-                            <dd class="font-mono text-3xl font-semibold leading-none tabular-nums">{{ $allRegions->spotsAboveTypicalRange()->count() }}</dd>
-                            <dt class="mt-1.5 text-sm text-ink-2">rivers higher than usual</dt>
+                            <dd class="font-mono text-3xl font-semibold leading-none tabular-nums"><x-figure-link :url="route('levels.index').'#higher'" figure>{{ $allRegions->spotsAboveTypicalRange()->count() }}</x-figure-link></dd>
+                            <dt class="mt-1.5 text-sm text-ink-2"><x-figure-link :url="route('levels.index').'#higher'">rivers higher than usual</x-figure-link></dt>
                         </div>
                         <div>
-                            <dd class="font-mono text-3xl font-semibold leading-none tabular-nums">{{ $allRegions->spotsRising()->count() }}</dd>
-                            <dt class="mt-1.5 text-sm text-ink-2">rivers currently rising <x-help term="rivers_rising" /></dt>
+                            <dd class="font-mono text-3xl font-semibold leading-none tabular-nums"><x-figure-link :url="route('levels.index').'#rising'" figure>{{ $allRegions->spotsRising()->count() }}</x-figure-link></dd>
+                            <dt class="mt-1.5 text-sm text-ink-2"><x-figure-link :url="route('levels.index').'#rising'">rivers currently rising</x-figure-link> <x-help term="rivers_rising" /></dt>
                         </div>
                         <div>
                             <dd class="font-mono text-3xl font-semibold leading-none tabular-nums">@if ($medianRain === null)-@else{{ number_format($medianRain, 1) }}<span class="text-base"> mm</span>@endif</dd>
@@ -192,10 +192,10 @@
     </section>
 
     <x-slot:after>
-        <section id="limits" class="bg-ink text-ground dark:bg-surface-2 dark:text-ink">
+        <section id="limits" class="border-t border-line bg-surface">
             <div class="mx-auto grid max-w-5xl gap-8 px-4 py-14 lg:grid-cols-12">
                 <div class="flex flex-col gap-3 lg:col-span-5">
-                    <div class="h-[3px] w-14 rounded bg-ground dark:bg-ink"></div>
+                    <div class="h-[3px] w-14 rounded bg-accent"></div>
                     <h2 class="font-display text-3xl font-semibold tracking-tight">What this site does not do</h2>
                 </div>
                 <ul class="grid gap-4 lg:col-span-7">

@@ -115,23 +115,28 @@
             </div>
         @endif
 
+        {{-- With monitors upstream, each figure opens what it counts: the overflows table below or the spills page. --}}
+        @php
+            $overflowsUrl = $hasMonitors ? '#overflows' : null;
+            $spillsUrl = $hasMonitors ? route('spots.spills', [$spot->river->region, $spot->river, $spot]) : null;
+        @endphp
         <dl class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Discharging upstream <x-help term="discharging_now" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $conditions->dischargingNowCount > 0 ? 'text-alert' : '' }}">{{ $hasMonitors ? $conditions->dischargingNowCount : '-' }}</dd>
+                <dt class="text-xs uppercase tracking-wide text-muted"><x-figure-link :url="$overflowsUrl">Discharging upstream</x-figure-link> <x-help term="discharging_now" /></dt>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $conditions->dischargingNowCount > 0 ? 'text-alert' : '' }}"><x-figure-link :url="$overflowsUrl" figure>{{ $hasMonitors ? $conditions->dischargingNowCount : '-' }}</x-figure-link></dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 48h <x-help term="spill" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $hasMonitors ? $conditions->spillsLast48HoursCount : '-' }}</dd>
+                <dt class="text-xs uppercase tracking-wide text-muted"><x-figure-link :url="$spillsUrl">Spills, last 48h</x-figure-link> <x-help term="spill" /></dt>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums"><x-figure-link :url="$spillsUrl" figure>{{ $hasMonitors ? $conditions->spillsLast48HoursCount : '-' }}</x-figure-link></dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Spills, last 30 days <x-help term="history" /></dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $hasMonitors ? $conditions->spillsLast30DaysCount : '-' }}</dd>
+                <dt class="text-xs uppercase tracking-wide text-muted"><x-figure-link :url="$spillsUrl">Spills, last 30 days</x-figure-link> <x-help term="history" /></dt>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums"><x-figure-link :url="$spillsUrl" figure>{{ $hasMonitors ? $conditions->spillsLast30DaysCount : '-' }}</x-figure-link></dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Upstream monitors <x-help term="upstream" /></dt>
+                <dt class="text-xs uppercase tracking-wide text-muted"><x-figure-link :url="$overflowsUrl">Upstream monitors</x-figure-link> <x-help term="upstream" /></dt>
                 <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">
-                    {{ $covered ? $conditions->upstreamMonitors->count() : '-' }}
+                    <x-figure-link :url="$overflowsUrl" figure>{{ $covered ? $conditions->upstreamMonitors->count() : '-' }}</x-figure-link>
                     @if ($conditions->offlineCount > 0)
                         <span class="font-sans text-sm font-normal text-muted">{{ $conditions->offlineCount }} offline <x-help term="offline" /></span>
                     @endif
@@ -193,7 +198,7 @@
         </aside>
     </div>
 
-    <section class="mt-10">
+    <section id="overflows" class="mt-10 scroll-mt-24">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <div class="flex items-center gap-1.5">
                 <h2 class="font-display text-lg font-semibold">Upstream storm overflows</h2>

@@ -188,37 +188,81 @@
 
 {{ $after }}
 
-<footer class="border-t border-line bg-surface">
-    <div class="mx-auto max-w-5xl px-4 py-6 text-xs leading-relaxed text-muted">
-        <p>
-            Near real-time, unvalidated data. This uses Environment Agency flood and river level data from the real-time data API (Beta)
-            and Environment Agency bathing water data, Open Government Licence v3.0. Welsh river level, rainfall, flood warning and bathing water data from Natural Resources Wales, Open Government Licence v3.0. Scottish river level, rainfall and bathing water data from SEPA, Open Government Licence v3.0.
-            @if ($streamCompanies !== '')
-                {{ $streamCompanies }} storm overflow data via Stream, CC BY 4.0.
-            @endif
-            @if ($overflowFeeds->contains('driver', 'scottish_water'))
-                Overflow data from Scottish Water.
-            @endif
-            @if ($overflowFeeds->contains('driver', 'welsh_water'))
-                Overflow data from Dŵr Cymru Welsh Water.
-            @endif
-            Storm overflow annual returns produced by The Rivers Trust from Environment Agency and Natural Resources Wales data, Open Government Licence v3.0. Past storm overflow spills from the water companies' records via the Environment Agency, Open Government Licence v3.0.
-            River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
-            Weather forecasts from <a href="https://open-meteo.com/" rel="noopener" class="underline hover:text-ink">Open-Meteo</a>, CC BY 4.0.
-            <a href="{{ route('about') }}" class="underline hover:text-ink">About the data and how it works</a>.
-            {{-- No email address on the pages: Cloudflare adds its email obfuscation script to any page that shows one. --}}
-            Seen a mistake? <a href="https://mou.me/contact" rel="noopener" class="underline hover:text-ink">Get in touch</a> or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">let us know on GitHub</a>.
-        </p>
-        {{-- Phones: credit and legal links stacked and centred. Wider: one row, legal links on the right. --}}
-        <div class="mt-4 flex flex-col items-center gap-2 border-t border-line-2 pt-4 text-center sm:flex-row sm:items-baseline sm:justify-between sm:text-left">
-            <p>Lovingly crafted in Leeds <svg class="inline h-3.5 w-3.5 -translate-y-px align-middle text-alert" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="love"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.2 4.4 2.5h2c.8-1.3 2.3-2.5 4.4-2.5 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21z"/></svg> by <a href="https://mou.me" rel="noopener" class="underline hover:text-ink">Chris Chrisostomou</a> <span class="whitespace-nowrap">© {{ now()->year }}</span></p>
-            <p class="flex gap-4 whitespace-nowrap">
-                <a href="{{ route('terms') }}" class="underline hover:text-ink">Terms of use</a>
-                <a href="{{ route('privacy') }}" class="underline hover:text-ink">Privacy</a>
-                @if ($analyticsId)
-                    <a href="#" data-cookie-settings class="underline hover:text-ink">Cookie settings</a>
+{{-- The same dark band as the live bar. --}}
+<footer class="border-t border-ground/15 bg-ink text-ground dark:border-line dark:bg-surface-2 dark:text-ink">
+    <div class="mx-auto max-w-5xl px-4 py-8">
+        {{-- The pages the header menus do not reach: what is happening now and the place hubs, each region's spills and
+             levels, and the site's own pages. Phones: the first and last columns side by side, the regions below. --}}
+        <nav aria-label="Footer" class="grid grid-cols-2 gap-x-6 gap-y-8 text-sm lg:grid-cols-4">
+            <div>
+                <h2 class="text-xs font-semibold uppercase tracking-[0.08em] text-ground/70 dark:text-muted">Right now</h2>
+                <ul class="mt-2">
+                    <li><a href="{{ route('spills.index') }}" class="inline-block py-2 hover:underline sm:py-1">Spills now</a></li>
+                    <li><a href="{{ route('levels.index') }}" class="inline-block py-2 hover:underline sm:py-1">River levels now</a></li>
+                    <li><a href="{{ route('swimming') }}" class="inline-block py-2 hover:underline sm:py-1">Swimming spots near you</a></li>
+                </ul>
+                <h2 class="mt-6 text-xs font-semibold uppercase tracking-[0.08em] text-ground/70 dark:text-muted">Places</h2>
+                <ul class="mt-2">
+                    <li><a href="{{ route('hubs.rivers') }}" class="inline-block py-2 hover:underline sm:py-1">All rivers</a></li>
+                    @if ($menus['beaches'] !== [])
+                        <li><a href="{{ route('hubs.beaches') }}" class="inline-block py-2 hover:underline sm:py-1">All beaches</a></li>
+                    @endif
+                    @if ($menus['lakes'] !== [])
+                        <li><a href="{{ route('hubs.lakes') }}" class="inline-block py-2 hover:underline sm:py-1">All lakes</a></li>
+                    @endif
+                </ul>
+            </div>
+            {{-- Each region's links carry its name for screen readers and search engines, which read them out of the row. --}}
+            <div class="order-last col-span-2 lg:order-none">
+                <h2 class="text-xs font-semibold uppercase tracking-[0.08em] text-ground/70 dark:text-muted">By region</h2>
+                <ul class="mt-2 grid gap-x-6 sm:grid-cols-2">
+                    @foreach ($allRegions as $footerRegion)
+                        <li class="flex flex-wrap items-baseline gap-x-2">
+                            <a href="{{ route('regions.show', $footerRegion) }}" class="inline-block py-2 font-medium hover:underline sm:py-1">{{ $footerRegion->name }}</a>
+                            <span class="text-ground/70 dark:text-muted">
+                                @if ($footerRegion->hasOverflowData())
+                                    <a href="{{ route('spills.region', $footerRegion) }}" class="inline-block py-2 hover:text-ground hover:underline dark:hover:text-ink sm:py-1">Spills<span class="sr-only"> in {{ $footerRegion->nameInSentence() }}</span></a> &amp;
+                                @endif
+                                <a href="{{ route('levels.region', $footerRegion) }}" class="inline-block py-2 hover:text-ground hover:underline dark:hover:text-ink sm:py-1">Levels<span class="sr-only"> in {{ $footerRegion->nameInSentence() }}</span></a>
+                            </span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            <div>
+                <h2 class="text-xs font-semibold uppercase tracking-[0.08em] text-ground/70 dark:text-muted">About</h2>
+                <ul class="mt-2">
+                    <li><a href="{{ route('about') }}" class="inline-block py-2 hover:underline sm:py-1">About the data</a></li>
+                    <li><a href="{{ route('terms') }}" class="inline-block py-2 hover:underline sm:py-1">Terms of use</a></li>
+                    <li><a href="{{ route('privacy') }}" class="inline-block py-2 hover:underline sm:py-1">Privacy</a></li>
+                    @if ($analyticsId)
+                        <li><a href="#" data-cookie-settings class="inline-block py-2 hover:underline sm:py-1">Cookie settings</a></li>
+                    @endif
+                    <li><a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="inline-block py-2 hover:underline sm:py-1">Report a mistake</a></li>
+                    {{-- No email address on the pages: Cloudflare adds its email obfuscation script to any page that shows one. --}}
+                    <li><a href="https://mou.me/contact" rel="noopener" class="inline-block py-2 hover:underline sm:py-1">Get in touch</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="mt-8 border-t border-ground/15 dark:border-line-2 pt-6 text-xs leading-relaxed text-ground/70 dark:text-muted">
+            <p>
+                Near real-time, unvalidated data. This uses Environment Agency flood and river level data from the real-time data API (Beta)
+                and Environment Agency bathing water data, Open Government Licence v3.0. Welsh river level, rainfall, flood warning and bathing water data from Natural Resources Wales, Open Government Licence v3.0. Scottish river level, rainfall and bathing water data from SEPA, Open Government Licence v3.0.
+                @if ($streamCompanies !== '')
+                    {{ $streamCompanies }} storm overflow data via Stream, CC BY 4.0.
                 @endif
+                @if ($overflowFeeds->contains('driver', 'scottish_water'))
+                    Overflow data from Scottish Water.
+                @endif
+                @if ($overflowFeeds->contains('driver', 'welsh_water'))
+                    Overflow data from Dŵr Cymru Welsh Water.
+                @endif
+                Storm overflow annual returns produced by The Rivers Trust from Environment Agency and Natural Resources Wales data, Open Government Licence v3.0. Past storm overflow spills from the water companies' records via the Environment Agency, Open Government Licence v3.0.
+                River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
+                Weather forecasts from <a href="https://open-meteo.com/" rel="noopener" class="underline hover:text-ground dark:hover:text-ink">Open-Meteo</a>, CC BY 4.0.
             </p>
+            <p class="mt-4 text-center sm:text-left">Lovingly crafted in Leeds <svg class="inline h-3.5 w-3.5 -translate-y-px align-middle text-alert" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="love"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.2 4.4 2.5h2c.8-1.3 2.3-2.5 4.4-2.5 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21z"/></svg> by <a href="https://mou.me" rel="noopener" class="underline hover:text-ground dark:hover:text-ink">Chris Chrisostomou</a> <span class="whitespace-nowrap">© {{ now()->year }}</span></p>
         </div>
     </div>
 </footer>

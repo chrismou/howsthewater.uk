@@ -25,13 +25,20 @@ const classificationColours = {
     Poor: '#b91c1c',
 };
 
+// The levels page marks rivers higher than usual in the accent and rising rivers in amber.
+const levelColours = {
+    higher: '#1f5f8b',
+    rising: '#b45309',
+};
+
 function markerFor(marker, compact = false) {
     // On a map of hundreds of places (the swimming page) full-size markers merge into blobs at the national zoom.
-    const isPlace = !compact && (marker.kind === 'spot' || marker.kind === 'bathing' || marker.kind === 'place');
+    const isPlace = !compact && ['spot', 'bathing', 'place', 'level'].includes(marker.kind);
     const colour = {
         spot: () => recencyColours[marker.recency] ?? '#78716c',
         bathing: () => classificationColours[marker.classification] ?? '#78716c',
         place: () => '#1f5f8b',
+        level: () => levelColours[marker.state] ?? '#78716c',
     }[marker.kind]?.() ?? monitorColours[marker.status] ?? '#64748b';
 
     return L.circleMarker([marker.lat, marker.lng], {

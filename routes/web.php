@@ -5,6 +5,7 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LakeController;
 use App\Http\Controllers\LegacyRiverRedirectController;
+use App\Http\Controllers\LevelsController;
 use App\Http\Controllers\OverflowController;
 use App\Http\Controllers\PlaceHubController;
 use App\Http\Controllers\PlaceSpillsController;
@@ -35,6 +36,7 @@ Route::middleware($pageCaching)->group(function () {
     Route::view('/privacy', 'privacy')->name('privacy');
     Route::view('/terms', 'terms')->name('terms');
     Route::get('/spills', [SpillsController::class, 'index'])->name('spills.index');
+    Route::get('/levels', [LevelsController::class, 'index'])->name('levels.index');
     Route::get('/swimming', SwimmingController::class)->name('swimming');
     Route::get('/swimming/places.json', [SwimmingController::class, 'places'])->name('swimming.places');
     Route::get('/overflows/{monitor}', [OverflowController::class, 'show'])->name('overflows.show');
@@ -70,6 +72,7 @@ Route::scopeBindings()->group(function () use ($pageCaching) {
     Route::middleware($pageCaching)->group(function () {
         Route::get('/{region}', [RegionController::class, 'show'])->name('regions.show');
         Route::get('/{region}/spills', [SpillsController::class, 'region'])->name('spills.region');
+        Route::get('/{region}/levels', [LevelsController::class, 'region'])->name('levels.region');
 
         Route::get('/{region}/rivers', [RiverController::class, 'index'])->name('rivers.index');
         Route::get('/{region}/beaches', [BeachController::class, 'index'])->name('beaches.index');

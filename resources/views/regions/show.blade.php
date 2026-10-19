@@ -42,15 +42,16 @@
                         Monitor data updated {{ $summary->dataUpdatedAt->diffForHumans() }}.
                     @endif
                 </p>
+                <x-region-data-links :region="$region" />
             </div>
             <dl class="flex flex-wrap gap-x-7 gap-y-3">
                 <div>
-                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $summary->hasOverflowData ? $summary->dischargingNowCount() : '-' }}</dd>
-                    <dt class="text-xs text-muted">overflows discharging now <x-help term="discharging_now" /></dt>
+                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->dischargingNowCount() > 0 ? 'text-alert' : '' }}"><x-figure-link :url="$summary->hasOverflowData ? route('spills.region', $region).'#discharging' : null" figure>{{ $summary->hasOverflowData ? $summary->dischargingNowCount() : '-' }}</x-figure-link></dd>
+                    <dt class="text-xs text-muted"><x-figure-link :url="$summary->hasOverflowData ? route('spills.region', $region).'#discharging' : null">overflows discharging now</x-figure-link> <x-help term="discharging_now" /></dt>
                 </div>
                 <div>
-                    <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $summary->spotsAboveTypicalRange()->count() }}</dd>
-                    <dt class="text-xs text-muted">rivers higher than usual <x-help term="typical_range" /></dt>
+                    <dd class="font-mono text-3xl font-semibold tabular-nums"><x-figure-link :url="route('levels.region', $region).'#higher'" figure>{{ $summary->spotsAboveTypicalRange()->count() }}</x-figure-link></dd>
+                    <dt class="text-xs text-muted"><x-figure-link :url="route('levels.region', $region).'#higher'">rivers higher than usual</x-figure-link> <x-help term="typical_range" /></dt>
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $summary->hasOverflowData ? number_format($summary->monitorCount) : '-' }}</dd>
