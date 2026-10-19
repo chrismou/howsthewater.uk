@@ -44,6 +44,7 @@ final readonly class SpotSummary
         public ?float $rainfallLast24HoursMillimetres,
         public ?Carbon $rainfallAt,
         public Collection $floodWarnings,
+        public bool $isBathingWater = false,
     ) {
     }
 
@@ -79,6 +80,7 @@ final readonly class SpotSummary
             rainfallLast24HoursMillimetres: $conditions->rainfall?->hasReadings() ? $conditions->rainfall->last24HoursMillimetres : null,
             rainfallAt: $conditions->rainfall?->latestAt,
             floodWarnings: $conditions->floodWarnings,
+            isBathingWater: $conditions->bathingWater !== null,
         );
     }
 

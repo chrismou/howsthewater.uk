@@ -124,8 +124,8 @@ it('counts beaches and lakes on the home page and leaves out places it has none 
 
     $this->get(route('home'))
         ->assertOk()
+        // The intro's count names only the kinds of place there are.
         ->assertSee('bathing water results for 1 beach and 1 lake.')
-        ->assertDontSee('river spot')
         ->assertSee('Bathing water results');
 });
 

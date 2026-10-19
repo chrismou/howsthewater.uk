@@ -253,6 +253,12 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   Main rivers and their tributaries are seeded
   by `RiverSeeder` (regions and their overflow feeds come from `RegionSeeder`), spots by `SpotSeeder`, whose `FEATURED` list
   marks the spots suggested on the home page. Spot coordinates sit on the OS centreline; new ones should too.
+- The home page's "Right now at popular swimming spots" (`PopularSwimmingSpots`, `components/swimming-spots-now`, under
+  the hero search) lists what is happening at designated bathing waters (every beach and lake site, and spots that are
+  one: `SpotSummary::$isBathingWater`) and the suggested well-known spots: an overflow discharging upstream or nearby,
+  then an increased pollution risk forecast (`WaterBodySummary::hasIncreasedRisk()`), a flood warning and a spill in
+  the last 24 hours, rivers, beaches and lakes in turn, five at most, topped up with the well-known spots as they are.
+  On a quiet day it says nothing is happening before listing them. It reads only the cached region summaries.
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
   the spot, plus everything on tributaries (rivers with a `parent_river_id`) and on main rivers that flow into it
   (`flows_into_river_id`, set by `flowsInto:` in `RiverSeeder`, e.g. the Ure into the Ouse) that join at or above the

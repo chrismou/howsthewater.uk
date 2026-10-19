@@ -3,8 +3,10 @@
 namespace App\Data;
 
 use App\Enums\BathingWaterClassification;
+use App\Enums\PollutionRisk;
 use App\Enums\SpillRecency;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * What a listing needs to say about a beach or lake, as plain values. Built
@@ -24,6 +26,7 @@ final readonly class WaterBodySummary
         public int $dischargingNearbyCount,
         public int $nearbyMonitorCount,
         public ?Carbon $overflowDataUpdatedAt,
+        public ?Carbon $increasedRiskUntil = null,
     ) {
     }
 
@@ -42,6 +45,7 @@ final readonly class WaterBodySummary
             dischargingNearbyCount: $conditions->overflows->dischargingNowCount,
             nearbyMonitorCount: $conditions->overflows->monitors->count(),
             overflowDataUpdatedAt: $conditions->overflows->dataUpdatedAt,
+            increasedRiskUntil: self::increasedRiskUntil(collect([$conditions->bathingWater])),
         );
     }
 
@@ -58,7 +62,31 @@ final readonly class WaterBodySummary
             dischargingNearbyCount: $conditions->overflows->dischargingNowCount,
             nearbyMonitorCount: $conditions->overflows->monitors->count(),
             overflowDataUpdatedAt: $conditions->overflows->dataUpdatedAt,
+            increasedRiskUntil: self::increasedRiskUntil($conditions->bathingWaters),
         );
+    }
+
+    /**
+     * Whether an increased pollution risk forecast is in force at any of its bathing sites, evaluated at read time
+     * so it ends when the forecast expires.
+     */
+    public function hasIncreasedRisk(): bool
+    {
+        return $this->increasedRiskUntil?->isFuture() === true;
+    }
+
+    /**
+     * When the latest increased pollution risk forecast in force at these sites expires, or null for none.
+     *
+     * @param  Collection<int, BathingWaterSummary>  $sites
+     */
+    private static function increasedRiskUntil(Collection $sites): ?Carbon
+    {
+        return $sites
+            ->filter(fn (BathingWaterSummary $site) => $site->currentRisk() === PollutionRisk::Increased)
+            ->map(fn (BathingWaterSummary $site) => $site->bathingWater->risk_expires_at)
+            ->filter()
+            ->max();
     }
 
     /**

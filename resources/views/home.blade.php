@@ -31,7 +31,7 @@
                 <path d="M-20 470 C 340 410, 520 550, 760 490 S 1140 390, 1300 470"/>
             </svg>
             <div class="relative mx-auto grid max-w-5xl gap-8 px-4 pt-6 pb-12 sm:py-14 lg:grid-cols-12 lg:py-16">
-                <div class="flex flex-col gap-5 lg:col-span-7">
+                <div class="flex min-w-0 flex-col gap-5 lg:col-span-7">
                     <p class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $regionNames ?: 'Rivers' }}, updated every 15 minutes</p>
                     <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">How's your local river, beach or lake looking today?</h1>
                     <p class="max-w-xl text-lg text-ink-2">
@@ -43,16 +43,9 @@
                                class="min-h-12 flex-1 rounded-lg border border-line bg-surface px-4 text-base text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent">
                         <button type="submit" class="inline-flex min-h-12 items-center justify-center rounded-lg bg-accent px-5 text-sm font-semibold text-surface hover:bg-accent-strong">Search</button>
                     </form>
-                    @if ($featured->isNotEmpty())
-                        <div class="flex flex-wrap items-center gap-2 text-sm text-muted">
-                            <span>Try:</span>
-                            @foreach ($featured as $spot)
-                                <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" class="rounded-full border border-pill-grey-ring bg-pill-grey-bg px-3 py-1.5 text-[13px] font-medium text-pill-grey-text hover:border-muted">{{ $spot->name }}</a>
-                            @endforeach
-                        </div>
-                    @endif
+                    <x-swimming-spots-now :now="$swimmingSpots" class="mt-2" />
                 </div>
-                <div class="rounded-lg border border-line bg-surface p-6 lg:col-span-5">
+                <div class="rounded-lg border border-line bg-surface p-6 lg:col-span-5 lg:self-start">
                     <div class="flex items-baseline justify-between">
                         <span class="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Across all rivers now</span>
                         @if ($allRegions->dataUpdatedAt)

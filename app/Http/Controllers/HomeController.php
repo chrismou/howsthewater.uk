@@ -8,20 +8,24 @@ use App\Data\SpotSummary;
 use App\Models\BathingWater;
 use App\Models\Lake;
 use App\Models\Region;
+use App\Services\Conditions\PopularSwimmingSpots;
 use App\Services\Conditions\RegionSummaries;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __invoke(RegionSummaries $summaries): View
+    public function __invoke(RegionSummaries $summaries, PopularSwimmingSpots $swimmingSpots): View
     {
         // The first region added leads the hero; the rest follow in the order they were added.
         $regions = Region::query()->orderBy('id')->get()->map(fn (Region $region) => $summaries->for($region));
 
+        $featured = $this->featuredSpots($regions);
+
         return view('home', [
             'regions' => $regions,
-            'featured' => $this->featuredSpots($regions),
+            'featured' => $featured,
+            'swimmingSpots' => $swimmingSpots->now($regions, $featured),
             'totalBeaches' => BathingWater::query()->beaches()->whereNotNull('region_id')->count(),
             'totalLakes' => Lake::query()->count(),
         ]);
