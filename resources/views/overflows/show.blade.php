@@ -159,7 +159,7 @@
 
     <section id="spills" class="mt-10 scroll-mt-24">
         <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 class="font-display text-lg font-semibold">Every spill recorded <span class="font-mono tabular-nums text-muted">{{ $spills->total() }}</span></h2>
+            <h2 class="font-display text-lg font-semibold">Every spill recorded<x-heading-count :count="$spills->total()" /></h2>
             @if ($hasPublishedLog)
                 <span class="text-sm text-muted">Newest first. From its live feed since {{ $recordedFrom->format('j F Y') }}, and from {{ $page->company() }}'s published records before that.</span>
             @else

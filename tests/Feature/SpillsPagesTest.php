@@ -40,7 +40,10 @@ it('lists what the live bar counts: overflows discharging now, spots with a spil
         // A spot is never itself discharging: the heading says the overflow is upstream, the pill when.
         ->assertSeeInOrder(['id="spots"', 'Spots with an overflow spilling upstream in the last 24 hours', 'Ilkley', 'motion-safe:animate-live', 'Happening now', 'id="recent"'], false)
         ->assertSee(route('overflows.show', $discharging), false)
-        ->assertSee(route('overflows.show', $spilled), false);
+        ->assertSee(route('overflows.show', $spilled), false)
+        // Each count is set off from its heading, with a hidden comma so the heading's text reads "..., 2".
+        ->assertSeeText('Spills in the last 24 hours, 2')
+        ->assertSee('Overflows discharging right now<span class="sr-only">, </span><span class="ml-3 font-mono font-bold tabular-nums text-alert">1</span>', false);
 
     // The live bar's counts open these lists.
     $this->get(route('regions.show', $region))

@@ -645,6 +645,9 @@ replacing the local database with a copy of live rather than backfilling.
   (heading and button in a flex row), never inside it;
   each term's text goes once into a hidden glossary at the end of the page (`data-nosnippet`, so search snippets skip
   it), and `tooltip.js` shows it in one shared panel kept on screen, so headings never contain the explanations.
+- A count beside a heading ("Spills in the last 24 hours 1,108") goes in `components/heading-count` (bold, spaced
+  off, red, amber or muted), straight after the last word inside the heading; its hidden comma keeps the words and
+  number apart in the text.
 - Phones keep the header to two rows: the search box sits behind a search button (`search.js`; without JavaScript it
   links to `/search`, which has its own box on phones). Controls people tap (menus, buttons, the theme toggle) are at
   least 44px tall on phones; small inline ones (help buttons, breadcrumb links) reach further than they are drawn.

@@ -53,7 +53,7 @@
     <section id="discharging" class="mb-10 scroll-mt-24">
         <div class="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <div class="flex items-center gap-1.5">
-                <h2 class="font-display text-lg font-semibold">Overflows discharging right now <span class="font-mono tabular-nums {{ $overview->dischargingNowTotal > 0 ? 'text-alert' : 'text-muted' }}">{{ $overview->dischargingNowTotal }}</span></h2>
+                <h2 class="font-display text-lg font-semibold">Overflows discharging right now<x-heading-count :count="$overview->dischargingNowTotal" :tone="$overview->dischargingNowTotal > 0 ? 'red' : 'grey'" /></h2>
                 <x-help term="discharging_now" />
             </div>
             {{-- Newest first by default, so each visit shows what has just started; the longest running are a click away. --}}
@@ -75,14 +75,14 @@
 
     @if ($overview->dischargingNearWaterBodies->isNotEmpty())
         <section id="near-beaches-and-lakes" class="mb-10 scroll-mt-24">
-            <h2 class="font-display mb-3 text-lg font-semibold">Discharging near beaches and lakes <span class="font-mono tabular-nums text-alert">{{ $overview->dischargingNearWaterBodiesTotal }}</span></h2>
+            <h2 class="font-display mb-3 text-lg font-semibold">Discharging near beaches and lakes<x-heading-count :count="$overview->dischargingNearWaterBodiesTotal" tone="red" /></h2>
             @include('spills.discharging-table', ['listings' => $overview->dischargingNearWaterBodies, 'total' => $overview->dischargingNearWaterBodiesTotal, 'placesHeading' => 'Within 3 km', 'label' => 'Storm overflows discharging near beaches and lakes', 'order' => $overview->order, 'moreUrl' => $rowsUrl('near')])
         </section>
     @endif
 
     <section id="spots" class="mb-10 scroll-mt-24">
         <div class="mb-3 flex items-center gap-1.5">
-            <h2 class="font-display text-lg font-semibold">Spots with an overflow spilling upstream in the last 24 hours <span class="font-mono tabular-nums {{ $overview->spotsWithSpill->isNotEmpty() ? 'text-spill' : 'text-muted' }}">{{ $overview->spotsWithSpill->count() }}</span></h2>
+            <h2 class="font-display text-lg font-semibold">Spots with an overflow spilling upstream in the last 24 hours<x-heading-count :count="$overview->spotsWithSpill->count()" :tone="$overview->spotsWithSpill->isNotEmpty() ? 'amber' : 'grey'" /></h2>
             <x-help term="upstream" />
         </div>
         @if ($overview->spotsWithSpill->isEmpty())
@@ -126,7 +126,7 @@
 
     <section id="recent" class="mb-10 scroll-mt-24">
         <div class="mb-3 flex items-center gap-1.5">
-            <h2 class="font-display text-lg font-semibold">Spills in the last 24 hours <span class="font-mono tabular-nums text-muted">{{ $overview->recentSpillsTotal }}</span></h2>
+            <h2 class="font-display text-lg font-semibold">Spills in the last 24 hours<x-heading-count :count="$overview->recentSpillsTotal" /></h2>
             <x-help term="spill" />
         </div>
         @if ($overview->recentSpills->isEmpty())

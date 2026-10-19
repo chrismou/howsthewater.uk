@@ -136,7 +136,7 @@
 
         <section id="spills" class="mt-10 scroll-mt-24">
             <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-                <h2 class="font-display text-lg font-semibold">Every spill recorded <span class="font-mono tabular-nums text-muted">{{ $spills->total() }}</span></h2>
+                <h2 class="font-display text-lg font-semibold">Every spill recorded<x-heading-count :count="$spills->total()" /></h2>
                 <span class="text-sm text-muted">Newest first. Spills from before we started reading an overflow's live feed come from its company's published records, or where it publishes none, the latest its feed showed then.</span>
             </div>
             @if ($spills->isEmpty())
