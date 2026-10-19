@@ -46,7 +46,7 @@
             <dl class="flex flex-wrap gap-x-7 gap-y-3">
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $summary->hasOverflowData ? $summary->dischargingNowCount() : '-' }}</dd>
-                    <dt class="text-xs text-muted">discharging now <x-help term="discharging_now" /></dt>
+                    <dt class="text-xs text-muted">overflows discharging now <x-help term="discharging_now" /></dt>
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $summary->spotsAboveTypicalRange()->count() }}</dd>

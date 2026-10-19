@@ -58,7 +58,7 @@ enum SpillRecency: string
             self::DischargingNow => 'Discharging upstream now',
             self::Within24Hours => 'Spill upstream in the last 24 hours',
             self::Within48Hours => 'Spill upstream in the last 48 hours',
-            self::None => 'No spills reported in the last 48 hours',
+            self::None => 'No upstream spills reported in 48h',
             self::Offline => 'Upstream monitors offline, no spill data',
             self::NoData => 'No monitored overflows upstream',
             self::NotCovered => 'Overflow data not available here yet',

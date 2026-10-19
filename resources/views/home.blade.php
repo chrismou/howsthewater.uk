@@ -83,7 +83,7 @@
                                 <a href="{{ route('regions.show', $region->slug) }}" class="group flex items-baseline justify-between gap-3 py-2">
                                     <span class="font-semibold group-hover:underline">{{ $region->name }}</span>
                                     <span class="text-muted">
-                                        <span class="font-mono font-semibold {{ $region->dischargingNowCount() > 0 ? 'text-alert' : 'text-ink' }}">{{ $region->dischargingNowCount() }}</span> discharging ·
+                                        <span class="font-mono font-semibold {{ $region->dischargingNowCount() > 0 ? 'text-alert' : 'text-ink' }}">{{ $region->dischargingNowCount() }}</span> <span class="hidden sm:inline">{{ \Illuminate\Support\Str::plural('overflow', $region->dischargingNowCount()) }}</span> discharging ·
                                         <span class="font-mono">{{ $region->spots()->count() }}</span> spots <span class="text-accent">→</span>
                                     </span>
                                 </a>

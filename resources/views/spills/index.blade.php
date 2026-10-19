@@ -47,7 +47,7 @@
 
     <section id="discharging" class="mb-10 scroll-mt-24">
         <div class="mb-3 flex items-center gap-1.5">
-            <h2 class="font-display text-lg font-semibold">Discharging now <span class="font-mono tabular-nums {{ $overview->dischargingNowTotal > 0 ? 'text-alert' : 'text-muted' }}">{{ $overview->dischargingNowTotal }}</span></h2>
+            <h2 class="font-display text-lg font-semibold">Overflows discharging now <span class="font-mono tabular-nums {{ $overview->dischargingNowTotal > 0 ? 'text-alert' : 'text-muted' }}">{{ $overview->dischargingNowTotal }}</span></h2>
             <x-help term="discharging_now" />
         </div>
         @if ($overview->dischargingNow->isEmpty())
@@ -72,7 +72,7 @@
         @if ($overview->spotsWithSpill->isEmpty())
             <p class="text-sm text-ink-2">{{ $stale ? 'No spot had a spill upstream in the 24 hours before the last update.' : 'No spot had a spill reported upstream in the last 24 hours.' }}</p>
         @else
-            <ul class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ul class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($overview->spotsWithSpill as $spot)
                     <li>
                         <a href="{{ route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]) }}" title="{{ $spot->name }}, {{ $spot->riverName }}" class="flex items-start justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 transition hover:border-muted">
@@ -81,13 +81,13 @@
                                 <span class="block truncate font-semibold">{{ $spot->name }}</span>
                                 <span class="block truncate text-xs text-muted">{{ $spot->riverName }}</span>
                             </span>
-                            {{-- The heading says "last 24 hours", so the pill only marks those discharging now or out of date. --}}
+                            {{-- The heading says "last 24 hours"; the pill says whether an overflow upstream is discharging now or spilled since, or the data is out of date. --}}
                             @if ($spot->overflowDataIsStale())
                                 <span class="shrink-0 whitespace-nowrap rounded-full bg-pill-grey-bg px-2.5 py-0.5 text-xs font-medium text-pill-grey-text ring-1 ring-inset ring-pill-grey-ring">Out of date</span>
                             @elseif ($spot->spillRecency === \App\Enums\SpillRecency::DischargingNow)
-                                <span class="shrink-0 whitespace-nowrap rounded-full bg-pill-red-bg px-2.5 py-0.5 text-xs font-medium text-pill-red-text ring-1 ring-inset ring-pill-red-ring">Discharging now</span>
+                                <span class="shrink-0 whitespace-nowrap rounded-full bg-pill-red-bg px-2.5 py-0.5 text-xs font-medium text-pill-red-text ring-1 ring-inset ring-pill-red-ring">Discharging upstream</span>
                             @else
-                                <span class="shrink-0 whitespace-nowrap rounded-full bg-pill-amber-bg px-2.5 py-0.5 text-xs font-medium text-pill-amber-text ring-1 ring-inset ring-pill-amber-ring">Last 24h</span>
+                                <span class="shrink-0 whitespace-nowrap rounded-full bg-pill-amber-bg px-2.5 py-0.5 text-xs font-medium text-pill-amber-text ring-1 ring-inset ring-pill-amber-ring">Upstream spill</span>
                             @endif
                         </a>
                     </li>

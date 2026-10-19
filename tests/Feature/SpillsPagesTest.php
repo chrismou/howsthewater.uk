@@ -36,6 +36,8 @@ it('lists what the live bar counts: overflows discharging now, spots with a spil
         ->assertOk()
         ->assertSee('<title>Storm overflow spills in Yorkshire now - How\'s the Water?</title>', false)
         ->assertSeeInOrder(['id="discharging"', 'Addingham CSO', 'YWS00100', 'Ilkley', '5.0 km', 'id="spots"', 'Ilkley', 'id="recent"', 'Addingham CSO', 'ongoing', 'YWS00200'], false)
+        // A spot is never itself discharging: its pill says the overflow is upstream.
+        ->assertSeeInOrder(['id="spots"', 'Ilkley', 'Discharging upstream', 'id="recent"'], false)
         ->assertSee(route('overflows.show', $discharging), false)
         ->assertSee(route('overflows.show', $spilled), false);
 
@@ -55,7 +57,7 @@ it('lists overflows discharging near beaches apart from those on rivers', functi
 
     $this->get(route('spills.region', $region))
         ->assertOk()
-        ->assertSeeInOrder(['Discharging now', 'is reporting a discharge right now', 'Discharging near beaches and lakes', 'Runswick CSO', 'Runswick Bay']);
+        ->assertSeeInOrder(['Overflows discharging now', 'is reporting a discharge right now', 'Discharging near beaches and lakes', 'Runswick CSO', 'Runswick Bay']);
 });
 
 it('has no spills page where we do not read the overflow feed, and never counts overflows recorded there', function () {
@@ -70,7 +72,7 @@ it('has no spills page where we do not read the overflow feed, and never counts 
     $this->get(route('spills.region', $wales))->assertNotFound();
 
     // The home page's bar counts Yorkshire's one discharging overflow, and the combined list shows just that one.
-    $this->get(route('home'))->assertSeeInOrder(['data-live-bar', '>1</span> <span class="hidden sm:inline">overflow</span> discharging'], false);
+    $this->get(route('home'))->assertSeeInOrder(['data-live-bar', '>1</span> overflow discharging'], false);
     $this->get(route('spills.index'))
         ->assertOk()
         ->assertSee('Addingham CSO')

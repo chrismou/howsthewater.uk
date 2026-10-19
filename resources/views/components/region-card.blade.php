@@ -43,8 +43,8 @@
             [
                 ['Rivers', $summary->rivers->count(), null],
                 ['Spots', $summary->spots()->count(), null],
-                ['Discharging now', $overflowFigure($summary->dischargingNowCount()), 'text-alert'],
-                ['Spill in last 24h', $overflowFigure($summary->spotsWithSpillLast24HoursCount()), 'text-spill', 'spots'],
+                ['Overflows discharging', $overflowFigure($summary->dischargingNowCount()), 'text-alert'],
+                ['Upstream spill in 24h', $overflowFigure($summary->spotsWithSpillLast24HoursCount()), 'text-spill', 'spots'],
             ],
         ],
     };

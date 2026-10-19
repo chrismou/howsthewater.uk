@@ -53,11 +53,11 @@
             <dl class="flex flex-wrap gap-x-7 gap-y-3">
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $summary->hasOverflowData ? $summary->dischargingNowCount() : '-' }}</dd>
-                    <dt class="text-xs text-muted">discharging now <x-help term="discharging_now" /></dt>
+                    <dt class="text-xs text-muted">overflows discharging now <x-help term="discharging_now" /></dt>
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $summary->hasOverflowData ? $summary->spotsWithSpillLast24HoursCount() : '-' }}</dd>
-                    <dt class="text-xs text-muted">spots, spill in 24h <x-help term="spill" /></dt>
+                    <dt class="text-xs text-muted">spots with an upstream spill in 24h <x-help term="spill" /></dt>
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $aboveTypical->count() }}</dd>
@@ -89,9 +89,10 @@
             data-map-markers="{{ json_encode($mapMarkers) }}"
         ></div>
         <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Map key">
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b91c1c"></span>Discharging now</li>
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#c2410c"></span>Spill in 48h</li>
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#047857"></span>No spills in 48h</li>
+            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b91c1c"></span>Discharging upstream</li>
+            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#c2410c"></span>Upstream spill in 24h</li>
+            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b45309"></span>Upstream spill in 48h</li>
+            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#047857"></span>No upstream spills reported in 48h</li>
             <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#78716c"></span>No data or offline</li>
         </ul>
     </div>

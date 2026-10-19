@@ -300,7 +300,10 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   Guids are stable per event so readers notify once. The feed and spot monitors routes sit before the spot route,
   which would otherwise take "feed" or "monitors" as a spot slug. Spot, river, beach and lake pages pass `feed` to the layout for the `<link rel="alternate">`.
 - `SpillRecency::Offline` is returned when every upstream monitor is offline, so an absence of data never shows as a
-  green "no spills". Keep that distinction for any new status. A region without overflow feeds
+  green "no spills". Keep that distinction for any new status. A spot is never itself "discharging": wording on
+  spots and rivers says where ("Discharging upstream", "Upstream spill"), counts of monitors say "overflows
+  discharging", beaches and lakes say "nearby", and only an overflow's own status (`OverflowStatus::label()`,
+  `components/overflow-status`) says "Discharging now". A region without overflow feeds
   (`Region::hasOverflowData()`; no region at present) gives `SpillRecency::NotCovered`: pages say "Overflow data not available
   here yet" and show dashes, never zero counts, "no monitored overflows" or a 30-day history, and `RegionSummary`
   carries `hasOverflowData` for the live bar, region page and cards. Every company's overflows are recorded ahead of

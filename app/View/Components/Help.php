@@ -22,7 +22,7 @@ class Help extends Component
         ],
         'discharging_now' => [
             'label' => 'What does discharging now mean?',
-            'text' => 'A storm overflow upstream is releasing untreated sewage mixed with rainwater into the river at this moment. The monitors report within about 15 minutes, so this is as live as the data gets.',
+            'text' => 'A storm overflow is releasing untreated sewage mixed with rainwater at this moment. For a spot, it counts the overflows upstream of it: the spot itself is not discharging. The monitors report within about 15 minutes, so this is as live as the data gets.',
         ],
         'history' => [
             'label' => 'How is the 30 day history built?',

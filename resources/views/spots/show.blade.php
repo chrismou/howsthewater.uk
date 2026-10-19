@@ -112,7 +112,7 @@
 
         <dl class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Discharging now <x-help term="discharging_now" /></dt>
+                <dt class="text-xs uppercase tracking-wide text-muted">Discharging upstream <x-help term="discharging_now" /></dt>
                 <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $conditions->dischargingNowCount > 0 ? 'text-alert' : '' }}">{{ $covered ? $conditions->dischargingNowCount : '-' }}</dd>
             </div>
             <div>
@@ -154,7 +154,7 @@
             ></div>
             <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Map key">
                 <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-accent"></span>{{ $spot->name }}</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b91c1c"></span>Discharging</li>
+                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b91c1c"></span>Overflow discharging</li>
                 <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#64748b"></span>Monitor</li>
                 <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#a8a29e"></span>Offline</li>
             </ul>
