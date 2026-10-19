@@ -3,13 +3,11 @@
 @php
     // Stale data gets the neutral style and its own words whatever it last said, so an old "no spills" never reads as
     // reassurance.
-    $classes = $stale ? 'bg-pill-grey-bg text-pill-grey-text ring-pill-grey-ring' : match ($recency) {
-        \App\Enums\SpillRecency::DischargingNow => 'bg-pill-red-bg text-pill-red-text ring-pill-red-ring',
-        \App\Enums\SpillRecency::Within24Hours => 'bg-pill-amber-bg text-pill-amber-text ring-pill-amber-ring',
-        \App\Enums\SpillRecency::Within48Hours => 'bg-pill-amber-bg text-pill-amber-text ring-pill-amber-ring',
-        \App\Enums\SpillRecency::None => 'bg-pill-green-bg text-pill-green-text ring-pill-green-ring',
-        \App\Enums\SpillRecency::Offline => 'bg-pill-grey-bg text-pill-grey-text ring-pill-grey-ring',
-        \App\Enums\SpillRecency::NoData, \App\Enums\SpillRecency::NotCovered => 'bg-pill-grey-bg text-pill-grey-text ring-pill-grey-ring',
+    $classes = match ($stale ? 'grey' : $recency->tone()) {
+        'red' => 'bg-pill-red-bg text-pill-red-text ring-pill-red-ring',
+        'amber' => 'bg-pill-amber-bg text-pill-amber-text ring-pill-amber-ring',
+        'green' => 'bg-pill-green-bg text-pill-green-text ring-pill-green-ring',
+        default => 'bg-pill-grey-bg text-pill-grey-text ring-pill-grey-ring',
     };
 @endphp
 

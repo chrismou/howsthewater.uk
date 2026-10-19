@@ -1,5 +1,6 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { fetchJsonOnce } from './json-cache';
 
 const recencyColours = {
     discharging_now: '#b91c1c',
@@ -24,8 +25,9 @@ const classificationColours = {
     Poor: '#b91c1c',
 };
 
-function markerFor(marker) {
-    const isPlace = marker.kind === 'spot' || marker.kind === 'bathing' || marker.kind === 'place';
+function markerFor(marker, compact = false) {
+    // On a map of hundreds of places (the swimming page) full-size markers merge into blobs at the national zoom.
+    const isPlace = !compact && (marker.kind === 'spot' || marker.kind === 'bathing' || marker.kind === 'place');
     const colour = {
         spot: () => recencyColours[marker.recency] ?? '#78716c',
         bathing: () => classificationColours[marker.classification] ?? '#78716c',
@@ -62,10 +64,23 @@ export function initMaps() {
     elements.forEach((element) => observer.observe(element));
 }
 
+// A page with very many markers (the swimming page) gives a URL to load them from instead (data-map-markers-url), so
+// they never weigh down the page itself.
 function initMap(element) {
+    if (element.dataset.mapMarkersUrl) {
+        fetchJsonOnce(element.dataset.mapMarkersUrl)
+            .then((markers) => drawMap(element, markers))
+            .catch(() => drawMap(element, []));
+
+        return;
+    }
+
+    drawMap(element, JSON.parse(element.dataset.mapMarkers || '[]'));
+}
+
+function drawMap(element, markers) {
     const centreline = JSON.parse(element.dataset.mapCentreline || '[]');
     const centrelines = JSON.parse(element.dataset.mapCentrelines || '[]');
-    const markers = JSON.parse(element.dataset.mapMarkers || '[]');
 
     // A static map is a picture: no panning, zooming or controls, so it can sit inside a link.
     const isStatic = element.hasAttribute('data-map-static');
@@ -80,6 +95,8 @@ function initMap(element) {
         // Half steps let the map fit a region's shape closely (a tall region in a wide box would otherwise drop a
         // whole level and show twice the area), while keeping tile labels sharp enough to read.
         zoomSnap: 0.5,
+        // Hundreds of markers (the swimming page has every place) draw far faster on one canvas than as SVG nodes.
+        preferCanvas: markers.length > 300,
     });
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -95,8 +112,11 @@ function initMap(element) {
         }
     });
 
+    const markerLayers = [];
+
     markers.forEach((marker) => {
-        const layer = markerFor(marker).addTo(map);
+        const layer = markerFor(marker, markers.length > 300).addTo(map);
+        markerLayers.push({ marker, layer });
         // Labels carry feed-supplied text, so build the popup from DOM nodes rather than an HTML string.
         const label = document.createElement(marker.url ? 'a' : 'span');
         label.textContent = marker.label;
@@ -114,4 +134,8 @@ function initMap(element) {
     } else {
         map.setView([53.9, -1.7], 9);
     }
+
+    // Lets a page's own script work with the map once it is drawn (the swimming page filters and zooms it).
+    element.leafletMap = { map, markers: markerLayers, L };
+    element.dispatchEvent(new CustomEvent('map:ready', { detail: element.leafletMap }));
 }

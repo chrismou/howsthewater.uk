@@ -55,7 +55,7 @@ class SitemapController extends Controller
             ->concat($spots->map(fn (Spot $spot) => $this->url(route('spots.show', [$spot->river->region, $spot->river, $spot]), $spotTimes[$spot->id] ?? null)))
             ->concat($beaches->map(fn (BathingWater $beach) => $this->url(route('beaches.show', [$beach->region, $beach]), $beach->updated_at)))
             ->concat($lakes->map(fn (Lake $lake) => $this->url(route('lakes.show', [$lake->region, $lake]), $lake->updated_at)))
-            ->concat(collect(['hubs.rivers', 'hubs.beaches', 'hubs.lakes', 'spills.index'])->map(fn (string $hub) => $this->url(route($hub), $latest)))
+            ->concat(collect(['hubs.rivers', 'hubs.beaches', 'hubs.lakes', 'spills.index', 'swimming'])->map(fn (string $hub) => $this->url(route($hub), $latest)))
             ->concat($regions->filter(fn (Region $region) => $region->hasOverflowData())->map(fn (Region $region) => $this->url(route('spills.region', $region), $regionTimes[$region->id])))
             ->concat($this->placeSpillsPages($spots, $beaches, $lakes, $spotTimes))
             // Dated by the overflow's latest spill: feeds confirm every monitor each poll, which changes nothing on the page.

@@ -22,7 +22,7 @@ return [
     // date whenever that page's content changes.
     'pages_updated' => [
         'about' => '2026-10-19',
-        'privacy' => '2026-10-16',
+        'privacy' => '2026-10-19',
         'terms' => '2026-10-18',
     ],
 

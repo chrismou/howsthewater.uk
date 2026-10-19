@@ -14,6 +14,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SpillsController;
 use App\Http\Controllers\SpotController;
+use App\Http\Controllers\SwimmingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,8 @@ Route::middleware($pageCaching)->group(function () {
     Route::view('/privacy', 'privacy')->name('privacy');
     Route::view('/terms', 'terms')->name('terms');
     Route::get('/spills', [SpillsController::class, 'index'])->name('spills.index');
+    Route::get('/swimming', SwimmingController::class)->name('swimming');
+    Route::get('/swimming/places.json', [SwimmingController::class, 'places'])->name('swimming.places');
     Route::get('/overflows/{monitor}', [OverflowController::class, 'show'])->name('overflows.show');
 });
 
