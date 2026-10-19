@@ -309,7 +309,7 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   (`components/region-card`, also used on the home page), so the menus work without JavaScript. The regions and places
   come from `NavigationMenus::menusJson()`, embedded once per page as `#nav-menus`, and `nav.js` builds each menu from it
   when it first opens, so the header stays small and the content comes early in the HTML. The hub routes, `/about`,
-  `/privacy`, `/terms`, `/search` and `/swimming` sit before `/{region}`, so `Region::RESERVED_SLUGS` lists them and saving a region
+  `/privacy`, `/terms`, `/search`, `/swimming` and `/levels` sit before `/{region}`, so `Region::RESERVED_SLUGS` lists them and saving a region
   with one throws. `RegionSummary` carries each region's beaches and lakes as plain `WaterBodySummary` values for the
   Beaches and Lakes hubs.
 - RSS feeds for each spot, river, beach and lake (`spots.feed`, `rivers.feed`, `beaches.feed`, `lakes.feed`, at
@@ -492,6 +492,11 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   `spills.region.rows` (`/spills/rows/{list}?offset=`, rows only), which take the same order. The page warns when no overflow behind it has reported for 6 hours, so an empty list never reads as
   "none right now". A region without overflow data has no spills page (404), and the combined page describes its
   coverage rather than naming countries. `spills` and `overflows` are in `Region::RESERVED_SLUGS`.
+- The "higher than usual" and "rising" counts (live bar, home, region and rivers pages) link to `/levels` (every
+  region) or `/{region}/levels` (`LevelsController`, `levels/index`, `#higher`, `#rising`), which list
+  `RegionSummary::spotsAboveTypicalRange()` and `spotsRising()` from the cached summaries: one row per river at the
+  spot that put it there, the first 25 shown and the rest in a `<details>`, with a map (`kind: 'level'` markers).
+  Every region has one, as every region has gauges, and both are in the sitemap.
 - Each spot, beach and lake has a spills page (`spots.spills`, `beaches.spills`, `lakes.spills`, at `.../spills`;
   `PlaceSpillsController`, `PlaceSpillsService`, `PlaceSpills`, `spills/place`) for the overflows its page shows
   (`overflow_monitor_places`): hours when at least one was spilling over 7 days, 30 days and the year (overlapping
@@ -673,6 +678,14 @@ replacing the local database with a copy of live rather than backfilling.
 - A count beside a heading ("Spills in the last 24 hours 1,108") goes in `components/heading-count` (bold, spaced
   off, red, amber or muted), straight after the last word inside the heading; its hidden comma keeps the words and
   number apart in the text.
+- A headline figure that counts something listed elsewhere links there: the number and its label each go in
+  `components/figure-link` (the number with `figure`, so screen readers and the keyboard skip the repeat), with a null
+  url where there is nothing to open (a dash, a region without overflow data). Help buttons stay outside the link.
+- The footer's navigation lists the pages the header menus do not reach in four columns: what is happening now
+  (spills, levels, swimming) and the place hubs, then each region across two columns with its spills (where we read
+  its overflow data) and levels pages, then the site's own pages and contact links, above the data credits. Its
+  short "Spills" and "Levels" links carry the region's name as `sr-only` text, so each says where it goes. Region
+  overview and rivers pages link both by name under their intro (`components/region-data-links`).
 - Phones keep the header to two rows: the search box sits behind a search button (`search.js`; without JavaScript it
   links to `/search`, which has its own box on phones). Controls people tap (menus, buttons, the theme toggle) are at
   least 44px tall on phones; small inline ones (help buttons, breadcrumb links) reach further than they are drawn.

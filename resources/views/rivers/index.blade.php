@@ -49,19 +49,20 @@
                         Monitor data updated {{ $summary->dataUpdatedAt->diffForHumans() }}.
                     @endif
                 </p>
+                <x-region-data-links :region="$region" />
             </div>
             <dl class="flex flex-wrap gap-x-7 gap-y-3">
                 <div>
-                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->dischargingNowCount() > 0 ? 'text-alert' : '' }}">{{ $summary->hasOverflowData ? $summary->dischargingNowCount() : '-' }}</dd>
-                    <dt class="text-xs text-muted">overflows discharging now <x-help term="discharging_now" /></dt>
+                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->dischargingNowCount() > 0 ? 'text-alert' : '' }}"><x-figure-link :url="$summary->hasOverflowData ? route('spills.region', $region).'#discharging' : null" figure>{{ $summary->hasOverflowData ? $summary->dischargingNowCount() : '-' }}</x-figure-link></dd>
+                    <dt class="text-xs text-muted"><x-figure-link :url="$summary->hasOverflowData ? route('spills.region', $region).'#discharging' : null">overflows discharging now</x-figure-link> <x-help term="discharging_now" /></dt>
                 </div>
                 <div>
-                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $summary->hasOverflowData ? $summary->spotsWithSpillLast24HoursCount() : '-' }}</dd>
-                    <dt class="text-xs text-muted">spots with an upstream spill in 24h <x-help term="spill" /></dt>
+                    <dd class="font-mono text-3xl font-semibold tabular-nums {{ $summary->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}"><x-figure-link :url="$summary->hasOverflowData ? route('spills.region', $region).'#spots' : null" figure>{{ $summary->hasOverflowData ? $summary->spotsWithSpillLast24HoursCount() : '-' }}</x-figure-link></dd>
+                    <dt class="text-xs text-muted"><x-figure-link :url="$summary->hasOverflowData ? route('spills.region', $region).'#spots' : null">spots with an upstream spill in 24h</x-figure-link> <x-help term="spill" /></dt>
                 </div>
                 <div>
-                    <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $aboveTypical->count() }}</dd>
-                    <dt class="text-xs text-muted">rivers higher than usual <x-help term="typical_range" /></dt>
+                    <dd class="font-mono text-3xl font-semibold tabular-nums"><x-figure-link :url="route('levels.region', $region).'#higher'" figure>{{ $aboveTypical->count() }}</x-figure-link></dd>
+                    <dt class="text-xs text-muted"><x-figure-link :url="route('levels.region', $region).'#higher'">rivers higher than usual</x-figure-link> <x-help term="typical_range" /></dt>
                 </div>
                 <div>
                     <dd class="font-mono text-3xl font-semibold tabular-nums">{{ $summary->hasOverflowData ? number_format($summary->monitorCount) : '-' }}</dd>
@@ -155,6 +156,9 @@
                     @empty
                         <p class="mt-2 text-sm text-ink-2">No river is higher than usual.</p>
                     @endforelse
+                    @if ($aboveTypical->count() > 4)
+                        <a href="{{ route('levels.region', $region) }}#higher" class="mt-2 inline-block text-sm font-medium text-accent hover:underline">All {{ $aboveTypical->count() }} rivers higher than usual</a>
+                    @endif
                 </div>
                 <div class="px-4 py-4">
                     <div class="flex items-baseline justify-between">

@@ -1,6 +1,6 @@
 <x-layouts.app :title="$query === '' ? 'Search' : 'Search for '.$query" noindex>
     <div class="mb-6">
-        <p class="text-sm text-muted"><a href="{{ route('home') }}" class="hover:underline">All rivers</a></p>
+        <p class="text-sm text-muted"><a href="{{ route('hubs.rivers') }}" class="hover:underline">All rivers</a></p>
         <h1 class="font-display mt-1 text-3xl font-semibold tracking-tight">
             @if ($query === '')
                 Find a spot or river

@@ -22,8 +22,9 @@ it('lists every region with rivers, beaches or lakes on its own page, ahead of r
         ->assertSee('<h1', false)
         ->assertSee('<h2 class="font-display text-3xl font-semibold tracking-tight">Yorkshire</h2>', false)
         ->assertDontSee('<h3', false)
-        ->assertSee(route('regions.show', $yorkshire))
-        ->assertDontSee(route('regions.show', $scotland));
+        ->assertSee(route('rivers.index', $yorkshire))
+        // The footer links every region, so Scotland's missing card shows as its missing rivers listing.
+        ->assertDontSee(route('rivers.index', $scotland));
 
     $this->get('/beaches')->assertOk()
         ->assertSee(route('beaches.index', $scotland))

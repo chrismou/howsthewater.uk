@@ -437,7 +437,7 @@ it('shows flood warnings on the spot, region and home pages and in the live bar'
         ->assertSee('id="flood-warnings"', false)
         ->assertSeeInOrder(['Flood warning', 'Lower River Wharfe', 'Covers', 'Otley'])
         ->assertSee('1 flood warning in force"', false)
-        ->assertSee('<span class="hidden sm:inline"><span class="font-mono font-semibold">0</span>', false);
+        ->assertSee('hover:underline hidden sm:inline-block"><span class="font-mono font-semibold">0</span>', false);
 
     $this->get(route('home'))
         ->assertOk()
@@ -449,7 +449,7 @@ it('shows no flood warning blocks when none are in force', function () {
     FloodArea::factory()->hasAttached($spot)->create();
 
     $this->get(route('regions.show', $region))->assertOk()->assertDontSee('id="flood-warnings"', false)->assertDontSee('in force')
-        ->assertDontSee('<span class="hidden sm:inline"><span class="font-mono font-semibold">', false);
+        ->assertDontSee('hover:underline hidden sm:inline-block"><span class="font-mono font-semibold">', false);
     $this->get(route('home'))->assertOk()->assertSee('flood warnings and bathing water results for')->assertDontSee('role="alert"', false);
     $this->get(route('spots.show', [$region, $river, $spot]))->assertOk()->assertDontSee('aria-label="Flood warnings"', false);
 });
@@ -473,8 +473,8 @@ it('credits the author and links to the contact page and GitHub issues in the fo
         ->assertSee('Lovingly crafted in Leeds')
         ->assertSee('aria-label="love"', false)
         ->assertSee('href="https://mou.me"', false)
-        ->assertSee('Seen a mistake?')
-        ->assertSee('let us know on GitHub')
+        ->assertSee('Report a mistake')
+        ->assertSee('Get in touch')
         ->assertSee('href="https://mou.me/contact"', false)
         ->assertDontSee('mailto:', false)
         ->assertSee('https://github.com/chrismou/howsthewater.uk/issues');
@@ -530,7 +530,7 @@ it('counts only the spills inside an overflow\'s record in its row, as the headl
 
     $this->get(route('spots.show', [$region, $river, $spot]))
         ->assertOk()
-        ->assertSeeInOrder(['Spills, last 30 days', '0</dd>'], false)
+        ->assertSeeInOrder(['Spills, last 30 days', '>0</a></dd>'], false)
         ->assertSee('0 in 30 days')
         ->assertDontSee('1 in 30 days');
 });

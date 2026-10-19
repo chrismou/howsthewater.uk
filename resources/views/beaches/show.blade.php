@@ -99,9 +99,13 @@
                 @endif
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Overflows within {{ $overflows->radiusMetres / 1000 }} km <x-help term="nearby_overflows" /></dt>
+                @php
+                    // With overflows nearby, the figures open the table below and the spills page.
+                    $hasNearbyOverflows = $overflows->isCovered() && $overflows->monitors->isNotEmpty();
+                @endphp
+                <dt class="text-xs uppercase tracking-wide text-muted"><x-figure-link :url="$hasNearbyOverflows ? '#overflows' : null">Overflows within {{ $overflows->radiusMetres / 1000 }} km</x-figure-link> <x-help term="nearby_overflows" /></dt>
                 <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums {{ $overflows->dischargingNowCount > 0 ? 'text-alert' : '' }}">
-                    {{ $overflows->isCovered() ? $overflows->monitors->count() : '-' }}
+                    <x-figure-link :url="$hasNearbyOverflows ? '#overflows' : null" figure>{{ $overflows->isCovered() ? $overflows->monitors->count() : '-' }}</x-figure-link>
                     @if ($overflows->dischargingNowCount > 0)
                         <span class="font-sans text-sm font-normal">{{ $overflows->dischargingNowCount }} discharging</span>
                     @elseif ($overflows->offlineCount > 0)
@@ -110,8 +114,8 @@
                 </dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-muted">Spills nearby, 30 days</dt>
-                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums">{{ $overflows->isCovered() && $overflows->monitors->isNotEmpty() ? $overflows->spillsLast30DaysCount : '-' }}</dd>
+                <dt class="text-xs uppercase tracking-wide text-muted"><x-figure-link :url="$hasNearbyOverflows ? route('beaches.spills', [$region, $beach]) : null">Spills nearby, 30 days</x-figure-link></dt>
+                <dd class="mt-1 font-mono text-3xl font-semibold tabular-nums"><x-figure-link :url="$hasNearbyOverflows ? route('beaches.spills', [$region, $beach]) : null" figure>{{ $hasNearbyOverflows ? $overflows->spillsLast30DaysCount : '-' }}</x-figure-link></dd>
             </div>
         </dl>
     </section>
@@ -177,7 +181,7 @@
             @endif
     </div>
 
-    <x-nearby-overflows :overflows="$overflows" :region="$region" :all-url="route('beaches.spills', [$region, $beach])" class="mt-10" />
+    <x-nearby-overflows id="overflows" :overflows="$overflows" :region="$region" :all-url="route('beaches.spills', [$region, $beach])" class="mt-10 scroll-mt-24" />
 
     <x-before-you-go kind="beach" />
 

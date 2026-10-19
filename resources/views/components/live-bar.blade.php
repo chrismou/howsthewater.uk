@@ -6,6 +6,7 @@
     $summaryUrl = $summary->isCombined() ? route('home') : route('regions.show', $summary->slug);
     // The spill counts open the lists they count.
     $spillsUrl = $summary->isCombined() ? route('spills.index') : route('spills.region', $summary->slug);
+    $levelsUrl = $summary->isCombined() ? route('levels.index') : route('levels.region', $summary->slug);
     $discharging = $summary->dischargingNowCount();
     $spill24 = $summary->spotsWithSpillLast24HoursCount();
     $above = $summary->spotsAboveTypicalRange()->count();
@@ -28,7 +29,7 @@
             <span>Overflow data not available yet</span>
         @endif
         {{-- On phones a flood warning takes this slot, so the bar stays on one line. --}}
-        <span class="{{ $floodWarnings->isNotEmpty() ? 'hidden sm:inline' : '' }}"><span class="font-mono font-semibold">{{ $above }}</span> <span class="sm:hidden">running high</span><span class="hidden sm:inline">{{ \Illuminate\Support\Str::plural('river', $above) }} higher than usual</span></span>
+        <a href="{{ $levelsUrl }}#higher" class="-my-1.5 py-1.5 hover:underline {{ $floodWarnings->isNotEmpty() ? 'hidden sm:inline-block' : 'inline-block' }}"><span class="font-mono font-semibold">{{ $above }}</span> <span class="sm:hidden">running high</span><span class="hidden sm:inline">{{ \Illuminate\Support\Str::plural('river', $above) }} higher than usual</span></a>
         @if ($floodWarnings->isNotEmpty())
             <a href="{{ $summaryUrl }}#flood-warnings" class="font-semibold hover:underline {{ $hasFloodWarning ? 'text-alert' : 'text-spill' }}" title="{{ $floodBreakdown }} in force">
                 <span class="font-mono">{{ $floodWarnings->count() }}</span> {{ \Illuminate\Support\Str::plural($hasFloodWarning ? 'flood warning' : 'flood alert', $floodWarnings->count()) }}

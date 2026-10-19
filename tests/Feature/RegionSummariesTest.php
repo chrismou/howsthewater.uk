@@ -124,7 +124,7 @@ it('stops counting a cached rising river once its gauge goes out of date, and sh
 
     expect($summary->spotsRising())->toHaveCount(1);
 
-    $this->get(route('home'))->assertOk()->assertSeeInOrder(['rivers higher than usual', '1</dd>', 'rivers currently rising'], false);
+    $this->get(route('home'))->assertOk()->assertSeeInOrder(['rivers higher than usual', '>1</a>', 'rivers currently rising'], false);
 
     // The summary was built while the gauge was rising; read later, the out of date level no longer counts.
     $this->travel(7)->hours();
