@@ -570,7 +570,13 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   in Wales carry their Welsh name first (`Afon Hafren`, alternative `River Severn`), so links are matched on
   `watercourse_name` or `watercourse_name_alternative`. A tributary sharing its name with another of the same parent
   (two Yeos join the Taw) takes a mouth hint (`mouth:` on `RiverSeeder::tributary()`), which wins over the parent's
-  line. Where OS names two parallel channels the same (the Itchen and its Navigation, braids at Romsey and on the
+  line. A river's line follows one headwater branch; where OS names another branch apart, with the river's name as
+  its alternative ("River Avon (Sherston Branch)", "River Wey (North Branch)", "River Nene Brampton Branch"), it is
+  seeded as a tributary under the name people use with OS's in `osName:` (looked up, not matched). The companies
+  write such branches as the river itself ("RIVER NENE"), so the tributary carries the river's name as an alias, and
+  `AssignRiverPositions` moves a parent's overflow to its tributary when it matches the tributary's names and sits
+  nearer its line. The Hampshire Avon's west branch and the Adur's eastern headwaters are left: OS does not name the
+  first apart, and Southern Water's "ADUR" overflows there sit on half a dozen differently named streams. Where OS names two parallel channels the same (the Itchen and its Navigation, braids at Romsey and on the
   Dorset Frome), the reader cuts the chain back to where the joined piece leaves it (within 300 m, and 4 km of the
   chain's end), so a line never doubles back; a migration clears an existing river's centreline to apply it. Seed
   parents before

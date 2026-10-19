@@ -64,6 +64,31 @@ it('records where a tributary joins its parent river', function () {
     expect($tributary->fresh()->joins_at_metres)->toBeBetween(15000, 19000);
 });
 
+it('moves an overflow named like its parent to a branch whose line it sits nearer, and leaves the parent its own', function () {
+    $parent = River::factory()->withCentreline()->create(['name' => 'River Test', 'aliases' => ['River Test']]);
+    // A branch the company writes as the parent ("RIVER NENE" on the Nene's Brampton Branch).
+    $branch = River::factory()->create([
+        'name' => 'Test Brampton Branch',
+        'aliases' => ['Test Brampton Branch', 'River Test'],
+        'parent_river_id' => $parent->id,
+        'centreline' => [[53.950, -1.750], [53.900, -1.750], [53.851, -1.701]],
+        'length_metres' => 9000,
+    ]);
+    $onBranch = OverflowMonitor::factory()->create(['receiving_watercourse' => 'RIVER TEST', 'latitude' => 53.925, 'longitude' => -1.751, 'river_id' => $parent->id, 'river_metres' => 12000]);
+    $onParent = OverflowMonitor::factory()->create(['receiving_watercourse' => 'RIVER TEST', 'latitude' => 53.855, 'longitude' => -1.710, 'river_id' => $parent->id, 'river_metres' => 28000]);
+    $otherName = OverflowMonitor::factory()->create(['receiving_watercourse' => 'RIVER OTHER', 'latitude' => 53.925, 'longitude' => -1.751, 'river_id' => $parent->id, 'river_metres' => 12000]);
+    $unplaced = OverflowMonitor::factory()->create(['receiving_watercourse' => 'TEST BRAMPTON BRANCH', 'latitude' => 53.940, 'longitude' => -1.752]);
+
+    app(AssignRiverPositions::class)->handle($branch);
+
+    expect($onBranch->fresh()->river_id)->toBe($branch->id)
+        ->and($onBranch->fresh()->river_metres)->toBeBetween(2000, 4000)
+        ->and($onParent->fresh()->river_id)->toBe($parent->id)
+        ->and($onParent->fresh()->river_metres)->toBe(28000)
+        ->and($otherName->fresh()->river_id)->toBe($parent->id)
+        ->and($unplaced->fresh()->river_id)->toBe($branch->id);
+});
+
 it('records where a main river joins the river it flows into', function () {
     $ouse = River::factory()->withCentreline()->create();
     $ure = River::factory()->create([

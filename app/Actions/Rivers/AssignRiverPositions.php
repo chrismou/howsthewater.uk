@@ -75,11 +75,17 @@ class AssignRiverPositions
         $latitudePadding = self::MAX_TRIBUTARY_OFFSET_METRES / self::METRES_PER_DEGREE_LATITUDE;
         $longitudePadding = self::MAX_TRIBUTARY_OFFSET_METRES / (self::METRES_PER_DEGREE_LATITUDE * cos(deg2rad(max(array_map('abs', $latitudes)))));
 
+        // A branch the companies name like its parent ("RIVER NENE" on the Nene's Brampton Branch) loses its overflows to
+        // the parent whenever the parent's line is within reach, so it takes back any of the parent's that match its own
+        // names and sit nearer its line.
+        $parent = $river->parent?->hasCentreline() === true ? $river->parent : null;
+        $parentProjector = $parent === null ? null : new PolylineProjector($parent->centreline);
+
         OverflowMonitor::query()
-            ->where(fn ($query) => $query->whereNull('river_id')->orWhere('river_id', $river->id))
+            ->where(fn ($query) => $query->whereNull('river_id')->orWhere('river_id', $river->id)->when($parent !== null, fn ($query) => $query->orWhere('river_id', $parent->id)))
             ->whereBetween('latitude', [min($latitudes) - $latitudePadding, max($latitudes) + $latitudePadding])
             ->whereBetween('longitude', [min($longitudes) - $longitudePadding, max($longitudes) + $longitudePadding])
-            ->each(function (OverflowMonitor $monitor) use ($river, $projector, &$count) {
+            ->each(function (OverflowMonitor $monitor) use ($river, $projector, $parent, $parentProjector, &$count) {
                 // Bare names count too ("MEDWAY", as Southern Water writes them), as they do for gauges.
                 if (! $river->matchesBareName($monitor->receiving_watercourse)) {
                     return;
@@ -90,6 +96,10 @@ class AssignRiverPositions
                 $maxOffset = $isUnnamedTributary ? self::MAX_TRIBUTARY_OFFSET_METRES : self::MAX_OFFSET_METRES;
 
                 if ($projection->offsetMetres > $maxOffset) {
+                    return;
+                }
+
+                if ($parent !== null && $monitor->river_id === $parent->id && $parentProjector->project($monitor->latitude, $monitor->longitude)->offsetMetres <= $projection->offsetMetres) {
                     return;
                 }
 

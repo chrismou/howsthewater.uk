@@ -185,6 +185,8 @@ class RiverSeeder extends Seeder
             self::tributary('River Chess', 'colne'),
             self::tributary('River Wey', 'thames'),
             self::tributary('Cranleigh Waters', 'wey', ['Cranleigh Waters/Littlemead Brook'], slug: 'cranleigh-waters'),
+            // The Wey's line follows its South Branch from Haslemere; Thames Water writes the North Branch through Farnham as plain "River Wey".
+            self::tributary('North Wey', 'wey', ['River Wey'], osName: 'River Wey (North Branch)'),
             self::tributary('River Mole', 'thames'),
             self::tributary('Hogsmill River', 'thames', ['River Hogsmill'], slug: 'hogsmill'),
         ];
@@ -335,7 +337,7 @@ class RiverSeeder extends Seeder
 
             // Great Stour, through Ashford and Canterbury to Plucks Gutter, below which OS calls it the River Stour
             self::main('Great Stour', 'Stour', [51.3270, 1.2700], ['Stour']),
-            self::tributary('East Stour River', 'great-stour', ['East Stour']),
+            self::tributary('East Stour River', 'great-stour', ['East Stour', 'Stour']),
 
             // Sussex
             self::main('River Rother', 'Sussex rivers', [50.9350, 0.7700], ['Rother', 'Rother E', 'Lower Rother', 'Eastern Rother']),
@@ -392,7 +394,7 @@ class RiverSeeder extends Seeder
         return [
             // Bristol Avon, from Malmesbury through Bath to Avonmouth. Brooks OS does not map (the Malago, Clackers, Coombe,
             // Fishponds, Dodham, Halse and Crewkerne ones) are aliases of the river they run into.
-            self::main('Bristol Avon', 'Bristol Avon', [51.5070, -2.7050], ['River Bristol Avon', 'Sherston Avon', 'Malago', 'Clackers Brook'], osName: 'River Avon'),
+            self::main('Bristol Avon', 'Bristol Avon', [51.5070, -2.7050], ['River Bristol Avon', 'Malago', 'Clackers Brook'], osName: 'River Avon'),
             self::tributary('River Frome', 'bristol-avon', ['Coombe Brook', 'Fishponds Brook'], slug: 'frome-bristol', mouth: [51.4510, -2.5960]),
             self::tributary('River Trym', 'bristol-avon'),
             self::tributary('Brislington Brook', 'bristol-avon'),
@@ -410,6 +412,8 @@ class RiverSeeder extends Seeder
             self::tributary('Semington Brook', 'bristol-avon'),
             self::tributary('Summerham Brook', 'semington-brook'),
             self::tributary('River Marden', 'bristol-avon'),
+            // The Avon's line follows its Tetbury Branch to Malmesbury; Wessex Water writes this one "RIVER AVON (SHERSTON BRANCH)".
+            self::tributary('Sherston Avon', 'bristol-avon', ['River Avon'], osName: 'River Avon (Sherston Branch)'),
             self::main('Somerset Frome', 'Bristol Avon', [51.3380, -2.3030], flowsInto: 'bristol-avon', osName: 'River Frome'),
             self::tributary('Mells River', 'somerset-frome'),
             // OS's Mells River is a short stub; Wessex Water's "Mells River" overflows are on what OS calls Mells Stream.
@@ -644,7 +648,8 @@ class RiverSeeder extends Seeder
             self::tributary('Grendon Brook', 'nene'),
             self::tributary('River Ise', 'nene'),
             self::tributary('Willow Brook', 'nene'),
-            self::tributary('River Nene Brampton Branch', 'nene', ['Brampton Branch R.Nene'], slug: 'nene-brampton-branch'),
+            // Anglian Water mostly writes it as the Nene itself ("RIVER NENE", "BRAMPTON BRANCH OF RIVER NENE").
+            self::tributary('River Nene Brampton Branch', 'nene', ['Brampton Branch R.Nene', 'River Nene', 'Brampton Branch of River Nene', 'River Nene Brixworth Brnch'], slug: 'nene-brampton-branch'),
             self::main('River Welland', 'Welland', [52.8700, 0.0400]),
             self::tributary('Langton Brook', 'welland'),
             self::tributary('River Gwash', 'welland'),
@@ -945,15 +950,17 @@ class RiverSeeder extends Seeder
     }
 
     /**
-     * The catchment is filled in from the parent when seeding.
+     * The catchment is filled in from the parent when seeding. A branch OS names apart from its parent, with the
+     * parent's name as the alternative ("River Avon (Sherston Branch)"), takes the name people use and OS's in
+     * `$osName`, which is only looked up, not matched, as the companies write such names the parent's way.
      *
      * @param  array<int, string>  $extraAliases
      * @param  array{0: float, 1: float}|null  $mouth  Roughly where it joins its parent, for one sharing its name with another tributary of the same parent (Bristol's and Somerset's Fromes)
-     * @return array{name: string, os_name: null, slug: string, catchment: string, aliases: array<int, string>, parent: string, mouth: array{0: float, 1: float}|null}
+     * @return array{name: string, os_name: string|null, slug: string, catchment: string, aliases: array<int, string>, parent: string, mouth: array{0: float, 1: float}|null}
      */
-    private static function tributary(string $name, string $parent, array $extraAliases = [], ?string $slug = null, ?array $mouth = null): array
+    private static function tributary(string $name, string $parent, array $extraAliases = [], ?string $slug = null, ?array $mouth = null, ?string $osName = null): array
     {
-        return ['name' => $name, 'os_name' => null, 'slug' => $slug ?? self::slug($name), 'catchment' => '', 'aliases' => [$name, ...$extraAliases], 'parent' => $parent, 'mouth' => $mouth];
+        return ['name' => $name, 'os_name' => $osName, 'slug' => $slug ?? self::slug($name), 'catchment' => '', 'aliases' => [$name, ...$extraAliases], 'parent' => $parent, 'mouth' => $mouth];
     }
 
     private static function slug(string $name): string
