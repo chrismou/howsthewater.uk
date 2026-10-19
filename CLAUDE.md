@@ -636,6 +636,8 @@ replacing the local database with a copy of live rather than backfilling.
 - Build data for `data-*` attributes in a `@php` block and output with `{{ json_encode(...) }}`. Multi-line `@json(...)`
   inside attributes breaks the Blade compiler.
 - Use a plain hyphen for dashes in any user-facing text.
+- Pages never show an email address: contact links go to `https://mou.me/contact`, and any address in the HTML makes
+  Cloudflare add its email obfuscation script to that page.
 - Colours are semantic tokens defined in `resources/css/app.css` (`bg-ground`, `bg-surface`, `text-ink`, `text-muted`,
   `border-line`, `text-accent`, `bg-pill-*`, `bg-warn-*`), each with a dark value under `.dark`. Never use raw
   Tailwind palette classes in views. Dark mode is a class on `<html>` set by the header toggle and remembered in

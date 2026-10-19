@@ -64,7 +64,7 @@ it('lists the legal pages in the sitemap', function () {
     $this->get(route('terms'))->assertSeeText('Last updated '.Carbon::parse(config('app.pages_updated.terms'))->format('j F Y'));
 });
 
-it('explains what the monitors record and offers an email contact on the about page', function () {
+it('explains what the monitors record and links to the contact page, never showing an email address, on the about page', function () {
     Region::factory()->create(['name' => 'North East', 'slug' => 'north-east']);
     config(['app.contact_email' => 'contact@example.test']);
 
@@ -73,7 +73,8 @@ it('explains what the monitors record and offers an email contact on the about p
         ->assertSee('in the North East')
         ->assertSee('not how much it released')
         ->assertSee('12/24 method')
-        ->assertSee('mailto:contact@example.test', false)
+        ->assertSee('href="https://mou.me/contact"', false)
+        ->assertDontSee('contact@example.test')
         ->assertSee('<time datetime="', false)
         ->assertSee('"dateModified"', false);
 });

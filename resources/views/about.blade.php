@@ -7,7 +7,6 @@
     // Bump app.pages_updated.about whenever the page's content changes; it is shown, goes into the page's dateModified
     // and the sitemap.
     $lastUpdated = \Illuminate\Support\Carbon::parse(config('app.pages_updated.about'), config('app.display_timezone', 'Europe/London'));
-    $contactEmail = config('app.contact_email');
 @endphp
 
 <x-layouts.app :breadcrumbs="[['Home', route('home')], ['About', route('about')]]" page-type="AboutPage" :date-modified="$lastUpdated" title="About the data and how it works"
@@ -75,7 +74,7 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">Who runs it</h2>
-                <p>How's the Water is an independent site built by <a href="https://mou.me" rel="noopener" class="text-accent hover:underline">Chris Chrisostomou</a> in Leeds. It is not connected to any water company or agency. Seen a mistake, or want a river added? Email <a href="mailto:{{ $contactEmail }}" class="text-accent hover:underline">{{ $contactEmail }}</a>, or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="text-accent hover:underline">open an issue on GitHub</a>. The <a href="{{ route('terms') }}" class="text-accent hover:underline">terms of use</a> cover reusing the data.</p>
+                <p>How's the Water is an independent site built by <a href="https://mou.me" rel="noopener" class="text-accent hover:underline">Chris Chrisostomou</a> in Leeds. It is not connected to any water company or agency. Seen a mistake, or want a river added? <a href="https://mou.me/contact" rel="noopener" class="text-accent hover:underline">Get in touch</a>, or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="text-accent hover:underline">open an issue on GitHub</a>. The <a href="{{ route('terms') }}" class="text-accent hover:underline">terms of use</a> cover reusing the data.</p>
             </section>
         </div>
     </article>

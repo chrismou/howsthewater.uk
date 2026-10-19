@@ -464,7 +464,7 @@ it('shortens long flood warning spot lists on the home page but not the region p
     $this->get(route('regions.show', $region))->assertOk()->assertDontSee('and 2 more');
 });
 
-it('credits the author and links to email and GitHub issues in the footer', function () {
+it('credits the author and links to the contact page and GitHub issues in the footer, never an email address', function () {
     spotWithUrl();
 
     $this->get(route('home'))
@@ -475,7 +475,8 @@ it('credits the author and links to email and GitHub issues in the footer', func
         ->assertSee('href="https://mou.me"', false)
         ->assertSee('Seen a mistake?')
         ->assertSee('let us know on GitHub')
-        ->assertSee('mailto:'.config('app.contact_email'), false)
+        ->assertSee('href="https://mou.me/contact"', false)
+        ->assertDontSee('mailto:', false)
         ->assertSee('https://github.com/chrismou/howsthewater.uk/issues');
 });
 

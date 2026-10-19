@@ -206,7 +206,8 @@
             River centrelines contain OS data © Crown copyright and database right. Map tiles © OpenStreetMap contributors.
             Weather forecasts from <a href="https://open-meteo.com/" rel="noopener" class="underline hover:text-ink">Open-Meteo</a>, CC BY 4.0.
             <a href="{{ route('about') }}" class="underline hover:text-ink">About the data and how it works</a>.
-            Seen a mistake? Email <a href="mailto:{{ config('app.contact_email') }}" class="underline hover:text-ink">{{ config('app.contact_email') }}</a> or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">let us know on GitHub</a>.
+            {{-- No email address on the pages: Cloudflare adds its email obfuscation script to any page that shows one. --}}
+            Seen a mistake? <a href="https://mou.me/contact" rel="noopener" class="underline hover:text-ink">Get in touch</a> or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="underline hover:text-ink">let us know on GitHub</a>.
         </p>
         {{-- Phones: credit and legal links stacked and centred. Wider: one row, legal links on the right. --}}
         <div class="mt-4 flex flex-col items-center gap-2 border-t border-line-2 pt-4 text-center sm:flex-row sm:items-baseline sm:justify-between sm:text-left">
