@@ -89,3 +89,45 @@ it('survives a round trip through a serialising cache store', function () {
 
     Cache::store('file')->flush();
 });
+
+it('counts rivers rising now once each, leaving out steady rivers and out of date gauges', function () {
+    $region = Region::factory()->create(['slug' => 'yorkshire', 'name' => 'Yorkshire']);
+    $levels = [
+        // Two rising spots on the Wharfe count as one river.
+        ['wharfe', 'Otley', [0.80, 1.20], 0],
+        ['wharfe', 'Ilkley', [0.50, 0.70], 0],
+        ['aire', 'Kirkstall', [0.60, 0.61], 0],
+        // Rising, but its gauge stopped reporting a day ago.
+        ['nidd', 'Knaresborough', [0.40, 0.90], 24],
+    ];
+
+    foreach ($levels as [$slug, $name, [$before, $now], $hoursOld]) {
+        $river = River::query()->firstOrCreate(['region_id' => $region->id, 'slug' => $slug], River::factory()->raw(['region_id' => $region->id, 'slug' => $slug]));
+        $station = GaugeStation::factory()->create(['river_id' => $river->id]);
+        GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours($hoursOld + 3), 'value' => $before]);
+        GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours($hoursOld), 'value' => $now]);
+        Spot::factory()->create(['river_id' => $river->id, 'name' => $name, 'gauge_station_id' => $station->id]);
+    }
+
+    expect(app(RegionSummaries::class)->build($region)->spotsRising()->pluck('riverSlug')->all())->toBe(['wharfe']);
+});
+
+it('stops counting a cached rising river once its gauge goes out of date, and shows the count on the home page', function () {
+    $region = Region::factory()->create(['slug' => 'yorkshire', 'name' => 'Yorkshire']);
+    $river = River::factory()->create(['region_id' => $region->id, 'slug' => 'wharfe']);
+    $station = GaugeStation::factory()->create(['river_id' => $river->id, 'typical_range_low' => 0.2, 'typical_range_high' => 2.0]);
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now()->subHours(3), 'value' => 0.80]);
+    GaugeReading::factory()->create(['gauge_station_id' => $station->id, 'measured_at' => now(), 'value' => 1.20]);
+    Spot::factory()->create(['river_id' => $river->id, 'gauge_station_id' => $station->id]);
+
+    $summary = app(RegionSummaries::class)->build($region);
+
+    expect($summary->spotsRising())->toHaveCount(1);
+
+    $this->get(route('home'))->assertOk()->assertSeeInOrder(['rivers higher than usual', '1</dd>', 'rivers currently rising'], false);
+
+    // The summary was built while the gauge was rising; read later, the out of date level no longer counts.
+    $this->travel(7)->hours();
+
+    expect($summary->spotsRising())->toBeEmpty();
+});

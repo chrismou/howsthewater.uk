@@ -70,7 +70,11 @@ class Help extends Component
         ],
         'trend' => [
             'label' => 'How is the trend worked out?',
-            'text' => 'The change over the last three hours of readings. Rising means the level has gone up by more than 3 cm in that time, falling means it has gone down by more than 3 cm.',
+            'text' => 'The change over the last three hours of readings. Rising means the level has gone up by 3 cm or more in that time, falling means it has gone down by 3 cm or more.',
+        ],
+        'rivers_rising' => [
+            'label' => 'What counts as a river rising?',
+            'text' => 'A river counts once if the gauge at any of its spots has gone up by 3 cm or more over the last three hours. Rain is the usual cause, but tidal stretches rise with every tide, and weirs and locks can move a level too.',
         ],
         'rainfall' => [
             'label' => 'Where is rainfall measured?',

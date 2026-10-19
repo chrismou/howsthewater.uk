@@ -61,12 +61,20 @@
                             <dd class="font-mono text-4xl font-semibold leading-none tabular-nums {{ $allRegions->spotsWithSpillLast24HoursCount() > 0 ? 'text-spill' : '' }}">{{ $allRegions->spotsWithSpillLast24HoursCount() }}</dd>
                             <dt class="mt-1.5 text-sm text-ink-2">spots with a spill upstream in the last 24h</dt>
                         </div>
+                    </dl>
+                    {{-- Higher than usual is rare and means a river in spate; rising moves through the day, so both show. Phones
+                         are too narrow for three, so rainfall takes its own row there. --}}
+                    <dl class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
                         <div>
-                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $allRegions->spotsAboveTypicalRange()->count() }}</dd>
+                            <dd class="font-mono text-3xl font-semibold leading-none tabular-nums">{{ $allRegions->spotsAboveTypicalRange()->count() }}</dd>
                             <dt class="mt-1.5 text-sm text-ink-2">rivers higher than usual</dt>
                         </div>
                         <div>
-                            <dd class="font-mono text-4xl font-semibold leading-none tabular-nums">{{ $medianRain === null ? '-' : number_format($medianRain, 1) }}<span class="text-lg"> mm</span></dd>
+                            <dd class="font-mono text-3xl font-semibold leading-none tabular-nums">{{ $allRegions->spotsRising()->count() }}</dd>
+                            <dt class="mt-1.5 text-sm text-ink-2">rivers currently rising <x-help term="rivers_rising" /></dt>
+                        </div>
+                        <div>
+                            <dd class="font-mono text-3xl font-semibold leading-none tabular-nums">@if ($medianRain === null)-@else{{ number_format($medianRain, 1) }}<span class="text-base"> mm</span>@endif</dd>
                             <dt class="mt-1.5 text-sm text-ink-2">median rainfall, last 24h</dt>
                         </div>
                     </dl>

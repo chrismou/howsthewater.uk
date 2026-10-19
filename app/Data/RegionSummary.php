@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\LevelTrend;
 use App\Enums\SpillRecency;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -117,6 +118,20 @@ final readonly class RegionSummary
         return $this->spots()
             ->filter(fn (SpotSummary $spot) => $spot->isAboveTypicalRange() && ! $spot->levelIsStale())
             ->sortByDesc('levelValue')
+            ->unique(fn (SpotSummary $spot) => $spot->regionSlug.'/'.$spot->riverSlug)
+            ->values();
+    }
+
+    /**
+     * One spot per river whose gauge is rising (LevelTrend over the last 3 hours), so the count is of rivers. Tidal
+     * and lock-controlled reaches rise and fall whatever the weather, so this moves through the day.
+     *
+     * @return Collection<int, SpotSummary>
+     */
+    public function spotsRising(): Collection
+    {
+        return $this->spots()
+            ->filter(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Rising && ! $spot->levelIsStale())
             ->unique(fn (SpotSummary $spot) => $spot->regionSlug.'/'.$spot->riverSlug)
             ->values();
     }
