@@ -188,7 +188,7 @@
                 <h2 class="font-display text-lg font-semibold">River level</h2>
                 <x-help term="level" />
             </div>
-            <x-level-card :level="$level" empty="No gauge is linked to this spot yet." />
+            <x-level-card :level="$level" :water="'the '.$spot->river->shortName()" empty="No gauge is linked to this spot yet." />
 
             <div class="flex items-center gap-1.5 mt-8 mb-3">
                 <h2 class="font-display text-lg font-semibold">Rainfall</h2>

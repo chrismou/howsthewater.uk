@@ -54,7 +54,7 @@ class PlaceHeadline
         $sentences = array_values(array_filter([
             ...$this->bathingWaterSentences($conditions->bathingWater),
             $this->overflowSentence($conditions->spillRecency, 'upstream', $monitors->count(), $conditions->offlineCount, $conditions->dischargingNowCount, $conditions->spillsLast48HoursCount, $conditions->recentSpillEvents, $conditions->dailyHistory->filter(fn (SpillHistoryDay $day) => $day->spillCount > 0)->count(), $conditions->overflowDataIsStale(), $conditions->dataUpdatedAt, $this->companies($monitors)),
-            $this->levelSentence('The '.$this->shortRiverName($river->name), $conditions->level),
+            $this->levelSentence('The '.$river->shortName(), $conditions->level),
             $this->floodSentence($conditions->floodWarnings),
         ]));
 
@@ -399,14 +399,6 @@ class PlaceHeadline
     private function within(int $radiusMetres): string
     {
         return 'within '.($radiusMetres / 1000).' km';
-    }
-
-    /**
-     * "The Wharfe" for the River Wharfe, "The Teifi" for Afon Teifi; other names stay whole ("The Water of Leith").
-     */
-    private function shortRiverName(string $name): string
-    {
-        return preg_replace('/^(River|Afon)\s+/', '', $name);
     }
 
     private function timezone(): string

@@ -110,7 +110,7 @@
                 <h2 class="font-display text-lg font-semibold">Lake level</h2>
                 <x-help term="level" />
             </div>
-            <x-level-card :level="$level" empty="We don't have a level gauge for this lake." />
+            <x-level-card :level="$level" :water="$lake->name" empty="We don't have a level gauge for this lake." />
 
             <div class="flex items-center gap-1.5 mt-8 mb-3">
                 <h2 class="font-display text-lg font-semibold">Rainfall</h2>

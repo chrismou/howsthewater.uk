@@ -1,5 +1,9 @@
-{{-- A gauge's latest level, trend, where it sits in its usual range and 48 hour sparkline. empty: what to say when there is no gauge. --}}
-@props(['level', 'empty' => 'No gauge is linked here yet.'])
+{{--
+    A gauge's latest level, trend, where it sits in its usual range and 48 hour sparkline. empty: what to say when there
+    is no gauge. water: the river or lake the gauge reads ("the Wharfe", "Windermere"), named in the sentence giving its
+    usual range, which search engines can quote for "river level" searches.
+--}}
+@props(['level', 'empty' => 'No gauge is linked here yet.', 'water' => null])
 
 @php
     $trendText = $level?->trend->label() ?? '';
@@ -16,6 +20,24 @@
     if ($level?->latestValue !== null && $level->station->typical_range_low !== null && $level->station->typical_range_high > $level->station->typical_range_low) {
         $fraction = ($level->latestValue - $level->station->typical_range_low) / ($level->station->typical_range_high - $level->station->typical_range_low);
         $rangePosition = (int) round(max(2, min(98, 22 + $fraction * 48)));
+    }
+
+    // The usual range in words, saying what each agency's range means: the Environment Agency's runs from the 5th to
+    // the 95th percentile, ours for NRW gauges is the same over the readings we hold, and SEPA's runs from the median
+    // yearly low to the median yearly high.
+    $usualRange = null;
+
+    if ($level !== null && $level->station->typical_range_low !== null && $level->station->typical_range_high > $level->station->typical_range_low) {
+        $unit = $level->station->unitLabel();
+        $usualRange = collect([
+            ($water !== null ? ucfirst($water).' at the ' : 'The ').$level->station->label.' gauge is usually between '
+                .number_format($level->station->typical_range_low, 2).' '.$unit.' and '.number_format($level->station->typical_range_high, 2).' '.$unit.'.',
+            match ($level->station->network) {
+                \App\Enums\Agency::EnvironmentAgency => 'Nine in ten of the Environment Agency\'s readings there fall inside that band.',
+                \App\Enums\Agency::NaturalResourcesWales => 'Nine in ten of its readings over the past year fall inside that band.',
+                \App\Enums\Agency::Sepa => 'That is SEPA\'s normal range, from the low of a typical year to its high.',
+            },
+        ])->join(' ');
     }
 @endphp
 
@@ -40,6 +62,9 @@
                 @endif
                 <span class="shrink-0 font-mono text-xs text-muted">{{ number_format($level->station->typical_range_low, 2) }} to {{ number_format($level->station->typical_range_high, 2) }} {{ $level->station->unitLabel() }}</span>
             </div>
+        @endif
+        @if ($usualRange !== null)
+            <p class="mt-3 text-sm text-ink-2">{{ $usualRange }}</p>
         @endif
         @if ($level->station->isAboveOrdnanceDatum())
             <p class="mt-2 text-xs text-muted">This gauge reports height above sea level, not depth above the river bed. <x-help term="maod" /></p>

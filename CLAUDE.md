@@ -733,7 +733,9 @@ replacing the local database with a copy of live rather than backfilling.
   Add new training-only crawlers to that group, never to `*`. The `*` group also states the policy as a
   Content-Signal line (search and AI answers yes, training no).
 - Levels are described in everyday words on pages: "at its usual level", "higher than usual", "lower than usual"
-  (`LevelSummary::usualPhrase()`), never "typical range". The API keeps its `within typical range` values. `/about` explains the sources and methods; keep it in step with Data sources below.
+  (`LevelSummary::usualPhrase()`), never "typical range". The level card also gives the usual range as one plain
+  sentence naming the river (or lake) and gauge, with what that agency's range means (`components/level-card`,
+  `water`), as search engines quote such a sentence for "river level" searches. The API keeps its `within typical range` values. `/about` explains the sources and methods; keep it in step with Data sources below.
 - `/about`, `/privacy` and `/terms` show a "Last updated" date from `app.pages_updated`, which also goes into their
   `dateModified` and sitemap `lastmod`. Bump a page's date whenever its content changes. Other pages' `lastmod` and
   `dateModified` are the newest of their overflow, level and rain data (`SpotSummary::latestDataAt()`), so places

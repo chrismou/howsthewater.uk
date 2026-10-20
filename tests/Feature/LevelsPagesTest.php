@@ -106,3 +106,18 @@ it('links the level and spill figures to the pages listing them, and lists them 
         ->assertSee('<loc>'.route('levels.index').'</loc>', false)
         ->assertSee('<loc>'.route('levels.region', $region).'</loc>', false);
 });
+
+it('says in a sentence what each gauge usually reads and what its agency\'s range means', function () {
+    $region = Region::factory()->create(['slug' => 'yorkshire']);
+    $spot = levelSpot($region, 'River Wharfe', 'Ilkley', 0.50, 0.50);
+
+    $this->get(route('spots.show', [$region, $spot->river, $spot]))
+        ->assertOk()
+        ->assertSee("The Wharfe at the Ilkley gauge is usually between 0.20 m and 1.00 m. Nine in ten of the Environment Agency's readings there fall inside that band.");
+
+    $scottish = levelSpot($region, 'River Tweed', 'Peebles', 0.50, 0.50);
+    $scottish->gaugeStation->update(['network' => \App\Enums\Agency::Sepa]);
+
+    $this->get(route('spots.show', [$region, $scottish->river, $scottish]))
+        ->assertSee("The Tweed at the Peebles gauge is usually between 0.20 m and 1.00 m. That is SEPA's normal range, from the low of a typical year to its high.");
+});

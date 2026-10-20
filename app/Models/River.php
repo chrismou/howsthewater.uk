@@ -191,6 +191,15 @@ class River extends Model
     }
 
     /**
+     * The name without a leading "River" or "Afon", as sentences use it after "the" ("the Wharfe" for the River
+     * Wharfe, "the Teifi" for Afon Teifi); other names stay whole ("the Water of Leith").
+     */
+    public function shortName(): string
+    {
+        return preg_replace('/^(River|Afon)\s+/', '', $this->name);
+    }
+
+    /**
      * Whether a river name as SEPA, NRW and Southern Water usually write it,
      * without "River" or "Afon" ("Tweed", "Teifi", "MEDWAY", "Tributary of
      * the Medway"), refers to this river. Names that do carry either ("River
