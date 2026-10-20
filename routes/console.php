@@ -17,11 +17,9 @@ Schedule::command('ingest:bathing-waters --history')->weeklyOn(1, '04:20');
 // Every three hours, off the quarter hours the other ingests use. A run reads about 600 forecasts in paced batches
 // and can take ten minutes when Open-Meteo is slow.
 Schedule::command('ingest:weather')->cron('7 */3 * * *')->withoutOverlapping(60);
-// Overflow pages' share cards, a batch at a time in the background: thousands of overflows would hold up a deploy,
-// and a card only changes when the overflow's name, river or returns do.
-Schedule::command('share-images:generate --overflows --limit=500')->hourlyAt(40)->withoutOverlapping(60)->runInBackground();
-// Place cards the deploy had no time for (a change to how cards are drawn redraws them all), also in the background.
-Schedule::command('share-images:generate --within=1500')->hourlyAt(10)->withoutOverlapping(60)->runInBackground();
+// Share cards are queued after each deploy; this hourly pass catches what changed since (a name, a river's spots, an
+// overflow's returns). The queue worker draws only the cards that changed.
+Schedule::command('share-images:generate --queue')->hourlyAt(40);
 // The annual returns come out once a year (spring), so a monthly read picks up a new year and any corrections.
 Schedule::command('ingest:overflow-annual-returns')->monthlyOn(2, '05:10');
 // The companies publish past spills monthly or yearly, so a daily read picks up new months within a day; a run that

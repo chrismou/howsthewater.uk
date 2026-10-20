@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Actions\ShareImages\GenerateShareImages as GenerateShareImagesAction;
+use App\Jobs\QueueShareCards;
 use App\Services\ShareImages\ShareCardRenderer;
 use App\Services\ShareImages\ShareCards;
 use Illuminate\Console\Command;
@@ -11,12 +12,10 @@ class GenerateShareImages extends Command
 {
     protected $signature = 'share-images:generate
         {--force : Redraw every card, including those that have not changed}
-        {--overflows : Draw overflow pages\' cards instead (scheduled), at most --limit a run}
-        {--limit=500 : With --overflows, the most cards to draw in one run}
-        {--within= : Stop drawing place cards after this many seconds, leaving the rest to the next run}
+        {--queue : Queue the drawing in batches for the queue worker instead (after deploys, and hourly)}
         {--site : Redraw the site\'s own card, public/og-image.png, instead (run locally and commit it, as releases are read-only)}';
 
-    protected $description = 'Draw the share card for every spot, river, beach and lake page (or, with --overflows, overflow page) whose card has changed';
+    protected $description = 'Draw the share card for every spot, river, beach, lake and overflow page whose card has changed';
 
     public function handle(GenerateShareImagesAction $generate, ShareCards $cards, ShareCardRenderer $renderer): int
     {
@@ -27,18 +26,15 @@ class GenerateShareImages extends Command
             return self::SUCCESS;
         }
 
-        if ($this->option('overflows')) {
-            $result = $generate->handleOverflows(max(1, (int) $this->option('limit')), (bool) $this->option('force'));
-            $this->info(sprintf('Drew %d overflow share cards, %d unchanged, %d removed, %d waiting for the next run.', $result['drawn'], $result['unchanged'], $result['removed'], $result['waiting']));
+        if ($this->option('queue')) {
+            QueueShareCards::dispatch((bool) $this->option('force'));
+            $this->info('Queued the share cards.');
 
             return self::SUCCESS;
         }
 
-        $within = $this->option('within');
-        $result = $generate->handle((bool) $this->option('force'), $within === null ? null : max(0, (int) $within));
-
-        $this->info(sprintf('Drew %d share cards, %d unchanged, %d removed.', $result['drawn'], $result['unchanged'], $result['removed'])
-            .($result['waiting'] > 0 ? " {$result['waiting']} waiting for the next run." : ''));
+        $result = $generate->handle((bool) $this->option('force'));
+        $this->info(sprintf('Drew %d share cards, %d unchanged, %d removed.', $result['drawn'], $result['unchanged'], $result['removed']));
 
         return self::SUCCESS;
     }

@@ -15,21 +15,25 @@ use App\Models\Spot;
 use App\Services\ShareImages\ShareCardRenderer;
 use App\Services\Conditions\RegionOverflows;
 use App\Services\ShareImages\ShareCards;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 
 /**
- * Draws the share card for every spot, river, beach and lake page, run on each deploy and hourly. A card is only drawn
- * when what it shows has changed (its fingerprint), so most runs draw nothing; a change to how cards are drawn changes
- * every one, so a run can stop drawing after a time budget and leave the rest, still showing their old cards, to the
- * next run. Each file name carries the fingerprint, so a
- * changed card gets a new address; the old file stays for a day for pages and crawlers that still point at it, then
- * goes, as do the cards of places that no longer have a page.
+ * Draws the share card for every spot, river, beach, lake and overflow page whose card has changed. A card is only
+ * drawn when what it shows has changed (its fingerprint), so most runs draw nothing; a change to how cards are drawn
+ * changes every one. The work splits into batches (batches()) that the queue draws in the background
+ * (App\Jobs\QueueShareCards), or handle() draws in one go. Each file name carries the fingerprint, so a changed card gets
+ * a new address; the old file stays for a day for pages and crawlers that still point at it, then goes, as do the
+ * cards of places that no longer have a page.
  */
 class GenerateShareImages
 {
     public const DIRECTORY = 'share';
+
+    /** How many places one queued job draws: a river comes with all its spots. */
+    private const BATCH_SIZES = ['rivers' => 10, 'beaches' => 100, 'lakes' => 100, 'overflows' => 100];
 
     /** Superseded files are kept this long for cached pages and crawlers mid-fetch. */
     private const KEEP_OLD_FILES_HOURS = 24;
@@ -39,34 +43,65 @@ class GenerateShareImages
     }
 
     /**
-     * @param  int|null  $withinSeconds  Stop drawing once this long has passed, counting the rest as waiting
-     * @return array{drawn: int, unchanged: int, removed: int, waiting: int}
+     * Draws every changed card in this process (locally and in tests; production queues the batches instead).
+     *
+     * @return array{drawn: int, unchanged: int, removed: int}
      */
-    public function handle(bool $force = false, ?int $withinSeconds = null): array
+    public function handle(bool $force = false): array
     {
-        $counts = ['drawn' => 0, 'unchanged' => 0, 'removed' => 0, 'waiting' => 0];
-        $stopAt = $withinSeconds === null ? null : microtime(true) + $withinSeconds;
-        // Overflow cards are drawn by handleOverflows() on a schedule, so this run leaves them alone.
-        $existing = ShareImage::query()
-            ->where('shareable_type', '!=', (new OverflowMonitor())->getMorphClass())
-            ->get()
-            ->keyBy(fn (ShareImage $image) => $image->shareable_type.':'.$image->shareable_id);
-        $seen = [];
+        $counts = ['drawn' => 0, 'unchanged' => 0, 'removed' => $this->forgetPlacesWithoutPages()];
 
-        $save = function (Spot|River|BathingWater|Lake $place, string $folder, ShareCard $card) use ($existing, $force, $stopAt, &$seen, &$counts) {
-            $key = $place->getMorphClass().':'.$place->getKey();
-            $seen[$key] = true;
+        foreach ($this->batches() as [$kind, $ids]) {
+            $drawn = $this->draw($kind, $ids, $force);
+            $counts['drawn'] += $drawn['drawn'];
+            $counts['unchanged'] += $drawn['unchanged'];
+        }
+
+        $this->pruneOldFiles();
+
+        return $counts;
+    }
+
+    /**
+     * Every page with a card, split into one queued job's worth each: rivers (with their spots), beaches, lakes and
+     * overflows, by id. Overflows go by river, so each job loads few rivers' lines.
+     *
+     * @return list<array{0: string, 1: list<int>}>
+     */
+    public function batches(): array
+    {
+        $ids = [
+            'rivers' => River::query()->main()->orderBy('id')->pluck('id'),
+            'beaches' => BathingWater::query()->beaches()->whereNotNull('region_id')->orderBy('id')->pluck('id'),
+            'lakes' => Lake::query()->orderBy('id')->pluck('id'),
+            'overflows' => $this->overflowsWithPages()->orderBy('river_id')->orderBy('id')->pluck('id'),
+        ];
+
+        $batches = [];
+        foreach ($ids as $kind => $list) {
+            foreach ($list->chunk(self::BATCH_SIZES[$kind]) as $chunk) {
+                $batches[] = [$kind, $chunk->values()->all()];
+            }
+        }
+
+        return $batches;
+    }
+
+    /**
+     * Draws the changed cards of one batch.
+     *
+     * @param  list<int>  $ids
+     * @return array{drawn: int, unchanged: int}
+     */
+    public function draw(string $kind, array $ids, bool $force = false): array
+    {
+        $counts = ['drawn' => 0, 'unchanged' => 0];
+        $save = function (Spot|River|BathingWater|Lake|OverflowMonitor $place, string $folder, ShareCard $card) use ($force, &$counts) {
             $fingerprint = $card->fingerprint(ShareCardRenderer::VERSION);
-            $image = $existing->get($key);
+            $image = $place->shareImage;
 
             if (! $force && $image?->fingerprint === $fingerprint && Storage::disk(ShareImage::DISK)->exists($image->path)) {
                 $counts['unchanged']++;
-
-                return;
-            }
-
-            if ($stopAt !== null && microtime(true) >= $stopAt) {
-                $counts['waiting']++;
 
                 return;
             }
@@ -77,112 +112,45 @@ class GenerateShareImages
             $counts['drawn']++;
         };
 
-        // One river (with its long centreline) at a time.
-        foreach (River::query()->main()->with(['region', 'spots' => fn ($spots) => $spots->published()])->lazyById(20) as $river) {
-            $save($river, 'rivers', $this->cards->forRiver($river, $river->region, $river->spots));
-            foreach ($river->spots as $spot) {
-                $save($spot, 'spots', $this->cards->forSpot($spot, $river, $river->region, $river->spots));
-            }
-        }
-
-        foreach (BathingWater::query()->beaches()->whereNotNull('region_id')->with('region')->get() as $beach) {
-            $save($beach, 'beaches', $this->cards->forBeach($beach, $beach->region));
-        }
-
-        foreach (Lake::query()->with('region')->get() as $lake) {
-            $save($lake, 'lakes', $this->cards->forLake($lake, $lake->region));
-        }
-
-        $counts['removed'] = $existing->keys()->reject(fn (string $key) => isset($seen[$key]))
-            ->each(fn (string $key) => $existing[$key]->delete())
-            ->count();
-        $this->pruneOldFiles();
+        match ($kind) {
+            'rivers' => $this->drawRivers($ids, $save),
+            'beaches' => BathingWater::query()->whereKey($ids)->whereNotNull('region_id')->with(['region', 'shareImage'])->get()
+                ->each(fn (BathingWater $beach) => $save($beach, 'beaches', $this->cards->forBeach($beach, $beach->region))),
+            'lakes' => Lake::query()->whereKey($ids)->with(['region', 'shareImage'])->get()
+                ->each(fn (Lake $lake) => $save($lake, 'lakes', $this->cards->forLake($lake, $lake->region))),
+            'overflows' => $this->drawOverflows($ids, $save),
+            default => throw new InvalidArgumentException("No share cards are drawn for \"{$kind}\"."),
+        };
 
         return $counts;
     }
 
     /**
-     * Draws the cards of overflows whose page exists and whose card has changed, at most $limit a run, so the
-     * thousands of overflows are drawn over a few scheduled runs rather than holding up a deploy, and forgets the
-     * cards of overflows that no longer have a page.
-     *
-     * @return array{drawn: int, unchanged: int, removed: int, waiting: int}
+     * Forgets the cards of places and overflows that no longer have a page.
      */
-    public function handleOverflows(int $limit, bool $force = false): array
+    public function forgetPlacesWithoutPages(): int
     {
-        $counts = ['drawn' => 0, 'unchanged' => 0, 'removed' => 0, 'waiting' => 0];
-        $existing = ShareImage::query()
-            ->where('shareable_type', (new OverflowMonitor())->getMorphClass())
-            ->get()
-            ->keyBy('shareable_id');
-        $seen = [];
-        $river = null;
-        $withReturns = OverflowAnnualReturn::query()->whereNotNull('overflow_monitor_id')->distinct()->pluck('overflow_monitor_id')->flip();
-        $regions = Region::query()->get()->filter(fn (Region $region) => $region->hasOverflowData());
+        $mainRivers = River::query()->main()->select('id');
+        $withPages = [
+            (new River())->getMorphClass() => $mainRivers,
+            (new Spot())->getMorphClass() => Spot::query()->published()->whereIn('river_id', $mainRivers)->select('id'),
+            (new BathingWater())->getMorphClass() => BathingWater::query()->beaches()->whereNotNull('region_id')->select('id'),
+            (new Lake())->getMorphClass() => Lake::query()->select('id'),
+            (new OverflowMonitor())->getMorphClass() => $this->overflowsWithPages()->select('id'),
+        ];
 
-        // By river, so each river's line, region and spots are loaded once and only one river's line is held at a time.
-        foreach ($this->overflowsWithPages($regions)->orderBy('river_id')->orderBy('id')->lazy(200) as $monitor) {
-            if ($monitor->river_id === null) {
-                $river = null;
-            } elseif ($river?->id !== $monitor->river_id) {
-                $river = River::query()->with(['region', 'spots' => fn ($spots) => $spots->published()])->find($monitor->river_id);
-            }
-
-            $region = $river?->region?->hasOverflowData() ? $river->region : $this->overflows->regionFor($monitor);
-
-            if ($region === null) {
-                continue;
-            }
-
-            $seen[$monitor->id] = true;
-            $card = $this->cards->forOverflow($monitor, $river, $region, $river === null ? collect() : $river->spots, $withReturns->has($monitor->id));
-            $fingerprint = $card->fingerprint(ShareCardRenderer::VERSION);
-            $image = $existing->get($monitor->id);
-
-            if (! $force && $image?->fingerprint === $fingerprint && Storage::disk(ShareImage::DISK)->exists($image->path)) {
-                $counts['unchanged']++;
-
-                continue;
-            }
-
-            // A forced redraw does every card, or a limited run would leave the rest matching their old fingerprints.
-            if (! $force && $counts['drawn'] >= $limit) {
-                $counts['waiting']++;
-
-                continue;
-            }
-
-            $path = self::DIRECTORY."/overflows/{$monitor->id}-{$fingerprint}.png";
-            Storage::disk(ShareImage::DISK)->put($path, $this->renderer->render($card));
-            $monitor->shareImage()->updateOrCreate([], ['path' => $path, 'fingerprint' => $fingerprint, 'alt' => $card->alt]);
-            $counts['drawn']++;
+        $removed = 0;
+        foreach ($withPages as $type => $ids) {
+            $removed += ShareImage::query()->where('shareable_type', $type)->whereNotIn('shareable_id', $ids)->delete();
         }
 
-        $counts['removed'] = $existing->keys()->reject(fn (int $id) => isset($seen[$id]))
-            ->each(fn (int $id) => $existing[$id]->delete())
-            ->count();
-        $this->pruneOldFiles();
-
-        return $counts;
-    }
-
-    /**
-     * Overflows some region's pages show: on a river of a region with overflow data, or linked to a place.
-     *
-     * @param  Collection<int, Region>  $regions
-     * @return Builder<OverflowMonitor>
-     */
-    private function overflowsWithPages(Collection $regions): Builder
-    {
-        return OverflowMonitor::query()->where(fn ($query) => $query
-            ->whereIn('river_id', $this->overflows->riverIdsQuery($regions))
-            ->orWhereIn('id', OverflowMonitorPlace::query()->select('overflow_monitor_id')));
+        return $removed;
     }
 
     /**
      * Deletes card files no place points at any more, once they are a day old.
      */
-    private function pruneOldFiles(): void
+    public function pruneOldFiles(): void
     {
         $disk = Storage::disk(ShareImage::DISK);
         $inUse = ShareImage::query()->pluck('path')->flip();
@@ -193,5 +161,59 @@ class GenerateShareImages
                 $disk->delete($path);
             }
         }
+    }
+
+    /**
+     * Rivers and their published spots, one river (with its long centreline) at a time.
+     *
+     * @param  list<int>  $ids
+     */
+    private function drawRivers(array $ids, Closure $save): void
+    {
+        foreach (River::query()->whereKey($ids)->main()->with(['region', 'shareImage', 'spots' => fn ($spots) => $spots->published()->with('shareImage')])->lazyById(5) as $river) {
+            $save($river, 'rivers', $this->cards->forRiver($river, $river->region, $river->spots));
+            foreach ($river->spots as $spot) {
+                $save($spot, 'spots', $this->cards->forSpot($spot, $river, $river->region, $river->spots));
+            }
+        }
+    }
+
+    /**
+     * Overflows by river, so each river's line, region and spots are loaded once.
+     *
+     * @param  list<int>  $ids
+     */
+    private function drawOverflows(array $ids, Closure $save): void
+    {
+        $river = null;
+        $withReturns = OverflowAnnualReturn::query()->whereIn('overflow_monitor_id', $ids)->distinct()->pluck('overflow_monitor_id')->flip();
+
+        foreach (OverflowMonitor::query()->whereKey($ids)->with('shareImage')->orderBy('river_id')->orderBy('id')->get() as $monitor) {
+            if ($monitor->river_id === null) {
+                $river = null;
+            } elseif ($river?->id !== $monitor->river_id) {
+                $river = River::query()->with(['region', 'spots' => fn ($spots) => $spots->published()])->find($monitor->river_id);
+            }
+
+            $region = $river?->region?->hasOverflowData() ? $river->region : $this->overflows->regionFor($monitor);
+
+            if ($region !== null) {
+                $save($monitor, 'overflows', $this->cards->forOverflow($monitor, $river, $region, $river === null ? collect() : $river->spots, $withReturns->has($monitor->id)));
+            }
+        }
+    }
+
+    /**
+     * Overflows some region's pages show: on a river of a region with overflow data, or linked to a place.
+     *
+     * @return Builder<OverflowMonitor>
+     */
+    private function overflowsWithPages(): Builder
+    {
+        $regions = Region::query()->get()->filter(fn (Region $region) => $region->hasOverflowData());
+
+        return OverflowMonitor::query()->where(fn ($query) => $query
+            ->whereIn('river_id', $this->overflows->riverIdsQuery($regions))
+            ->orWhereIn('id', OverflowMonitorPlace::query()->select('overflow_monitor_id')));
     }
 }

@@ -1,5 +1,10 @@
 <?php
 
+use App\Actions\ShareImages\GenerateShareImages;
+use App\Jobs\DrawShareCards;
+use App\Jobs\ImportAnnualReturnsIfOutdated;
+use App\Jobs\PositionRivers;
+use App\Jobs\QueueShareCards;
 use App\Models\BathingWater;
 use App\Models\Lake;
 use App\Models\OverflowMonitor;
@@ -8,6 +13,8 @@ use App\Models\River;
 use App\Models\ShareImage;
 use App\Models\Spot;
 use App\Services\ShareImages\ShareCards;
+use Illuminate\Bus\PendingBatch;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -106,16 +113,15 @@ it('shares the page\'s own card, or the site card until it is drawn', function (
     $this->get(route('rivers.show', [$region, $river]))->assertSee($river->fresh()->shareImage->url(), false);
 });
 
-it('draws overflow cards in batches on their own run, which the place run leaves alone', function () {
+it('draws overflow pages\' cards with the places\' ones, and none for overflows without a page', function () {
     Storage::fake('public');
     [$region, $river] = shareablePlaces();
     $monitors = OverflowMonitor::factory()->count(3)->create(['river_id' => $river->id, 'river_metres' => 1000]);
     $monitors[0]->update(['return_name' => 'Ellerton CSO']);
     $unshown = OverflowMonitor::factory()->create(['river_id' => null]);
 
-    $this->artisan('share-images:generate --overflows --limit=2')->expectsOutputToContain('Drew 2 overflow share cards, 0 unchanged, 0 removed, 1 waiting')->assertSuccessful();
-    $this->artisan('share-images:generate --overflows --limit=2')->expectsOutputToContain('Drew 1 overflow share cards, 2 unchanged');
-    $this->artisan('share-images:generate')->expectsOutputToContain('0 removed');
+    $this->artisan('share-images:generate')->expectsOutputToContain('Drew 5 share cards, 0 unchanged, 0 removed.')->assertSuccessful();
+    $this->artisan('share-images:generate')->expectsOutputToContain('Drew 0 share cards, 5 unchanged');
 
     $card = $monitors[0]->fresh()->shareImage;
 
@@ -126,7 +132,7 @@ it('draws overflow cards in batches on their own run, which the place run leaves
     $this->get(route('overflows.show', $monitors[0]))->assertSee('<meta property="og:image" content="'.$card->url().'">', false);
 });
 
-it('redraws every overflow card when forced, and pins one with no river on Britain under its place\'s region', function () {
+it('redraws every card when forced, and pins an overflow with no river on Britain under its place\'s region', function () {
     Storage::fake('public');
     [$region, $river] = shareablePlaces();
     OverflowMonitor::factory()->count(3)->create(['river_id' => $river->id, 'river_metres' => 1000]);
@@ -134,10 +140,40 @@ it('redraws every overflow card when forced, and pins one with no river on Brita
     $nearBeach = OverflowMonitor::factory()->create(['external_id' => 'YWS07777', 'river_id' => null, 'receiving_watercourse' => 'North Sea', 'latitude' => 54.285, 'longitude' => -0.40]);
     app(\App\Actions\Ingest\RefreshRegions::class)->handle([$region->id]);
 
-    $this->artisan('share-images:generate --overflows --limit=1')->expectsOutputToContain('Drew 1 overflow share cards');
-    $this->artisan('share-images:generate --overflows --limit=1 --force')->expectsOutputToContain('Drew 4 overflow share cards, 0 unchanged, 0 removed, 0 waiting');
+    $this->artisan('share-images:generate')->expectsOutputToContain('Drew 7 share cards');
+    $this->artisan('share-images:generate --force')->expectsOutputToContain('Drew 7 share cards, 0 unchanged, 0 removed.');
 
     expect($nearBeach->fresh()->shareImage->alt)->toBe('Storm overflow YWS07777 into North Sea, Yorkshire, marked on a map of Britain');
+});
+
+it('queues every page\'s card in batches for the worker, which draws only the changed ones', function () {
+    Storage::fake('public');
+    [$region, $river] = shareablePlaces();
+    OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 1000]);
+    BathingWater::factory()->create(['region_id' => $region->id]);
+
+    Bus::fake();
+    $this->artisan('share-images:generate --queue')->assertSuccessful();
+    Bus::assertDispatched(QueueShareCards::class);
+
+    (new QueueShareCards())->handle(app(GenerateShareImages::class));
+    Bus::assertBatched(fn (PendingBatch $batch) => $batch->name === 'Share cards' && $batch->hasJobs([
+        fn (DrawShareCards $job) => $job->kind === 'rivers' && $job->ids === [$river->id],
+        fn (DrawShareCards $job) => $job->kind === 'beaches',
+        fn (DrawShareCards $job) => $job->kind === 'overflows',
+    ]));
+
+    (new DrawShareCards('rivers', [$river->id]))->handle(app(GenerateShareImages::class));
+    expect(ShareImage::query()->count())->toBe(2);
+});
+
+it('leaves centrelines, positions, share cards and the annual returns to the queue once a deploy is live', function () {
+    Bus::fake();
+
+    $this->artisan('deploy:dispatch-jobs')->assertSuccessful();
+
+    Bus::assertChained([PositionRivers::class, QueueShareCards::class]);
+    Bus::assertDispatched(ImportAnnualReturnsIfOutdated::class);
 });
 
 it('draws the site\'s own card from the same renderer, naming the countries rather than the regions', function () {
@@ -146,14 +182,4 @@ it('draws the site\'s own card from the same renderer, naming the countries rath
     expect($card->subtitle)->toBe('England, Scotland and Wales')
         ->and($card->pin)->toBeNull()
         ->and(getimagesizefromstring(app(\App\Services\ShareImages\ShareCardRenderer::class)->render($card)))->toMatchArray([0 => 1200, 1 => 630]);
-});
-
-it('stops drawing place cards once its time is up, leaving the rest waiting for the next run', function () {
-    Storage::fake('public');
-    shareablePlaces();
-
-    $this->artisan('share-images:generate --within=0')->expectsOutputToContain('Drew 0 share cards, 0 unchanged, 0 removed. 2 waiting for the next run.');
-    expect(ShareImage::query()->count())->toBe(0);
-
-    $this->artisan('share-images:generate')->expectsOutputToContain('Drew 2 share cards');
 });

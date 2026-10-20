@@ -406,14 +406,15 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
 - Overflow annual returns: each overflow's official event duration monitoring return per year (counted spills by
   the 12/24 hour method, total hours, % of the year the monitor worked), from the Rivers Trust's ArcGIS layers for
   England and Wales (OGL, `services.overflow_annual_returns`, 2021-2025; 2020 has no ids or coordinates).
-  `ingest:overflow-annual-returns` (`ImportOverflowAnnualReturns`, monthly, and on deploy while the table is empty)
+  `ingest:overflow-annual-returns` (`ImportOverflowAnnualReturns`, monthly, and queued after each deploy)
   replaces each year's rows in `overflow_annual_returns` and matches them to monitors: by id where the return
   carries the live feeds' (England from 2023: `UID` is Stream's `Id`), otherwise to the nearest monitor within 25 m
   (Welsh rows have no id; 2021 numbers its rows and 2022 has none), then by permit across years
   (`matchByPermit`: 2021 places rows at the permit's grid reference, 100 m or more from the outlet), by permit and
   site name and then permit alone, only where the key names one row in its year on both sides and one monitor
   across years, so outlets sharing a permit are never guessed between. One row per monitor per year, the closest. A
-  year that fails to read keeps its old rows. The deploy runs it with `--if-outdated`, which imports while none are
+  year that fails to read keeps its old rows. After a deploy the queue runs it with `--if-outdated`
+  (`ImportAnnualReturnsIfOutdated`), which imports while none are
   stored or `ImportOverflowAnnualReturns::MATCHING_VERSION` (bump it whenever matching changes) differs from the
   version cached by the last complete import. These are the company's figures; never mix them with our own counts
   without saying which is which.
@@ -476,10 +477,8 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   feed text goes through `ConditionsFeed::xmlText()`, as names come from the companies' feeds. Name an overflow with
   `OverflowMonitor::titleName()`, `companyName()`, `companyPhrase()` and `intoPhrase()` rather than building the
   words again. Overflow pages have share cards too (`ShareCards::forOverflow()`: the river's line with the overflow
-  pinned, or Britain), but thousands of them would hold up a deploy, so `share-images:generate --overflows` draws
-  them hourly in the background, at most 500 a run (`--force` redraws them all), one river's line in memory at a
-  time, and the deploy's place run never touches them. The scheduler runs as www-data and the deploy user owns
-  `share/`, so the deploy makes `share/overflows` group writable (setgid, 2775).
+  pinned, or Britain), drawn on the queue with the place cards (below), a batch of overflows by river so each job
+  holds few rivers' lines.
 - The live bar's spill counts link to `/spills` (every region, `SpillsOverviewService`) or `/{region}/spills`
   (`#discharging`, `#spots`). "Discharging now" lists what the bar counts (overflows on the region's rivers,
   tributaries included), read live while the bar is rebuilt every 15 minutes, so the two can differ briefly after an
@@ -756,9 +755,12 @@ replacing the local database with a copy of live rather than backfilling.
   arrays in `@php`, not inside `{!! !!}`, where Blade reads the "@context" key as a directive.
 - Breadcrumb JSON-LD follows the URL (Home, region, Rivers, Beaches or Lakes, river, place). The visible trail's first link goes to
   the matching hub (All rivers, All beaches, All lakes) rather than the home page.
-- Spot, river, beach and lake pages share their own card (`og:image`, 1200 by 630): `share-images:generate`
-  (`GenerateShareImages`, on every deploy for up to ten minutes, `--within=600`, and hourly in the background for the
-  rest, as redrawing all of them takes over half an hour on the server; until then a page keeps its old card) draws it with GD (`ShareCardRenderer`, TTF copies of the site fonts in
+- Spot, river, beach and lake pages share their own card (`og:image`, 1200 by 630). They are drawn on the queue, never
+  during a deploy (redrawing all of them takes over half an hour on the server): after each deploy and hourly,
+  `QueueShareCards` (`share-images:generate --queue`; without `--queue` it draws in one go, locally) queues a batch of
+  `DrawShareCards` jobs (`GenerateShareImages::batches()`), each drawing only the cards whose fingerprint changed;
+  until then a page keeps its old card. The worker runs as www-data and the deploy user owns `share/`, so the deploy
+  makes the card folders group writable (setgid, 2775). `GenerateShareImages` draws each card with GD (`ShareCardRenderer`, TTF copies of the site fonts in
   `resources/fonts`) from what `ShareCards` says: the place, where it is and what the page covers (`topics`, drawn as
   chips), beside a map card like the site's own: the river's line and its spots, or Britain (`resources/geo`, Natural
   Earth), with the place pinned (an overflow square) under a popup naming it, and "Updated every 15 minutes" below. Never live status: social sites keep a
@@ -794,11 +796,17 @@ replacing the local database with a copy of live rather than backfilling.
   `github-howsthewater` SSH alias. Permissions follow the shared `www-data` group model: `writable_mode` is `chmod`,
   `writable_recursive` is off, the release is made read-only after the build, and file log channels set
   `'permission' => 0660` so web requests and deploy-time artisan can share a log file.
-- Every deploy runs `db:seed`, `rivers:centrelines` and `rivers:positions` after `migrate`, so a seeded river goes
-  live on push as long as the GeoPackage is on the server. Gauge discovery is left to the weekly schedule.
-  `rivers:positions` has a 30 minute timeout, and `AssignRiverPositions` only checks monitors inside each river's
-  bounding box (plus the largest offset allowed): with every water company recorded, checking every unpositioned
-  monitor against every river ran past the recipe's five minutes and failed a deploy.
+- A deploy does only what the new release needs before it goes live: `migrate`, `db:seed` and `regions:refresh --all`
+  (the warm cache). Everything else runs on the queue (database driver, a supervisor-run `queue:work` as www-data):
+  after `deploy:symlink` the deploy runs `queue:restart`, so workers pick up the new code, then `deploy:dispatch-jobs`
+  queues `PositionRivers` (`rivers:centrelines` then `rivers:positions`) chained to `QueueShareCards`, and
+  `ImportAnnualReturnsIfOutdated`. Dispatching before the switch could hand a job to a worker running the old release.
+  A seeded river is positioned a few minutes after the deploy, as long as the GeoPackage is on the server and readable
+  by www-data, and shows on its pages from the next `regions:refresh`. Gauge discovery is left to the weekly schedule.
+  The database queue's `retry_after` (3600) outlasts the longest job's `$timeout` (`PositionRivers`, 3300), so a slow
+  job is never picked up twice. `AssignRiverPositions` only checks monitors inside each river's bounding box (plus the
+  largest offset allowed): checking every unpositioned monitor against every river took too long. Add new
+  post-deploy work as a job dispatched from `deploy:dispatch-jobs`, never as a deploy task.
 - Server provisioning (users, PHP-FPM, nginx, deploy keys, GitHub environment) lives in the `opendata-ansible` repo.
   Nothing is deployed by hand; never run `composer update` or merge on the server.
 - `bootstrap/cache` is read-only to www-data once a release is hardened; the deploy writes every cache file there as

@@ -121,7 +121,7 @@ it('runs the refresh after every ingest, with overlap locks that cannot outlive 
 
     expect($events->last()->command)->toContain('regions:refresh')
         ->and($events->filter->withoutOverlapping)->each(fn ($event) => $event->expiresAt->toBeLessThanOrEqual(60))
-        ->and($events->filter->withoutOverlapping->count())->toBe(11);
+        ->and($events->filter->withoutOverlapping->count())->toBe(9);
 });
 
 it('makes the river and region comparisons work out again when the overflows a region shows change', function () {

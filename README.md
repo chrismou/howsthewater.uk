@@ -140,11 +140,37 @@ The schedule lives in `routes/console.php`. In production, run the Laravel sched
 4. Run `php artisan db:seed`, then `rivers:centrelines`, `ingest:gauges --stations` and `rivers:positions`. The
    positions step also records where each tributary joins its parent and links each spot to its nearest gauge,
    preferring gauges that report stage in metres over ones reporting height above sea level (mAOD).
-5. Push. The deploy runs the seeders, centrelines and positions itself (the GeoPackage must already be on the
-   server). The next scheduled ingests catch up on the rest without a manual step: the overflow ingest positions a new
-   region's monitors when it first sees them, the gauge ingest discovers and backfills gauges on rivers never searched,
-   and the rainfall ingest finds rain gauges for spots never searched. The first of those runs can take several
-   minutes while it backfills a week of readings; it runs in the scheduler, so deploys are not delayed.
+5. Push. The deploy runs the seeders, then queues the centrelines and positions for the queue worker once the new
+   release is live (the GeoPackage must already be on the server). The next scheduled ingests catch up on the rest
+   without a manual step: the overflow ingest positions a new region's monitors when it first sees them, the gauge
+   ingest discovers and backfills gauges on rivers never searched, and the rainfall ingest finds rain gauges for spots
+   never searched.
+
+## Queue worker
+
+Deploys only migrate, seed and warm the cache. River positions, share cards and the annual returns check run on the
+queue afterwards (`deploy:dispatch-jobs`), and share cards are queued hourly too. In production, keep a worker running
+under supervisor as the web user. Two workers let a long job (positions take up to half an hour) run while the other
+carries on with share cards; jobs set their own retries and timeouts, and the command goes through `current/` so each
+deploy's restart picks up the new release:
+
+```
+[program:howsthewater-queue]
+process_name=%(program_name)s_%(process_num)02d
+command=php /path/to/howsthewater/current/artisan queue:work --sleep=3 --tries=1 --max-time=3600 --memory=512
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/path/to/howsthewater/shared/storage/logs/worker.log
+stopwaitsecs=3600
+```
+
+Each deploy runs `queue:restart`, so the worker picks up the new release. Locally, `php artisan queue:work` runs queued jobs, or set
+`QUEUE_CONNECTION=sync` to run them straight away.
 
 <!-- The API is not released yet; show this section again when it is.
 
