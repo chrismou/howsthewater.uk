@@ -72,9 +72,9 @@ final readonly class SwimmingSpot
 
     /**
      * The place as the swimming page's map and "near me" list read it from /swimming/places.json: the map's marker
-     * fields (lat, lng, label, url, kind, recency) plus the row's words and pill colour. Links are site-relative.
+     * fields (lat, lng, label, url, kind, recency, and the popup's note and link text) plus the row's words and pill colour. Links are site-relative.
      *
-     * @return array{lat: float, lng: float, label: string, url: string, kind: string, recency: string, type: string, region: string, detail: string, pill: string, tone: string}
+     * @return array{lat: float, lng: float, label: string, url: string, kind: string, recency: string, note: string|null, link: string, type: string, region: string, detail: string, pill: string, tone: string}
      */
     public function toMapPlace(): array
     {
@@ -85,6 +85,8 @@ final readonly class SwimmingSpot
             'url' => (string) parse_url($this->url, PHP_URL_PATH),
             'kind' => 'place',
             'recency' => $this->stale ? 'no_data' : $this->spillRecency->value,
+            'note' => $this->spillRecency->mapNote($this->stale, $this->nearbyWording),
+            'link' => 'View '.($this->kind === 'river' ? 'spot' : $this->kind),
             'type' => $this->kind,
             'region' => $this->regionName,
             'detail' => $this->description(),

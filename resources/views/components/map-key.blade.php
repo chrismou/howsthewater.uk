@@ -10,8 +10,7 @@
 @php
     $colours = [
         '#b91c1c' => 'Overflow discharging',
-        '#c2410c' => 'Spill in 24h',
-        '#b45309' => 'Spill in 48h',
+        '#f59e0b' => 'Spill in last 48h',
         '#047857' => 'No spills reported in 48h',
         '#78716c' => 'No data or out of date',
     ];

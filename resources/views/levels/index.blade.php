@@ -21,6 +21,8 @@
             'url' => route('spots.show', [$entry[0]->regionSlug, $entry[0]->riverSlug, $entry[0]->slug]),
             'kind' => 'level',
             'state' => $entry[1],
+            'note' => $entry[1] === 'higher' ? 'Higher than usual' : 'Rising',
+            'link' => 'View spot',
         ])->values();
 @endphp
 

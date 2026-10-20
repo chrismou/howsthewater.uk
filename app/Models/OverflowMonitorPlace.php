@@ -65,6 +65,18 @@ class OverflowMonitorPlace extends Model
     }
 
     /**
+     * What kind of page the place has: "spot", "beach" or "lake".
+     */
+    public function placeKind(): string
+    {
+        return match (true) {
+            $this->place instanceof BathingWater => 'beach',
+            $this->place instanceof Lake => 'lake',
+            default => 'spot',
+        };
+    }
+
+    /**
      * The place's name, with its river for a spot ("Ilkley, River Wharfe").
      */
     public function placeLabel(): string

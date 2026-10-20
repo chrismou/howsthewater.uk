@@ -38,6 +38,22 @@ trait ReportsSpills
      */
     public function spillRecency(): SpillRecency
     {
-        return SpillRecency::forMonitor($this->status, $this->latestEvent === null ? null : ($this->latestEvent->ended_at ?? now()), $this->monitor->isStale());
+        return SpillRecency::forMonitor($this->status, $this->latestSpillEnd(), $this->monitor->isStale());
+    }
+
+    /**
+     * The line under its name in a map popup (SpillRecency::monitorNote()).
+     */
+    public function mapNote(): ?string
+    {
+        return SpillRecency::monitorNote($this->status, $this->latestSpillEnd(), $this->monitor->source_updated_at, $this->monitor->isStale());
+    }
+
+    /**
+     * When its latest spill ended, or now while one is open.
+     */
+    private function latestSpillEnd(): ?Carbon
+    {
+        return $this->latestEvent === null ? null : ($this->latestEvent->ended_at ?? now());
     }
 }

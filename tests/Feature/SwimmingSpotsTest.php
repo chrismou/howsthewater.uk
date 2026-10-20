@@ -101,6 +101,8 @@ it('shows a block per region on the swimming page, and serves every place with i
             'url' => '/yorkshire/rivers/wharfe/otley',
             'kind' => 'place',
             'recency' => 'discharging_now',
+            'note' => 'Discharging upstream now',
+            'link' => 'View spot',
             'type' => 'river',
             'region' => 'Yorkshire',
             'detail' => 'River Wharfe',

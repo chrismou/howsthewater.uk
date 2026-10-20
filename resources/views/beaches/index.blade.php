@@ -21,6 +21,8 @@
             'url' => route('beaches.show', [$region, $conditions->bathingWater->bathingWater]),
             'kind' => 'place',
             'recency' => $conditions->overflows->spillRecency->onMap($conditions->overflows->isStale()),
+            'note' => $conditions->overflows->spillRecency->mapNote($conditions->overflows->isStale(), nearby: true),
+            'link' => 'View beach',
         ])->values();
     @endphp
 

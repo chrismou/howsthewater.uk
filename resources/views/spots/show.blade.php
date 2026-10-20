@@ -19,13 +19,16 @@
         'label' => $spot->name,
         'kind' => 'place',
         'recency' => $conditions->spillRecency->onMap($conditions->overflowDataIsStale()),
+        'note' => $conditions->spillRecency->mapNote($conditions->overflowDataIsStale()),
     ]])->concat($mapMonitors->map(fn ($summary) => [
         'lat' => $summary->monitor->latitude,
         'lng' => $summary->monitor->longitude,
-        'label' => ($summary->monitor->displayName() ?? $summary->monitor->external_id).', '.$summary->river->name.' ('.$summary->status->label().')',
+        'label' => $summary->monitor->titleName(),
         'url' => route('overflows.show', $summary->monitor),
         'kind' => 'monitor',
         'recency' => $summary->spillRecency()->value,
+        'note' => $summary->mapNote(),
+        'link' => 'View overflow',
     ]))->values();
 
     // Places whose water company feed we do not read yet show dashes, never zeros that would read as "no spills".
@@ -64,8 +67,9 @@
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
             <x-breadcrumbs :items="$breadcrumbs" />
-            {{-- Names the river too ("Ilkley, River Wharfe"), as people search for both, with the place standing out. --}}
-            <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $spot->name }}<span class="text-2xl font-medium text-muted sm:text-3xl">, {{ $spot->river->name }}</span></h1>
+            {{-- Names the river too ("Ilkley, River Wharfe"), as people search for both, with the place standing out; the
+                 river opens its page, quietly, as the breadcrumb's link is small. --}}
+            <h1 class="font-display mt-1 text-4xl font-semibold tracking-tight">{{ $spot->name }}<span class="text-2xl font-medium text-muted sm:text-3xl">, <a href="{{ route('rivers.show', [$spot->river->region, $spot->river]) }}" class="hover:text-ink hover:underline">{{ $spot->river->name }}</a></span></h1>
             <p class="mt-1 text-ink-2">
                 @if ($spot->description){{ $spot->description }} @endif
                 @if ($spot->river_metres !== null)

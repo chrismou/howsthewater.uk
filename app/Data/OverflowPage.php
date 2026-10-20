@@ -34,7 +34,7 @@ final readonly class OverflowPage
      * @param  list<array{month: Carbon, spills: int, hours: float, recorded: bool, rain: float|null}>  $months  The last 12 UK months, oldest first
      * @param  Carbon  $coveredFrom  The earliest time we hold its spills for: its company's published log, or the record start
      * @param  list<string>  $notes  Where the spills shown come from and which months are missing (SpillCoverage::notes())
-     * @param  SpillRecency  $spillRecency  Its own recency, for its map marker (SpillRecency::forMonitor())
+     * @param  Carbon|null  $latestSpillEndedAt  When its latest spill ended (or its last report, if still open), for its map marker
      */
     public function __construct(
         public OverflowMonitor $monitor,
@@ -55,8 +55,24 @@ final readonly class OverflowPage
         public array $months,
         public Carbon $coveredFrom,
         public array $notes,
-        public SpillRecency $spillRecency,
+        public ?Carbon $latestSpillEndedAt,
     ) {
+    }
+
+    /**
+     * Its own recency, for its map marker.
+     */
+    public function spillRecency(): SpillRecency
+    {
+        return SpillRecency::forMonitor($this->monitor->status, $this->latestSpillEndedAt, $this->monitor->isStale());
+    }
+
+    /**
+     * The line under its name in its map popup.
+     */
+    public function mapNote(): ?string
+    {
+        return SpillRecency::monitorNote($this->monitor->status, $this->latestSpillEndedAt, $this->monitor->source_updated_at, $this->monitor->isStale());
     }
 
     /**

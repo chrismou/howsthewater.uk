@@ -12,12 +12,15 @@
         'lng' => $monitor->longitude,
         'label' => $name,
         'kind' => 'monitor',
-        'recency' => $page->spillRecency->value,
+        'recency' => $page->spillRecency()->value,
+        'note' => $page->mapNote(),
     ]])->concat($page->places->map(fn ($link) => [
         'lat' => $link->place->latitude,
         'lng' => $link->place->longitude,
         'label' => $link->placeLabel(),
         'url' => $link->placeUrl(),
+        'note' => ucfirst($link->distanceLabel()),
+        'link' => 'View '.$link->placeKind(),
         'kind' => 'place',
     ]))->values();
 

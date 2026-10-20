@@ -12,13 +12,16 @@
         'label' => $beach->name,
         'kind' => 'place',
         'recency' => $overflows->spillRecency->onMap($overflows->isStale()),
+        'note' => $overflows->spillRecency->mapNote($overflows->isStale(), nearby: true),
     ]])->concat($overflows->monitors->map(fn ($monitor) => [
         'lat' => $monitor->monitor->latitude,
         'lng' => $monitor->monitor->longitude,
-        'label' => ($monitor->monitor->displayName() ?? $monitor->monitor->external_id).', '.number_format($monitor->distanceMetres / 1000, 1).' km ('.$monitor->status->label().')',
+        'label' => $monitor->monitor->titleName(),
         'url' => route('overflows.show', $monitor->monitor),
         'kind' => 'monitor',
         'recency' => $monitor->spillRecency()->value,
+        'note' => $monitor->mapNote(),
+        'link' => 'View overflow',
     ]))->values();
 
     // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.

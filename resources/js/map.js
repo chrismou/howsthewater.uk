@@ -2,15 +2,15 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchJsonOnce } from './json-cache';
 
-// Every map colours places and overflows alike, by spills on one scale: red while an overflow discharges, orange and
-// amber after a spill in the last 24 and 48 hours, green when none was reported in 48 hours and grey with nothing to
-// go on (offline, out of date, none matched, or a feed we do not read). Places are circles and overflows squares,
+// Every map colours places and overflows alike, by spills on one scale: red while an overflow discharges, amber after
+// a spill in the last 48 hours (light enough to tell from red at a glance; the popup says when), green when none was
+// reported in 48 hours and grey with nothing to go on (offline, out of date, none matched, or a feed we do not read). Places are circles and overflows squares,
 // so the two never read as each other. Levels are blue, which no spill status uses, and a place drawn only to show
 // where it is (no status on that map) is white with a dark ring. components/map-key draws the same colours.
 const recencyColours = {
     discharging_now: '#b91c1c',
-    within_24_hours: '#c2410c',
-    within_48_hours: '#b45309',
+    within_24_hours: '#f59e0b',
+    within_48_hours: '#f59e0b',
     none: '#047857',
     offline: '#78716c',
     no_data: '#78716c',
@@ -46,6 +46,51 @@ function markerFor(marker, compact = false) {
             : { fillColor: recencyColours[marker.recency] ?? recencyColours.no_data, color: '#ffffff', weight: compact ? 1 : 2 };
 
     return L.circleMarker(latLng, { pane: 'places', radius, fillOpacity: 0.95, ...style });
+}
+
+// A marker's popup: its name, a line saying why it is not green (none when it is), and a link to its page. Names come
+// from the feeds, so it is built from DOM nodes rather than an HTML string; divs, as Leaflet spaces out paragraphs.
+function popupFor(marker) {
+    const popup = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'font-semibold';
+    name.textContent = marker.label;
+    popup.append(name);
+
+    if (marker.note && marker.recency === 'discharging_now') {
+        popup.append(dischargingPill(marker.note));
+    } else if (marker.note) {
+        const note = document.createElement('div');
+        note.className = 'mt-0.5';
+        note.textContent = marker.note;
+        popup.append(note);
+    }
+
+    if (marker.url) {
+        const link = document.createElement('a');
+        link.href = marker.url;
+        link.className = 'mt-1.5 block font-medium';
+        link.style.color = 'var(--color-accent)';
+        link.textContent = `${marker.link ?? 'View page'} \u203a`;
+        popup.append(link);
+    }
+
+    return popup;
+}
+
+// "Discharging now" in the red pill with the pulsing dot, as components/spill-badge and components/live-dot draw it.
+function dischargingPill(text) {
+    const pill = document.createElement('div');
+    pill.className = 'mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset bg-pill-red-bg text-pill-red-text ring-pill-red-ring';
+
+    const dot = document.createElement('span');
+    dot.className = 'relative inline-flex size-1.5 shrink-0 text-alert';
+    dot.setAttribute('aria-hidden', 'true');
+    dot.innerHTML = '<span class="absolute inset-0 rounded-full bg-current opacity-60 motion-safe:animate-live"></span><span class="relative inline-flex size-1.5 rounded-full bg-current"></span>';
+
+    pill.append(dot, document.createTextNode(text));
+
+    return pill;
 }
 
 // Each map is built when it comes near the screen, so pages with several (the hubs, a region's cards) do not draw
@@ -126,15 +171,7 @@ function drawMap(element, markers) {
     markers.forEach((marker) => {
         const layer = markerFor(marker, markers.length > 300).addTo(map);
         markerLayers.push({ marker, layer });
-        // Labels carry feed-supplied text, so build the popup from DOM nodes rather than an HTML string.
-        const label = document.createElement(marker.url ? 'a' : 'span');
-        label.textContent = marker.label;
-
-        if (marker.url) {
-            label.href = marker.url;
-        }
-
-        layer.bindPopup(label);
+        layer.bindPopup(popupFor(marker));
         layers.push(layer);
     });
 

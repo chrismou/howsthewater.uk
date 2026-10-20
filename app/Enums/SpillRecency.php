@@ -63,6 +63,35 @@ enum SpillRecency: string
     }
 
     /**
+     * The line a place's map popup gives under its name, saying why its marker is not green; none when it is, as a
+     * quiet place needs no note.
+     */
+    public function mapNote(bool $stale = false, bool $nearby = false): ?string
+    {
+        return match (true) {
+            $stale => 'Overflow data out of date',
+            $this === self::None => null,
+            default => $nearby ? $this->nearbyLabel() : $this->label(),
+        };
+    }
+
+    /**
+     * The line an overflow's map popup gives under its name, matching its colour (forMonitor()): when it last
+     * reported if it is out of date, discharging now, when its latest spill ended if that was in the last 48 hours,
+     * or offline; none when it has not spilled in 48 hours.
+     */
+    public static function monitorNote(OverflowStatus $status, ?CarbonInterface $latestSpillEnd, ?CarbonInterface $lastReport, bool $stale): ?string
+    {
+        return match (true) {
+            $stale => $lastReport === null ? 'No recent reports from this monitor' : 'Last reported '.$lastReport->diffForHumans(),
+            $status === OverflowStatus::Discharging => 'Discharging now',
+            $latestSpillEnd?->greaterThanOrEqualTo(now()->subHours(48)) ?? false => 'Last spill ended '.$latestSpillEnd->diffForHumans(),
+            $status === OverflowStatus::Offline => 'Monitor offline',
+            default => null,
+        };
+    }
+
+    /**
      * The pill colour it shows in: red while discharging, amber after a recent spill, green when none was reported and
      * grey when there is no data to go on.
      */

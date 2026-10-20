@@ -679,10 +679,13 @@ replacing the local database with a copy of live rather than backfilling.
   off, red, amber or muted), straight after the last word inside the heading; its hidden comma keeps the words and
   number apart in the text.
 - Every map means the same by its colours (`map.js`, keyed by `components/map-key`): places and overflows are
-  coloured by spills on one scale (red discharging, orange and amber after a spill in 24 and 48 hours, green none
-  reported in 48 hours, grey no data, offline, out of date or not read), places as circles and overflows as squares.
-  Markers pass `recency` (`SpillRecency::onMap()`, which greys out stale data; an overflow's own from
-  `SpillRecency::forMonitor()`), never a classification or a raw status. Levels are blue (the levels page: filled
+  coloured by spills on one scale (red discharging, a light amber after a spill in the last 48 hours, so it never
+  passes for red, green none reported in 48 hours, grey no data, offline, out of date or not read), places as circles
+  and overflows as squares. Markers pass `recency` (`SpillRecency::onMap()`, which greys out stale data; an
+  overflow's own from `SpillRecency::forMonitor()`), never a classification or a raw status. Popups give the name, a
+  `note` saying why the marker is not green (`SpillRecency::mapNote()`, `monitorNote()`; none when it is green; a
+  discharge now in the red pill with the live dot) and a
+  `link` ("View spot", "View overflow") to its page. Levels are blue (the levels page: filled
   for higher than usual, a ring for rising) and a place shown without a status is white with a dark ring.
 - A headline figure that counts something listed elsewhere links there: the number and its label each go in
   `components/figure-link` (the number with `figure`, so screen readers and the keyboard skip the repeat), with a null

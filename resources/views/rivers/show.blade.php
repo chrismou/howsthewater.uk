@@ -6,6 +6,8 @@
         'url' => route('spots.show', [$conditions->spot->river->region, $conditions->spot->river, $conditions->spot]),
         'kind' => 'place',
         'recency' => $conditions->spillRecency->onMap($conditions->overflowDataIsStale()),
+        'note' => $conditions->spillRecency->mapNote($conditions->overflowDataIsStale()),
+        'link' => 'View spot',
     ])->values();
 
     // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.

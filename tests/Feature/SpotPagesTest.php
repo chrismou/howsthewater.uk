@@ -512,13 +512,13 @@ it('titles a river page by its levels and dates its monitor sentence', function 
         ->assertSee('1 spot, listed source to mouth.');
 });
 
-it('names the river in a spot heading and gives each spot its own facts in its description', function () {
+it('names and links the river in a spot heading and gives each spot its own facts in its description', function () {
     [$region, $river, $spot] = spotWithUrl(['name' => 'Ilkley', 'slug' => 'ilkley', 'river_metres' => 53000], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
     OverflowMonitor::factory()->count(2)->create(['river_id' => $river->id, 'river_metres' => 40000]);
 
     $this->get('/yorkshire/rivers/wharfe/ilkley')
         ->assertOk()
-        ->assertSee('>Ilkley<span class="text-2xl font-medium text-muted sm:text-3xl">, River Wharfe</span></h1>', false)
+        ->assertSee('>Ilkley<span class="text-2xl font-medium text-muted sm:text-3xl">, <a href="'.route('rivers.show', [$region, $river]).'" class="hover:text-ink hover:underline">River Wharfe</a></span></h1>', false)
         ->assertSee('<meta name="description" content="Ilkley on the River Wharfe, 53 km from the source: spills from 2 storm overflows upstream, river level and rainfall, for swimming, paddling and fishing.">', false);
 });
 

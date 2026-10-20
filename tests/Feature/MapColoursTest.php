@@ -19,7 +19,14 @@ it('colours an overflow by its own spills on the same scale as a place, and an o
         ->and(SpillRecency::forMonitor(OverflowStatus::Offline, null, false))->toBe(SpillRecency::Offline)
         ->and(SpillRecency::forMonitor(OverflowStatus::Discharging, null, true))->toBe(SpillRecency::NoData)
         ->and(SpillRecency::DischargingNow->onMap(true))->toBe('no_data')
-        ->and(SpillRecency::DischargingNow->onMap())->toBe('discharging_now');
+        ->and(SpillRecency::DischargingNow->onMap())->toBe('discharging_now')
+        ->and(SpillRecency::None->mapNote())->toBeNull()
+        ->and(SpillRecency::None->mapNote(stale: true))->toBe('Overflow data out of date')
+        ->and(SpillRecency::Within48Hours->mapNote(nearby: true))->toBe('Spill nearby in the last 48 hours')
+        ->and(SpillRecency::monitorNote(OverflowStatus::NotDischarging, now()->subDays(5), now(), false))->toBeNull()
+        ->and(SpillRecency::monitorNote(OverflowStatus::Discharging, null, now(), false))->toBe('Discharging now')
+        ->and(SpillRecency::monitorNote(OverflowStatus::Offline, null, now(), false))->toBe('Monitor offline')
+        ->and(SpillRecency::monitorNote(OverflowStatus::NotDischarging, null, now()->subDays(2), true))->toBe('Last reported 2 days ago');
 });
 
 it('marks the spot and its overflows by their spills, with a key for both shapes', function () {
@@ -33,7 +40,9 @@ it('marks the spot and its overflows by their spills, with a key for both shapes
         ->assertOk()
         ->assertSee('&quot;kind&quot;:&quot;place&quot;,&quot;recency&quot;:&quot;within_24_hours&quot;', false)
         ->assertSee('&quot;kind&quot;:&quot;monitor&quot;,&quot;recency&quot;:&quot;within_24_hours&quot;', false)
-        ->assertSeeInOrder(['aria-label="Map key"', 'Spills upstream:', 'Overflow discharging', 'No data or out of date', 'Ilkley', 'Overflow'], false);
+        ->assertSee('&quot;note&quot;:&quot;Spill upstream in the last 24 hours&quot;', false)
+        ->assertSee('&quot;note&quot;:&quot;Last spill ended 6 hours ago&quot;,&quot;link&quot;:&quot;View overflow&quot;', false)
+        ->assertSeeInOrder(['aria-label="Map key"', 'Spills upstream:', 'Overflow discharging', 'Spill in last 48h', 'No data or out of date', 'Ilkley', 'Overflow'], false);
 
     // The overflow's own page colours it the same way, with the places it reaches shown without a status.
     app(RefreshRegions::class)->handle([$region->id]);

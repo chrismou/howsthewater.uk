@@ -12,6 +12,8 @@
         'url' => route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]),
         'kind' => 'place',
         'recency' => $spot->spillRecency->onMap($spot->overflowDataIsStale()),
+        'note' => $spot->spillRecency->mapNote($spot->overflowDataIsStale()),
+        'link' => 'View spot',
     ])->values();
 
     $dotColour = fn ($spot) => match (true) {
