@@ -20,8 +20,10 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Draws the share card for every spot, river, beach and lake page, run on each deploy. A card is only drawn when what
- * it shows has changed (its fingerprint), so most runs draw nothing. Each file name carries the fingerprint, so a
+ * Draws the share card for every spot, river, beach and lake page, run on each deploy and hourly. A card is only drawn
+ * when what it shows has changed (its fingerprint), so most runs draw nothing; a change to how cards are drawn changes
+ * every one, so a run can stop drawing after a time budget and leave the rest, still showing their old cards, to the
+ * next run. Each file name carries the fingerprint, so a
  * changed card gets a new address; the old file stays for a day for pages and crawlers that still point at it, then
  * goes, as do the cards of places that no longer have a page.
  */
@@ -37,11 +39,13 @@ class GenerateShareImages
     }
 
     /**
-     * @return array{drawn: int, unchanged: int, removed: int}
+     * @param  int|null  $withinSeconds  Stop drawing once this long has passed, counting the rest as waiting
+     * @return array{drawn: int, unchanged: int, removed: int, waiting: int}
      */
-    public function handle(bool $force = false): array
+    public function handle(bool $force = false, ?int $withinSeconds = null): array
     {
-        $counts = ['drawn' => 0, 'unchanged' => 0, 'removed' => 0];
+        $counts = ['drawn' => 0, 'unchanged' => 0, 'removed' => 0, 'waiting' => 0];
+        $stopAt = $withinSeconds === null ? null : microtime(true) + $withinSeconds;
         // Overflow cards are drawn by handleOverflows() on a schedule, so this run leaves them alone.
         $existing = ShareImage::query()
             ->where('shareable_type', '!=', (new OverflowMonitor())->getMorphClass())
@@ -49,7 +53,7 @@ class GenerateShareImages
             ->keyBy(fn (ShareImage $image) => $image->shareable_type.':'.$image->shareable_id);
         $seen = [];
 
-        $save = function (Spot|River|BathingWater|Lake $place, string $folder, ShareCard $card) use ($existing, $force, &$seen, &$counts) {
+        $save = function (Spot|River|BathingWater|Lake $place, string $folder, ShareCard $card) use ($existing, $force, $stopAt, &$seen, &$counts) {
             $key = $place->getMorphClass().':'.$place->getKey();
             $seen[$key] = true;
             $fingerprint = $card->fingerprint(ShareCardRenderer::VERSION);
@@ -57,6 +61,12 @@ class GenerateShareImages
 
             if (! $force && $image?->fingerprint === $fingerprint && Storage::disk(ShareImage::DISK)->exists($image->path)) {
                 $counts['unchanged']++;
+
+                return;
+            }
+
+            if ($stopAt !== null && microtime(true) >= $stopAt) {
+                $counts['waiting']++;
 
                 return;
             }

@@ -147,3 +147,13 @@ it('draws the site\'s own card from the same renderer, naming the countries rath
         ->and($card->pin)->toBeNull()
         ->and(getimagesizefromstring(app(\App\Services\ShareImages\ShareCardRenderer::class)->render($card)))->toMatchArray([0 => 1200, 1 => 630]);
 });
+
+it('stops drawing place cards once its time is up, leaving the rest waiting for the next run', function () {
+    Storage::fake('public');
+    shareablePlaces();
+
+    $this->artisan('share-images:generate --within=0')->expectsOutputToContain('Drew 0 share cards, 0 unchanged, 0 removed. 2 waiting for the next run.');
+    expect(ShareImage::query()->count())->toBe(0);
+
+    $this->artisan('share-images:generate')->expectsOutputToContain('Drew 2 share cards');
+});

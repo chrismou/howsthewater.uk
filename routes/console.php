@@ -20,6 +20,8 @@ Schedule::command('ingest:weather')->cron('7 */3 * * *')->withoutOverlapping(60)
 // Overflow pages' share cards, a batch at a time in the background: thousands of overflows would hold up a deploy,
 // and a card only changes when the overflow's name, river or returns do.
 Schedule::command('share-images:generate --overflows --limit=500')->hourlyAt(40)->withoutOverlapping(60)->runInBackground();
+// Place cards the deploy had no time for (a change to how cards are drawn redraws them all), also in the background.
+Schedule::command('share-images:generate --within=1500')->hourlyAt(10)->withoutOverlapping(60)->runInBackground();
 // The annual returns come out once a year (spring), so a monthly read picks up a new year and any corrections.
 Schedule::command('ingest:overflow-annual-returns')->monthlyOn(2, '05:10');
 // The companies publish past spills monthly or yearly, so a daily read picks up new months within a day; a run that

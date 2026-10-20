@@ -13,6 +13,7 @@ class GenerateShareImages extends Command
         {--force : Redraw every card, including those that have not changed}
         {--overflows : Draw overflow pages\' cards instead (scheduled), at most --limit a run}
         {--limit=500 : With --overflows, the most cards to draw in one run}
+        {--within= : Stop drawing place cards after this many seconds, leaving the rest to the next run}
         {--site : Redraw the site\'s own card, public/og-image.png, instead (run locally and commit it, as releases are read-only)}';
 
     protected $description = 'Draw the share card for every spot, river, beach and lake page (or, with --overflows, overflow page) whose card has changed';
@@ -33,9 +34,11 @@ class GenerateShareImages extends Command
             return self::SUCCESS;
         }
 
-        $result = $generate->handle((bool) $this->option('force'));
+        $within = $this->option('within');
+        $result = $generate->handle((bool) $this->option('force'), $within === null ? null : max(0, (int) $within));
 
-        $this->info(sprintf('Drew %d share cards, %d unchanged, %d removed.', $result['drawn'], $result['unchanged'], $result['removed']));
+        $this->info(sprintf('Drew %d share cards, %d unchanged, %d removed.', $result['drawn'], $result['unchanged'], $result['removed'])
+            .($result['waiting'] > 0 ? " {$result['waiting']} waiting for the next run." : ''));
 
         return self::SUCCESS;
     }

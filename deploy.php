@@ -77,18 +77,19 @@ after('artisan:rivers:centrelines', 'artisan:rivers:positions');
 // the old release keeps serving from its own. No cache:clear, which would leave the old release cold meanwhile.
 after('artisan:rivers:positions', 'artisan:regions:refresh');
 
-// Share cards are drawn only for places whose card has changed, so most deploys draw none; a change to how cards are
-// drawn redraws all of them (about 800, a few minutes), hence the longer timeout.
+// Share cards are drawn only for places whose card has changed, so most deploys draw none. A change to how cards are
+// drawn changes all of them (about 1,400, over half an hour on the server), so the deploy draws for ten minutes and
+// the hourly scheduled run draws the rest; until then those pages keep their old card.
 task('artisan:share-images:generate', function () {
-    run('{{bin/php}} {{release_or_current_path}}/artisan share-images:generate', timeout: 1800);
-})->desc('Draw share cards for new or changed spots, rivers, beaches and lakes');
+    run('{{bin/php}} {{release_or_current_path}}/artisan share-images:generate --within=600', timeout: 1800);
+})->desc('Draw share cards for new or changed spots, rivers, beaches and lakes, for up to ten minutes');
 after('artisan:regions:refresh', 'artisan:share-images:generate');
 
-// Overflow cards are drawn by the scheduler, which runs as www-data, inside share/, which the deploy user owns. Their
-// folder is made here, group writable and setgid, so the scheduler can write to it.
+// The scheduler, which runs as www-data, draws overflow cards and finishes place cards inside share/, which the deploy
+// user owns. The card folders are made here, group writable and setgid, so the scheduler can write to them.
 task('share-images:overflow-folder', function () {
-    run('mkdir -p {{deploy_path}}/shared/storage/app/public/share/overflows && chmod 2775 {{deploy_path}}/shared/storage/app/public/share/overflows');
-})->desc('Make the overflow share cards folder writable by the scheduler');
+    run('cd {{deploy_path}}/shared/storage/app/public/share && mkdir -p overflows spots rivers beaches lakes && chmod 2775 . overflows spots rivers beaches lakes');
+})->desc('Make the share card folders writable by the scheduler');
 after('artisan:share-images:generate', 'share-images:overflow-folder');
 
 // Imports the overflow annual returns on a deploy that has none, or whose matching rules changed

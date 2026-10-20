@@ -757,7 +757,8 @@ replacing the local database with a copy of live rather than backfilling.
 - Breadcrumb JSON-LD follows the URL (Home, region, Rivers, Beaches or Lakes, river, place). The visible trail's first link goes to
   the matching hub (All rivers, All beaches, All lakes) rather than the home page.
 - Spot, river, beach and lake pages share their own card (`og:image`, 1200 by 630): `share-images:generate`
-  (`GenerateShareImages`, run on every deploy) draws it with GD (`ShareCardRenderer`, TTF copies of the site fonts in
+  (`GenerateShareImages`, on every deploy for up to ten minutes, `--within=600`, and hourly in the background for the
+  rest, as redrawing all of them takes over half an hour on the server; until then a page keeps its old card) draws it with GD (`ShareCardRenderer`, TTF copies of the site fonts in
   `resources/fonts`) from what `ShareCards` says: the place, where it is and what the page covers (`topics`, drawn as
   chips), beside a map card like the site's own: the river's line and its spots, or Britain (`resources/geo`, Natural
   Earth), with the place pinned (an overflow square) under a popup naming it, and "Updated every 15 minutes" below. Never live status: social sites keep a

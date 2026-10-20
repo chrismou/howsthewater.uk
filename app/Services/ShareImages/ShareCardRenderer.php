@@ -54,6 +54,12 @@ class ShareCardRenderer
     /** @var list<array{0: int, 1: int}> The river as drawn, so the popup can keep off it. */
     private array $riverPixels = [];
 
+    /** @var array{britain: list<list<array{0: float, 1: float}>>, ireland: list<list<array{0: float, 1: float}>>}|null Read once per run */
+    private ?array $outlines = null;
+
+    /** The map card's shadow, blurred once per run, as every card's panel casts the same one. */
+    private ?GdImage $cardShadow = null;
+
     public function render(ShareCard $card): string
     {
         $this->image = imagecreatetruecolor(self::WIDTH * self::SCALE, self::HEIGHT * self::SCALE);
@@ -68,7 +74,8 @@ class ShareCardRenderer
         imagecopyresampled($output, $this->image, 0, 0, 0, 0, self::WIDTH, self::HEIGHT, self::WIDTH * self::SCALE, self::HEIGHT * self::SCALE);
 
         ob_start();
-        imagepng($output, null, 9);
+        // Level 6 is a little larger than 9 but much quicker, which matters when every card is redrawn.
+        imagepng($output, null, 6);
 
         return (string) ob_get_clean();
     }
@@ -156,7 +163,7 @@ class ShareCardRenderer
         $mapBottom = $this->px(self::MAP_BOTTOM);
         $radius = $this->px(18);
 
-        $this->shadow($x1, $y1, $x2, $y2, $radius, 10, 0.22);
+        $this->shadow($x1, $y1, $x2, $y2, $radius, 10, 0.22, isCard: true);
         $this->roundedRectangle($x1, $y1, $x2, $y2, $radius, $this->colour('line'));
         $inset = $this->px(1.5);
         $this->roundedRectangle($x1 + $inset, $y1 + $inset, $x2 - $inset, $y2 - $inset, $radius - $inset, $this->colour('surface'));
@@ -231,8 +238,7 @@ class ShareCardRenderer
      */
     private function drawBritain(int $x1, int $y1, int $x2, int $y2, ?array $place, bool $small = false): ?array
     {
-        /** @var array{britain: list<list<array{0: float, 1: float}>>, ireland: list<list<array{0: float, 1: float}>>} $outlines */
-        $outlines = json_decode((string) file_get_contents(resource_path('geo/britain-and-ireland.json')), true);
+        $outlines = $this->outlines ??= json_decode((string) file_get_contents(resource_path('geo/britain-and-ireland.json')), true);
         $project = $this->projector(array_merge(...$outlines['britain']), $x1, $y1, $x2, $y2, 0);
 
         foreach ([[$outlines['ireland'], 'otherLand', 'otherLandEdge'], [$outlines['britain'], 'land', 'landEdge']] as [$rings, $fill, $edge]) {
@@ -318,18 +324,28 @@ class ShareCardRenderer
      * drawn black on white at an eighth of the size, blurred there, turned into faint ink whose opacity follows the
      * blur, then scaled up and laid down a little below the box.
      */
-    private function shadow(int $x1, int $y1, int $x2, int $y2, int $radius, int $blur, float $opacity): void
+    private function shadow(int $x1, int $y1, int $x2, int $y2, int $radius, int $blur, float $opacity, bool $isCard = false): void
+    {
+        $margin = $this->px($blur * 3);
+        $large = $isCard
+            ? $this->cardShadow ??= $this->blurredShadow($x2 - $x1, $y2 - $y1, $radius, $blur, $opacity)
+            : $this->blurredShadow($x2 - $x1, $y2 - $y1, $radius, $blur, $opacity);
+        imagecopy($this->image, $large, $x1 - $margin, $y1 - $margin + $this->px($blur * 1.2), 0, 0, imagesx($large), imagesy($large));
+    }
+
+    /** The shadow of a box this size, blurred, on a transparent canvas reaching $blur * 3 pixels beyond it. */
+    private function blurredShadow(int $boxWidth, int $boxHeight, int $radius, int $blur, float $opacity): GdImage
     {
         $shrink = 8;
         $margin = $this->px($blur * 3);
-        [$width, $height] = [$x2 - $x1 + 2 * $margin, $y2 - $y1 + 2 * $margin];
+        [$width, $height] = [$boxWidth + 2 * $margin, $boxHeight + 2 * $margin];
         [$smallWidth, $smallHeight] = [intdiv($width, $shrink), intdiv($height, $shrink)];
 
         $mask = imagecreatetruecolor($smallWidth, $smallHeight);
         imagefill($mask, 0, 0, (int) imagecolorallocate($mask, 255, 255, 255));
         $previous = $this->image;
         $this->image = $mask;
-        $this->roundedRectangle(intdiv($margin, $shrink), intdiv($margin, $shrink), intdiv($margin + $x2 - $x1, $shrink), intdiv($margin + $y2 - $y1, $shrink), intdiv($radius, $shrink), (int) imagecolorallocate($mask, 0, 0, 0));
+        $this->roundedRectangle(intdiv($margin, $shrink), intdiv($margin, $shrink), intdiv($margin + $boxWidth, $shrink), intdiv($margin + $boxHeight, $shrink), intdiv($radius, $shrink), (int) imagecolorallocate($mask, 0, 0, 0));
         $this->image = $previous;
         for ($pass = 0; $pass < $blur; $pass++) {
             imagefilter($mask, IMG_FILTER_GAUSSIAN_BLUR);
@@ -348,7 +364,8 @@ class ShareCardRenderer
         imagealphablending($large, false);
         imagesavealpha($large, true);
         imagecopyresampled($large, $small, 0, 0, 0, 0, $width, $height, $smallWidth, $smallHeight);
-        imagecopy($this->image, $large, $x1 - $margin, $y1 - $margin + $this->px($blur * 1.2), 0, 0, $width, $height);
+
+        return $large;
     }
 
     /**
