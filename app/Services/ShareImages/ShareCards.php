@@ -19,6 +19,21 @@ use Illuminate\Support\Str;
 class ShareCards
 {
     /**
+     * The site's own card (public/og-image.png), for the home page and any page without a card of its own: Britain,
+     * with what the site covers. Named by country rather than region, as the regions grow.
+     */
+    public function forSite(): ShareCard
+    {
+        return new ShareCard(
+            eyebrow: 'Rivers, beaches and lakes',
+            title: "What's the river doing right now?",
+            subtitle: 'England, Scotland and Wales',
+            topics: ['Overflow spills', 'River levels', 'Bathing water results'],
+            alt: "How's the Water? card asking: what's the river doing right now?",
+        );
+    }
+
+    /**
      * @param  Collection<int, Spot>  $spotsOnRiver  The river's published spots, this one included
      */
     public function forSpot(Spot $spot, River $river, Region $region, Collection $spotsOnRiver): ShareCard

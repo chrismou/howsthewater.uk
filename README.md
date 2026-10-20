@@ -32,8 +32,9 @@ Tributaries don't get pages; their monitors count as upstream of any spot below 
 Spot conditions are cached for up to 30 minutes and flushed by every ingest and positioning run, so pages are cheap
 to serve. Set `CACHE_STORE=redis` in production if Redis is available; the database store works fine too.
 
-Every page carries Open Graph and Twitter card tags with a shared image at `/og-image.png` (rendered from
-`resources/images/og-image.svg` with Inkscape), and `/sitemap.xml` lists the home, region, river and spot pages.
+Every page carries Open Graph and Twitter card tags. Spot, river, beach, lake and overflow pages get their own card,
+drawn by `share-images:generate`; the rest share `/og-image.png`, redrawn with `php artisan share-images:generate --site`
+and committed. `/sitemap.xml` lists the public pages.
 
 ## Data sources
 

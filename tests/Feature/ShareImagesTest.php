@@ -139,3 +139,11 @@ it('redraws every overflow card when forced, and pins one with no river on Brita
 
     expect($nearBeach->fresh()->shareImage->alt)->toBe('Storm overflow YWS07777 into North Sea, Yorkshire, marked on a map of Britain');
 });
+
+it('draws the site\'s own card from the same renderer, naming the countries rather than the regions', function () {
+    $card = app(ShareCards::class)->forSite();
+
+    expect($card->subtitle)->toBe('England, Scotland and Wales')
+        ->and($card->pin)->toBeNull()
+        ->and(getimagesizefromstring(app(\App\Services\ShareImages\ShareCardRenderer::class)->render($card)))->toMatchArray([0 => 1200, 1 => 630]);
+});

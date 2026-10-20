@@ -763,7 +763,8 @@ replacing the local database with a copy of live rather than backfilling.
   Earth), with the place pinned (an overflow square) under a popup naming it, and "Updated every 15 minutes" below. Never live status: social sites keep a
   card for days. A card is only redrawn when its fingerprint changes, and the file name carries the fingerprint, so
   bump `ShareCardRenderer::VERSION` whenever the drawing changes. Cards live on the public disk under `share/`, rows in
-  `share_images`; pages fall back to `og-image.png` until theirs is drawn.
+  `share_images`; pages fall back to `og-image.png` until theirs is drawn. That site card comes from the same renderer
+  (`ShareCards::forSite()`): run `share-images:generate --site` locally and commit it, as releases are read-only.
 - Spot, beach and lake pages end with a Nearby section (`NearbyPlaceFinder`, `components/nearby-places`): on spots the
   next spot up and down the river by distance along it (following a main river into the one it flows into, and up main
   rivers that join just above), then up to two beaches or lakes within 20 km; on beaches and lakes the three nearest
