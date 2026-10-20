@@ -74,7 +74,7 @@
 
             <section class="grid gap-3">
                 <h2 class="font-display text-lg font-semibold text-ink">Who runs it</h2>
-                <p>How's the Water is an independent site built by <a href="https://mou.me" rel="noopener" class="text-accent hover:underline">Chris Chrisostomou</a> in Leeds. It is not connected to any water company or agency. Seen a mistake, or want a river added? <a href="https://mou.me/contact" rel="noopener" class="text-accent hover:underline">Get in touch</a>, or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="text-accent hover:underline">open an issue on GitHub</a>. The <a href="{{ route('terms') }}" class="text-accent hover:underline">terms of use</a> cover reusing the data.</p>
+                <p>How's the Water is an independent site built by <a href="https://mou.me" rel="noopener" class="text-accent hover:underline">Chris Chrisostomou</a>, a software engineer based in Leeds with a love of swimming and a keen interest in how our waterways are looked after. It is not connected to any water company or agency. Seen a mistake, or want a river added? <a href="https://mou.me/contact" rel="noopener" class="text-accent hover:underline">Get in touch</a>, or <a href="https://github.com/chrismou/howsthewater.uk/issues" rel="noopener" class="text-accent hover:underline">open an issue on GitHub</a>. The <a href="{{ route('terms') }}" class="text-accent hover:underline">terms of use</a> cover reusing the data.</p>
             </section>
         </div>
     </article>
