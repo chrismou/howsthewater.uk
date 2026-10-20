@@ -45,13 +45,7 @@
         <div class="mb-8">
             <div class="h-[28rem] w-full rounded-lg border border-line" role="region" aria-label="Map of every river spot, beach and lake, coloured by overflow activity upstream or nearby"
                  data-map data-swimming-map data-map-markers-url="{{ route('swimming.places') }}"></div>
-            <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Map key">
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b91c1c"></span>Discharging upstream or nearby</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#c2410c"></span>Spill in 24h</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b45309"></span>Spill in 48h</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#047857"></span>No spills reported in 48h</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#78716c"></span>No data or offline</li>
-            </ul>
+            <x-map-key where="upstream or nearby" />
         </div>
 
         {{-- Filled by swimming.js once a visitor shares their location: the nearest places, a batch at a time. --}}

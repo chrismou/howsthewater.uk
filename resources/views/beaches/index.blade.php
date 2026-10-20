@@ -19,14 +19,14 @@
             'lng' => $conditions->bathingWater->bathingWater->longitude,
             'label' => $conditions->bathingWater->bathingWater->name,
             'url' => route('beaches.show', [$region, $conditions->bathingWater->bathingWater]),
-            'kind' => 'bathing',
-            'classification' => $conditions->bathingWater->bathingWater->classification?->value,
+            'kind' => 'place',
+            'recency' => $conditions->overflows->spillRecency->onMap($conditions->overflows->isStale()),
         ])->values();
     @endphp
 
     <div class="mb-8">
         <div class="h-80 w-full rounded-lg border border-line sm:h-[420px]" role="region" aria-label="Map of the beaches in {{ $region->nameInSentence() }}" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
-        <x-bathing-map-key :overflows="false" />
+        <x-map-key where="nearby" :spills="$region->hasOverflowData()" />
     </div>
 
     <div class="overflow-x-auto rounded-lg border border-line bg-surface">

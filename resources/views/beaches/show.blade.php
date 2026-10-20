@@ -10,15 +10,15 @@
         'lat' => $beach->latitude,
         'lng' => $beach->longitude,
         'label' => $beach->name,
-        'kind' => 'bathing',
-        'classification' => $beach->classification?->value,
+        'kind' => 'place',
+        'recency' => $overflows->spillRecency->onMap($overflows->isStale()),
     ]])->concat($overflows->monitors->map(fn ($monitor) => [
         'lat' => $monitor->monitor->latitude,
         'lng' => $monitor->monitor->longitude,
         'label' => ($monitor->monitor->displayName() ?? $monitor->monitor->external_id).', '.number_format($monitor->distanceMetres / 1000, 1).' km ('.$monitor->status->label().')',
         'url' => route('overflows.show', $monitor->monitor),
         'kind' => 'monitor',
-        'status' => $monitor->status->value,
+        'recency' => $monitor->spillRecency()->value,
     ]))->values();
 
     // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
@@ -132,7 +132,7 @@
     <div class="grid gap-8 lg:grid-cols-5 lg:grid-rows-[auto_1fr]">
         <div class="lg:col-span-3 lg:row-start-1">
             <div class="h-80 w-full rounded-lg border border-line" role="region" aria-label="Map of {{ $beach->name }} and the overflow monitors within 3 km" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
-            <x-bathing-map-key />
+            <x-map-key where="nearby" :place="$beach->name" :overflows="$overflows->monitors->isNotEmpty()" :spills="$overflows->isCovered()" />
         </div>
 
         <aside class="lg:col-span-2 lg:col-start-4 lg:row-span-2 lg:row-start-1">

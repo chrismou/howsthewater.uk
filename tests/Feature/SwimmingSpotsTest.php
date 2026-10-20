@@ -99,7 +99,7 @@ it('shows a block per region on the swimming page, and serves every place with i
             'lng' => round(Spot::query()->where('slug', 'otley')->value('longitude'), 5),
             'label' => 'Otley',
             'url' => '/yorkshire/rivers/wharfe/otley',
-            'kind' => 'spot',
+            'kind' => 'place',
             'recency' => 'discharging_now',
             'type' => 'river',
             'region' => 'Yorkshire',

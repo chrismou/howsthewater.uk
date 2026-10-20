@@ -12,7 +12,7 @@
         'lng' => $monitor->longitude,
         'label' => $name,
         'kind' => 'monitor',
-        'status' => $monitor->status->value,
+        'recency' => $page->spillRecency->value,
     ]])->concat($page->places->map(fn ($link) => [
         'lat' => $link->place->latitude,
         'lng' => $link->place->longitude,
@@ -140,6 +140,7 @@
                 data-map-centreline="{{ json_encode($page->centreline ?? []) }}"
                 data-map-markers="{{ json_encode($mapMarkers) }}"
             ></div>
+            <x-map-key :neutral="$page->places->isNotEmpty() ? 'Place it reaches' : null" />
 
             <h2 class="font-display mt-8 mb-3 text-lg font-semibold">Places it reaches</h2>
             @if ($page->places->isEmpty())

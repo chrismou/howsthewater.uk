@@ -17,15 +17,15 @@
         'lat' => $spot->latitude,
         'lng' => $spot->longitude,
         'label' => $spot->name,
-        'kind' => 'spot',
-        'recency' => $conditions->spillRecency->value,
+        'kind' => 'place',
+        'recency' => $conditions->spillRecency->onMap($conditions->overflowDataIsStale()),
     ]])->concat($mapMonitors->map(fn ($summary) => [
         'lat' => $summary->monitor->latitude,
         'lng' => $summary->monitor->longitude,
         'label' => ($summary->monitor->displayName() ?? $summary->monitor->external_id).', '.$summary->river->name.' ('.$summary->status->label().')',
         'url' => route('overflows.show', $summary->monitor),
         'kind' => 'monitor',
-        'status' => $summary->status->value,
+        'recency' => $summary->spillRecency()->value,
     ]))->values();
 
     // Places whose water company feed we do not read yet show dashes, never zeros that would read as "no spills".
@@ -162,12 +162,7 @@
                 data-map-centreline="{{ json_encode($river->centreline ?? []) }}"
                 data-map-markers="{{ json_encode($mapMarkers) }}"
             ></div>
-            <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Map key">
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full bg-accent"></span>{{ $spot->name }}</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b91c1c"></span>Overflow discharging</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#64748b"></span>Monitor</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#a8a29e"></span>Offline</li>
-            </ul>
+            <x-map-key where="upstream" :place="$spot->name" :overflows="$mapMonitors->isNotEmpty()" :spills="$covered" />
 
             <div class="flex items-center gap-1.5 mt-8 mb-3">
                 <h2 class="font-display text-lg font-semibold">Last 30 days</h2>

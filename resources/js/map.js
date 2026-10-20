@@ -2,52 +2,50 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchJsonOnce } from './json-cache';
 
+// Every map colours places and overflows alike, by spills on one scale: red while an overflow discharges, orange and
+// amber after a spill in the last 24 and 48 hours, green when none was reported in 48 hours and grey with nothing to
+// go on (offline, out of date, none matched, or a feed we do not read). Places are circles and overflows squares,
+// so the two never read as each other. Levels are blue, which no spill status uses, and a place drawn only to show
+// where it is (no status on that map) is white with a dark ring. components/map-key draws the same colours.
 const recencyColours = {
     discharging_now: '#b91c1c',
     within_24_hours: '#c2410c',
     within_48_hours: '#b45309',
     none: '#047857',
+    offline: '#78716c',
     no_data: '#78716c',
     not_covered: '#78716c',
 };
 
-const monitorColours = {
-    1: '#b91c1c',
-    0: '#64748b',
-    '-1': '#a8a29e',
-};
-
-// Beaches and lake bathing sites take the EA classification's colour; places without one (a lake centre) use the accent.
-const classificationColours = {
-    Excellent: '#047857',
-    Good: '#047857',
-    Sufficient: '#b45309',
-    Poor: '#b91c1c',
-};
-
-// The levels page marks rivers higher than usual in the accent and rising rivers in amber.
-const levelColours = {
-    higher: '#1f5f8b',
-    rising: '#b45309',
-};
+const levelColour = '#1f5f8b';
+const inkColour = '#1b2a33';
 
 function markerFor(marker, compact = false) {
-    // On a map of hundreds of places (the swimming page) full-size markers merge into blobs at the national zoom.
-    const isPlace = !compact && ['spot', 'bathing', 'place', 'level'].includes(marker.kind);
-    const colour = {
-        spot: () => recencyColours[marker.recency] ?? '#78716c',
-        bathing: () => classificationColours[marker.classification] ?? '#78716c',
-        place: () => '#1f5f8b',
-        level: () => levelColours[marker.state] ?? '#78716c',
-    }[marker.kind]?.() ?? monitorColours[marker.status] ?? '#64748b';
+    const latLng = [marker.lat, marker.lng];
 
-    return L.circleMarker([marker.lat, marker.lng], {
-        radius: isPlace ? 8 : 5,
-        color: '#ffffff',
-        weight: isPlace ? 2 : 1,
-        fillColor: colour,
-        fillOpacity: 0.95,
-    });
+    if (marker.kind === 'monitor') {
+        const colour = recencyColours[marker.recency] ?? recencyColours.no_data;
+
+        return L.marker(latLng, {
+            pane: 'overflows',
+            keyboard: false,
+            icon: L.divIcon({
+                className: '',
+                iconSize: [12, 12],
+                html: `<span style="display:block;box-sizing:border-box;width:12px;height:12px;border-radius:2px;background:${colour};border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(27,42,51,.35)"></span>`,
+            }),
+        });
+    }
+
+    // On a map of hundreds of places (the swimming page) full-size markers merge into blobs at the national zoom.
+    const radius = compact ? 5 : 8;
+    const style = marker.kind === 'level'
+        ? { fillColor: marker.state === 'rising' ? '#ffffff' : levelColour, color: marker.state === 'rising' ? levelColour : '#ffffff', weight: marker.state === 'rising' ? 3 : 2 }
+        : marker.recency === undefined
+            ? { fillColor: '#ffffff', color: inkColour, weight: 2.5 }
+            : { fillColor: recencyColours[marker.recency] ?? recencyColours.no_data, color: '#ffffff', weight: compact ? 1 : 2 };
+
+    return L.circleMarker(latLng, { pane: 'places', radius, fillOpacity: 0.95, ...style });
 }
 
 // Each map is built when it comes near the screen, so pages with several (the hubs, a region's cards) do not draw
@@ -105,6 +103,10 @@ function drawMap(element, markers) {
         // Hundreds of markers (the swimming page has every place) draw far faster on one canvas than as SVG nodes.
         preferCanvas: markers.length > 300,
     });
+
+    // Places sit above overflows, so the place a page is about is never hidden under the overflows around it.
+    map.createPane('overflows').style.zIndex = 450;
+    map.createPane('places').style.zIndex = 460;
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,

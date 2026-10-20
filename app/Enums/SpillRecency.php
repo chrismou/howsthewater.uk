@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use Carbon\CarbonInterface;
+
 /**
  * Summarises how recently any upstream overflow discharged. This is a
  * description of the data, deliberately not a safety rating.
@@ -33,6 +35,31 @@ enum SpillRecency: string
             $offline === $monitorCount => self::Offline,
             default => self::None,
         };
+    }
+
+    /**
+     * One overflow's own recency, on the same scale as a place's, so maps colour overflows and places alike. A monitor
+     * that has not reported for SpotConditions::STALE_AFTER_HOURS gives no data, as its status is only what it was then.
+     * latestSpillEnd: when its latest spill ended, or now while one is open.
+     */
+    public static function forMonitor(OverflowStatus $status, ?CarbonInterface $latestSpillEnd, bool $stale): self
+    {
+        if ($stale) {
+            return self::NoData;
+        }
+
+        $spilledWithin = fn (int $hours) => $status === OverflowStatus::Discharging
+            || ($latestSpillEnd?->greaterThanOrEqualTo(now()->subHours($hours)) ?? false);
+
+        return self::assess(1, $status === OverflowStatus::Discharging ? 1 : 0, $status === OverflowStatus::Offline ? 1 : 0, $spilledWithin(24), $spilledWithin(48));
+    }
+
+    /**
+     * The value a map marker takes: out of date overflow data shows as no data, never as the status it last had.
+     */
+    public function onMap(bool $stale = false): string
+    {
+        return $stale ? self::NoData->value : $this->value;
     }
 
     /**

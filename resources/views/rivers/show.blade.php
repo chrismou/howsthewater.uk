@@ -4,8 +4,8 @@
         'lng' => $conditions->spot->longitude,
         'label' => $conditions->spot->name,
         'url' => route('spots.show', [$conditions->spot->river->region, $conditions->spot->river, $conditions->spot]),
-        'kind' => 'spot',
-        'recency' => $conditions->spillRecency->value,
+        'kind' => 'place',
+        'recency' => $conditions->spillRecency->onMap($conditions->overflowDataIsStale()),
     ])->values();
 
     // The page's trail: the visible breadcrumb and the BreadcrumbList are both built from it.
@@ -36,12 +36,13 @@
     </div>
 
     <div
-        class="mb-8 h-80 w-full rounded-lg border border-line"
-        role="region" aria-label="Map of the {{ $overview->river->name }}, its spots and overflow monitors"
+        class="h-80 w-full rounded-lg border border-line"
+        role="region" aria-label="Map of the {{ $overview->river->name }} and its spots"
         data-map
         data-map-centreline="{{ json_encode($overview->river->centreline ?? []) }}"
         data-map-markers="{{ json_encode($mapMarkers) }}"
     ></div>
+    <x-map-key where="upstream" :spills="$overview->river->region->hasOverflowData()" class="mb-8" />
 
     @if ($returnYears->isNotEmpty())
         @php

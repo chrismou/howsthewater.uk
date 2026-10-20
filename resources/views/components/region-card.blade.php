@@ -1,6 +1,6 @@
 {{--
     A region as a card with a small map and four figures, for one kind of place: rivers (spots coloured by spill
-    status upstream), beaches (coloured by classification) or lakes (coloured by spill status nearby). Used by the
+    status upstream), beaches or lakes (coloured by spill status nearby), in map.js's colours. Used by the
     home page, the Rivers, Beaches and Lakes pages and each region's overview, where inRegion titles the card by kind
     of place instead of by region. summary: a RegionSummary.
 --}}
@@ -16,7 +16,7 @@
     [$url, $markers, $blurb, $figures] = match ($type) {
         'beaches' => [
             route('beaches.index', $summary->slug),
-            $summary->beaches->map(fn ($beach) => [...$place($beach), 'kind' => 'bathing', 'classification' => $beach->classification?->value]),
+            $summary->beaches->map(fn ($beach) => [...$place($beach), 'kind' => 'place', 'recency' => $beach->nearbySpillRecency->onMap($beach->overflowDataIsStale())]),
             $summary->beaches->count().' designated '.\Illuminate\Support\Str::plural('beach', $summary->beaches->count()).', with their classification and the storm overflows within 3 km.',
             [
                 ['Beaches', $summary->beaches->count(), null],
@@ -27,7 +27,7 @@
         ],
         'lakes' => [
             route('lakes.index', $summary->slug),
-            $summary->lakes->map(fn ($lake) => [...$place($lake), 'kind' => 'spot', 'recency' => $lake->nearbySpillRecency->value]),
+            $summary->lakes->map(fn ($lake) => [...$place($lake), 'kind' => 'place', 'recency' => $lake->nearbySpillRecency->onMap($lake->overflowDataIsStale())]),
             $summary->lakes->pluck('name')->join(', ', ' and ').'.',
             [
                 ['Lakes', $summary->lakes->count(), null],
@@ -38,7 +38,7 @@
         ],
         default => [
             route('rivers.index', $summary->slug),
-            $summary->spots()->map(fn ($spot) => [...$place($spot), 'kind' => 'spot', 'recency' => $spot->spillRecency->value]),
+            $summary->spots()->map(fn ($spot) => [...$place($spot), 'kind' => 'place', 'recency' => $spot->spillRecency->onMap($spot->overflowDataIsStale())]),
             $summary->riversByCatchment()->keys()->join(', ', ' and ').'. '.$summary->rivers->count().' '.\Illuminate\Support\Str::plural('river', $summary->rivers->count()).', source to mouth.',
             [
                 ['Rivers', $summary->rivers->count(), null],

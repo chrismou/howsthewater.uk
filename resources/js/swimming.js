@@ -147,7 +147,7 @@ export function initSwimming() {
 
         withMap(({ map, L }) => {
             userMarker?.remove();
-            userMarker = L.circleMarker([position.lat, position.lng], { radius: 7, color: '#ffffff', weight: 2, fillColor: '#1f5f8b', fillOpacity: 1 }).addTo(map).bindPopup('You are here');
+            userMarker = L.circleMarker([position.lat, position.lng], { pane: 'places', radius: 7, color: '#ffffff', weight: 2, fillColor: '#1b2a33', fillOpacity: 1 }).addTo(map).bindPopup('You are here');
         });
 
         renderNearest();

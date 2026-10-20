@@ -49,7 +49,7 @@
                  data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
             <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Map key">
                 <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#1f5f8b"></span>Higher than usual</li>
-                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b45309"></span>Rising</li>
+                <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full border-2 bg-surface" style="border-color:#1f5f8b"></span>Rising</li>
             </ul>
         </div>
     @endif

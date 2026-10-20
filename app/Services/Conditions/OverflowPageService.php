@@ -3,6 +3,7 @@
 namespace App\Services\Conditions;
 
 use App\Data\OverflowPage;
+use App\Enums\SpillRecency;
 use App\Models\BathingWater;
 use App\Models\Lake;
 use App\Models\OverflowMonitor;
@@ -86,6 +87,7 @@ class OverflowPageService
             months: $this->months($spans, $coverage, $rainfallStation, $now),
             coveredFrom: $coveredFrom,
             notes: $this->coverage->notes([$monitor->company => $recordingSince->getTimestamp()], $monthsFrom->getTimestamp(), $now->getTimestamp()),
+            spillRecency: SpillRecency::forMonitor($monitor->status, $allSpans === [] ? null : Carbon::createFromTimestamp(max(array_column($allSpans, 1)), 'UTC'), $monitor->isStale()),
         );
     }
 
