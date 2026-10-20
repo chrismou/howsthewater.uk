@@ -83,7 +83,7 @@ final readonly class SwimmingSpot
             'lng' => round($this->longitude, 5),
             'label' => $this->name,
             'url' => (string) parse_url($this->url, PHP_URL_PATH),
-            'kind' => 'spot',
+            'kind' => 'place',
             'recency' => $this->stale ? 'no_data' : $this->spillRecency->value,
             'type' => $this->kind,
             'region' => $this->regionName,

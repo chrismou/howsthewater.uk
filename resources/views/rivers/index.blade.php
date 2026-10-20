@@ -10,8 +10,8 @@
         'lng' => $spot->longitude,
         'label' => $spot->name,
         'url' => route('spots.show', [$spot->regionSlug, $spot->riverSlug, $spot->slug]),
-        'kind' => 'spot',
-        'recency' => $spot->spillRecency->value,
+        'kind' => 'place',
+        'recency' => $spot->spillRecency->onMap($spot->overflowDataIsStale()),
     ])->values();
 
     $dotColour = fn ($spot) => match (true) {
@@ -89,13 +89,7 @@
             data-map-centrelines="{{ json_encode($centrelines) }}"
             data-map-markers="{{ json_encode($mapMarkers) }}"
         ></div>
-        <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Map key">
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b91c1c"></span>Discharging upstream</li>
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#c2410c"></span>Upstream spill in 24h</li>
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#b45309"></span>Upstream spill in 48h</li>
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#047857"></span>No upstream spills reported in 48h</li>
-            <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#78716c"></span>No data or offline</li>
-        </ul>
+        <x-map-key where="upstream" :spills="$summary->hasOverflowData" />
     </div>
 
     <div class="mb-12 grid gap-6 lg:grid-cols-3">

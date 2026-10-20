@@ -19,10 +19,12 @@
             'label' => $conditions->lake->name,
             'url' => route('lakes.show', [$region, $conditions->lake]),
             'kind' => 'place',
+            'recency' => $conditions->overflows->spillRecency->onMap($conditions->overflows->isStale()),
         ])->values();
     @endphp
 
-    <div class="mb-8 h-72 w-full rounded-lg border border-line" role="region" aria-label="Map of the lakes in {{ $region->nameInSentence() }}" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+    <div class="h-72 w-full rounded-lg border border-line" role="region" aria-label="Map of the lakes in {{ $region->nameInSentence() }}" data-map data-map-markers="{{ json_encode($mapMarkers) }}"></div>
+    <x-map-key where="nearby" :spills="$region->hasOverflowData()" class="mb-8" />
 
     <div class="overflow-x-auto rounded-lg border border-line bg-surface">
         <table class="w-full text-sm">
