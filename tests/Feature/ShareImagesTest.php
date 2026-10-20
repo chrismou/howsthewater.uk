@@ -82,9 +82,11 @@ it('never mentions spills on cards where the region has no overflow data', funct
     $wales = Region::factory()->create(['name' => 'Wales', 'slug' => 'wales', 'overflow_feeds' => []]);
     $cards = app(ShareCards::class);
 
-    expect($cards->forSpot($spot, $river, $river->region, collect([$spot]))->tagline)->toContain('spills')
-        ->and($cards->forSpot($spot, $river, $wales, collect([$spot]))->tagline)->not->toContain('spills')
-        ->and($cards->forBeach(BathingWater::factory()->make(), $wales)->tagline)->not->toContain('spills');
+    $words = fn ($card) => mb_strtolower(implode(' ', $card->topics));
+
+    expect($words($cards->forSpot($spot, $river, $river->region, collect([$spot]))))->toContain('spills')
+        ->and($words($cards->forSpot($spot, $river, $wales, collect([$spot]))))->not->toContain('spills')
+        ->and($words($cards->forBeach(BathingWater::factory()->make(), $wales)))->not->toContain('spills');
 });
 
 it('shares the page\'s own card, or the site card until it is drawn', function () {

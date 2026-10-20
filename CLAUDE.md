@@ -758,8 +758,9 @@ replacing the local database with a copy of live rather than backfilling.
   the matching hub (All rivers, All beaches, All lakes) rather than the home page.
 - Spot, river, beach and lake pages share their own card (`og:image`, 1200 by 630): `share-images:generate`
   (`GenerateShareImages`, run on every deploy) draws it with GD (`ShareCardRenderer`, TTF copies of the site fonts in
-  `resources/fonts`) from what `ShareCards` says: the place, where it is and what the page covers, with the river's
-  line and its spots, or Britain with a pin (`resources/geo`, Natural Earth). Never live status: social sites keep a
+  `resources/fonts`) from what `ShareCards` says: the place, where it is and what the page covers (`topics`, drawn as
+  chips), beside a map card like the site's own: the river's line and its spots, or Britain (`resources/geo`, Natural
+  Earth), with the place pinned (an overflow square) under a popup naming it, and "Updated every 15 minutes" below. Never live status: social sites keep a
   card for days. A card is only redrawn when its fingerprint changes, and the file name carries the fingerprint, so
   bump `ShareCardRenderer::VERSION` whenever the drawing changes. Cards live on the public disk under `share/`, rows in
   `share_images`; pages fall back to `og-image.png` until theirs is drawn.

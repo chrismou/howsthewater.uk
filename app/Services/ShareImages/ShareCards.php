@@ -27,7 +27,7 @@ class ShareCards
             eyebrow: 'River spot',
             title: $spot->name,
             subtitle: "{$river->name}, {$region->name}",
-            tagline: $this->riverTagline($region),
+            topics: $this->riverTopics($region, 'River level'),
             alt: "{$spot->name} on the {$river->name}, {$region->name}, marked on a map of ".($river->hasCentreline() ? 'the river from source to mouth' : 'Britain'),
             riverLine: $river->hasCentreline() ? $river->centreline : null,
             riverSpots: $this->positions($spotsOnRiver->reject(fn (Spot $other) => $other->is($spot))),
@@ -47,7 +47,7 @@ class ShareCards
             eyebrow: 'River',
             title: $river->name,
             subtitle: $count > 0 ? "{$region->name} - {$spots}" : $region->name,
-            tagline: $this->riverTagline($region),
+            topics: $this->riverTopics($region, 'River levels'),
             alt: $river->hasCentreline()
                 ? "The {$river->name}, {$region->name}, drawn from source to mouth".($count > 0 ? " with its {$spots} marked" : '')
                 : "The mouth of the {$river->name}, {$region->name}, marked on a map of Britain",
@@ -69,7 +69,7 @@ class ShareCards
             title: $beach->name,
             // Some districts start lower case ("the Vale of Glamorgan").
             subtitle: ucfirst($where),
-            tagline: $this->bathingTagline($region),
+            topics: $this->bathingTopics($region, 'Weather'),
             alt: "{$beach->name}, {$where}, marked on a map of Britain",
             pin: [$beach->latitude, $beach->longitude],
         );
@@ -81,7 +81,7 @@ class ShareCards
             eyebrow: 'Lake',
             title: $lake->name,
             subtitle: $region->name,
-            tagline: $this->bathingTagline($region),
+            topics: $this->bathingTopics($region, 'Lake level'),
             alt: "{$lake->name}, {$region->name}, marked on a map of Britain",
             pin: [$lake->latitude, $lake->longitude],
         );
@@ -105,26 +105,29 @@ class ShareCards
             eyebrow: 'Storm overflow',
             title: $name,
             subtitle: $into !== null ? "{$into}, {$region->name}" : $region->name,
-            tagline: $hasReturns ? 'Every spill recorded, and its yearly returns' : 'Every spill recorded from its monitor',
+            topics: $hasReturns ? ['Every spill recorded', 'Yearly returns', 'Rainfall'] : ['Every spill recorded', 'Rainfall'],
             alt: ($monitor->displayName() === null ? $name : "{$name}, a storm overflow").($monitor->intoPhrase() !== null ? ' '.$monitor->intoPhrase() : '').", {$region->name}, marked on a map of ".($onRiverLine ? 'the river from source to mouth' : 'Britain'),
             riverLine: $onRiverLine ? $river->centreline : null,
             riverSpots: $onRiverLine ? $this->positions($spotsOnRiver) : [],
             pin: [$monitor->latitude, $monitor->longitude],
+            pinIsOverflow: true,
         );
     }
 
-    private function riverTagline(Region $region): string
+    /**
+     * @return list<string>
+     */
+    private function riverTopics(Region $region, string $level): array
     {
-        return $region->hasOverflowData()
-            ? 'Live overflow spills, levels, rainfall and weather'
-            : 'Live river levels, rainfall and weather';
+        return $region->hasOverflowData() ? ['Overflow spills', $level, 'Rainfall'] : [$level, 'Rainfall', 'Weather'];
     }
 
-    private function bathingTagline(Region $region): string
+    /**
+     * @return list<string>
+     */
+    private function bathingTopics(Region $region, string $extra): array
     {
-        return $region->hasOverflowData()
-            ? 'Live spills, bathing water results and weather'
-            : 'Bathing water results, rainfall and weather';
+        return $region->hasOverflowData() ? ['Spills nearby', 'Bathing water results', $extra] : ['Bathing water results', $extra, 'Rainfall'];
     }
 
     /**
