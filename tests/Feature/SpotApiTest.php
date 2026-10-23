@@ -92,6 +92,15 @@ it('returns river overviews for a region', function () {
         ->assertJsonPath('data.0.slug', 'aire');
 });
 
+it('404s every endpoint while the api is switched off', function () {
+    [$region, $river, $spot] = apiSpot();
+    config(['app.api_enabled' => false]);
+
+    $this->getJson(route('api.v1.regions.index'))->assertNotFound();
+    $this->getJson(route('api.v1.rivers.index', $region))->assertNotFound();
+    $this->getJson(route('api.v1.spots.show', [$region, $river, $spot]))->assertNotFound();
+});
+
 it('404s for unknown spots and rivers from other regions as json', function () {
     [$region, $river, $spot] = apiSpot();
     $other = Region::factory()->create(['slug' => 'lancashire']);

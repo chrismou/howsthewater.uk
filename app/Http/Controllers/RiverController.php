@@ -6,7 +6,6 @@ use App\Models\Region;
 use App\Models\River;
 use App\Services\Conditions\AnnualReturnTotals;
 use App\Services\Conditions\RegionSummaries;
-use App\Services\Conditions\RiverOverviewService;
 use App\Services\Geo\Coordinates;
 use Illuminate\View\View;
 
@@ -45,15 +44,22 @@ class RiverController extends Controller
         ]);
     }
 
-    public function show(Region $region, River $river, RiverOverviewService $overview, AnnualReturnTotals $totals): View
+    /**
+     * A river and its spots, read from the region's cached summary: the full conditions of every spot on a long
+     * river (hundreds of upstream overflows each, low on the Trent) do not fit in a request's memory.
+     */
+    public function show(Region $region, River $river, RegionSummaries $summaries, AnnualReturnTotals $totals): View
     {
         abort_if($river->isTributary(), 404);
 
         $river->setRelation('region', $region);
+        $summary = $summaries->for($region)->rivers->firstWhere('id', $river->id);
+        abort_if($summary === null, 404);
         $latestYear = $totals->latestYear();
 
         return view('rivers.show', [
-            'overview' => $overview->for($river),
+            'river' => $river,
+            'summary' => $summary,
             'shareImage' => $river->shareImage,
             'returnYears' => $totals->riverByYear($river),
             'returnRank' => $latestYear === null ? null : $totals->riverRank($river, $latestYear),

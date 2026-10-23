@@ -160,6 +160,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   `app/Services` (read side), `app/Actions` (write side, one `handle()` per class) and `app/Data` (readonly DTOs).
 - Web pages and `/api/v1` share the same services and DTOs. `SpotConditionsService` is the single source of truth for a
   spot's status; `RiverOverviewService` wraps it for listings. Add new facts to the DTO first, then to both outputs.
+  The API is not released: it answers 404 unless `API_ENABLED` is on (`app.api_enabled`, `EnsureApiIsEnabled`), which
+  only the tests set. Its river endpoints still embed every spot's full conditions, which do not fit in a request's
+  memory on long rivers (the river page reads `RiverSummary` for that reason); fix that before switching it on.
 - Data is ingested in the background by scheduled artisan commands (see `routes/console.php`) and served from MySQL.
   Pages never call third-party APIs at request time.
 - Rivers are seeded per region: Yorkshire's main rivers (Wharfe, Aire, Calder, Don, Nidd, Ure, Swale, Derwent, Ouse,

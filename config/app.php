@@ -18,6 +18,9 @@ return [
     // Where data providers can reach us; it is sent in the user agent of every API request.
     'contact_email' => env('CONTACT_EMAIL', 'howsthewater@mou.me'),
 
+    // The API under /api/v1 answers 404 until this is on: it is not released yet.
+    'api_enabled' => (bool) env('API_ENABLED', false),
+
     // When the about and legal pages last changed: shown on each page, in its dateModified and in the sitemap. Bump a
     // date whenever that page's content changes.
     'pages_updated' => [
