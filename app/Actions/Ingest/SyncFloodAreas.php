@@ -9,14 +9,16 @@ use App\Models\River;
 use App\Models\Spot;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
 use App\Services\NaturalResourcesWales\FloodWarningsClient;
+use App\Services\Sepa\FloodWarningsClient as SepaFloodWarningsClient;
 use Illuminate\Support\Collection;
 
 /**
- * Links each spot to the Environment Agency flood areas that cover it, and
- * in and near Wales to Natural Resources Wales's. Both match against each
- * area's outline, so a small radius finds the areas the spot sits in or
- * beside; only areas naming the spot's river are kept, so a warning for a
- * beck that passes nearby is not shown.
+ * Links each spot to the Environment Agency flood areas that cover it, in and
+ * near Wales to Natural Resources Wales's, and in Scotland to SEPA's. All match
+ * against each area's outline, so a small radius finds the areas the spot sits
+ * in or beside; the Environment Agency's and NRW's are then kept only where
+ * they name the spot's river, so a warning for a beck that passes nearby is not
+ * shown. SEPA's are kept as found, as it names its areas by place.
  */
 class SyncFloodAreas
 {
@@ -26,7 +28,7 @@ class SyncFloodAreas
      */
     public const SEARCH_RADIUS_KM = 1;
 
-    public function __construct(private FloodMonitoringClient $client, private FloodWarningsClient $nrw)
+    public function __construct(private FloodMonitoringClient $client, private FloodWarningsClient $nrw, private SepaFloodWarningsClient $sepa)
     {
     }
 
@@ -66,8 +68,8 @@ class SyncFloodAreas
     }
 
     /**
-     * NRW's areas are only searched while its flood warnings key is set, since
-     * nothing would be shown for them without the warnings.
+     * NRW's and SEPA's areas are only searched while their warnings are read,
+     * since nothing would be shown for them without the warnings.
      *
      * @return Collection<int, FloodAreaData>
      */
@@ -79,6 +81,10 @@ class SyncFloodAreas
             $areas = $areas->concat($this->nrw->floodAreasNear($spot->latitude, $spot->longitude, self::SEARCH_RADIUS_KM));
         }
 
+        if ($this->sepa->isEnabled() && $this->sepa->covers($spot->latitude, $spot->longitude)) {
+            $areas = $areas->concat($this->sepa->floodAreasNear($spot->latitude, $spot->longitude, self::SEARCH_RADIUS_KM));
+        }
+
         return $areas;
     }
 
@@ -86,9 +92,18 @@ class SyncFloodAreas
      * NRW names some rivers without "River" ("Rhondda") and leaves some
      * catchment-wide alert areas unnamed ("Lower Dee catchment"), so for its
      * areas the area's own name or description may name the river instead.
+     * SEPA's alert areas are whole regions (Tayside) and its warning areas are
+     * named by place, with the river in the scheme's name only sometimes (the
+     * Tay at Perth sits in the "Almond" scheme, the Forth in "Stirling"), so a
+     * name check would drop real warnings; its areas are small enough for the
+     * search radius alone to place them.
      */
     private function namesRiver(FloodAreaData $area, River $river): bool
     {
+        if ($area->agency === Agency::Sepa) {
+            return true;
+        }
+
         if ($area->agency !== Agency::NaturalResourcesWales) {
             return collect($area->watercourses())->contains(fn (string $name) => $river->matchesWatercourse($name));
         }

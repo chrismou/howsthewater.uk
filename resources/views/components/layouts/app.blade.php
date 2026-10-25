@@ -248,7 +248,7 @@
         <div class="mt-8 border-t border-ground/15 dark:border-line-2 pt-6 text-xs leading-relaxed text-ground/70 dark:text-muted">
             <p>
                 Near real-time, unvalidated data. This uses Environment Agency flood and river level data from the real-time data API (Beta)
-                and Environment Agency bathing water data, Open Government Licence v3.0. Welsh river level, rainfall, flood warning and bathing water data from Natural Resources Wales, Open Government Licence v3.0. Scottish river level, rainfall and bathing water data from SEPA, Open Government Licence v3.0.
+                and Environment Agency bathing water data, Open Government Licence v3.0. Welsh river level, rainfall, flood warning and bathing water data from Natural Resources Wales, Open Government Licence v3.0. Scottish river level, rainfall and bathing water data from SEPA, Open Government Licence v3.0. Scottish flood alerts and warnings from SEPA's Floodline, which states no licence.
                 @if ($streamCompanies !== '')
                     {{ $streamCompanies }} storm overflow data via Stream, CC BY 4.0.
                 @endif

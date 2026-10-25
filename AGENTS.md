@@ -172,7 +172,7 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   Utilities, mouths at the head of each estuary), and the North East's Tyne (with the North and South Tyne flowing
   into it), Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Tweed, with the Till flowing into the Tweed (Northumbrian
   Water, plus Scottish Water for the Tweed, which runs mostly through Scotland; its Scottish stretch has overflows and
-  SEPA levels and rainfall but no flood warnings yet). The Midlands has Severn
+  SEPA levels, rainfall and flood warnings). The Midlands has Severn
   Trent's rivers: the Trent, with the Soar and the Peak District's Derwent, Wye, Dove and Manifold flowing into it, and
   the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn and the Vyrnwy, and around
   Knighton on the Teme (Hafren Dyfrdwy), are not on Stream, so they do not count yet. The East of England has Anglian Water's rivers, Lincolnshire to Essex: the Great
@@ -240,7 +240,7 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   Esk, and the Nith, Annan and Galloway Dee (slug `dee-galloway`; the other is the Aberdeenshire Dee, slug `dee`, both
   OS's "River Dee" in `os_name`). Many share names with English
   or other Scottish rivers, so each main river's mouth hint matters. Scotland has SEPA levels, rainfall and bathing
-  waters (with samples while switched on) but no flood warnings yet. Wales has the Taff and Usk, the Wye (with the
+  waters (with samples while switched on), and SEPA's flood alerts and warnings while `SEPA_FLOOD_WARNINGS` is on. Wales has the Taff and Usk, the Wye (with the
   Irfon, Ithon, Lugg and Monnow, running on into England to Monmouth), the Tawe, Neath (with the Mellte), Towy, Teifi
   and Western Cleddau, the Dovey, Mawddach (with the Wnion), Glaslyn, Conwy (with the Llugwy) and the Dee (with the
   Tryweryn, running on to Chester). Welsh rivers take their OS name: the English alternative where there is one
@@ -582,6 +582,25 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   flood history; the feed keeps none, so it cannot be backfilled. EA flood times carry no offset and are UK local time.
   `FloodWarningSummary::isStale()` flags a warning no poll has confirmed for 6 hours. The area search is slow (a few
   seconds per spot), so it only runs for spots with a null `flood_areas_searched_at`, or all spots with `--areas`.
+- Scottish flood alerts and warnings: SEPA publishes no keyless feed (its Floodline API needs a key from
+  ffw@sepa.org.uk and states no licence), so `Sepa\FloodWarningsClient` reads the two public ArcGIS Online layers
+  behind SEPA's Floodline map (`services.sepa.flood_warnings`, read only while `SEPA_FLOOD_WARNINGS` is on), which
+  carry each area's live status joined onto its outline: about 20 regional alert areas (Tayside) and about 330 warning
+  areas named by place (Riverside and Cambuskenneth) with the river in the scheme's name at best (the Tay at Perth
+  sits in the "Almond" scheme), so `SyncFloodAreas` keeps every SEPA area within 1 km of a spot without a name check,
+  and a regional alert shows on every spot in it. Codes are `SEPA-A-{id}` and `SEPA-W-{id}` from Floodline's own ids. Only spots inside Scotland (`covers()`, a box cut along the border from Gretna to Berwick) are searched. Severities are
+  words (Alert, Warning, NLIF for lifted, kept 12 hours); `startTime` is when the current message was issued
+  (Floodline's "last updated") and `updatedTime` when SEPA last rewrote the layer, which becomes `checked_at`
+  (`FloodWarningData::$publishedAt`), so a frozen layer goes stale on the pages. `ingest:floods` reads nothing from SEPA and fails with an error when
+  that time is over 6 hours old or ahead of our clock; with no status rows at all it falls back to the layers' own
+  last edit time (`lastRefreshedAt()`), which ticks every few minutes whatever the data does, so it only shows
+  SEPA's service is alive. Spots are only searched for SEPA areas while the flag is on and only when unsearched, so
+  run `ingest:floods --areas` once after switching it on (or wait for the weekly run). Every read checks the layer's field list and each row's
+  keys, ArcGIS's 200-with-error bodies, ids, both times and the severity words (only "NLIF" means lifted), and
+  throws on anything unexpected (logged at error, so Rollbar sees a schema change). With the flag off, the ingest
+  removes SEPA's warnings and closes their history, so switching it off is a clean rollback.
+  Links go to Floodline's live page, as areas have no address of their own; the terms page says SEPA states no
+  licence for them.
 - River centrelines: OS Open Rivers GeoPackage at `OS_OPEN_RIVERS_PATH` (default `storage/app/private/oprvrs_gb.gpkg`,
   gitignored, download from the OS Data Hub). OpenStreetMap via Overpass is a fallback (`--source=osm`) but is unreliable.
   Names repeat (becks across Yorkshire; Calder, Don, Derwent, Ouse and Esk across Britain; two River Gretas in the North

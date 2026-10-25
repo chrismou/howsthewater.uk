@@ -4,7 +4,7 @@
     $timezone = config('app.display_timezone', 'Europe/London');
 @endphp
 
-{{-- Environment Agency or Natural Resources Wales flood alerts and warnings in force for the areas covering a spot, in the agency's own words. --}}
+{{-- Environment Agency, Natural Resources Wales or SEPA flood alerts and warnings in force for the areas covering a spot, in the agency's own words. --}}
 <section class="mb-8 flex flex-col gap-3" aria-label="Flood warnings">
     @foreach ($warnings as $warning)
         @php
