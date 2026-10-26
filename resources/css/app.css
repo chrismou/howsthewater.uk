@@ -18,6 +18,9 @@
     --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque fallback', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'IBM Plex Mono', 'IBM Plex Mono fallback', ui-monospace, SFMono-Regular, Menlo, monospace;
 
+    /* The page width (max-w-site): header, live bar, main, footer and the home page's full-bleed bands all share it. */
+    --container-site: 72rem;
+
     /* Surfaces and text */
     --color-ground: #f6f3ec;
     --color-surface: #fffdf8;

@@ -20,7 +20,7 @@
 
 {{-- The region's (or every region's) headline numbers, shown under the header on every page so the state of the rivers is one glance away. --}}
 <div class="bg-ink text-ground dark:bg-surface-2 dark:text-ink" data-live-bar>
-    <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-xs sm:gap-x-7 sm:text-[13px]">
+    <div class="mx-auto flex max-w-site flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-xs sm:gap-x-7 sm:text-[13px]">
         <a href="{{ $summaryUrl }}" class="hidden font-semibold hover:underline sm:inline">{{ $summary->name }}</a>
         @if ($summary->hasOverflowData)
             <a href="{{ $spillsUrl }}#discharging" class="-my-1.5 inline-block py-1.5 hover:underline"><span class="font-mono font-semibold {{ $discharging > 0 ? 'text-alert' : '' }}">{{ $discharging }}</span> {{ \Illuminate\Support\Str::plural('overflow', $discharging) }} discharging<span class="hidden sm:inline"> now</span></a>

@@ -160,7 +160,7 @@
     <div class="grid gap-8 lg:grid-cols-5">
         <div class="min-w-0 lg:col-span-3">
             <div
-                class="h-80 w-full rounded-lg border border-line"
+                class="h-80 w-full rounded-lg border border-line lg:h-96"
                 role="region" aria-label="Map of {{ $spot->name }} on the {{ $spot->river->name }}, with the overflow monitors upstream"
                 data-map
                 data-map-centreline="{{ json_encode($river->centreline ?? []) }}"

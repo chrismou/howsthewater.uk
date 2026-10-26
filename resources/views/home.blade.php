@@ -30,7 +30,7 @@
                 <path d="M-20 420 C 320 360, 500 500, 740 440 S 1120 340, 1300 420"/>
                 <path d="M-20 470 C 340 410, 520 550, 760 490 S 1140 390, 1300 470"/>
             </svg>
-            <div class="relative mx-auto grid max-w-5xl gap-8 px-4 pt-6 pb-12 sm:py-14 lg:grid-cols-12 lg:py-16">
+            <div class="relative mx-auto grid max-w-site gap-8 px-4 pt-6 pb-12 sm:py-14 lg:grid-cols-12 lg:py-16">
                 <div class="flex min-w-0 flex-col gap-5 lg:col-span-7">
                     <p class="text-xs font-semibold uppercase tracking-[0.08em] text-accent">{{ $regionNames ?: 'Rivers' }}, updated every 15 minutes</p>
                     <h1 class="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">How's your local river, beach or lake looking today?</h1>
@@ -193,7 +193,7 @@
 
     <x-slot:after>
         <section id="limits" class="border-t border-line bg-surface">
-            <div class="mx-auto grid max-w-5xl gap-8 px-4 py-14 lg:grid-cols-12">
+            <div class="mx-auto grid max-w-site gap-8 px-4 py-14 lg:grid-cols-12">
                 <div class="flex flex-col gap-3 lg:col-span-5">
                     <div class="h-[3px] w-14 rounded bg-accent"></div>
                     <h2 class="font-display text-3xl font-semibold tracking-tight">What this site does not do</h2>

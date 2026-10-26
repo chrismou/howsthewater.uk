@@ -134,7 +134,7 @@
 <header class="border-b border-line bg-surface" data-nav-current="{{ $liveRegion?->slug }}">
     {{-- Phones: logo, search button and theme toggle on one row, the menus below and the search box under them once the
          button opens it. Wider: one row with search and toggle on the right. --}}
-    <div class="relative mx-auto flex max-w-5xl flex-wrap items-center gap-x-1 px-4 py-1.5 sm:gap-x-6 sm:gap-y-3 sm:py-4">
+    <div class="relative mx-auto flex max-w-site flex-wrap items-center gap-x-1 px-4 py-1.5 sm:gap-x-6 sm:gap-y-3 sm:py-4">
         <a href="{{ route('home') }}" class="order-1 font-display text-lg font-semibold tracking-tight">
             How's the Water<span class="text-accent">?</span>
         </a>
@@ -182,7 +182,7 @@
 {{-- Full-bleed sections a page wants above or below its content, such as the home page hero. --}}
 {{ $hero }}
 
-<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+<main class="mx-auto w-full max-w-site flex-1 px-4 py-8">
     {{ $slot }}
 </main>
 
@@ -190,7 +190,7 @@
 
 {{-- The same dark band as the live bar. --}}
 <footer class="border-t border-ground/15 bg-ink text-ground dark:border-line dark:bg-surface-2 dark:text-ink">
-    <div class="mx-auto max-w-5xl px-4 py-8">
+    <div class="mx-auto max-w-site px-4 py-8">
         {{-- The pages the header menus do not reach: what is happening now and the place hubs, each region's spills and
              levels, and the site's own pages. Phones: the first and last columns side by side, the regions below. --}}
         <nav aria-label="Footer" class="grid grid-cols-2 gap-x-6 gap-y-8 text-sm lg:grid-cols-4">
