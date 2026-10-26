@@ -47,14 +47,16 @@ final readonly class FloodWarningSummary
     }
 
     /**
-     * The area's page on GOV.UK's Check for flooding service, or NRW's flood
-     * warnings map for a Welsh area, which has no page per area.
+     * The area's page on GOV.UK's Check for flooding service, or for a Welsh or
+     * Scottish area the agency's live warnings page, as neither has an address per area.
      */
     public function url(): string
     {
-        return $this->agency === Agency::NaturalResourcesWales
-            ? 'https://flood-warning.naturalresources.wales/'
-            : 'https://check-for-flooding.service.gov.uk/target-area/'.rawurlencode($this->areaCode);
+        return match ($this->agency) {
+            Agency::NaturalResourcesWales => 'https://flood-warning.naturalresources.wales/',
+            Agency::Sepa => 'https://floodline.sepa.org.uk/live-flood-information/',
+            Agency::EnvironmentAgency => 'https://check-for-flooding.service.gov.uk/target-area/'.rawurlencode($this->areaCode),
+        };
     }
 
     /**
@@ -62,7 +64,11 @@ final readonly class FloodWarningSummary
      */
     public function urlLabel(): string
     {
-        return $this->agency === Agency::NaturalResourcesWales ? 'Read the latest from Natural Resources Wales' : 'Read the latest on GOV.UK';
+        return match ($this->agency) {
+            Agency::NaturalResourcesWales => 'Read the latest from Natural Resources Wales',
+            Agency::Sepa => 'Read the latest on Floodline',
+            Agency::EnvironmentAgency => 'Read the latest on GOV.UK',
+        };
     }
 
     /**

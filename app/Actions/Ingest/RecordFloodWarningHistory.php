@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 
 /**
  * Builds the flood warning history from each poll of an agency's national
- * feed, for every area in England (or Wales) rather than only those our
+ * feed, for every area in England (or Wales, or Scotland) rather than only those our
  * spots use, so a region added later already has its history. Each agency's
  * feed only opens and closes events for that agency's areas. An area's event stays open
  * while it is in force at the same severity; a change of severity closes

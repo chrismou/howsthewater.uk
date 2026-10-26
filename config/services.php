@@ -156,6 +156,14 @@ return [
             'enabled' => (bool) env('SEPA_BATHING_SAMPLES', false),
             'interval_days' => (float) env('SEPA_BATHING_SAMPLES_INTERVAL_DAYS', 7),
         ],
+        // Scottish flood alerts and warnings, read from the public ArcGIS Online layers behind SEPA's Floodline map
+        // (no key; SEPA states no licence for them, and its documented Floodline API needs a key from ffw@sepa.org.uk).
+        // The layers carry each area's live status joined onto its outline. Off until switched on.
+        'flood_warnings' => [
+            'enabled' => (bool) env('SEPA_FLOOD_WARNINGS', false),
+            'alert_areas_url' => env('SEPA_FLOOD_ALERT_AREAS_URL', 'https://services-eu1.arcgis.com/jj6fR2HO7enbrICO/arcgis/rest/services/Join_Features_to_Flood_Alert_Areas_2_view/FeatureServer/0'),
+            'warning_areas_url' => env('SEPA_FLOOD_WARNING_AREAS_URL', 'https://services-eu1.arcgis.com/jj6fR2HO7enbrICO/arcgis/rest/services/Flood_Warning_Areas_(public)_view/FeatureServer/0'),
+        ],
     ],
 
     // Natural Resources Wales's API (Welsh river levels, rainfall and flood warnings): each product has its own free

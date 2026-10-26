@@ -86,7 +86,7 @@ class Help extends Component
         ],
         'flood_warning' => [
             'label' => 'Where do flood warnings come from?',
-            'text' => 'The Environment Agency (Natural Resources Wales in Wales) issues flood alerts (flooding is possible), flood warnings (flooding is expected) and severe flood warnings (danger to life) for areas along each river. We show any in force for an area covering this stretch, checked every 15 minutes, in the agency\'s own words.',
+            'text' => 'The Environment Agency (Natural Resources Wales in Wales, SEPA in Scotland) issues flood alerts (flooding is possible), flood warnings (flooding is expected) and severe flood warnings (danger to life) for areas along each river; SEPA\'s alerts cover a whole region, such as Tayside. We show any in force for an area covering this stretch, checked every 15 minutes, in the agency\'s own words.',
         ],
         'bathing_classification' => [
             'label' => 'What does the classification mean?',

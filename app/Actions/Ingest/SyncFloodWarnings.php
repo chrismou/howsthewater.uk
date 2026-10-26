@@ -12,9 +12,11 @@ use Illuminate\Support\Collection;
 /**
  * Replaces the stored warnings with those in force now for the flood areas
  * our spots use, one agency's feed at a time. Each feed lists every warning
- * in England (or Wales) in one small response, so each run reads it whole; a
- * warning missing from its agency's feed, or marked no longer in force, has
- * been lifted and is removed.
+ * in England (or Wales, or Scotland) in one small response, so each run reads
+ * it whole; a warning missing from its agency's feed, or marked no longer in
+ * force, has been lifted and is removed. A warning is confirmed as of the
+ * poll, or of the feed's own publication time where it carries one (SEPA's
+ * layers), so a feed that stops refreshing goes stale on the pages.
  */
 class SyncFloodWarnings
 {
@@ -45,7 +47,7 @@ class SyncFloodWarnings
                     'message' => $data->message,
                     'raised_at' => $data->raisedAt,
                     'message_changed_at' => $data->messageChangedAt,
-                    'checked_at' => now(),
+                    'checked_at' => $data->publishedAt?->min(now()) ?? now(),
                 ],
             );
         }

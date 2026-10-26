@@ -5,10 +5,13 @@ namespace App\Console\Commands;
 use App\Actions\Ingest\RecordFloodWarningHistory;
 use App\Actions\Ingest\SyncFloodAreas;
 use App\Actions\Ingest\SyncFloodWarnings;
+use App\Data\FloodWarningData;
 use App\Enums\Agency;
+use App\Models\FloodArea;
 use App\Services\Conditions\ChangedRegions;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
 use App\Services\NaturalResourcesWales\FloodWarningsClient;
+use App\Services\Sepa\FloodWarningsClient as SepaFloodWarningsClient;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -21,11 +24,12 @@ class IngestFloods extends Command
         {--areas : Refresh the flood areas covering every spot, not just spots never searched}
         {--quick : Skip the slow flood area search, for development; a later run picks the spots up}';
 
-    protected $description = 'Fetch the flood alerts and warnings in force from the Environment Agency and Natural Resources Wales';
+    protected $description = 'Fetch the flood alerts and warnings in force from the Environment Agency, Natural Resources Wales and SEPA';
 
     public function handle(
         FloodMonitoringClient $client,
         FloodWarningsClient $nrw,
+        SepaFloodWarningsClient $sepa,
         SyncFloodAreas $syncAreas,
         SyncFloodWarnings $syncWarnings,
         RecordFloodWarningHistory $history,
@@ -43,6 +47,15 @@ class IngestFloods extends Command
 
         if ($nrw->isEnabled()) {
             $failed = ! $this->syncWales($nrw, $syncWarnings, $history) || $failed;
+        }
+
+        if ($sepa->isEnabled()) {
+            $failed = ! $this->syncScotland($sepa, $syncWarnings, $history) || $failed;
+        } elseif (FloodArea::query()->where('agency', Agency::Sepa)->exists()) {
+            // Switching SEPA off (the plain rollback if its layers misbehave) also takes its warnings off the pages and closes
+            // their history; those events' ended_at then means when we stopped reading, not when SEPA lifted the warning.
+            $syncWarnings->handle(collect(), Agency::Sepa);
+            $history->handle(collect(), Agency::Sepa);
         }
 
         $changed->markAll();
@@ -107,8 +120,60 @@ class IngestFloods extends Command
     }
 
     /**
+     * SEPA's layers, read and recorded on their own like NRW's. SEPA rewrites every
+     * status row with the same refresh time every few minutes while anything has a
+     * status, so if that time is hours old, or ahead of our clock, SEPA's side has
+     * stopped or its times cannot be trusted: nothing is synced from it (the stored
+     * warnings keep the time they were last confirmed, so the pages call them out of
+     * date) and the run fails, so the scheduler and the error log both report it. With
+     * no status rows at all, the layers' own last edit time is the only signal left,
+     * and it shows no more than that SEPA's service is still writing.
+     */
+    private function syncScotland(SepaFloodWarningsClient $sepa, SyncFloodWarnings $syncWarnings, RecordFloodWarningHistory $history): bool
+    {
+        try {
+            $feed = $sepa->floodWarnings();
+            $refreshedAt = $feed->max(fn (FloodWarningData $warning) => $warning->publishedAt) ?? $sepa->lastRefreshedAt();
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
+            $this->error("SEPA flood warnings failed, {$exception->getMessage()}");
+            Log::error("SEPA flood warnings failed: {$exception->getMessage()}");
+
+            return false;
+        }
+
+        if ($refreshedAt->lessThan(now()->subHours(SepaFloodWarningsClient::REFRESH_STALE_AFTER_HOURS))) {
+            return $this->failScotland("SEPA's flood warning layers were last refreshed {$refreshedAt->diffForHumans()}, so their warnings were not read");
+        }
+
+        if ($refreshedAt->greaterThan(now()->addMinutes(SepaFloodWarningsClient::REFRESH_FUTURE_MINUTES))) {
+            return $this->failScotland("SEPA's flood warning layers are dated {$refreshedAt->toIso8601String()}, ahead of our clock, so their times cannot be trusted and their warnings were not read");
+        }
+
+        $result = $syncWarnings->handle($feed, Agency::Sepa);
+        $recorded = $history->handle($feed, Agency::Sepa);
+
+        $this->info(sprintf(
+            'SEPA: %d flood alerts and warnings in force for our spots; history: %d opened, %d closed.',
+            $result['warnings'],
+            $recorded['opened'],
+            $recorded['closed'],
+        ));
+
+        return true;
+    }
+
+    private function failScotland(string $message): bool
+    {
+        $this->error($message);
+        Log::error($message);
+
+        return false;
+    }
+
+    /**
      * Links spots never searched (a newly seeded region) to the flood areas around them; --areas re-checks them all.
-     * Spots are marked searched one at a time, so a failure part way through resumes on the next run.
+     * Spots are marked searched one at a time, so a failure part way through resumes on the next run, and a failure
+     * (a changed SEPA layer included) still lets the warnings below sync.
      */
     private function linkFloodAreas(SyncFloodAreas $syncAreas): bool
     {
@@ -120,7 +185,7 @@ class IngestFloods extends Command
             }
 
             return true;
-        } catch (ConnectionException|RequestException $exception) {
+        } catch (ConnectionException|RequestException|RuntimeException $exception) {
             $this->error("Flood area search failed, {$exception->getMessage()}");
             Log::error("Flood area search failed: {$exception->getMessage()}");
 

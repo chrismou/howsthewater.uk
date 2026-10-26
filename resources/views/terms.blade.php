@@ -39,6 +39,7 @@
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data published by the water companies through Stream: <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener"
                                 class="text-accent hover:underline">CC BY 4.0</a>.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data from Scottish Water: published by Scottish Water for reuse, crediting Scottish Water as the source.</span></li>
+                    <li class="flex gap-3"><span class="text-muted">-</span><span>SEPA flood alerts and warnings: they come from the map layers behind SEPA's Floodline, which state no licence, so we do not claim one. Ask SEPA before reusing them, and credit it as the source.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Storm overflow data from Dŵr Cymru Welsh Water: Welsh Water's public storm overflow map states no licence or terms of use, so we do not claim one. Ask Welsh Water before reusing its data, and credit it as the source.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>River centrelines from OS Open Rivers: Open Government Licence v3.0, contains OS data © Crown copyright and database right.</span></li>
                     <li class="flex gap-3"><span class="text-muted">-</span><span>Map tiles: © OpenStreetMap contributors, <a href="https://www.openstreetmap.org/copyright" rel="noopener"
