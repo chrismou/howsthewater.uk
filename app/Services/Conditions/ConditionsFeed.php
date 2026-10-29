@@ -7,7 +7,8 @@ use App\Data\FeedItem;
 use App\Data\FloodWarningSummary;
 use App\Data\NearbyMonitorSummary;
 use App\Data\NearbyOverflows;
-use App\Data\SpotConditions;
+use App\Data\RiverSummary;
+use App\Data\SpotSummary;
 use App\Data\UpstreamMonitorSummary;
 use App\Enums\PollutionRisk;
 use App\Models\BathingWater;
@@ -37,6 +38,7 @@ class ConditionsFeed
         private SpotConditionsService $conditions,
         private RiverOverviewService $overviews,
         private WaterBodyConditionsService $waterBodies,
+        private RegionSummaries $summaries,
     ) {
     }
 
@@ -58,7 +60,8 @@ class ConditionsFeed
 
     /**
      * Overflows on the river and every tributary, plus the flood warnings
-     * covering any of its spots.
+     * covering any of its spots, read from the cached region summary, as
+     * every spot's full conditions do not fit in memory on long rivers.
      *
      * @return Collection<int, FeedItem>
      */
@@ -77,9 +80,10 @@ class ConditionsFeed
             ->get()
             ->flatMap(fn (SpillEvent $event) => $this->spillItems($event, $link, ''));
 
-        $spots = $river->spots()->published()->get()->each(fn (Spot $spot) => $spot->setRelation('river', $river));
-        $floodWarnings = $this->conditions->forMany($spots)
-            ->flatMap(fn (SpotConditions $conditions) => $conditions->floodWarnings)
+        $floodWarnings = $this->summaries->for($river->region)->rivers
+            ->where('id', $river->id)
+            ->flatMap(fn (RiverSummary $summary) => $summary->spots)
+            ->flatMap(fn (SpotSummary $spot) => $spot->floodWarnings)
             ->unique('areaCode');
 
         return $this->latest($spillItems->concat($this->floodItems($floodWarnings, $link)));
