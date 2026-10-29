@@ -13,6 +13,8 @@ use App\Models\Region;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
+use App\Services\Conditions\RegionSummaries;
+use App\Services\Conditions\SpotConditionsService;
 
 /**
  * @return array{0: Region, 1: River, 2: Spot}
@@ -83,6 +85,21 @@ it('covers the river and its tributaries in the river feed', function () {
         ->assertSee('YWS00001 started discharging on the River Wharfe')
         ->assertSee('YWS00002 started discharging on the River Washburn')
         ->assertDontSee('YWS00003');
+});
+
+it('lists each flood warning on the river once in the river feed, from the cached region summary', function () {
+    [$region, $river, $spot] = feedSpot();
+    $downstream = Spot::factory()->create(['river_id' => $river->id, 'slug' => 'wetherby', 'river_metres' => 80000]);
+    $area = FloodArea::factory()->hasAttached($spot)->hasAttached($downstream)->create(['code' => '122WAF943', 'label' => 'Lower River Wharfe']);
+    FloodWarning::factory()->severity(FloodSeverity::FloodWarning)->create(['flood_area_id' => $area->id]);
+    app(RegionSummaries::class)->refresh($region);
+
+    // Every spot's full conditions do not fit in memory on long rivers, so the feed must not read them.
+    $this->mock(SpotConditionsService::class)->shouldNotReceive('for', 'forMany');
+
+    $xml = $this->get(route('rivers.feed', [$region, $river]))->assertOk()->getContent();
+
+    expect(substr_count($xml, 'Flood warning in force: Lower River Wharfe'))->toBe(1);
 });
 
 it('links each page to its feed for readers to discover', function () {
