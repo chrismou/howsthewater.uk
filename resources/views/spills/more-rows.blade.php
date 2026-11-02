@@ -1,6 +1,6 @@
 {{--
     Under a long list that shows its first rows only: how many of the total are shown, and a button that loads the
-    next batch (SpillsOverviewService::MORE_ROWS) into the list's [data-more-rows-body] in place (more-rows.js), with
+    next batch (SpillsOverviewService::MORE_ROWS) into the list's [data-more-rows-body] in place (more-rows.ts), with
     a loader while it waits. Without JavaScript the sentence still says how many are shown.
 --}}
 @php

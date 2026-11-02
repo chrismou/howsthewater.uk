@@ -3,7 +3,7 @@
  * is remembered in this browser. The <head> applies the stored choice before
  * paint; this wires up the toggle buttons.
  */
-export function initThemeToggle() {
+export function initThemeToggle(): void {
     const root = document.documentElement;
 
     document.querySelectorAll('[data-theme-toggle]').forEach((button) => {

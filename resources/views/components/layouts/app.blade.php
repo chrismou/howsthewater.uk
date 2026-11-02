@@ -128,7 +128,7 @@
             }
         } catch (e) {
         }</script>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.ts'])
 </head>
 <body class="min-h-full flex flex-col bg-ground text-ink antialiased">
 <header class="border-b border-line bg-surface" data-nav-current="{{ $liveRegion?->slug }}">
@@ -269,9 +269,9 @@
 @if ($analyticsId)
     <x-cookie-banner :measurement-id="$analyticsId"/>
 @endif
-{{-- The regions and places in the Rivers, Beaches and Lakes menus, which nav.js builds when a menu first opens. --}}
+{{-- The regions and places in the Rivers, Beaches and Lakes menus, which nav.ts builds when a menu first opens. --}}
 <script type="application/json" id="nav-menus">{!! app(\App\Services\Conditions\NavigationMenus::class)->menusJson() !!}</script>
-{{-- Explanations for the page's help buttons (each button's aria-describedby), shown in the panel below by tooltip.js. --}}
+{{-- Explanations for the page's help buttons (each button's aria-describedby), shown in the panel below by tooltip.ts. --}}
 <div hidden data-nosnippet>@stack('help-glossary')</div>
 <div data-help-panel role="tooltip" aria-hidden="true" hidden
      class="pointer-events-none fixed left-0 top-0 z-[1100] w-72 max-w-[calc(100vw-2rem)] rounded-md bg-ink px-3.5 py-2.5 text-left text-[13px] leading-snug text-ground shadow-lg"></div>

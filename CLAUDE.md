@@ -266,11 +266,11 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   light: a block per region with its counts, what is discharging there and links to the region and its listings. The
   places come from `/swimming/places.json` (`swimming.places`, `SwimmingSpots::all()`, `SwimmingSpot::toMapPlace()`),
   cached at the edge like the pages, which the map loads when it comes into view (`data-map-markers-url`) and "Show
-  spots near me" (`swimming.js`) reads through the same fetch (`json-cache.js`). Near me asks the browser for the
+  spots near me" (`swimming.ts`) reads through the same fetch (`json-cache.ts`). Near me asks the browser for the
   visitor's location, which never leaves the device, and lists the nearest 20 with their distances, 20 more a click;
   Rivers, Beaches and Lakes buttons filter the list and the map. The controls stay hidden without JavaScript. Its rows
   are drawn by the script, so their styles are set once on the list, with pills coloured by `data-pill`
-  (`SpillRecency::tone()`, as `components/spill-badge` is). `map.js` draws maps of over 300 markers on canvas with
+  (`SpillRecency::tone()`, as `components/spill-badge` is). `map.ts` draws maps of over 300 markers on canvas with
   small markers, and hands each map and its markers to the page's own script (`element.leafletMap`, the `map:ready`
   event).
 - "Upstream" is resolved by `UpstreamMonitorFinder`: monitors on the same river with a smaller `river_metres` than
@@ -310,7 +310,7 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   has, plus its headline figures and flood warnings. The Rivers, Beaches and Lakes menus all render through `components/nav-menu` as plain links to `/rivers`,
   `/beaches` and `/lakes` (`PlaceHubController`), which list every region with that kind of place as cards
   (`components/region-card`, also used on the home page), so the menus work without JavaScript. The regions and places
-  come from `NavigationMenus::menusJson()`, embedded once per page as `#nav-menus`, and `nav.js` builds each menu from it
+  come from `NavigationMenus::menusJson()`, embedded once per page as `#nav-menus`, and `nav.ts` builds each menu from it
   when it first opens, so the header stays small and the content comes early in the HTML. The hub routes, `/about`,
   `/privacy`, `/terms`, `/search`, `/swimming` and `/levels` sit before `/{region}`, so `Region::RESERVED_SLUGS` lists them and saving a region
   with one throws. `RegionSummary` carries each region's beaches and lakes as plain `WaterBodySummary` values for the
@@ -490,7 +490,7 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   above the table). Spots come from the cached region summaries, under a heading that says "upstream", so their pills
   say only when ("Happening now", "Earlier"); then every spill running or ended in the last 24 hours (the first 100,
   newest first, found through the index on `spill_events.ended_at`, as the published logs hold millions of spills).
-  Each long list loads its next 200 rows in place (`spills/more-rows`, `more-rows.js`) from `spills.rows` or
+  Each long list loads its next 200 rows in place (`spills/more-rows`, `more-rows.ts`) from `spills.rows` or
   `spills.region.rows` (`/spills/rows/{list}?offset=`, rows only), which take the same order. The page warns when no overflow behind it has reported for 6 hours, so an empty list never reads as
   "none right now". A region without overflow data has no spills page (404), and the combined page describes its
   coverage rather than naming countries. `spills` and `overflows` are in `Region::RESERVED_SLUGS`.
@@ -676,6 +676,11 @@ replacing the local database with a copy of live rather than backfilling.
 ## Frontend
 
 - Blade + Tailwind 4 + Leaflet. Components live in `resources/views/components`; the layout is `components/layouts/app`.
+- Browser code is TypeScript in `resources/js` (strict, `tsconfig.json`), one entry (`app.ts`) that calls each module's
+  `init*()` and loads `map.ts` with Leaflet only on pages with a map. Vite compiles it without checking types, so CI
+  runs `npm run typecheck` (`tsc --noEmit`) before the build; run it with any change there. The shapes of the JSON the
+  PHP side hands over (map markers, `/swimming/places.json`, the nav menus) live in `types.ts`, which also declares
+  `element.leafletMap`, the `map:ready` event and `window.gtag`; change them there when the PHP output changes.
 - Fonts (Instrument Sans, Bricolage Grotesque, IBM Plex Mono) are self-hosted by the Laravel Vite font plugin
   (`vite.config.js`, downloaded from Google Fonts at build time as one woff2 each; not Bunny, whose woff
   files this plugin version emits as separate rules that override the woff2) and loaded by `@fonts` in the layout, with font-display: swap
@@ -695,11 +700,11 @@ replacing the local database with a copy of live rather than backfilling.
   rather than writing one-off explanations in views. The component renders only the `?` button, placed beside a heading
   (heading and button in a flex row), never inside it;
   each term's text goes once into a hidden glossary at the end of the page (`data-nosnippet`, so search snippets skip
-  it), and `tooltip.js` shows it in one shared panel kept on screen, so headings never contain the explanations.
+  it), and `tooltip.ts` shows it in one shared panel kept on screen, so headings never contain the explanations.
 - A count beside a heading ("Spills in the last 24 hours 1,108") goes in `components/heading-count` (bold, spaced
   off, red, amber or muted), straight after the last word inside the heading; its hidden comma keeps the words and
   number apart in the text.
-- Every map means the same by its colours (`map.js`, keyed by `components/map-key`): places and overflows are
+- Every map means the same by its colours (`map.ts`, keyed by `components/map-key`): places and overflows are
   coloured by spills on one scale (red discharging, a light amber after a spill in the last 48 hours, so it never
   passes for red, green none reported in 48 hours, grey no data, offline, out of date or not read), places as circles
   and overflows as squares. Markers pass `recency` (`SpillRecency::onMap()`, which greys out stale data; an
@@ -716,14 +721,14 @@ replacing the local database with a copy of live rather than backfilling.
   its overflow data) and levels pages, then the site's own pages and contact links, above the data credits. Its
   short "Spills" and "Levels" links carry the region's name as `sr-only` text, so each says where it goes. Region
   overview and rivers pages link both by name under their intro (`components/region-data-links`).
-- Phones keep the header to two rows: the search box sits behind a search button (`search.js`; without JavaScript it
+- Phones keep the header to two rows: the search box sits behind a search button (`search.ts`; without JavaScript it
   links to `/search`, which has its own box on phones). Controls people tap (menus, buttons, the theme toggle) are at
   least 44px tall on phones; small inline ones (help buttons, breadcrumb links) reach further than they are drawn.
 - Spot, beach and lake pages show the weather and daylight as one full-width band under the status card
   (`components/weather-card`, from `PlaceWeather`), with a line icon per hour (`components/weather-icon`, one per
   group of WMO codes from `WeatherCode::icon()`, the moon instead of the sun after sunset) and end with general advice for getting in the water (`components/before-you-go`, by kind of
   place), which says what to check and never whether a place is safe.
-- Spot, beach and lake pages share `components/place-actions`: share (copy link on desktops; `share.js` switches to the
+- Spot, beach and lake pages share `components/place-actions`: share (copy link on desktops; `share.ts` switches to the
   share sheet on touch screens that have one), RSS feed, and open in OpenStreetMap and Google Maps, as a two by two grid
   on phones.
 

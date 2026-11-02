@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
             // Self-hosted: downloaded from Google Fonts at build time, never requested from Google by visitors, with
             // font-display: swap. Google serves one woff2 per face; Bunny also lists woff, which this plugin version

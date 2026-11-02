@@ -2,12 +2,18 @@
  * "Show more" under the spills pages' long lists: each click fetches the next batch of rows after those shown (the
  * list's own URL with ?offset=) and appends them to the list's [data-more-rows-body], until every row is shown.
  */
-export function initMoreRows() {
-    document.querySelectorAll('[data-more-rows]').forEach((control) => {
-        const button = control.querySelector('[data-more-rows-button]');
-        const loading = control.querySelector('[data-more-rows-loading]');
-        const shownLabel = control.querySelector('[data-more-rows-shown]');
-        const body = control.closest('[data-more-rows-list]').querySelector('[data-more-rows-body]');
+export function initMoreRows(): void {
+    document.querySelectorAll<HTMLElement>('[data-more-rows]').forEach((control) => {
+        const button = control.querySelector<HTMLButtonElement>('[data-more-rows-button]');
+        const loading = control.querySelector<HTMLElement>('[data-more-rows-loading]');
+        const shownLabel = control.querySelector<HTMLElement>('[data-more-rows-shown]');
+        const body = control.closest('[data-more-rows-list]')?.querySelector<HTMLTableSectionElement>('[data-more-rows-body]');
+        const moreUrl = control.dataset.moreRows;
+
+        if (!button || !loading || !shownLabel || !body || !moreUrl) {
+            return;
+        }
+
         const total = Number(control.dataset.total);
         const batch = Number(control.dataset.batch);
         let shown = Number(control.dataset.shown);
@@ -17,7 +23,7 @@ export function initMoreRows() {
             loading.hidden = false;
 
             try {
-                const url = new URL(control.dataset.moreRows, window.location.href);
+                const url = new URL(moreUrl, window.location.href);
                 url.searchParams.set('offset', String(shown));
                 const response = await fetch(url, { headers: { Accept: 'text/html' } });
 

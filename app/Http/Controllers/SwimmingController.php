@@ -14,7 +14,7 @@ use Illuminate\View\View;
 /**
  * Every river spot, beach and lake on one map, for finding somewhere to swim. The page itself stays light: a block per
  * region linking to its listings, while the places come from places() for the map and the "near me" list, which
- * swimming.js sorts by distance in the browser. Both are the same for every visitor, so both cache at the edge.
+ * swimming.ts sorts by distance in the browser. Both are the same for every visitor, so both cache at the edge.
  */
 class SwimmingController extends Controller
 {

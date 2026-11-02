@@ -1,6 +1,6 @@
 {{--
     A top-level menu (Rivers, Beaches, Lakes). The page carries only a link to that kind of place's page (/rivers and so
-    on), which lists every region, so the menu still leads somewhere without JavaScript. nav.js turns the link into a
+    on), which lists every region, so the menu still leads somewhere without JavaScript. nav.ts turns the link into a
     menu: regions and their places come from the page's nav-menus JSON (NavigationMenus::menusJson()), built into the
     panel the first time it opens. menu: the key into that JSON. url: the page to link to.
 --}}

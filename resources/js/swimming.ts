@@ -1,7 +1,16 @@
+import type L from 'leaflet';
 import { fetchJsonOnce } from './json-cache';
+import type { LeafletMapHandle, MapPlace } from './types';
 
 /** Places the nearest-first list adds at a time. */
 const BATCH = 20;
+
+interface Position {
+    lat: number;
+    lng: number;
+}
+
+type PlaceWithDistance = MapPlace & { distance: number };
 
 /**
  * The swimming page's controls. "Show spots near me" asks the browser for the visitor's location (which never leaves
@@ -9,28 +18,33 @@ const BATCH = 20;
  * a batch at a time, with their distances. The Rivers, Beaches and Lakes buttons filter that list and the map. Without
  * JavaScript the controls stay hidden and the region blocks still link to every place.
  */
-export function initSwimming() {
-    const page = document.querySelector('[data-swimming]');
+export function initSwimming(): void {
+    const page = document.querySelector<HTMLElement>('[data-swimming]');
 
     if (!page) {
         return;
     }
 
-    const controls = page.querySelector('[data-swimming-controls]');
-    const nearButton = page.querySelector('[data-swimming-near]');
-    const status = page.querySelector('[data-swimming-status]');
-    const nearest = page.querySelector('[data-swimming-nearest]');
-    const nearestList = page.querySelector('[data-swimming-nearest-list]');
-    const moreButton = page.querySelector('[data-swimming-more]');
-    const regions = page.querySelector('[data-swimming-regions]');
-    const mapElement = page.querySelector('[data-swimming-map]');
-    const kindButtons = [...page.querySelectorAll('[data-swimming-kind]')];
+    const controls = page.querySelector<HTMLElement>('[data-swimming-controls]');
+    const nearButton = page.querySelector<HTMLButtonElement>('[data-swimming-near]');
+    const status = page.querySelector<HTMLElement>('[data-swimming-status]');
+    const nearest = page.querySelector<HTMLElement>('[data-swimming-nearest]');
+    const nearestList = page.querySelector<HTMLElement>('[data-swimming-nearest-list]');
+    const moreButton = page.querySelector<HTMLButtonElement>('[data-swimming-more]');
+    const regions = page.querySelector<HTMLElement>('[data-swimming-regions]');
+    const mapElement = page.querySelector<HTMLElement>('[data-swimming-map]');
+    const kindButtons = [...page.querySelectorAll<HTMLElement>('[data-swimming-kind]')];
+    const placesUrl = page.dataset.placesUrl;
+
+    if (!controls || !nearButton || !status || !nearest || !nearestList || !moreButton || !regions || !mapElement || !placesUrl) {
+        return;
+    }
 
     let kind = 'all';
-    let position = null;
-    let sorted = [];
+    let position: Position | null = null;
+    let sorted: PlaceWithDistance[] = [];
     let shown = 0;
-    let userMarker = null;
+    let userMarker: L.CircleMarker | null = null;
 
     controls.hidden = false;
 
@@ -38,7 +52,7 @@ export function initSwimming() {
         nearButton.hidden = true;
     }
 
-    const withMap = (callback) => {
+    const withMap = (callback: (handle: LeafletMapHandle) => void): void => {
         if (mapElement.leafletMap) {
             callback(mapElement.leafletMap);
         } else {
@@ -46,19 +60,19 @@ export function initSwimming() {
         }
     };
 
-    const distanceKm = (lat, lng) => {
-        const toRadians = (degrees) => (degrees * Math.PI) / 180;
-        const dLat = toRadians(lat - position.lat);
-        const dLng = toRadians(lng - position.lng);
-        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(position.lat)) * Math.cos(toRadians(lat)) * Math.sin(dLng / 2) ** 2;
+    const distanceKm = (from: Position, lat: number, lng: number): number => {
+        const toRadians = (degrees: number): number => (degrees * Math.PI) / 180;
+        const dLat = toRadians(lat - from.lat);
+        const dLng = toRadians(lng - from.lng);
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(from.lat)) * Math.cos(toRadians(lat)) * Math.sin(dLng / 2) ** 2;
 
         return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
-    const matchesKind = (place) => kind === 'all' || place.type === kind;
+    const matchesKind = (place: { type?: string }): boolean => kind === 'all' || place.type === kind;
 
     // Built from DOM nodes, as names come from the agencies' and companies' data.
-    const row = (place) => {
+    const row = (place: PlaceWithDistance): HTMLLIElement => {
         const item = document.createElement('li');
         const link = document.createElement('a');
         const text = document.createElement('span');
@@ -67,7 +81,7 @@ export function initSwimming() {
         const pill = document.createElement('span');
         const distance = document.createElement('strong');
 
-        link.href = place.url;
+        link.href = place.url ?? '';
         text.className = 'min-w-0 max-w-full';
         name.textContent = place.label;
         distance.className = 'font-semibold text-ink';
@@ -92,36 +106,36 @@ export function initSwimming() {
         return item;
     };
 
-    const matching = () => sorted.filter(matchesKind);
+    const matching = (): PlaceWithDistance[] => sorted.filter(matchesKind);
 
-    const updateMore = () => {
+    const updateMore = (): void => {
         const remaining = matching().length - shown;
         moreButton.hidden = remaining <= 0;
         moreButton.textContent = `Show ${Math.min(BATCH, remaining)} more`;
     };
 
-    const addBatch = () => {
+    const addBatch = (): void => {
         matching().slice(shown, shown + BATCH).forEach((place) => nearestList.append(row(place)));
         shown = nearestList.children.length;
         updateMore();
     };
 
     // Zooms the map to the visitor and the ten nearest places of the kind shown.
-    const fitNearest = () => {
+    const fitNearest = (from: Position): void => {
         withMap(({ map, L }) => {
-            const points = matching().slice(0, 10).map((place) => [place.lat, place.lng]);
-            map.fitBounds(L.latLngBounds([[position.lat, position.lng], ...points]).pad(0.15));
+            const points = matching().slice(0, 10).map((place): [number, number] => [place.lat, place.lng]);
+            map.fitBounds(L.latLngBounds([[from.lat, from.lng], ...points]).pad(0.15));
         });
     };
 
-    const renderNearest = () => {
+    const renderNearest = (from: Position): void => {
         nearestList.replaceChildren();
         shown = 0;
         addBatch();
-        fitNearest();
+        fitNearest(from);
     };
 
-    const filterMap = () => {
+    const filterMap = (): void => {
         withMap(({ map, markers }) => {
             markers.forEach(({ marker, layer }) => {
                 const show = matchesKind(marker);
@@ -135,9 +149,9 @@ export function initSwimming() {
         });
     };
 
-    const showNearest = (places) => {
+    const showNearest = (from: Position, places: MapPlace[]): void => {
         sorted = places
-            .map((place) => ({ ...place, distance: distanceKm(place.lat, place.lng) }))
+            .map((place) => ({ ...place, distance: distanceKm(from, place.lat, place.lng) }))
             .sort((a, b) => a.distance - b.distance);
 
         nearest.hidden = false;
@@ -147,13 +161,13 @@ export function initSwimming() {
 
         withMap(({ map, L }) => {
             userMarker?.remove();
-            userMarker = L.circleMarker([position.lat, position.lng], { pane: 'places', radius: 7, color: '#ffffff', weight: 2, fillColor: '#1b2a33', fillOpacity: 1 }).addTo(map).bindPopup('You are here');
+            userMarker = L.circleMarker([from.lat, from.lng], { pane: 'places', radius: 7, color: '#ffffff', weight: 2, fillColor: '#1b2a33', fillOpacity: 1 }).addTo(map).bindPopup('You are here');
         });
 
-        renderNearest();
+        renderNearest(from);
     };
 
-    const showByRegion = () => {
+    const showByRegion = (): void => {
         nearest.hidden = true;
         regions.hidden = false;
         nearestList.replaceChildren();
@@ -175,9 +189,10 @@ export function initSwimming() {
         status.textContent = 'Finding your location...';
         navigator.geolocation.getCurrentPosition(
             ({ coords }) => {
-                position = { lat: coords.latitude, lng: coords.longitude };
-                fetchJsonOnce(page.dataset.placesUrl)
-                    .then(showNearest)
+                const from: Position = { lat: coords.latitude, lng: coords.longitude };
+                position = from;
+                fetchJsonOnce<MapPlace[]>(placesUrl)
+                    .then((places) => showNearest(from, places))
                     .catch(() => {
                         position = null;
                         status.textContent = 'The spots could not be loaded. Try again in a moment.';
@@ -194,12 +209,12 @@ export function initSwimming() {
 
     kindButtons.forEach((button) => {
         button.addEventListener('click', () => {
-            kind = button.dataset.swimmingKind;
+            kind = button.dataset.swimmingKind ?? 'all';
             kindButtons.forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
             filterMap();
 
             if (position) {
-                renderNearest();
+                renderNearest(position);
             }
         });
     });

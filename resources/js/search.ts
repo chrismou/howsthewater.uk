@@ -3,9 +3,9 @@
  * and the page start higher. The button is a link to the search page, which
  * has its own box; with JavaScript it opens the header's box in place.
  */
-export function initSearchToggle() {
-    const toggle = document.querySelector('[data-search-toggle]');
-    const form = document.querySelector('[data-search-form]');
+export function initSearchToggle(): void {
+    const toggle = document.querySelector<HTMLElement>('[data-search-toggle]');
+    const form = document.querySelector<HTMLElement>('[data-search-form]');
 
     if (!toggle || !form) {
         return;

@@ -107,7 +107,7 @@ class NavigationMenus
      * Every menu as compact JSON for the page to embed: per menu, its regions
      * with their slug, name, overview path and blurb, and their places as
      * [[heading, [[name, path], ...]], ...]. Paths are relative to keep it
-     * small; nav.js builds each menu from it when it first opens.
+     * small; nav.ts builds each menu from it when it first opens.
      */
     public function menusJson(): string
     {

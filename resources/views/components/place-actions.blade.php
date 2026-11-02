@@ -1,7 +1,7 @@
 {{--
     Share (or copy link), the place's RSS feed and links to open it in OpenStreetMap and Google Maps, for a place's
     page header. Phones get a two by two grid with shorter map labels; wider screens one row. The share button copies
-    the link until share.js finds a touch screen with a share sheet, where it becomes "Share".
+    the link until share.ts finds a touch screen with a share sheet, where it becomes "Share".
 --}}
 @props(['latitude', 'longitude', 'label', 'feed' => null, 'feedTitle' => null])
 

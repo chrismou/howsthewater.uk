@@ -8,19 +8,19 @@
 const EDGE = 16;
 const GAP = 8;
 
-export function initTooltips() {
-    const panel = document.querySelector('[data-help-panel]');
-    const buttons = Array.from(document.querySelectorAll('[data-help]'));
+export function initTooltips(): void {
+    const panel = document.querySelector<HTMLElement>('[data-help-panel]');
+    const buttons = Array.from(document.querySelectorAll<HTMLElement>('[data-help]'));
 
     if (!panel || buttons.length === 0) {
         return;
     }
 
     // The open button, and whether a click or tap opened it (then it stays open until dismissed, not on mouse out).
-    let current = null;
+    let current: HTMLElement | null = null;
     let pinned = false;
 
-    const place = () => {
+    const place = (): void => {
         if (!current) {
             return;
         }
@@ -35,8 +35,8 @@ export function initTooltips() {
         panel.style.transform = `translate(${Math.max(left, EDGE)}px, ${top}px)`;
     };
 
-    const show = (button, pin = false) => {
-        const text = document.getElementById(button.getAttribute('aria-describedby'));
+    const show = (button: HTMLElement, pin = false): void => {
+        const text = document.getElementById(button.getAttribute('aria-describedby') ?? '');
 
         if (!text) {
             return;
@@ -46,12 +46,12 @@ export function initTooltips() {
         current = button;
         pinned = pin;
         button.setAttribute('data-open', '');
-        panel.textContent = text.textContent.trim();
+        panel.textContent = (text.textContent ?? '').trim();
         panel.hidden = false;
         place();
     };
 
-    const hide = () => {
+    const hide = (): void => {
         current?.removeAttribute('data-open');
         current = null;
         pinned = false;
@@ -71,7 +71,7 @@ export function initTooltips() {
     });
 
     document.addEventListener('click', (event) => {
-        if (current && !current.contains(event.target)) {
+        if (current && !current.contains(event.target as Node)) {
             hide();
         }
     });

@@ -2,7 +2,7 @@
     A "?" button that explains a term. Only the button sits where the component is used, beside a heading rather than
     inside it, so headings read as their own words; the explanation goes once per term into a hidden glossary at the
     end of the page.
-    tooltip.js shows it in one shared panel, kept on screen. The circle is small, but the button reaches 7px around it,
+    tooltip.ts shows it in one shared panel, kept on screen. The circle is small, but the button reaches 7px around it,
     so it is a 32px target.
 --}}
 <button type="button"
