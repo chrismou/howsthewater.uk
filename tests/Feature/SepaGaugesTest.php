@@ -39,8 +39,8 @@ it('discovers SEPA level gauges on a river by its SEPA name, with SEPA normal ra
     fakeSepa([
         'getStationList' => [['station_no', 'river_name'], ['100', 'Tweed'], ['200', 'Tweed'], ['300', 'Tweed'], ['400', 'Teviot']],
         'getTimeseriesList:S' => function (Request $request) use ($recent) {
-            if ($request['ts_name'] === 'HydrologicalYear.M*') {
-                return [['station_no', 'ts_id', 'ts_name'], ['100', '901', 'HydrologicalYear.Min'], ['100', '902', 'HydrologicalYear.Max'], ['100', '903', 'HydrologicalYear.Mean']];
+            if ($request['ts_name'] === 'HydrologicalYear.Min,HydrologicalYear.Max,Month.Max') {
+                return [['station_no', 'ts_id', 'ts_name'], ['100', '901', 'HydrologicalYear.Min'], ['100', '902', 'HydrologicalYear.Max'], ['100', '903', 'HydrologicalYear.Mean'], ['100', '904', 'Month.Max']];
             }
 
             return [
@@ -54,6 +54,7 @@ it('discovers SEPA level gauges on a river by its SEPA name, with SEPA normal ra
         'getTimeseriesValues' => [
             ['ts_id' => '901', 'data' => [['2023-10-01T09:00:00.000Z', 0.2], ['2024-10-01T09:00:00.000Z', 0.3], ['2025-10-01T09:00:00.000Z', 0.25]]],
             ['ts_id' => '902', 'data' => [['2023-10-01T09:00:00.000Z', 2.0], ['2024-10-01T09:00:00.000Z', 3.1], ['2025-10-01T09:00:00.000Z', 2.4]]],
+            ['ts_id' => '904', 'data' => [['2023-10-01T09:00:00.000Z', 1.8], ['2023-12-01T09:00:00.000Z', 2.0], ['2024-12-01T09:00:00.000Z', 3.1], ['2025-01-01T09:00:00.000Z', 2.4]]],
         ],
     ]);
 
@@ -61,12 +62,18 @@ it('discovers SEPA level gauges on a river by its SEPA name, with SEPA normal ra
 
     $peebles = GaugeStation::query()->where('external_id', 'SEPA100')->firstOrFail();
 
+    // The record is the highest monthly maximum, so only its month is known; the records begin with the first yearly maximum.
     expect($peebles->network)->toBe(Agency::Sepa)
         ->and($peebles->measure_id)->toBe('55822010')
         ->and($peebles->unit)->toBe('m')
         ->and($peebles->river_id)->toBe($river->id)
         ->and($peebles->typical_range_low)->toBe(0.25)
         ->and($peebles->typical_range_high)->toBe(2.4)
+        ->and($peebles->record_level)->toBe(3.1)
+        ->and($peebles->record_level_at->toIso8601String())->toBe('2024-12-01T09:00:00+00:00')
+        ->and($peebles->record_level_known_to_month)->toBeTrue()
+        ->and($peebles->records_from->toDateString())->toBe('2023-10-01')
+        ->and($peebles->recordLevelPhrase())->toBe('3.10 m in December 2024')
         ->and($peebles->is_active)->toBeTrue()
         ->and(GaugeStation::query()->where('external_id', 'SEPA200')->value('is_active'))->toBeFalse()
         ->and(GaugeStation::query()->whereIn('external_id', ['SEPA300', 'SEPA400'])->exists())->toBeFalse();

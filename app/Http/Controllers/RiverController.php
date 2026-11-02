@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GaugeStation;
 use App\Models\Region;
 use App\Models\River;
 use App\Services\Conditions\AnnualReturnTotals;
+use App\Services\Conditions\GaugeLevelHistory;
+use App\Services\Conditions\PlaceHeadline;
 use App\Services\Conditions\RegionSummaries;
 use App\Services\Geo\Coordinates;
+use App\Services\Weather\PlaceWeather;
 use Illuminate\View\View;
 
 class RiverController extends Controller
@@ -46,9 +50,10 @@ class RiverController extends Controller
 
     /**
      * A river and its spots, read from the region's cached summary: the full conditions of every spot on a long
-     * river (hundreds of upstream overflows each, low on the Trent) do not fit in a request's memory.
+     * river (hundreds of upstream overflows each, low on the Trent) do not fit in a request's memory. The river's few
+     * gauges, with a week of readings, and its weather are read here, as the page is cached at the edge.
      */
-    public function show(Region $region, River $river, RegionSummaries $summaries, AnnualReturnTotals $totals): View
+    public function show(Region $region, River $river, RegionSummaries $summaries, AnnualReturnTotals $totals, GaugeLevelHistory $levelHistory, PlaceWeather $weather, PlaceHeadline $headline): View
     {
         abort_if($river->isTributary(), 404);
 
@@ -57,9 +62,20 @@ class RiverController extends Controller
         abort_if($summary === null, 404);
         $latestYear = $totals->latestYear();
 
+        $gaugeIds = $summary->spotsWithOwnGauge()->pluck('gaugeId');
+        $middle = $summary->middleSpot();
+        $forecast = $middle === null ? null : $weather->forecast($middle->latitude, $middle->longitude);
+
         return view('rivers.show', [
             'river' => $river,
             'summary' => $summary,
+            'headline' => $headline->forRiver($summary, $forecast, $region->hasOverflowData()),
+            'gauges' => GaugeStation::query()->whereIn('id', $gaugeIds)->get()->keyBy('id'),
+            'levelHistories' => $levelHistory->forStations($gaugeIds),
+            'weather' => $forecast,
+            'sun' => $middle === null ? null : $weather->sunTimes($middle->latitude, $middle->longitude),
+            'flowsInto' => $river->flows_into_river_id === null ? null : $river->flowsInto()->with('region')->first(),
+            'tributaryNames' => $river->tributaries()->pluck('name')->all(),
             'shareImage' => $river->shareImage,
             'returnYears' => $totals->riverByYear($river),
             'returnRank' => $latestYear === null ? null : $totals->riverRank($river, $latestYear),

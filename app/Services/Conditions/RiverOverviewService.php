@@ -2,13 +2,18 @@
 
 namespace App\Services\Conditions;
 
+use App\Data\FloodWarningEventSummary;
 use App\Data\RiverOverview;
+use App\Data\SpotConditions;
 use App\Enums\OverflowStatus;
+use App\Models\FloodArea;
+use App\Models\FloodWarningEvent;
 use App\Models\OverflowMonitor;
 use App\Models\Region;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Models\Spot;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -19,7 +24,7 @@ class RiverOverviewService
     /** @var array<int, array<int, int>>|null Tributary ids keyed by parent river id */
     private ?array $childrenByParent = null;
 
-    public function __construct(private SpotConditionsService $spotConditions)
+    public function __construct(private SpotConditionsService $spotConditions, private SpillHistoryService $spillHistory, private DailyRainfall $rainfall)
     {
     }
 
@@ -92,12 +97,13 @@ class RiverOverviewService
         $countedRiverIds = $river->region->hasOverflowData() ? $riverIds : [];
         $monitorsByStatus = OverflowMonitor::query()->whereIn('river_id', $countedRiverIds)->toBase()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
         $companies = OverflowMonitor::query()->whereIn('river_id', $countedRiverIds)->distinct()->orderBy('company')->pluck('company')
-            ->map(fn (string $company) => preg_replace('/\s+(Ltd|Limited|plc)\.?$/i', '', $company))->unique()->values()->all();
+            ->map(fn (string $company) => preg_replace(['/\s+(Ltd|Limited|plc)\.?$/i', '/\s+Services$/i'], '', $company))->unique()->values()->all();
         // Counted as spot pages count them: spills still running or that ended within the last 48 hours.
         $spillsLast48Hours = SpillEvent::query()
             ->whereHas('overflowMonitor', fn ($query) => $query->whereIn('river_id', $countedRiverIds))
             ->where(fn ($query) => $query->whereNull('ended_at')->orWhere('ended_at', '>=', now()->subHours(48)))
             ->count();
+        $rainSpot = $this->rainGaugeSpot($spots);
 
         return new RiverOverview(
             river: $river,
@@ -108,6 +114,94 @@ class RiverOverviewService
             hasTributaries: count($riverIds) > 1,
             spillsLast48HoursCount: $spillsLast48Hours,
             companies: $companies,
+            dailyHistory: $this->dailyHistory($countedRiverIds),
+            dailyRainfall: $rainSpot === null ? null : $this->rainfall->forStation($rainSpot->spot->rainfallStation, now()),
+            rainGaugeLabel: $rainSpot?->spot->rainfallStation->nameInSentence(),
+            floodAreaAgencies: $this->floodAreaAgencies($spots),
+            lastFloodWarning: $this->lastFloodWarning($spots),
+            monitorsUpdatedAt: $this->monitorsUpdatedAt($countedRiverIds),
         );
+    }
+
+    /**
+     * When any monitor on these rivers last reported, so a river with monitors but none upstream of a spot still
+     * has a data time.
+     *
+     * @param  array<int, int>  $riverIds
+     */
+    private function monitorsUpdatedAt(array $riverIds): ?Carbon
+    {
+        $latest = $riverIds === [] ? null : OverflowMonitor::query()->whereIn('river_id', $riverIds)->max('source_updated_at');
+
+        return $latest === null ? null : Carbon::parse($latest);
+    }
+
+    /**
+     * Spills per UK day over the history window for every overflow on these rivers, overlapping spills counted once,
+     * with the days before the earliest overflow's record marked as no data.
+     *
+     * @param  array<int, int>  $riverIds
+     * @return Collection<int, \App\Data\SpillHistoryDay>
+     */
+    private function dailyHistory(array $riverIds): Collection
+    {
+        if ($riverIds === []) {
+            return collect();
+        }
+
+        $monitors = OverflowMonitor::query()->whereIn('river_id', $riverIds)->get(['id', 'company', 'created_at']);
+        $events = $this->spillHistory->counted($this->spillHistory->recentEventsForMonitors($monitors->pluck('id')));
+
+        return $this->spillHistory->dailyBreakdown($events, recordedFrom: $this->spillHistory->recordedFrom($monitors->toBase()));
+    }
+
+    /**
+     * The spot whose rain gauge stands for the river: the one with a gauge nearest the river's midpoint.
+     *
+     * @param  Collection<int, SpotConditions>  $spots  Source to mouth
+     */
+    private function rainGaugeSpot(Collection $spots): ?SpotConditions
+    {
+        $withGauge = $spots->filter(fn (SpotConditions $conditions) => $conditions->spot->rainfallStation !== null)->values();
+
+        return $withGauge->get(intdiv(max(0, $withGauge->count() - 1), 2));
+    }
+
+    /**
+     * The agencies whose flood areas cover the river's spots, so a page knows whose feed an absence of warnings rests on.
+     *
+     * @param  Collection<int, SpotConditions>  $spots
+     * @return list<\App\Enums\Agency>
+     */
+    private function floodAreaAgencies(Collection $spots): array
+    {
+        $spotIds = $spots->map(fn (SpotConditions $conditions) => $conditions->spot->id);
+
+        return FloodArea::query()
+            ->whereHas('spots', fn ($query) => $query->whereIn('spots.id', $spotIds))
+            ->distinct()
+            ->pluck('agency')
+            ->sortBy(fn ($agency) => $agency->value)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * The flood alert or warning most recently lifted for an area covering one of the river's spots.
+     *
+     * @param  Collection<int, SpotConditions>  $spots
+     */
+    private function lastFloodWarning(Collection $spots): ?FloodWarningEventSummary
+    {
+        $spotIds = $spots->map(fn (SpotConditions $conditions) => $conditions->spot->id);
+
+        $event = FloodWarningEvent::query()
+            ->whereNotNull('ended_at')
+            ->whereHas('floodArea.spots', fn ($query) => $query->whereIn('spots.id', $spotIds))
+            ->with('floodArea')
+            ->orderByDesc('ended_at')
+            ->first();
+
+        return $event === null ? null : FloodWarningEventSummary::fromEvent($event);
     }
 }

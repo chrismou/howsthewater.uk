@@ -64,6 +64,14 @@ class Help extends Component
             'label' => 'What is the usual range?',
             'text' => 'The band this gauge sits in most of the time, which the agencies call its typical or normal range. Higher than usual, the river is high for this stretch and likely to be fast and cold. Lower than usual, it is low. It is the same all year, not adjusted for the season.',
         ],
+        'record_level' => [
+            'label' => 'What is the highest on record?',
+            'text' => 'The highest level the agency has recorded at this gauge, and when. The Environment Agency publishes the reading and its moment; SEPA publishes each month\'s highest, so only the month is known. Gauges have been moved and re-zeroed over the years, so treat it as a guide to how high the river has gone here, not a limit.',
+        ],
+        'river_gauges' => [
+            'label' => 'Which gauges are these?',
+            'text' => 'Every level gauge linked to one of the river\'s swimming spots, listed source to mouth. Each reads the height above its own zero mark, so compare a gauge with its own usual range and record rather than with the others.',
+        ],
         'maod' => [
             'label' => 'What does mAOD mean?',
             'text' => 'Metres above Ordnance Datum: the height above mean sea level rather than above the river bed. The number looks large, so watch the trend and the usual range instead.',

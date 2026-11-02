@@ -12,7 +12,7 @@ function environmentAgencyStation(array $measures): array
         'lat' => 53.82,
         'long' => -1.60,
         'status' => 'http://environment.data.gov.uk/flood-monitoring/def/core/statusActive',
-        'stageScale' => ['typicalRangeLow' => 0.2, 'typicalRangeHigh' => 1.1],
+        'stageScale' => ['typicalRangeLow' => 0.2, 'typicalRangeHigh' => 1.1, 'maxOnRecord' => ['dateTime' => '2024-01-07T15:45:00', 'value' => 7.54]],
         'measures' => $measures,
     ];
 }
@@ -26,6 +26,21 @@ it('prefers the stage level measure that has a unit', function () {
     expect($station->measureId)->toBe('L1708-level-stage-i-15_min-m')
         ->and($station->typicalRangeHigh)->toBe(1.1)
         ->and($station->isActive)->toBeTrue();
+});
+
+it('reads the highest level on record as UK local time, and does without one', function () {
+    $station = GaugeStationData::fromEnvironmentAgency(environmentAgencyStation([]));
+
+    expect($station->recordLevel)->toBe(7.54)
+        ->and($station->recordLevelAt->toIso8601String())->toBe('2024-01-07T15:45:00+00:00')
+        ->and($station->recordLevelKnownToMonth)->toBeFalse();
+
+    $summer = GaugeStationData::fromEnvironmentAgency([...environmentAgencyStation([]), 'stageScale' => ['maxOnRecord' => ['dateTime' => '2007-06-25T18:00:00', 'value' => 3.2]]]);
+    $none = GaugeStationData::fromEnvironmentAgency([...environmentAgencyStation([]), 'stageScale' => ['typicalRangeLow' => 0.2]]);
+
+    expect($summer->recordLevelAt->toIso8601String())->toBe('2007-06-25T17:00:00+00:00')
+        ->and($none->recordLevel)->toBeNull()
+        ->and($none->recordLevelAt)->toBeNull();
 });
 
 it('ignores non-stage measures', function () {

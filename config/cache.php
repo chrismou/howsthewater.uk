@@ -2,6 +2,7 @@
 
 use App\Data\BathingWaterSummary;
 use App\Data\BeachConditions;
+use App\Data\FloodWarningEventSummary;
 use App\Data\FloodWarningSummary;
 use App\Data\LakeConditions;
 use App\Data\LevelSummary;
@@ -175,6 +176,7 @@ return [
     'serializable_classes' => [
         BathingWaterSummary::class,
         BeachConditions::class,
+        FloodWarningEventSummary::class,
         FloodWarningSummary::class,
         LakeConditions::class,
         NearbyMonitorSummary::class,

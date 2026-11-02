@@ -24,6 +24,10 @@ final readonly class GaugeStationData
         public bool $isActive,
         public Agency $network = Agency::EnvironmentAgency,
         public ?string $rloiId = null,
+        public ?float $recordLevel = null,
+        public ?Carbon $recordLevelAt = null,
+        public bool $recordLevelKnownToMonth = false,
+        public ?Carbon $recordsFrom = null,
     ) {
     }
 
@@ -91,6 +95,7 @@ final readonly class GaugeStationData
     public static function fromEnvironmentAgency(array $item): self
     {
         $measure = self::levelMeasure($item['measures'] ?? []);
+        $record = self::recordFromStageScale(is_array($item['stageScale'] ?? null) ? $item['stageScale'] : []);
 
         return new self(
             externalId: (string) ($item['stationReference'] ?? $item['notation']),
@@ -105,7 +110,27 @@ final readonly class GaugeStationData
             typicalRangeHigh: isset($item['stageScale']['typicalRangeHigh']) ? (float) $item['stageScale']['typicalRangeHigh'] : null,
             isActive: str_ends_with((string) ($item['status'] ?? ''), 'statusActive'),
             rloiId: self::firstStringOrNull($item['RLOIid'] ?? null),
+            recordLevel: $record === null ? null : (float) $record['value'],
+            recordLevelAt: $record === null ? null : Carbon::parse($record['dateTime'], 'Europe/London')->utc(),
         );
+    }
+
+    /**
+     * The highest level the Environment Agency holds for a station, with its moment, or null without one. Its times
+     * carry no offset and are UK local time, like its flood warnings.
+     *
+     * @param  array<string, mixed>  $stageScale
+     * @return array{value: float|int|string, dateTime: string}|null
+     */
+    private static function recordFromStageScale(array $stageScale): ?array
+    {
+        $record = $stageScale['maxOnRecord'] ?? null;
+
+        if (! is_array($record) || ! is_numeric($record['value'] ?? null) || ! is_string($record['dateTime'] ?? null) || $record['dateTime'] === '') {
+            return null;
+        }
+
+        return ['value' => $record['value'], 'dateTime' => $record['dateTime']];
     }
 
     /**

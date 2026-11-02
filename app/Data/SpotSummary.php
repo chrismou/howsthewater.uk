@@ -45,6 +45,8 @@ final readonly class SpotSummary
         public ?Carbon $rainfallAt,
         public Collection $floodWarnings,
         public bool $isBathingWater = false,
+        public ?int $gaugeId = null,
+        public ?float $levelChangeLast3Hours = null,
     ) {
     }
 
@@ -81,6 +83,8 @@ final readonly class SpotSummary
             rainfallAt: $conditions->rainfall?->latestAt,
             floodWarnings: $conditions->floodWarnings,
             isBathingWater: $conditions->bathingWater !== null,
+            gaugeId: $level?->station->id,
+            levelChangeLast3Hours: $level?->changeLast3Hours,
         );
     }
 

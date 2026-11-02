@@ -10,14 +10,18 @@ use App\Data\LakeConditions;
 use App\Data\LevelSummary;
 use App\Data\NearbyMonitorSummary;
 use App\Data\RainfallSummary;
+use App\Data\RiverSummary;
 use App\Data\SpillHistoryDay;
 use App\Data\SpotConditions;
+use App\Data\SpotSummary;
 use App\Data\UpstreamMonitorSummary;
 use App\Data\WeatherHour;
 use App\Data\WeatherSummary;
 use App\Enums\BathingWaterClassification;
 use App\Enums\LevelTrend;
 use App\Enums\SpillRecency;
+use App\Actions\Ingest\SyncFloodWarnings;
+use App\Enums\Agency;
 use App\Models\BathingWater;
 use App\Models\SpillEvent;
 use Illuminate\Support\Carbon;
@@ -27,7 +31,9 @@ use Illuminate\Support\Str;
 /**
  * Writes the headline under a spot, beach or lake heading: the overflow state in plain words, the level against its
  * usual range, a flood warning or bathing water result where there is one, and notes when rain, wind or thunder
- * cross a threshold. It states what the data says, never whether a place is safe.
+ * cross a threshold. A river's headline leads with flooding, as people search a river's levels when they fear one:
+ * any alert or warning in force (or that none is), its gauges against their usual ranges and which way they are
+ * going, then its overflows. It states what the data says, never whether a place is safe or will flood.
  */
 class PlaceHeadline
 {
@@ -114,6 +120,253 @@ class PlaceHeadline
             levelAt: $conditions->level?->latestAt,
             forecastAt: $forecastAt,
         );
+    }
+
+    /**
+     * The headline for a river page, from its cached summary. covered: whether we read the region's overflow data.
+     */
+    public function forRiver(RiverSummary $river, ?WeatherSummary $weather, bool $covered): Headline
+    {
+        $short = $this->shortRiverName($river->name);
+        $family = $river->hasTributaries ? ' and its tributaries' : '';
+        $gauged = $river->spotsWithOwnGauge()->filter(fn (SpotSummary $spot) => $spot->levelValue !== null && $spot->levelAt !== null);
+        $current = $gauged->reject(fn (SpotSummary $spot) => $spot->levelIsStale())->values();
+        $leadGauge = $this->leadGauge($current);
+
+        $sentences = array_values(array_filter([
+            $this->riverFloodSentence($river, $short),
+            ...$this->riverLevelSentences($current, $gauged),
+            $this->riverOverflowSentence($river, $short, $family, $covered),
+        ]));
+
+        $wettest = $river->spots
+            ->filter(fn (SpotSummary $spot) => $spot->rainfallLast24HoursMillimetres !== null && $spot->rainfallAt !== null && $spot->rainfallAt->greaterThanOrEqualTo(now()->subHours(RainfallSummary::STALE_AFTER_HOURS)))
+            ->sortByDesc('rainfallLast24HoursMillimetres')
+            ->first();
+        $notes = $this->rainNote($wettest?->rainfallLast24HoursMillimetres, $wettest === null ? null : "near {$wettest->name}", 'rivers usually keep rising for some hours after rain stops');
+        [$weatherNotes, $forecastAt] = $this->weatherNotes($weather, windy: false);
+
+        return new Headline(
+            sentences: $sentences,
+            notes: [...$notes, ...$weatherNotes],
+            overflowSource: $covered && $river->monitorCount > 0 ? $river->monitorCount.' '.collect($river->companies)->join(', ', ' and ').' '.Str::plural('monitor', $river->monitorCount)." on the {$short}{$family}" : null,
+            overflowAt: $river->dataUpdatedAt(),
+            levelSource: $leadGauge === null ? null : "the {$leadGauge->gaugeLabel} gauge",
+            levelAt: $leadGauge?->levelAt,
+            forecastAt: $forecastAt,
+        );
+    }
+
+    /**
+     * The gauge the level sentence leads with and the source line names: the highest above its usual range, else
+     * the one rising fastest, else the first along the river.
+     *
+     * @param  Collection<int, SpotSummary>  $current  Gauged spots with a current reading, source to mouth
+     */
+    private function leadGauge(Collection $current): ?SpotSummary
+    {
+        return $current->filter(fn (SpotSummary $spot) => $spot->isAboveTypicalRange())->sortByDesc('levelValue')->first()
+            ?? $current->filter(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Rising)->first()
+            ?? $current->first();
+    }
+
+    /**
+     * Any flood alert or warning in force for the river's spots, or that none is, so long as flood areas cover the
+     * river and its agency's feed was read recently. Nothing where no flood area is linked yet, as "none in force"
+     * would then be a guess.
+     *
+     * @return list<array{0: string, 1: bool}>|null
+     */
+    private function riverFloodSentence(RiverSummary $river, string $short): ?array
+    {
+        $warnings = $river->floodWarnings();
+
+        if ($warnings->isNotEmpty()) {
+            $severities = $warnings->map(fn (FloodWarningSummary $warning) => $warning->severity)->unique()->values();
+            $labels = $severities->map(fn ($severity) => strtolower($severity->label()));
+
+            return [
+                [ucfirst($labels->join(', ', ' and ')).' in force', true],
+                [$warnings->count() === 1 ? " for {$warnings->first()->areaLabel}." : " for {$warnings->count()} areas along the {$short}.", false],
+            ];
+        }
+
+        if ($river->floodAreaAgencies === []) {
+            return null;
+        }
+
+        $checkedAt = collect($river->floodAreaAgencies)->map(fn (Agency $agency) => SyncFloodWarnings::lastCheckedAt($agency));
+
+        if ($checkedAt->contains(null)) {
+            return [['Flood warnings have not been checked yet', true], ['.', false]];
+        }
+
+        $oldest = $checkedAt->min();
+
+        if ($oldest->lessThan(now()->subHours(FloodWarningSummary::STALE_AFTER_HOURS))) {
+            $time = $oldest->copy()->timezone($this->timezone());
+
+            return [['Flood warnings were last checked at '.$time->format($time->isSameDay(now($this->timezone())) ? 'H:i' : 'H:i \o\n j F'), true], [', so this may be out of date.', false]];
+        }
+
+        return [['No flood alerts or warnings in force', true], [" for the {$short}.", false]];
+    }
+
+    /**
+     * The river's gauges against their usual ranges, grouped: "Higher than usual at Callander and Doune, rising at
+     * Callander (up 0.32 m in 3 hours). At its usual level at Stirling." A gauge with no reading for hours is said
+     * to be silent instead, so a stale level never passes for the current one.
+     *
+     * @param  Collection<int, SpotSummary>  $current  Gauged spots with a current reading, source to mouth
+     * @param  Collection<int, SpotSummary>  $gauged  Every gauged spot with a reading, stale ones included
+     * @return list<list<array{0: string, 1: bool}>>
+     */
+    private function riverLevelSentences(Collection $current, Collection $gauged): array
+    {
+        $sentences = [];
+        $groups = $current
+            ->filter(fn (SpotSummary $spot) => $spot->levelRelativeToTypical !== null)
+            ->groupBy('levelRelativeToTypical')
+            ->sortBy(fn (Collection $group, string $relative) => array_search($relative, ['above typical range', 'within typical range', 'below typical range'], true));
+
+        foreach ($groups as $relative => $group) {
+            $sentences[] = [
+                [ucfirst(LevelSummary::usualPhrase($relative) ?? ''), true],
+                [' at '.$this->gaugeNames($group), false],
+                ...$this->trendClause($group),
+                ['.', false],
+            ];
+        }
+
+        $silent = $gauged->filter(fn (SpotSummary $spot) => $spot->levelIsStale());
+
+        if ($silent->isNotEmpty()) {
+            $sentences[] = [
+                ['The '.$this->gaugeNames($silent).' '.Str::plural('gauge', $silent->count()).' ', false],
+                [($silent->count() === 1 ? 'has' : 'have').' not reported for '.$silent->min('levelAt')->diffForHumans(null, Carbon::DIFF_ABSOLUTE), true],
+                ['.', false],
+            ];
+        }
+
+        return $sentences;
+    }
+
+    /**
+     * ", rising at Callander (up 0.32 m in 3 hours)", ", falling at Doune", " and steady", or nothing when the trend
+     * is unknown.
+     *
+     * @param  Collection<int, SpotSummary>  $group
+     * @return list<array{0: string, 1: bool}>
+     */
+    private function trendClause(Collection $group): array
+    {
+        $rising = $group->filter(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Rising)->sortByDesc(fn (SpotSummary $spot) => $spot->levelChangeLast3Hours ?? 0);
+        $falling = $group->filter(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Falling);
+        $one = $group->count() === 1;
+
+        if ($rising->isNotEmpty()) {
+            $change = $rising->first()->levelChangeLast3Hours;
+
+            return [
+                [$one ? ', and ' : ', ', false],
+                [$one ? 'rising' : 'rising at '.$this->gaugeNames($rising), true],
+                [$change === null ? '' : ' (up '.number_format($change, 2).' m in 3 hours)', false],
+            ];
+        }
+
+        if ($falling->isNotEmpty()) {
+            $change = $falling->first()->levelChangeLast3Hours;
+
+            return [
+                [$one ? ', but ' : ', ', false],
+                [$one ? 'falling' : 'falling at '.$this->gaugeNames($falling), true],
+                [$change === null ? '' : ' (down '.number_format(abs($change), 2).' m in 3 hours)', false],
+            ];
+        }
+
+        return $group->every(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Steady) ? [[' and ', false], ['steady', true]] : [];
+    }
+
+    /**
+     * Up to three gauge names, then "and 2 more".
+     *
+     * @param  Collection<int, SpotSummary>  $spots
+     */
+    private function gaugeNames(Collection $spots): string
+    {
+        $names = $spots->map(fn (SpotSummary $spot) => $spot->gaugeLabel ?? $spot->name)->unique()->values();
+        $more = $names->count() - 3;
+
+        return $more > 0
+            ? $names->take(3)->join(', ').' and '.$more.' more'
+            : $names->join(', ', ' and ');
+    }
+
+    /**
+     * The overflows on the river and its tributaries in a sentence, as overflowSentence() does for a place.
+     * Missing data never reads as no spills.
+     *
+     * @return list<array{0: string, 1: bool}>
+     */
+    private function riverOverflowSentence(RiverSummary $river, string $short, string $family, bool $covered): array
+    {
+        $where = "on the {$short}{$family}";
+
+        if (! $covered) {
+            return [["We do not read the water company's overflow data here yet", true], [", so storm overflows on the {$river->name} are not shown.", false]];
+        }
+
+        if ($river->monitorCount === 0) {
+            return [["No storm overflow monitors {$where}", true], [" appear in the water companies' data.", false]];
+        }
+
+        if ($river->overflowDataIsStale()) {
+            $updatedAt = $river->dataUpdatedAt();
+
+            if ($updatedAt === null) {
+                return [['Overflow data is out of date', true], ['.', false]];
+            }
+
+            $date = $updatedAt->copy()->timezone($this->timezone());
+
+            return [['Overflow data is out of date', true], [': the latest from '.collect($river->companies)->join(', ', ' and ').' is from ', false], [$date->format($date->isSameYear(now()) ? 'j F' : 'j F Y'), true], ['.', false]];
+        }
+
+        $offline = $river->offlineCount;
+        $working = $river->monitorCount - $offline;
+        $spills = fn (int $count) => $count.' '.Str::plural('spill', $count).' in the last 48 hours';
+        $offlineNote = $offline > 0 && $working > 0 ? [[" {$offline} ".Str::plural('monitor', $offline).' '.($offline === 1 ? 'is' : 'are').' offline.', false]] : [];
+
+        if ($working === 0) {
+            return [["All {$river->monitorCount} monitors {$where} are offline", true], [', so there is ', false], ['no current spill data', true], ['.', false]];
+        }
+
+        if ($river->dischargingNowCount > 0) {
+            return [
+                ["{$river->dischargingNowCount} of {$river->monitorCount} overflows {$where} ".($river->dischargingNowCount === 1 ? 'is' : 'are').' discharging now', true],
+                ...($river->spillsLast48HoursCount > 0 ? [[', with ', false], [$spills($river->spillsLast48HoursCount), true]] : []),
+                ['.', false],
+                ...$offlineNote,
+            ];
+        }
+
+        if ($river->spillsLast48HoursCount > 0) {
+            return [[ucfirst($spills($river->spillsLast48HoursCount))." {$where}", true], [', none discharging now.', false], ...$offlineNote];
+        }
+
+        if ($offline >= $working) {
+            return [
+                ["Only {$working} of {$river->monitorCount} monitors {$where} ".($working === 1 ? 'is' : 'are').' reporting', true],
+                [', and '.($working === 1 ? 'it' : 'they').' reported no spills in the last 48 hours.', false],
+            ];
+        }
+
+        return [["No spills reported {$where} in the last 48 hours", true], ['.', false], ...$offlineNote];
+    }
+
+    private function shortRiverName(string $name): string
+    {
+        return preg_replace('/^(River|Afon)\s+/', '', $name) ?? $name;
     }
 
     /**
@@ -321,20 +574,43 @@ class PlaceHeadline
      */
     private function notes(?RainfallSummary $rainfall, ?WeatherSummary $weather, string $rainEffect, bool $windy): array
     {
-        $notes = [];
+        $fresh = $rainfall !== null && $rainfall->hasReadings() && ! $rainfall->isStale();
+        [$weatherNotes, $forecastAt] = $this->weatherNotes($weather, $windy);
 
-        if ($rainfall !== null && $rainfall->hasReadings() && ! $rainfall->isStale() && $rainfall->last24HoursMillimetres >= self::HEAVY_RAIN_MILLIMETRES) {
-            $notes[] = [
-                ['Heavy rain in the last 24 hours', true],
-                [' ('.number_format($rainfall->last24HoursMillimetres, 0)." mm): {$rainEffect}.", false],
-            ];
+        return [[...$this->rainNote($fresh ? $rainfall->last24HoursMillimetres : null, null, $rainEffect), ...$weatherNotes], $forecastAt];
+    }
+
+    /**
+     * A note when the rain gauge has caught heavy rain over the last day: "Heavy rain in the last 24 hours (22 mm
+     * near Callander): ...". where: which gauge, where several could stand for the place.
+     *
+     * @return list<list<array{0: string, 1: bool}>>
+     */
+    private function rainNote(?float $millimetres, ?string $where, string $rainEffect): array
+    {
+        if ($millimetres === null || $millimetres < self::HEAVY_RAIN_MILLIMETRES) {
+            return [];
         }
 
+        return [[
+            ['Heavy rain in the last 24 hours', true],
+            [' ('.number_format($millimetres, 0).' mm'.($where === null ? '' : " {$where}")."): {$rainEffect}.", false],
+        ]];
+    }
+
+    /**
+     * Notes for heavy rain, thunder or (on open water) strong winds forecast in the next twelve hours, with when the
+     * forecast was read when there is one.
+     *
+     * @return array{0: list<list<array{0: string, 1: bool}>>, 1: Carbon|null}
+     */
+    private function weatherNotes(?WeatherSummary $weather, bool $windy): array
+    {
         if ($weather === null || $weather->isStale()) {
-            return [$notes, null];
+            return [[], null];
         }
 
-        $gaugeNotes = count($notes);
+        $notes = [];
 
         $hours = collect([$weather->now])->concat($weather->laterHours)
             ->filter(fn (WeatherHour $hour) => $hour->at->lessThan($weather->now->at->copy()->addHours(self::FORECAST_HOURS)));
@@ -360,7 +636,7 @@ class PlaceHeadline
             $notes[] = [['Strong winds forecast', true], [', gusting to '.number_format($strongestGust, 0).' mph: open water can get rough.', false]];
         }
 
-        return [$notes, count($notes) > $gaugeNotes ? $weather->fetchedAt : null];
+        return [$notes, $notes === [] ? null : $weather->fetchedAt];
     }
 
     /**

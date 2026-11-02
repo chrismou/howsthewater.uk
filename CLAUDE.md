@@ -361,6 +361,27 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   Use `build()` in tests that change data between calls. Rivers inside cached conditions are loaded with
   `withoutCentreline()` (or a slim clone of the bound river), so pages take the centreline for their map from the
   route-bound river, never from `$conditions->spot->river`.
+- River pages (`rivers/show`, `RiverController::show()`) are written for people who search a river's levels when they
+  fear a flood, so they lead with flooding: a headline (`PlaceHeadline::forRiver()`, from the cached `RiverSummary`)
+  that says which flood alerts or warnings are in force for the river's spots, or that none is (only where a flood
+  area is linked and that agency's feed was read in the last 6 hours, `SyncFloodWarnings::lastCheckedAt()`; nothing
+  where no area is linked, as "none" would be a guess), then every gauge grouped by where it sits against its usual
+  range with its trend ("Higher than usual at Callander, and rising (up 0.32 m in 3 hours)"), then the river's
+  overflows. `RiverSummary` carries the river's own `dailyHistory` (spills of every overflow on it and its
+  tributaries, overlaps counted once), its rain gauge's daily totals, the agencies of its flood areas, the last
+  warning lifted (`FloodWarningEventSummary`) and `monitorsUpdatedAt`. The page then lists each gauge
+  (`components/river-gauge-card`: reading, trend, usual range bar, highest on record, a week of hourly readings from
+  `GaugeLevelHistory`, read at request time rather than cached), the weather at the middle spot, the map with gauges in blue (`kind: 'level'`, state `higher`, `rising` or `usual`), the
+  spots as plain-words cards (`components/spot-card`, which say what the spot page adds) and the 30 day spill chart,
+  before the companies' yearly returns. Copy says "swimming spot", never a bare "spot"; the title promises flood
+  alerts only where flood areas cover the river, and spills only where the overflow data is read.
+- Gauges carry a highest level on record (`record_level`, `record_level_at`, `records_from`,
+  `GaugeStation::recordLevelPhrase()`): the Environment Agency's `stageScale.maxOnRecord` (a reading and its moment,
+  UK local time), and for SEPA the highest of its monthly maxima (`Month.Max`, read with the yearly extremes in
+  `TimeSeriesClient::levelStatistics()`, so `record_level_known_to_month` is true and pages say "in December 2015"),
+  with `records_from` the first hydrological year. NRW publishes none. Both are read by gauge discovery, so existing
+  gauges get theirs from the weekly `ingest:gauges --stations`. It is a guide to how high the river has gone, shown
+  beside the usual range, never a flood threshold.
 - Gauges carry a `unit` (`m` for stage above the gauge datum, `mAOD` for height above sea level). Spots link the nearest gauge within 25 km
   along the river (none beyond that, rather than a reading far away) and prefer `m` gauges; show the unit via `GaugeStation::unitLabel()` wherever a level is printed.
   The level card links the agency's own page for the gauge (`GaugeStation::agencyPageUrl()`): GOV.UK's needs the

@@ -14,6 +14,7 @@ use App\Services\Sepa\TimeSeriesClient;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -70,10 +71,10 @@ class SyncGaugeStations
         $environmentAgencyGauges = GaugeStation::query()->where('river_id', $river->id)->where('network', Agency::EnvironmentAgency)->get();
 
         $sepaStations = $this->onCentrelineAndNotShared($this->sepaStationsOn($river), $projector, $environmentAgencyGauges);
-        $ranges = $this->sepaTypicalRanges($sepaStations);
+        $statistics = $this->sepaLevelStatistics($sepaStations);
 
         foreach ($sepaStations as $data) {
-            $this->store($river, $data, $ranges[$data->externalId] ?? null);
+            $this->store($river, $data, $statistics[$data->externalId] ?? null);
             $count++;
         }
 
@@ -148,30 +149,30 @@ class SyncGaugeStations
     }
 
     /**
-     * A failure here only costs the typical range, so the gauges are still stored.
+     * A failure here only costs the typical range and record, so the gauges are still stored.
      *
      * @param  Collection<int, GaugeStationData>  $stations
-     * @return array<string, array{low: float, high: float}>
+     * @return array<string, array{low: float, high: float, record: float|null, recordAt: Carbon|null, recordsFrom: Carbon|null}>
      */
-    private function sepaTypicalRanges(Collection $stations): array
+    private function sepaLevelStatistics(Collection $stations): array
     {
         if ($stations->isEmpty()) {
             return [];
         }
 
         try {
-            return $this->sepa->typicalRanges($stations);
+            return $this->sepa->levelStatistics($stations);
         } catch (ConnectionException|RequestException|RuntimeException $exception) {
-            Log::error("SEPA typical ranges failed: {$exception->getMessage()}");
+            Log::error("SEPA level statistics failed: {$exception->getMessage()}");
 
             return [];
         }
     }
 
     /**
-     * @param  array{low: float, high: float}|null  $sepaRange  SEPA's normal range, which its station list does not carry
+     * @param  array{low: float, high: float, record: float|null, recordAt: Carbon|null, recordsFrom: Carbon|null}|null  $sepaStatistics  SEPA's normal range and record, which its station list does not carry
      */
-    private function store(River $river, GaugeStationData $data, ?array $sepaRange = null): void
+    private function store(River $river, GaugeStationData $data, ?array $sepaStatistics = null): void
     {
         $attributes = [
             'network' => $data->network,
@@ -187,10 +188,14 @@ class SyncGaugeStations
             'is_active' => $data->isActive,
         ];
 
-        // A SEPA gauge whose range lookup failed keeps the range it already has.
-        if ($data->network === Agency::EnvironmentAgency || $sepaRange !== null) {
-            $attributes['typical_range_low'] = $sepaRange['low'] ?? $data->typicalRangeLow;
-            $attributes['typical_range_high'] = $sepaRange['high'] ?? $data->typicalRangeHigh;
+        // A SEPA gauge whose statistics lookup failed keeps the range and record it already has.
+        if ($data->network === Agency::EnvironmentAgency || $sepaStatistics !== null) {
+            $attributes['typical_range_low'] = $sepaStatistics['low'] ?? $data->typicalRangeLow;
+            $attributes['typical_range_high'] = $sepaStatistics['high'] ?? $data->typicalRangeHigh;
+            $attributes['record_level'] = $sepaStatistics['record'] ?? $data->recordLevel;
+            $attributes['record_level_at'] = $sepaStatistics['recordAt'] ?? $data->recordLevelAt;
+            $attributes['record_level_known_to_month'] = $sepaStatistics !== null;
+            $attributes['records_from'] = $sepaStatistics['recordsFrom'] ?? $data->recordsFrom;
         }
 
         GaugeStation::query()->updateOrCreate(['external_id' => $data->externalId], $attributes);

@@ -55,13 +55,15 @@ it('shows a river page with its spots source to mouth', function () {
 it('says river monitor counts include tributaries and offline monitors', function () {
     [$region, $river] = spotWithUrl([], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
     $tributary = River::factory()->create(['region_id' => $region->id, 'parent_river_id' => $river->id]);
-    OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id]);
-    OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'status' => \App\Enums\OverflowStatus::Offline]);
-    OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'status' => \App\Enums\OverflowStatus::NotDischarging]);
+    OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'source_updated_at' => now()]);
+    OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'status' => \App\Enums\OverflowStatus::Offline, 'source_updated_at' => now()]);
+    OverflowMonitor::factory()->create(['river_id' => $tributary->id, 'status' => \App\Enums\OverflowStatus::NotDischarging, 'source_updated_at' => now()]);
 
     $this->get('/yorkshire/rivers/wharfe')
         ->assertOk()
-        ->assertSee('1 of 3 storm overflow monitors on the River Wharfe and its tributaries was discharging and 1 was offline')
+        ->assertSee('1 of 3 overflows on the Wharfe and its tributaries is discharging now')
+        ->assertSee('1 monitor is offline.')
+        ->assertSee('3 storm overflow monitors on the Wharfe and its tributaries')
         ->assertDontSee('discharge into');
 });
 
@@ -200,7 +202,7 @@ it('shows rainfall at the nearest rain gauge', function () {
         ->assertSee('in the last 24 hours')
         ->assertSee('3.3 mm');
 
-    $this->get(route('rivers.show', [$region, $river]))->assertSee('3.3 mm rain in 24h');
+    $this->get(route('rivers.show', [$region, $river]))->assertSee('3.3 mm of rain in the last 24 hours');
 });
 
 it('treats search wildcards literally and caps the query length', function () {
@@ -501,15 +503,17 @@ it('seeds no river or spot under a name the beach, lake or feed routes would hid
 
 it('titles a river page by its levels and dates its monitor sentence', function () {
     [$region, $river] = spotWithUrl([], ['name' => 'River Wharfe', 'slug' => 'wharfe']);
-    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'company' => 'Yorkshire Water Services Ltd']);
+    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'company' => 'Yorkshire Water Services Ltd', 'source_updated_at' => now()]);
     SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours(30), 'ended_at' => now()->subHours(29)]);
     SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subDays(5), 'ended_at' => now()->subDays(5)->addHour()]);
 
     $this->get('/yorkshire/rivers/wharfe')
         ->assertOk()
-        ->assertSee("<title>River Wharfe levels, spills and swimming spots - How's the Water?</title>", false)
-        ->assertSee('the one storm overflow monitor on the River Wharfe was not discharging, with 1 spill in the previous 48 hours, according to Yorkshire Water Services.')
-        ->assertSee('1 spot, listed source to mouth.');
+        ->assertSee("<title>River Wharfe levels and spills - How's the Water?</title>", false)
+        ->assertSee('1 spill in the last 48 hours on the Wharfe')
+        ->assertSee(', none discharging now.')
+        ->assertSee('1 Yorkshire Water monitor on the Wharfe, data from')
+        ->assertSee('1 swimming spot, 0 level gauges and 1 storm overflow monitor on the Wharfe, listed source to mouth.');
 });
 
 it('names and links the river in a spot heading and gives each spot its own facts in its description', function () {
@@ -544,7 +548,7 @@ it('shows dashes rather than zero spills for a spot with no monitored overflow u
         ->assertSee('No spill history, as no storm overflow monitor is matched upstream of this spot.')
         ->assertDontSee('of the last 30 days');
 
-    $this->get(route('rivers.show', [$region, $river]))->assertOk()->assertSee('0 upstream monitors')->assertDontSee('spills in 30 days');
+    $this->get(route('rivers.show', [$region, $river]))->assertOk()->assertSee('No monitored storm overflows upstream')->assertDontSee('spills in 30 days');
 });
 
 it('says a spot that is not a designated bathing water has no official samples', function () {

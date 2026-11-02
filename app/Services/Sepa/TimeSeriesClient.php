@@ -27,6 +27,9 @@ class TimeSeriesClient
      */
     private const BATCH_WITHIN_HOURS = 24;
 
+    /** The yearly extremes behind SEPA's normal range, and the monthly maxima that hold each gauge's record. */
+    private const STATISTICS_SERIES = ['HydrologicalYear.Min', 'HydrologicalYear.Max', 'Month.Max'];
+
     /** Keeps the request URL a sensible length. */
     private const SERIES_PER_REQUEST = 50;
 
@@ -60,14 +63,15 @@ class TimeSeriesClient
     }
 
     /**
-     * SEPA's normal range for each gauge: the median annual minimum to the
-     * median annual maximum of its stage, keyed by external id. Gauges
-     * without enough history are left out.
+     * SEPA's level statistics for each gauge, keyed by external id: its normal range (the median annual minimum to
+     * the median annual maximum of its stage) and the highest level in its records, with the month it fell in and
+     * when the records begin. SEPA publishes monthly maxima, not the day of each, so the record is known to the
+     * month. Gauges without enough history for a range are left out.
      *
      * @param  Collection<int, GaugeStationData>  $stations
-     * @return array<string, array{low: float, high: float}>
+     * @return array<string, array{low: float, high: float, record: float|null, recordAt: Carbon|null, recordsFrom: Carbon|null}>
      */
-    public function typicalRanges(Collection $stations): array
+    public function levelStatistics(Collection $stations): array
     {
         if ($stations->isEmpty()) {
             return [];
@@ -75,34 +79,52 @@ class TimeSeriesClient
 
         $series = $this->table('getTimeseriesList', [
             'parametertype_name' => 'S',
-            'ts_name' => 'HydrologicalYear.M*',
+            'ts_name' => implode(',', self::STATISTICS_SERIES),
             'station_no' => $stations->map(fn (GaugeStationData $station) => substr($station->externalId, 4))->implode(','),
             'returnfields' => 'station_no,ts_id,ts_name',
-        ])->filter(fn (array $row) => in_array($row['ts_name'] ?? null, ['HydrologicalYear.Min', 'HydrologicalYear.Max'], true));
+        ])->filter(fn (array $row) => in_array($row['ts_name'] ?? null, self::STATISTICS_SERIES, true));
 
         $values = $this->values($series->pluck('ts_id')->all(), Carbon::create(1900));
-        $medians = [];
+        $bySeries = [];
 
         foreach ($series as $row) {
-            $readings = collect($values[$row['ts_id']] ?? [])->map(fn (GaugeReadingData $reading) => $reading->value);
+            $readings = collect($values[$row['ts_id']] ?? []);
 
             if ($readings->isNotEmpty()) {
-                $medians['SEPA'.$row['station_no']][$row['ts_name']] = (float) $readings->median();
+                $bySeries['SEPA'.$row['station_no']][$row['ts_name']] = $readings;
             }
         }
 
-        $ranges = [];
+        $statistics = [];
 
-        foreach ($medians as $externalId => $median) {
-            $low = $median['HydrologicalYear.Min'] ?? null;
-            $high = $median['HydrologicalYear.Max'] ?? null;
+        foreach ($bySeries as $externalId => $readings) {
+            $low = $readings['HydrologicalYear.Min'] ?? null;
+            $high = $readings['HydrologicalYear.Max'] ?? null;
 
-            if ($low !== null && $high !== null && $high > $low) {
-                $ranges[$externalId] = ['low' => round($low, 3), 'high' => round($high, 3)];
+            if ($low === null || $high === null) {
+                continue;
             }
+
+            $medianLow = (float) $low->map(fn (GaugeReadingData $reading) => $reading->value)->median();
+            $medianHigh = (float) $high->map(fn (GaugeReadingData $reading) => $reading->value)->median();
+
+            if ($medianHigh <= $medianLow) {
+                continue;
+            }
+
+            /** @var GaugeReadingData|null $record */
+            $record = ($readings['Month.Max'] ?? collect())->sortByDesc(fn (GaugeReadingData $reading) => $reading->value)->first();
+
+            $statistics[$externalId] = [
+                'low' => round($medianLow, 3),
+                'high' => round($medianHigh, 3),
+                'record' => $record === null ? null : round($record->value, 3),
+                'recordAt' => $record?->measuredAt,
+                'recordsFrom' => $high->min(fn (GaugeReadingData $reading) => $reading->measuredAt),
+            ];
         }
 
-        return $ranges;
+        return $statistics;
     }
 
     /**

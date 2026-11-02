@@ -7,7 +7,9 @@ use App\Enums\Agency;
 use App\Models\FloodArea;
 use App\Models\FloodWarning;
 use App\Services\EnvironmentAgency\FloodMonitoringClient;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Replaces the stored warnings with those in force now for the flood areas
@@ -20,8 +22,21 @@ use Illuminate\Support\Collection;
  */
 class SyncFloodWarnings
 {
+    private const CHECKED_AT_KEY = 'flood-warnings:checked-at';
+
     public function __construct(private FloodMonitoringClient $client)
     {
+    }
+
+    /**
+     * When an agency's feed was last read whole, so a page can say "no warnings in force" is current rather than
+     * guess from an empty table. Null before the first read.
+     */
+    public static function lastCheckedAt(Agency $agency): ?Carbon
+    {
+        $checkedAt = Cache::get(self::CHECKED_AT_KEY.':'.$agency->value);
+
+        return is_string($checkedAt) ? Carbon::parse($checkedAt) : null;
     }
 
     /**
@@ -56,6 +71,8 @@ class SyncFloodWarnings
             ->whereHas('floodArea', fn ($query) => $query->where('agency', $agency))
             ->whereNotIn('flood_area_id', $areas->pluck('id'))
             ->delete();
+
+        Cache::forever(self::CHECKED_AT_KEY.':'.$agency->value, now()->toIso8601String());
 
         return ['warnings' => $areas->count()];
     }

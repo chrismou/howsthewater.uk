@@ -28,6 +28,10 @@ use Illuminate\Support\Str;
  * @property string|null $unit
  * @property float|null $typical_range_low
  * @property float|null $typical_range_high
+ * @property float|null $record_level The highest level the agency holds for the gauge
+ * @property Carbon|null $record_level_at
+ * @property bool $record_level_known_to_month SEPA publishes monthly maxima, so only the month of its record is known
+ * @property Carbon|null $records_from When the agency's records for the gauge begin, where it says
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -53,6 +57,10 @@ class GaugeStation extends Model
         'unit',
         'typical_range_low',
         'typical_range_high',
+        'record_level',
+        'record_level_at',
+        'record_level_known_to_month',
+        'records_from',
         'is_active',
     ];
 
@@ -64,8 +72,28 @@ class GaugeStation extends Model
             'longitude' => 'float',
             'typical_range_low' => 'float',
             'typical_range_high' => 'float',
+            'record_level' => 'float',
+            'record_level_at' => 'datetime',
+            'record_level_known_to_month' => 'boolean',
+            'records_from' => 'date',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * The highest level on record in words, for pages: "3.62 m in December 2015" (SEPA, known to the month) or
+     * "7.54 m on 7 January 2024" (the Environment Agency), or null where the agency publishes none.
+     */
+    public function recordLevelPhrase(): ?string
+    {
+        if ($this->record_level === null || $this->record_level_at === null) {
+            return null;
+        }
+
+        $at = $this->record_level_at->copy()->timezone(config('app.display_timezone', 'Europe/London'));
+
+        return number_format($this->record_level, 2).' '.$this->unitLabel().' '
+            .($this->record_level_known_to_month ? 'in '.$at->format('F Y') : 'on '.$at->format('j F Y'));
     }
 
     /**

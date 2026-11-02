@@ -21,6 +21,7 @@ const recencyColours: Record<MapRecency, string> = {
 };
 
 const levelColour = '#1f5f8b';
+const usualLevelColour = '#a9c9de';
 const inkColour = '#1b2a33';
 
 function recencyColour(recency: MapRecency | undefined): string {
@@ -47,12 +48,25 @@ function markerFor(marker: MapMarker, compact = false): L.Marker | L.CircleMarke
     // On a map of hundreds of places (the swimming page) full-size markers merge into blobs at the national zoom.
     const radius = compact ? 5 : 8;
     const style: L.CircleMarkerOptions = marker.kind === 'level'
-        ? { fillColor: marker.state === 'rising' ? '#ffffff' : levelColour, color: marker.state === 'rising' ? levelColour : '#ffffff', weight: marker.state === 'rising' ? 3 : 2 }
+        ? levelStyle(marker.state)
         : marker.recency === undefined
             ? { fillColor: '#ffffff', color: inkColour, weight: 2.5 }
             : { fillColor: recencyColour(marker.recency), color: '#ffffff', weight: compact ? 1 : 2 };
 
     return L.circleMarker(latLng, { pane: 'places', radius, fillOpacity: 0.95, ...style });
+}
+
+// Levels are blue throughout: filled for higher than usual, a ring for rising, and a pale fill with the ring for a gauge
+// at or below its usual level (river pages show every gauge, not only the notable ones).
+function levelStyle(state: string | undefined): L.CircleMarkerOptions {
+    switch (state) {
+        case 'rising':
+            return { fillColor: '#ffffff', color: levelColour, weight: 3 };
+        case 'usual':
+            return { fillColor: usualLevelColour, color: levelColour, weight: 2 };
+        default:
+            return { fillColor: levelColour, color: '#ffffff', weight: 2 };
+    }
 }
 
 // A marker's popup: its name, a line saying why it is not green (none when it is), and a link to its page. Names come

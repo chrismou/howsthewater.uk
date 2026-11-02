@@ -17,10 +17,25 @@ function environmentAgencyStationItem(string $reference, float $lat, float $long
         'lat' => $lat,
         'long' => $long,
         'status' => 'http://environment.data.gov.uk/flood-monitoring/def/core/statusActive',
-        'stageScale' => ['typicalRangeLow' => 0.2, 'typicalRangeHigh' => 1.1],
+        'stageScale' => ['typicalRangeLow' => 0.2, 'typicalRangeHigh' => 1.1, 'maxOnRecord' => ['dateTime' => '2015-12-26T14:30:00', 'value' => 4.21]],
         'measures' => [['@id' => "http://example/id/measures/{$reference}-level-stage-i-15_min-m", 'parameter' => 'level', 'qualifier' => 'Stage', 'unitName' => 'm']],
     ];
 }
+
+it('stores each Environment Agency gauge\'s highest level on record with its moment', function () {
+    $river = River::factory()->create(['name' => 'River Test', 'aliases' => ['River Test']]);
+
+    Http::fake(['environment.data.gov.uk/*' => Http::response(['items' => [environmentAgencyStationItem('L0001', 53.90, -1.80)]])]);
+
+    app(SyncGaugeStations::class)->handle($river);
+
+    $station = GaugeStation::query()->sole();
+
+    expect($station->record_level)->toBe(4.21)
+        ->and($station->record_level_at->toIso8601String())->toBe('2015-12-26T14:30:00+00:00')
+        ->and($station->record_level_known_to_month)->toBeFalse()
+        ->and($station->recordLevelPhrase())->toBe('4.21 m on 26 December 2015');
+});
 
 it('skips same-named stations that sit nowhere near the river centreline', function () {
     $river = River::factory()->withCentreline()->create(['name' => 'River Test', 'aliases' => ['River Test']]);

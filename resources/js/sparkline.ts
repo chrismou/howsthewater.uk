@@ -4,6 +4,7 @@
 export function initSparklines(): void {
     document.querySelectorAll<HTMLElement>('[data-sparkline]').forEach((element) => {
         const points: Array<[number, number]> = JSON.parse(element.dataset.sparkline || '[]');
+        const label = element.dataset.sparklineLabel || 'River level over the last 48 hours';
 
         if (points.length < 2) {
             return;
@@ -31,7 +32,7 @@ export function initSparklines(): void {
             .join(' ');
 
         element.innerHTML = `
-            <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" role="img" aria-label="River level over the last 48 hours">
+            <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" role="img" aria-label="${label}">
                 <path d="${path}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" />
             </svg>`;
     });

@@ -10,7 +10,7 @@ export interface MapMarker {
     label: string;
     kind: 'place' | 'monitor' | 'level';
     recency?: MapRecency;
-    /** Levels only: 'higher' or 'rising'. */
+    /** Levels only: 'higher', 'rising' or 'usual' (at or below the usual range, on river pages). */
     state?: string;
     note?: string | null;
     url?: string | null;

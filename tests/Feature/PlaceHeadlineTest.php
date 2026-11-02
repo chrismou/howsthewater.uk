@@ -66,6 +66,8 @@ function forecastAt(Spot|BathingWater $place, array $hoursAhead = []): void
 }
 
 it('says a quiet couple of days plainly, and qualifies it when the month was busy', function () {
+    $this->travelTo('2026-07-15 12:00:00');
+
     $spot = headlineSpot();
     $monitor = OverflowMonitor::factory()->create(['river_id' => $spot->river_id, 'river_metres' => 40000, 'company' => 'Yorkshire Water Services Ltd', 'source_updated_at' => now()]);
 

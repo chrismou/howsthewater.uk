@@ -4,8 +4,9 @@
     coloured marker is an overflow. place: what the coloured circles are, named when overflows share the map.
     overflows: whether the map has any. neutral: what a white circle is (a place shown without its status), if any.
     spills false where we do not read the overflow data, so every marker is grey and the colours would mean nothing.
+    gauges: whether the map also marks level gauges in blue (river pages).
 --}}
-@props(['where' => null, 'place' => null, 'overflows' => false, 'neutral' => null, 'spills' => true])
+@props(['where' => null, 'place' => null, 'overflows' => false, 'neutral' => null, 'spills' => true, 'gauges' => false])
 
 @php
     $colours = [
@@ -18,7 +19,7 @@
     $shape = $where === null ? 'rounded-[2px]' : 'rounded-full';
 @endphp
 
-@if ($spills || $neutral !== null)
+@if ($spills || $neutral !== null || $gauges)
 <ul {{ $attributes->merge(['class' => 'mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted']) }} aria-label="Map key">
     @if ($spills)
         <li class="font-medium text-ink-2">{{ $where === null ? 'Spills:' : 'Spills '.$where.':' }}</li>
@@ -32,6 +33,12 @@
     @endif
     @if ($neutral !== null)
         <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full border-2 border-ink bg-surface"></span>{{ $neutral }}</li>
+    @endif
+    @if ($gauges)
+        <li class="font-medium text-ink-2">Gauges:</li>
+        <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full" style="background:#1f5f8b"></span>Higher than usual</li>
+        <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full border-2 bg-surface" style="border-color:#1f5f8b"></span>Rising</li>
+        <li class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 rounded-full border-2" style="border-color:#1f5f8b;background:#a9c9de"></span>At or below its usual level</li>
     @endif
 </ul>
 @endif
