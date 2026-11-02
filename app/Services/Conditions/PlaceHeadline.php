@@ -213,9 +213,10 @@ class PlaceHeadline
     }
 
     /**
-     * The river's gauges against their usual ranges, grouped: "Higher than usual at Callander and Doune, rising at
-     * Callander (up 0.32 m in 3 hours). At its usual level at Stirling." A gauge with no reading for hours is said
-     * to be silent instead, so a stale level never passes for the current one.
+     * The river's gauges against their usual ranges, grouped, in the words people search for: "Water levels at
+     * Callander and Doune are higher than usual, rising at Callander (up 0.32 m in 3 hours). The water level at
+     * Stirling is within its usual range and steady." A gauge with no reading for hours is said to be silent
+     * instead, so a stale level never passes for the current one.
      *
      * @param  Collection<int, SpotSummary>  $current  Gauged spots with a current reading, source to mouth
      * @param  Collection<int, SpotSummary>  $gauged  Every gauged spot with a reading, stale ones included
@@ -230,9 +231,15 @@ class PlaceHeadline
             ->sortBy(fn (Collection $group, string $relative) => array_search($relative, ['above typical range', 'within typical range', 'below typical range'], true));
 
         foreach ($groups as $relative => $group) {
+            $one = $group->count() === 1;
+            $phrase = match ($relative) {
+                'within typical range' => 'within '.($one ? 'its' : 'their').' usual range',
+                default => LevelSummary::usualPhrase($relative) ?? '',
+            };
+
             $sentences[] = [
-                [ucfirst(LevelSummary::usualPhrase($relative) ?? ''), true],
-                [' at '.$this->gaugeNames($group), false],
+                [($one ? 'The water level at ' : 'Water levels at ').$this->gaugeNames($group).($one ? ' is ' : ' are '), false],
+                [$phrase, true],
                 ...$this->trendClause($group),
                 ['.', false],
             ];
@@ -252,8 +259,8 @@ class PlaceHeadline
     }
 
     /**
-     * ", rising at Callander (up 0.32 m in 3 hours)", ", falling at Doune", " and steady", or nothing when the trend
-     * is unknown.
+     * " and rising (up 0.32 m in 3 hours)", ", rising at Callander (up 0.32 m in 3 hours)", " but falling", " and
+     * steady", or nothing when the trend is unknown.
      *
      * @param  Collection<int, SpotSummary>  $group
      * @return list<array{0: string, 1: bool}>
@@ -268,7 +275,7 @@ class PlaceHeadline
             $change = $rising->first()->levelChangeLast3Hours;
 
             return [
-                [$one ? ', and ' : ', ', false],
+                [$one ? ' and ' : ', ', false],
                 [$one ? 'rising' : 'rising at '.$this->gaugeNames($rising), true],
                 [$change === null ? '' : ' (up '.number_format($change, 2).' m in 3 hours)', false],
             ];
@@ -278,7 +285,7 @@ class PlaceHeadline
             $change = $falling->first()->levelChangeLast3Hours;
 
             return [
-                [$one ? ', but ' : ', ', false],
+                [$one ? ' but ' : ', ', false],
                 [$one ? 'falling' : 'falling at '.$this->gaugeNames($falling), true],
                 [$change === null ? '' : ' (down '.number_format(abs($change), 2).' m in 3 hours)', false],
             ];

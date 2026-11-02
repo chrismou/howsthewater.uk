@@ -60,7 +60,7 @@ it('leads a river page with its flood state and levels, and lists each gauge wit
         ->assertSee("<title>River Wharfe levels, flood alerts and spills - How's the Water?</title>", false)
         ->assertSee('100 km from source to the Ouse, with the Washburn flowing into it.')
         ->assertSee('1 swimming spot, 1 level gauge and 0 storm overflow monitors on the Wharfe and its tributaries')
-        ->assertSeeInOrder(['No flood alerts or warnings in force', 'for the Wharfe.', 'Higher than usual', 'at Ilkley', 'rising', '(up 0.40 m in 3 hours).'])
+        ->assertSeeInOrder(['No flood alerts or warnings in force', 'for the Wharfe.', 'The water level at Ilkley is', 'higher than usual', 'and', 'rising', '(up 0.40 m in 3 hours).'])
         ->assertSee('Level from the Ilkley gauge at')
         ->assertSeeInOrder(['Wharfe river levels', 'Ilkley gauge', '1.40 m', 'Rising, +0.40 m in 3 hours', 'Higher than usual', 'usually 0.20 to 1.00 m', 'Highest on record', '4.21 m on 26 December 2015', '(records from 1974)'])
         ->assertSee('data-sparkline-label="Ilkley gauge level over the last', false)
@@ -81,7 +81,7 @@ it('shows the flood alerts and warnings in force, and when the last one was lift
     FloodWarningEvent::factory()->create(['flood_area_id' => $area->id, 'severity_level' => FloodSeverity::FloodWarning, 'started_at' => Carbon::parse('2026-10-12 06:00'), 'ended_at' => Carbon::parse('2026-10-14 09:00')]);
     app(RefreshRegions::class)->handle([$region->id]);
 
-    expect(riverHeadline($region, $river))->toStartWith('Flood alert in force for River Wharfe at Ilkley. At its usual level at Ilkley and steady.');
+    expect(riverHeadline($region, $river))->toStartWith('Flood alert in force for River Wharfe at Ilkley. The water level at Ilkley is within its usual range and steady.');
 
     $this->get(route('rivers.show', [$region, $river]))
         ->assertOk()
@@ -120,12 +120,22 @@ it('groups the gauges by where they sit against their usual range, and says whic
     Spot::factory()->create(['river_id' => $river->id, 'name' => 'Otley', 'slug' => 'otley', 'river_metres' => 60000, 'gauge_station_id' => $silent->id]);
 
     expect(riverHeadline($region, $river))
-        ->toContain('Higher than usual at Addingham, and rising (up 0.20 m in 3 hours). At its usual level at Ilkley and steady. The Otley gauge has not reported for 9 hours.');
+        ->toContain('The water level at Addingham is higher than usual and rising (up 0.20 m in 3 hours). The water level at Ilkley is within its usual range and steady. The Otley gauge has not reported for 9 hours.');
 
     $this->get(route('rivers.show', [$region, $river]))
         ->assertOk()
         ->assertSee('There are 3 gauges measuring the water level on the River Wharfe, listed source to mouth.')
         ->assertSeeInOrder(['Addingham gauge', 'Ilkley gauge', 'Otley gauge', 'No reading from this gauge for 9 hours']);
+});
+
+it('names several gauges in one sentence when they agree', function () {
+    [$region, $river] = gaugedRiver(0.5, 0.5);
+    $doune = GaugeStation::factory()->create(['river_id' => $river->id, 'label' => 'Addingham', 'typical_range_low' => 0.2, 'typical_range_high' => 1.0]);
+    GaugeReading::factory()->create(['gauge_station_id' => $doune->id, 'measured_at' => now()->subHours(3), 'value' => 0.6]);
+    GaugeReading::factory()->create(['gauge_station_id' => $doune->id, 'measured_at' => now(), 'value' => 0.6]);
+    Spot::factory()->create(['river_id' => $river->id, 'name' => 'Addingham', 'slug' => 'addingham', 'river_metres' => 45000, 'gauge_station_id' => $doune->id]);
+
+    expect(riverHeadline($region, $river))->toContain('Water levels at Addingham and Ilkley are within their usual range and steady.');
 });
 
 it('charts the spills of every overflow on the river and its tributaries over the last 30 days', function () {
