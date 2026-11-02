@@ -179,3 +179,10 @@ vendor/bin/phpstan analyse
 ```
 
 Architecture notes for contributors (and AI agents) are in `CLAUDE.md`.
+
+## Licence
+
+Copyright (c) 2026 Chris Chrisostomou
+
+This code is licensed under the GNU Affero General Public License v3.0; see [LICENSE](LICENSE). The data sources listed
+above keep their own licences.
