@@ -1,18 +1,20 @@
 const STORAGE_KEY = 'analytics-consent';
 
+type Consent = 'granted' | 'denied';
+
 /**
  * Google Analytics sets cookies, so it only loads once the visitor accepts
  * them in the consent banner. The choice is remembered in this browser, and
  * the footer's "Cookie settings" link reopens the banner to change it.
  */
-export function initAnalyticsConsent() {
-    const banner = document.querySelector('[data-cookie-banner]');
+export function initAnalyticsConsent(): void {
+    const banner = document.querySelector<HTMLElement>('[data-cookie-banner]');
+    const measurementId = banner?.dataset.measurementId;
 
-    if (!banner) {
+    if (!banner || !measurementId) {
         return;
     }
 
-    const measurementId = banner.dataset.measurementId;
     const consent = readConsent();
 
     if (consent === 'granted') {
@@ -21,13 +23,13 @@ export function initAnalyticsConsent() {
         banner.hidden = false;
     }
 
-    banner.querySelector('[data-cookie-accept]').addEventListener('click', () => {
+    banner.querySelector('[data-cookie-accept]')?.addEventListener('click', () => {
         saveConsent('granted');
         banner.hidden = true;
         loadAnalytics(measurementId);
     });
 
-    banner.querySelector('[data-cookie-reject]').addEventListener('click', () => {
+    banner.querySelector('[data-cookie-reject]')?.addEventListener('click', () => {
         const wasGranted = readConsent() === 'granted';
 
         saveConsent('denied');
@@ -48,12 +50,13 @@ export function initAnalyticsConsent() {
     });
 }
 
-function loadAnalytics(measurementId) {
+function loadAnalytics(measurementId: string): void {
     if (window.gtag) {
         return;
     }
 
     window.dataLayer = window.dataLayer || [];
+    // gtag.js reads the arguments objects themselves, so they are pushed as they are, never as arrays.
     window.gtag = function gtag() {
         window.dataLayer.push(arguments);
     };
@@ -69,7 +72,7 @@ function loadAnalytics(measurementId) {
 /**
  * Google sets its cookies on the top-level domain, so expire them there and on the current host.
  */
-function clearAnalyticsCookies() {
+function clearAnalyticsCookies(): void {
     const domains = [window.location.hostname, `.${window.location.hostname.split('.').slice(-2).join('.')}`];
 
     document.cookie.split(';').map((cookie) => cookie.split('=')[0].trim()).filter((name) => name.startsWith('_ga')).forEach((name) => {
@@ -80,7 +83,7 @@ function clearAnalyticsCookies() {
     });
 }
 
-function readConsent() {
+function readConsent(): string | null {
     try {
         return localStorage.getItem(STORAGE_KEY);
     } catch {
@@ -88,7 +91,7 @@ function readConsent() {
     }
 }
 
-function saveConsent(value) {
+function saveConsent(value: Consent): void {
     try {
         localStorage.setItem(STORAGE_KEY, value);
     } catch {

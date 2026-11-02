@@ -1,13 +1,16 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchJsonOnce } from './json-cache';
+import type { LeafletMapHandle, MapMarker, MapRecency } from './types';
+
+type LatLng = [number, number];
 
 // Every map colours places and overflows alike, by spills on one scale: red while an overflow discharges, amber after
 // a spill in the last 48 hours (light enough to tell from red at a glance; the popup says when), green when none was
 // reported in 48 hours and grey with nothing to go on (offline, out of date, none matched, or a feed we do not read). Places are circles and overflows squares,
 // so the two never read as each other. Levels are blue, which no spill status uses, and a place drawn only to show
 // where it is (no status on that map) is white with a dark ring. components/map-key draws the same colours.
-const recencyColours = {
+const recencyColours: Record<MapRecency, string> = {
     discharging_now: '#b91c1c',
     within_24_hours: '#f59e0b',
     within_48_hours: '#f59e0b',
@@ -20,11 +23,15 @@ const recencyColours = {
 const levelColour = '#1f5f8b';
 const inkColour = '#1b2a33';
 
-function markerFor(marker, compact = false) {
-    const latLng = [marker.lat, marker.lng];
+function recencyColour(recency: MapRecency | undefined): string {
+    return (recency && recencyColours[recency]) ?? recencyColours.no_data;
+}
+
+function markerFor(marker: MapMarker, compact = false): L.Marker | L.CircleMarker {
+    const latLng: LatLng = [marker.lat, marker.lng];
 
     if (marker.kind === 'monitor') {
-        const colour = recencyColours[marker.recency] ?? recencyColours.no_data;
+        const colour = recencyColour(marker.recency);
 
         return L.marker(latLng, {
             pane: 'overflows',
@@ -39,18 +46,18 @@ function markerFor(marker, compact = false) {
 
     // On a map of hundreds of places (the swimming page) full-size markers merge into blobs at the national zoom.
     const radius = compact ? 5 : 8;
-    const style = marker.kind === 'level'
+    const style: L.CircleMarkerOptions = marker.kind === 'level'
         ? { fillColor: marker.state === 'rising' ? '#ffffff' : levelColour, color: marker.state === 'rising' ? levelColour : '#ffffff', weight: marker.state === 'rising' ? 3 : 2 }
         : marker.recency === undefined
             ? { fillColor: '#ffffff', color: inkColour, weight: 2.5 }
-            : { fillColor: recencyColours[marker.recency] ?? recencyColours.no_data, color: '#ffffff', weight: compact ? 1 : 2 };
+            : { fillColor: recencyColour(marker.recency), color: '#ffffff', weight: compact ? 1 : 2 };
 
     return L.circleMarker(latLng, { pane: 'places', radius, fillOpacity: 0.95, ...style });
 }
 
 // A marker's popup: its name, a line saying why it is not green (none when it is), and a link to its page. Names come
 // from the feeds, so it is built from DOM nodes rather than an HTML string; divs, as Leaflet spaces out paragraphs.
-function popupFor(marker) {
+function popupFor(marker: MapMarker): HTMLElement {
     const popup = document.createElement('div');
     const name = document.createElement('div');
     name.className = 'font-semibold';
@@ -71,7 +78,7 @@ function popupFor(marker) {
         link.href = marker.url;
         link.className = 'mt-1.5 block font-medium';
         link.style.color = 'var(--color-accent)';
-        link.textContent = `${marker.link ?? 'View page'} \u203a`;
+        link.textContent = `${marker.link ?? 'View page'} ›`;
         popup.append(link);
     }
 
@@ -79,7 +86,7 @@ function popupFor(marker) {
 }
 
 // "Discharging now" in the red pill with the pulsing dot, as components/spill-badge and components/live-dot draw it.
-function dischargingPill(text) {
+function dischargingPill(text: string): HTMLElement {
     const pill = document.createElement('div');
     pill.className = 'mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset bg-pill-red-bg text-pill-red-text ring-pill-red-ring';
 
@@ -95,8 +102,8 @@ function dischargingPill(text) {
 
 // Each map is built when it comes near the screen, so pages with several (the hubs, a region's cards) do not draw
 // and fetch tiles for maps nobody scrolls to.
-export function initMaps() {
-    const elements = document.querySelectorAll('[data-map]');
+export function initMaps(): void {
+    const elements = document.querySelectorAll<HTMLElement>('[data-map]');
 
     if (!('IntersectionObserver' in window)) {
         elements.forEach(initMap);
@@ -107,7 +114,7 @@ export function initMaps() {
     const observer = new IntersectionObserver((entries) => {
         entries.filter((entry) => entry.isIntersecting).forEach((entry) => {
             observer.unobserve(entry.target);
-            initMap(entry.target);
+            initMap(entry.target as HTMLElement);
         });
     }, { rootMargin: '200px' });
 
@@ -116,9 +123,9 @@ export function initMaps() {
 
 // A page with very many markers (the swimming page) gives a URL to load them from instead (data-map-markers-url), so
 // they never weigh down the page itself.
-function initMap(element) {
+function initMap(element: HTMLElement): void {
     if (element.dataset.mapMarkersUrl) {
-        fetchJsonOnce(element.dataset.mapMarkersUrl)
+        fetchJsonOnce<MapMarker[]>(element.dataset.mapMarkersUrl)
             .then((markers) => drawMap(element, markers))
             .catch(() => drawMap(element, []));
 
@@ -128,9 +135,9 @@ function initMap(element) {
     drawMap(element, JSON.parse(element.dataset.mapMarkers || '[]'));
 }
 
-function drawMap(element, markers) {
-    const centreline = JSON.parse(element.dataset.mapCentreline || '[]');
-    const centrelines = JSON.parse(element.dataset.mapCentrelines || '[]');
+function drawMap(element: HTMLElement, markers: MapMarker[]): void {
+    const centreline: LatLng[] = JSON.parse(element.dataset.mapCentreline || '[]');
+    const centrelines: LatLng[][] = JSON.parse(element.dataset.mapCentrelines || '[]');
 
     // A static map is a picture: no panning, zooming or controls, so it can sit inside a link.
     const isStatic = element.hasAttribute('data-map-static');
@@ -150,15 +157,15 @@ function drawMap(element, markers) {
     });
 
     // Places sit above overflows, so the place a page is about is never hidden under the overflows around it.
-    map.createPane('overflows').style.zIndex = 450;
-    map.createPane('places').style.zIndex = 460;
+    map.createPane('overflows').style.zIndex = '450';
+    map.createPane('places').style.zIndex = '460';
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    const layers = [];
+    const layers: L.Layer[] = [];
 
     [centreline, ...centrelines].forEach((line) => {
         if (line.length > 1) {
@@ -166,7 +173,7 @@ function drawMap(element, markers) {
         }
     });
 
-    const markerLayers = [];
+    const markerLayers: LeafletMapHandle['markers'] = [];
 
     markers.forEach((marker) => {
         const layer = markerFor(marker, markers.length > 300).addTo(map);

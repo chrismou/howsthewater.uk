@@ -43,6 +43,7 @@ jobs:
       - name: Build assets
         run: |
           npm ci --ignore-scripts
+          npm run typecheck
           npm run build
 
       - name: Run CI Checks

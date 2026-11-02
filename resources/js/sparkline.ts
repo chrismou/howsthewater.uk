@@ -1,9 +1,9 @@
 /**
  * Renders a minimal inline SVG line chart of [timestamp, value] pairs.
  */
-export function initSparklines() {
-    document.querySelectorAll('[data-sparkline]').forEach((element) => {
-        const points = JSON.parse(element.dataset.sparkline || '[]');
+export function initSparklines(): void {
+    document.querySelectorAll<HTMLElement>('[data-sparkline]').forEach((element) => {
+        const points: Array<[number, number]> = JSON.parse(element.dataset.sparkline || '[]');
 
         if (points.length < 2) {
             return;

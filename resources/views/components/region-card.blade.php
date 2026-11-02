@@ -1,6 +1,6 @@
 {{--
     A region as a card with a small map and four figures, for one kind of place: rivers (spots coloured by spill
-    status upstream), beaches or lakes (coloured by spill status nearby), in map.js's colours. Used by the
+    status upstream), beaches or lakes (coloured by spill status nearby), in map.ts's colours. Used by the
     home page, the Rivers, Beaches and Lakes pages and each region's overview, where inRegion titles the card by kind
     of place instead of by region. summary: a RegionSummary.
 --}}

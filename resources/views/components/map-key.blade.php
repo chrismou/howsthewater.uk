@@ -1,5 +1,5 @@
 {{--
-    The key under a map, in the colours map.js draws: places (circles) and overflows (squares) coloured by spills on one
+    The key under a map, in the colours map.ts draws: places (circles) and overflows (squares) coloured by spills on one
     scale. where: what the places' colours count ("upstream", "nearby", "upstream or nearby"), null on a map whose only
     coloured marker is an overflow. place: what the coloured circles are, named when overflows share the map.
     overflows: whether the map has any. neutral: what a white circle is (a place shown without its status), if any.

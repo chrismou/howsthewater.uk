@@ -9,7 +9,7 @@
     $breadcrumbs = [['Home', route('home')], ['Swimming spots', route('swimming')]];
     $dischargingNow = fn ($spot) => ! $spot->stale && $spot->spillRecency === \App\Enums\SpillRecency::DischargingNow;
 
-    // The "near me" rows are drawn by swimming.js, so their styles are set once on the list; pills take their colour
+    // The "near me" rows are drawn by swimming.ts, so their styles are set once on the list; pills take their colour
     // from data-pill (SpillRecency::tone(), as components/spill-badge does). The detail line wraps rather than being
     // cut short, so the distance at its end always shows.
     $listClasses = 'mt-3 divide-y divide-line-2 rounded-lg border border-line bg-surface [&_a]:flex [&_a]:flex-col [&_a]:items-start [&_a]:gap-1.5 [&_a]:px-4 [&_a]:py-2.5 [&_a:hover]:bg-surface-2 sm:[&_a]:flex-row sm:[&_a]:items-center sm:[&_a]:justify-between sm:[&_a]:gap-3 [&_b]:block [&_b]:truncate [&_b]:font-semibold [&_small]:block [&_small]:text-xs [&_small]:text-muted'
@@ -48,7 +48,7 @@
             <x-map-key where="upstream or nearby" />
         </div>
 
-        {{-- Filled by swimming.js once a visitor shares their location: the nearest places, a batch at a time. --}}
+        {{-- Filled by swimming.ts once a visitor shares their location: the nearest places, a batch at a time. --}}
         <section data-swimming-nearest hidden class="mb-10">
             <h2 class="font-display text-2xl font-semibold tracking-tight">Nearest first</h2>
             <ol data-swimming-nearest-list class="{{ $listClasses }}"></ol>

@@ -1,3 +1,5 @@
+import type { NavRegion } from './types';
+
 /**
  * The header's Rivers, Beaches and Lakes items are plain links to pages
  * listing every region, so they work without JavaScript. This turns each
@@ -12,39 +14,51 @@
  */
 const CHEVRON = 'M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z';
 
-export function initNavMenus() {
-    const menus = Array.from(document.querySelectorAll('[data-nav-menu]'));
+type PlaceItems = Array<[string, string]>;
+
+export function initNavMenus(): void {
+    const menus = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-menu]'));
 
     if (menus.length === 0) {
         return;
     }
 
     const data = readMenus();
-    const current = document.querySelector('[data-nav-current]')?.dataset.navCurrent || null;
+    const current = document.querySelector<HTMLElement>('[data-nav-current]')?.dataset.navCurrent || null;
     const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-    const isOpen = (menu) => menu.hasAttribute('data-open');
+    const triggerOf = (menu: HTMLElement): HTMLAnchorElement | null => menu.querySelector<HTMLAnchorElement>('[data-nav-trigger]');
+    const isOpen = (menu: HTMLElement): boolean => menu.hasAttribute('data-open');
 
-    const close = (menu) => {
+    const close = (menu: HTMLElement): void => {
         menu.removeAttribute('data-open');
-        menu.querySelector('[data-nav-trigger]').setAttribute('aria-expanded', 'false');
+        triggerOf(menu)?.setAttribute('aria-expanded', 'false');
         menu.querySelector('[data-nav-panel]')?.setAttribute('hidden', '');
     };
 
-    const open = (menu) => {
+    const open = (menu: HTMLElement): void => {
         menus.filter((other) => other !== menu).forEach(close);
 
         if (!menu.querySelector('[data-nav-panel]')) {
-            menu.append(buildPanel(menu, data[menu.dataset.navMenu] ?? [], current, canHover));
+            const panel = buildPanel(menu, data[menu.dataset.navMenu ?? ''] ?? [], current, canHover);
+
+            if (panel) {
+                menu.append(panel);
+            }
         }
 
         menu.setAttribute('data-open', '');
-        menu.querySelector('[data-nav-trigger]').setAttribute('aria-expanded', 'true');
-        menu.querySelector('[data-nav-panel]').removeAttribute('hidden');
+        triggerOf(menu)?.setAttribute('aria-expanded', 'true');
+        menu.querySelector('[data-nav-panel]')?.removeAttribute('hidden');
     };
 
     menus.forEach((menu) => {
-        const trigger = menu.querySelector('[data-nav-trigger]');
+        const trigger = triggerOf(menu);
+
+        if (!trigger) {
+            return;
+        }
+
         trigger.setAttribute('aria-expanded', 'false');
 
         if (canHover) {
@@ -62,14 +76,14 @@ export function initNavMenus() {
 
         trigger.addEventListener('focus', () => trigger.matches(':focus-visible') && open(menu));
         menu.addEventListener('focusout', (event) => {
-            if (!menu.contains(event.relatedTarget)) {
+            if (!menu.contains(event.relatedTarget as Node | null)) {
                 close(menu);
             }
         });
     });
 
     document.addEventListener('click', (event) => {
-        menus.filter((menu) => !menu.contains(event.target)).forEach(close);
+        menus.filter((menu) => !menu.contains(event.target as Node)).forEach(close);
     });
 
     document.addEventListener('keydown', (event) => {
@@ -81,15 +95,15 @@ export function initNavMenus() {
 
         if (menu) {
             close(menu);
-            menu.querySelector('[data-nav-trigger]').focus();
+            triggerOf(menu)?.focus();
         }
     });
 }
 
 /**
- * @returns {Record<string, Array<{slug: string, name: string, url: string, blurb: string, groups: Array<[string, Array<[string, string]>]>}>>}
+ * The menus' regions from the page's nav-menus JSON, keyed by menu (rivers, beaches, lakes).
  */
-function readMenus() {
+function readMenus(): Record<string, NavRegion[]> {
     try {
         return JSON.parse(document.getElementById('nav-menus')?.textContent || '{}');
     } catch {
@@ -102,10 +116,15 @@ function readMenus() {
  * It starts flush with the item and carries its own top padding, so moving
  * the mouse into it never leaves the menu.
  */
-function buildPanel(menu, regions, current, canHover) {
-    const selected = regions.some((region) => region.slug === current) ? current : regions[0]?.slug;
-    const hub = menu.querySelector('[data-nav-trigger]');
-    const hubLabel = `All ${hub.textContent.trim().toLowerCase()}`;
+function buildPanel(menu: HTMLElement, regions: NavRegion[], current: string | null, canHover: boolean): HTMLElement | null {
+    const hub = menu.querySelector<HTMLAnchorElement>('[data-nav-trigger]');
+
+    if (!hub) {
+        return null;
+    }
+
+    const selected = regions.some((region) => region.slug === current) ? current : regions[0]?.slug ?? null;
+    const hubLabel = `All ${(hub.textContent ?? '').trim().toLowerCase()}`;
 
     const panel = element('div', 'absolute inset-x-0 top-full z-[1100] px-4 pt-2 sm:inset-x-auto sm:left-0 sm:w-max sm:max-w-[calc(100vw-2rem)] sm:px-0');
     panel.setAttribute('data-nav-panel', '');
@@ -121,7 +140,7 @@ function buildPanel(menu, regions, current, canHover) {
     return panel;
 }
 
-function narrowPanel(regions, selected, hubUrl, hubLabel) {
+function narrowPanel(regions: NavRegion[], selected: string | null, hubUrl: string, hubLabel: string): HTMLElement {
     const list = element('div', 'divide-y divide-line-2 sm:hidden');
     const all = link(hubUrl, 'block px-4 py-3 font-medium text-accent hover:underline', `${hubLabel} →`);
 
@@ -154,7 +173,7 @@ function narrowPanel(regions, selected, hubUrl, hubLabel) {
  * into three lists, or two when every group is that big (so nothing shares
  * the grid) and a name is too long for a third of the pane.
  */
-function widePanel(regions, selected, hubUrl, hubLabel) {
+function widePanel(regions: NavRegion[], selected: string | null, hubUrl: string, hubLabel: string): HTMLElement {
     const panes = element('div', 'hidden sm:flex');
     const tabs = element('ul', 'w-48 shrink-0 border-r border-line-2 bg-surface-2 py-2');
     tabs.setAttribute('role', 'list');
@@ -177,7 +196,7 @@ function widePanel(regions, selected, hubUrl, hubLabel) {
     tabs.append(all);
 
     const content = element('div', 'w-[34rem] max-w-[calc(100vw-15rem)] p-4');
-    const span = (items) => (items.length > 5 ? 3 : 1);
+    const span = (items: PlaceItems): number => (items.length > 5 ? 3 : 1);
 
     content.append(...regions.map((region) => {
         const panel = element('div', 'grid grid-flow-row-dense grid-cols-3 gap-x-6 gap-y-4 [&[data-nav-region-hidden]]:hidden');
@@ -212,11 +231,11 @@ function widePanel(regions, selected, hubUrl, hubLabel) {
  * right. Hovering previews a region; without hover, the first tap previews
  * it and a second tap follows the link to its overview.
  */
-function initRegionTabs(panel, canHover) {
-    const tabs = Array.from(panel.querySelectorAll('[data-nav-region-tab]'));
-    const panels = Array.from(panel.querySelectorAll('[data-nav-region-panel]'));
+function initRegionTabs(panel: HTMLElement, canHover: boolean): void {
+    const tabs = Array.from(panel.querySelectorAll<HTMLElement>('[data-nav-region-tab]'));
+    const panels = Array.from(panel.querySelectorAll<HTMLElement>('[data-nav-region-panel]'));
 
-    const select = (slug) => {
+    const select = (slug: string | undefined): void => {
         tabs.forEach((tab) => tab.setAttribute('data-selected', tab.dataset.navRegionTab === slug ? 'true' : 'false'));
         panels.forEach((pane) => pane.toggleAttribute('data-nav-region-hidden', pane.dataset.navRegionPanel !== slug));
     };
@@ -237,7 +256,7 @@ function initRegionTabs(panel, canHover) {
     });
 }
 
-function places(items, className) {
+function places(items: PlaceItems, className: string): HTMLUListElement {
     const list = element('ul', className);
 
     list.append(...items.map(([name, path]) => {
@@ -250,7 +269,7 @@ function places(items, className) {
     return list;
 }
 
-function chevron(className) {
+function chevron(className: string): SVGSVGElement {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', className);
     svg.setAttribute('viewBox', '0 0 20 20');
@@ -265,14 +284,14 @@ function chevron(className) {
     return svg;
 }
 
-function link(href, className, text) {
+function link(href: string, className: string, text: string): HTMLAnchorElement {
     const anchor = element('a', className, text);
     anchor.href = href;
 
     return anchor;
 }
 
-function element(tag, className, text = null) {
+function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text: string | null = null): HTMLElementTagNameMap[K] {
     const node = document.createElement(tag);
     node.className = className;
 
