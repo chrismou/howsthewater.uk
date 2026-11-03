@@ -129,13 +129,15 @@ class PlaceHeadline
     {
         $short = $this->shortRiverName($river->name);
         $family = $river->hasTributaries ? ' and its tributaries' : '';
-        $gauged = $river->spotsWithOwnGauge()->filter(fn (SpotSummary $spot) => $spot->levelValue !== null && $spot->levelAt !== null);
-        $current = $gauged->reject(fn (SpotSummary $spot) => $spot->levelIsStale())->values();
+        $gauged = $river->spotsWithOwnGauge();
+        $current = $gauged->filter(fn (SpotSummary $spot) => $spot->levelValue !== null && $spot->levelAt !== null && ! $spot->levelIsStale())->values();
+        // A gauge with no reading in the summariser's two day window has no value at all, and is silent too.
+        $silent = $gauged->reject(fn (SpotSummary $spot) => $current->contains('gaugeId', $spot->gaugeId))->values();
         $leadGauge = $this->leadGauge($current);
 
         $sentences = array_values(array_filter([
             $this->riverFloodSentence($river, $short),
-            ...$this->riverLevelSentences($current, $gauged),
+            ...$this->riverLevelSentences($current, $silent),
             $this->riverOverflowSentence($river, $short, $family, $covered),
         ]));
 
@@ -183,12 +185,20 @@ class PlaceHeadline
 
         if ($warnings->isNotEmpty()) {
             $severities = $warnings->map(fn (FloodWarningSummary $warning) => $warning->severity)->unique()->values();
-            $labels = $severities->map(fn ($severity) => strtolower($severity->label()));
+            $labels = ucfirst($severities->map(fn ($severity) => strtolower($severity->label()))->join(', ', ' and '));
+            $where = $warnings->count() === 1 ? "for {$warnings->first()->areaLabel}" : "for {$warnings->count()} areas along the {$short}";
+            /** @var FloodWarningSummary $mostSevere */
+            $mostSevere = $warnings->first();
 
-            return [
-                [ucfirst($labels->join(', ', ' and ')).' in force', true],
-                [$warnings->count() === 1 ? " for {$warnings->first()->areaLabel}." : " for {$warnings->count()} areas along the {$short}.", false],
-            ];
+            // A warning no poll has confirmed for hours may have been lifted since, so it is never stated as current.
+            if ($mostSevere->isStale()) {
+                return [
+                    ["{$labels} in force when last checked", true],
+                    [' '.$mostSevere->checkedAt->diffForHumans().", {$where}; it may have changed since.", false],
+                ];
+            }
+
+            return [["{$labels} in force", true], [" {$where}.", false]];
         }
 
         if ($river->floodAreaAgencies === []) {
@@ -215,14 +225,14 @@ class PlaceHeadline
     /**
      * The river's gauges against their usual ranges, grouped, in the words people search for: "Water levels at
      * Callander and Doune are higher than usual, rising at Callander (up 0.32 m in 3 hours). The water level at
-     * Stirling is within its usual range and steady." A gauge with no reading for hours is said to be silent
-     * instead, so a stale level never passes for the current one.
+     * Stirling is within its usual range and steady." A gauge with no usual range gets its reading instead, and a
+     * gauge with no reading for hours is said to be silent, so a stale level never passes for the current one.
      *
      * @param  Collection<int, SpotSummary>  $current  Gauged spots with a current reading, source to mouth
-     * @param  Collection<int, SpotSummary>  $gauged  Every gauged spot with a reading, stale ones included
+     * @param  Collection<int, SpotSummary>  $silent  Gauged spots with a stale reading or none at all
      * @return list<list<array{0: string, 1: bool}>>
      */
-    private function riverLevelSentences(Collection $current, Collection $gauged): array
+    private function riverLevelSentences(Collection $current, Collection $silent): array
     {
         $sentences = [];
         $groups = $current
@@ -240,17 +250,31 @@ class PlaceHeadline
             $sentences[] = [
                 [($one ? 'The water level at ' : 'Water levels at ').$this->gaugeNames($group).($one ? ' is ' : ' are '), false],
                 [$phrase, true],
-                ...$this->trendClause($group),
+                ...$this->trendClause($group, contrast: $relative === 'above typical range'),
                 ['.', false],
             ];
         }
 
-        $silent = $gauged->filter(fn (SpotSummary $spot) => $spot->levelIsStale());
+        // Gauges whose agency gives no usual range (most NRW gauges until a year of readings): the reading itself.
+        foreach ($current->filter(fn (SpotSummary $spot) => $spot->levelRelativeToTypical === null) as $spot) {
+            $sentences[] = [
+                ["The water level at {$spot->gaugeLabel} is ", false],
+                [number_format($spot->levelValue, 2).' '.$spot->levelUnit, true],
+                ...$this->trendClause(collect([$spot]), contrast: false),
+                ['.', false],
+            ];
+        }
 
         if ($silent->isNotEmpty()) {
+            // The shortest silence among them is what can be said of all: "for at least 8 hours".
+            $newest = $silent->pluck('levelAt')->filter()->max();
+            $allOverTwoDays = $newest === null || $newest->lessThan(now()->subHours(48));
+            $for = $allOverTwoDays ? 'over 2 days' : $newest->diffForHumans(null, Carbon::DIFF_ABSOLUTE);
+            $atLeast = $silent->count() > 1 && ! $allOverTwoDays ? 'at least ' : '';
+
             $sentences[] = [
                 ['The '.$this->gaugeNames($silent).' '.Str::plural('gauge', $silent->count()).' ', false],
-                [($silent->count() === 1 ? 'has' : 'have').' not reported for '.$silent->min('levelAt')->diffForHumans(null, Carbon::DIFF_ABSOLUTE), true],
+                [($silent->count() === 1 ? 'has' : 'have')." not reported for {$atLeast}{$for}", true],
                 ['.', false],
             ];
         }
@@ -259,39 +283,38 @@ class PlaceHeadline
     }
 
     /**
-     * " and rising (up 0.32 m in 3 hours)", ", rising at Callander (up 0.32 m in 3 hours)", " but falling", " and
-     * steady", or nothing when the trend is unknown.
+     * " and rising (up 0.32 m in 3 hours)", ", rising at Callander (up 0.32 m in 3 hours) and falling at Doune",
+     * " and steady", or nothing when the trend is unknown. contrast: the group is above its usual range, so a fall
+     * reads as "but falling".
      *
      * @param  Collection<int, SpotSummary>  $group
      * @return list<array{0: string, 1: bool}>
      */
-    private function trendClause(Collection $group): array
+    private function trendClause(Collection $group, bool $contrast): array
     {
         $rising = $group->filter(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Rising)->sortByDesc(fn (SpotSummary $spot) => $spot->levelChangeLast3Hours ?? 0);
-        $falling = $group->filter(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Falling);
+        $falling = $group->filter(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Falling)->sortBy(fn (SpotSummary $spot) => $spot->levelChangeLast3Hours ?? 0);
         $one = $group->count() === 1;
+        $change = fn (?float $metres, string $word) => $metres === null ? '' : " ({$word} ".number_format(abs($metres), 2).' m in 3 hours)';
+        $parts = [];
 
         if ($rising->isNotEmpty()) {
-            $change = $rising->first()->levelChangeLast3Hours;
-
-            return [
-                [$one ? ' and ' : ', ', false],
-                [$one ? 'rising' : 'rising at '.$this->gaugeNames($rising), true],
-                [$change === null ? '' : ' (up '.number_format($change, 2).' m in 3 hours)', false],
-            ];
+            $parts[] = [[$one ? 'rising' : 'rising at '.$this->gaugeNames($rising), true], [$change($rising->first()->levelChangeLast3Hours, 'up'), false]];
         }
 
         if ($falling->isNotEmpty()) {
-            $change = $falling->first()->levelChangeLast3Hours;
-
-            return [
-                [$one ? ' but ' : ', ', false],
-                [$one ? 'falling' : 'falling at '.$this->gaugeNames($falling), true],
-                [$change === null ? '' : ' (down '.number_format(abs($change), 2).' m in 3 hours)', false],
-            ];
+            $parts[] = [[$one ? 'falling' : 'falling at '.$this->gaugeNames($falling), true], [$change($falling->first()->levelChangeLast3Hours, 'down'), false]];
         }
 
-        return $group->every(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Steady) ? [[' and ', false], ['steady', true]] : [];
+        if ($parts === []) {
+            return $group->every(fn (SpotSummary $spot) => $spot->levelTrend === LevelTrend::Steady) ? [[' and ', false], ['steady', true]] : [];
+        }
+
+        if ($one) {
+            return [[$contrast && $falling->isNotEmpty() ? ' but ' : ' and ', false], ...$parts[0]];
+        }
+
+        return [[', ', false], ...$parts[0], ...(isset($parts[1]) ? [[' and ', false], ...$parts[1]] : [])];
     }
 
     /**
@@ -569,7 +592,15 @@ class PlaceHeadline
     {
         $warning = $warnings->first();
 
-        return $warning === null ? null : [[$warning->severity->label().' in force', true], ['.', false]];
+        if ($warning === null) {
+            return null;
+        }
+
+        if ($warning->isStale()) {
+            return [[$warning->severity->label().' in force when last checked', true], [' '.$warning->checkedAt->diffForHumans().'.', false]];
+        }
+
+        return [[$warning->severity->label().' in force', true], ['.', false]];
     }
 
     /**

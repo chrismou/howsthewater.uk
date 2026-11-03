@@ -111,6 +111,10 @@ it('describes the level in everyday words, with its trend and any flood warning'
 
     expect(spotHeadline($spot))->toContain('The Wharfe water level is higher than usual and rising. Flood alert in force.');
 
+    FloodWarning::query()->update(['checked_at' => now()->subDays(2)]);
+
+    expect(spotHeadline($spot))->toContain('Flood alert in force when last checked 2 days ago.');
+
     GaugeReading::query()->update(['value' => 0.5]);
 
     expect(spotHeadline($spot))->toContain('The Wharfe water level is normal and steady.');

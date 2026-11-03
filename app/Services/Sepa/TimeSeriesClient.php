@@ -100,27 +100,29 @@ class TimeSeriesClient
         foreach ($bySeries as $externalId => $readings) {
             $low = $readings['HydrologicalYear.Min'] ?? null;
             $high = $readings['HydrologicalYear.Max'] ?? null;
+            $range = null;
 
-            if ($low === null || $high === null) {
-                continue;
+            if ($low !== null && $high !== null) {
+                $medianLow = (float) $low->map(fn (GaugeReadingData $reading) => $reading->value)->median();
+                $medianHigh = (float) $high->map(fn (GaugeReadingData $reading) => $reading->value)->median();
+                $range = $medianHigh > $medianLow ? ['low' => round($medianLow, 3), 'high' => round($medianHigh, 3)] : null;
             }
 
-            $medianLow = (float) $low->map(fn (GaugeReadingData $reading) => $reading->value)->median();
-            $medianHigh = (float) $high->map(fn (GaugeReadingData $reading) => $reading->value)->median();
-
-            if ($medianHigh <= $medianLow) {
-                continue;
-            }
-
+            /** @var Collection<int, GaugeReadingData> $monthly */
+            $monthly = $readings['Month.Max'] ?? collect();
             /** @var GaugeReadingData|null $record */
-            $record = ($readings['Month.Max'] ?? collect())->sortByDesc(fn (GaugeReadingData $reading) => $reading->value)->first();
+            $record = $monthly->sortByDesc(fn (GaugeReadingData $reading) => $reading->value)->first();
+
+            if ($range === null && $record === null) {
+                continue;
+            }
 
             $statistics[$externalId] = [
-                'low' => round($medianLow, 3),
-                'high' => round($medianHigh, 3),
+                'low' => $range['low'] ?? null,
+                'high' => $range['high'] ?? null,
                 'record' => $record === null ? null : round($record->value, 3),
                 'recordAt' => $record?->measuredAt,
-                'recordsFrom' => $high->min(fn (GaugeReadingData $reading) => $reading->measuredAt),
+                'recordsFrom' => ($high ?? $monthly)->min(fn (GaugeReadingData $reading) => $reading->measuredAt),
             ];
         }
 

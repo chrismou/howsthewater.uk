@@ -51,7 +51,7 @@
     $gaugeCount = $gaugedSpots->count();
     $descriptionFacts = collect([
         $gaugeCount > 0 ? "river levels at {$gaugeCount} ".\Illuminate\Support\Str::plural('gauge', $gaugeCount).' against '.($gaugeCount === 1 ? 'its' : 'their').' usual range' : 'river levels',
-        $hasFloodData ? 'flood alerts in force' : null,
+        $hasFloodData ? 'flood alerts and warnings' : null,
         'rainfall',
         $covered ? 'storm overflow spills' : null,
     ])->filter()->join(', ', ' and ');
@@ -111,7 +111,7 @@
             @endif
             A high level does not on its own mean flooding is imminent{{ $floodAgencies !== '' ? ": when {$floodAgencies} issues a flood alert or warning for this stretch, it is shown at the top of this page" : '' }}.
             @if ($lastFlood !== null && $lastFlood->endedAt !== null)
-                The last {{ strtolower($lastFlood->severity->label()) }} here, for {{ $lastFlood->areaLabel }}, was lifted <time datetime="{{ $lastFlood->endedAt->toIso8601String() }}">{{ $lastFlood->endedAt->timezone(config('app.display_timezone', 'Europe/London'))->format('j F Y') }}</time>.
+                The last {{ strtolower($lastFlood->severity->label()) }} here, for {{ $lastFlood->areaLabel }}, ended on <time datetime="{{ $lastFlood->endedAt->toIso8601String() }}">{{ $lastFlood->endedAt->timezone(config('app.display_timezone', 'Europe/London'))->format('j F Y') }}</time>.
             @endif
         </p>
         @if ($gaugeCount === 0)
@@ -120,7 +120,7 @@
             <div class="grid gap-4 md:grid-cols-2 {{ $gaugeCount >= 3 ? 'xl:grid-cols-3' : '' }}">
                 @foreach ($gaugedSpots as $spot)
                     @if (isset($gauges[$spot->gaugeId]))
-                        <x-river-gauge-card :spot="$spot" :station="$gauges[$spot->gaugeId]" :points="$levelHistories[$spot->gaugeId] ?? []" />
+                        <x-river-gauge-card :spot="$spot" :station="$gauges[$spot->gaugeId]" :points="$levelHistories[$spot->gaugeId] ?? []" :water="'the '.$shortName" />
                     @endif
                 @endforeach
             </div>
@@ -146,7 +146,7 @@
             data-map-centreline="{{ json_encode($river->centreline ?? []) }}"
             data-map-markers="{{ json_encode($mapMarkers) }}"
         ></div>
-        <x-map-key where="upstream" :spills="$covered" :gauges="$gaugedSpots->isNotEmpty()" />
+        <x-map-key where="upstream" :spills="$covered" :gauges="$mapMarkers->contains('kind', 'level')" />
     </section>
 
     <section class="mb-10">

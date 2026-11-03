@@ -56,6 +56,7 @@ class IngestFloods extends Command
             // their history; those events' ended_at then means when we stopped reading, not when SEPA lifted the warning.
             $syncWarnings->handle(collect(), Agency::Sepa);
             $history->handle(collect(), Agency::Sepa);
+            SyncFloodWarnings::forgetCheck(Agency::Sepa);
         }
 
         $changed->markAll();

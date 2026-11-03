@@ -5,6 +5,7 @@ namespace App\Services\Conditions;
 use App\Data\FloodWarningEventSummary;
 use App\Data\RiverOverview;
 use App\Data\SpotConditions;
+use App\Enums\Agency;
 use App\Enums\OverflowStatus;
 use App\Models\FloodArea;
 use App\Models\FloodWarningEvent;
@@ -168,10 +169,11 @@ class RiverOverviewService
     }
 
     /**
-     * The agencies whose flood areas cover the river's spots, so a page knows whose feed an absence of warnings rests on.
+     * The agencies whose flood areas cover the river's spots, so a page knows whose feed an absence of warnings rests
+     * on. SEPA's areas stay linked while its flag is off, but nothing is read then, so it is left out.
      *
      * @param  Collection<int, SpotConditions>  $spots
-     * @return list<\App\Enums\Agency>
+     * @return list<Agency>
      */
     private function floodAreaAgencies(Collection $spots): array
     {
@@ -181,7 +183,8 @@ class RiverOverviewService
             ->whereHas('spots', fn ($query) => $query->whereIn('spots.id', $spotIds))
             ->distinct()
             ->pluck('agency')
-            ->sortBy(fn ($agency) => $agency->value)
+            ->reject(fn (Agency $agency) => $agency === Agency::Sepa && ! config('services.sepa.flood_warnings.enabled'))
+            ->sortBy(fn (Agency $agency) => $agency->value)
             ->values()
             ->all();
     }
