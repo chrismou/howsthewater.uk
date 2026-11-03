@@ -41,7 +41,8 @@ it('lists what is happening at popular swimming spots first, most pressing first
     OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'river_metres' => 80000]);
 
     $response = $this->get(route('home'))
-        ->assertSeeInOrder(['Right now at popular swimming spots', 'All swimming spots', 'with anything happening there first', 'Runswick Bay', 'Beach, Yorkshire', 'Overflow discharging nearby now', 'Cromwheel', 'River Wharfe, Yorkshire', 'Burnsall'])
+        ->assertSeeInOrder(['Right now at popular swimming spots', 'All swimming spots', 'Runswick Bay', 'Beach, Yorkshire', 'Overflow discharging nearby now', 'Cromwheel', 'River Wharfe, Yorkshire', 'Burnsall'])
+        ->assertDontSee('with anything happening there first')
         ->assertSee(route('beaches.show', [$region, $beach]), false);
 
     // Only popular spots: the ordinary one is on the spills pages instead.

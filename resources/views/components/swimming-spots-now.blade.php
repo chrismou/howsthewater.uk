@@ -10,13 +10,11 @@
         <h2 id="swimming-now" class="font-display text-xl font-semibold tracking-tight">Right now at popular swimming spots</h2>
         <a href="{{ route('swimming') }}" class="text-sm font-medium text-accent hover:underline">All swimming spots</a>
     </div>
-    <p class="mt-1 text-sm text-ink-2">
-        @if ($now->anythingHappening())
-            Designated bathing waters and well-known river spots, with anything happening there first.
-        @else
+    @unless ($now->anythingHappening())
+        <p class="mt-1 text-sm text-ink-2">
             Nothing to report at {{ number_format($now->popularCount) }} designated bathing waters and well-known river spots right now. A few well-known spots:
-        @endif
-    </p>
+        </p>
+    @endunless
     @if ($now->spots->isNotEmpty())
         <ul class="mt-3 divide-y divide-line-2 overflow-hidden rounded-lg border border-line bg-surface">
             @foreach ($now->spots as $spot)
