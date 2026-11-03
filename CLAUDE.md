@@ -371,7 +371,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   tributaries, overlaps counted once), its rain gauge's daily totals, the agencies of its flood areas, the last
   warning lifted (`FloodWarningEventSummary`) and `monitorsUpdatedAt`. The page then lists each gauge
   (`components/river-gauge-card`: reading, trend, usual range bar, highest on record, a week of hourly readings from
-  `GaugeLevelHistory`, read at request time rather than cached), the weather at the middle spot, the map with gauges in blue (`kind: 'level'`, state `higher`, `rising` or `usual`), the
+  `GaugeLevelHistory`, read at request time rather than cached; a reading above the usual range goes level blue,
+  never red or amber, which mean a discharge or a warning, and where the record is known the bar runs from the range
+  low to the record with a tick, so the dot shows how far the river has gone towards its highest), the weather at the middle spot, the map with gauges in blue (`kind: 'level'`, state `higher`, `rising` or `usual`), the
   spots as plain-words cards (`components/spot-card`, which say what the spot page adds) and the 30 day spill chart,
   before the companies' yearly returns. Copy says "swimming spot", never a bare "spot"; the title promises flood
   alerts only where flood areas cover the river, and spills only where the overflow data is read.

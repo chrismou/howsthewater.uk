@@ -15,14 +15,31 @@
         $trendText .= sprintf(', %s%s m in 3 hours', $spot->levelChangeLast3Hours > 0 ? '+' : '', number_format($spot->levelChangeLast3Hours, 2));
     }
 
-    // Where the latest reading sits on the usual range bar: the range itself spans 22% to 70% of the bar.
-    $rangePosition = null;
+    // The usual range bar. Without a record the band spans 22% to 70%; with a record above the band, the bar runs
+    // from the range low (10%) to the record (92%), so the dot shows how far the river has gone towards its highest.
     $hasRange = $station->typical_range_low !== null && $station->typical_range_high > $station->typical_range_low;
+    $recordOnBar = $hasRange && $station->record_level !== null && $station->record_level > $station->typical_range_high;
+    $bandLeft = $recordOnBar ? 10 : 22;
+    $bandRight = 70;
+    $rangePosition = null;
 
-    if ($spot->levelValue !== null && $hasRange) {
-        $fraction = ($spot->levelValue - $station->typical_range_low) / ($station->typical_range_high - $station->typical_range_low);
-        $rangePosition = (int) round(max(2, min(98, 22 + $fraction * 48)));
+    if ($hasRange) {
+        $scale = $recordOnBar
+            ? 82 / ($station->record_level - $station->typical_range_low)
+            : 48 / ($station->typical_range_high - $station->typical_range_low);
+
+        if ($recordOnBar) {
+            $bandRight = max($bandLeft + 2, (int) round($bandLeft + ($station->typical_range_high - $station->typical_range_low) * $scale));
+        }
+
+        if ($spot->levelValue !== null) {
+            $rangePosition = (int) round(max(2, min(98, $bandLeft + ($spot->levelValue - $station->typical_range_low) * $scale)));
+        }
     }
+
+    // Above its usual range the reading and its label take the level blue, as the map does; never red or amber,
+    // which mean a discharge or a flood warning. A high level is not a flood threshold.
+    $aboveUsual = $spot->isAboveTypicalRange();
 
     $readAt = $spot->levelAt?->copy()->timezone($timezone);
     $recordPhrase = $station->recordLevelPhrase();
@@ -58,21 +75,24 @@
         <p class="mt-3 text-sm text-ink-2">No recent readings from this gauge.</p>
     @else
         <div class="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p class="font-mono text-3xl font-semibold tabular-nums">{{ number_format($spot->levelValue, 2) }} {{ $unit }}</p>
+            <p @class(['font-mono text-3xl font-semibold tabular-nums', 'text-accent' => $aboveUsual])>{{ number_format($spot->levelValue, 2) }} {{ $unit }}</p>
             <p class="text-sm text-ink-2">{{ $trendText }}</p>
         </div>
 
         @if ($spot->levelRelativeToTypical)
             <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-2">
-                <span class="shrink-0 font-medium text-ink">{{ ucfirst(\App\Data\LevelSummary::usualPhrase($spot->levelRelativeToTypical)) }}</span>
+                <span @class(['shrink-0 font-medium', 'text-accent' => $aboveUsual, 'text-ink' => ! $aboveUsual])>{{ ucfirst(\App\Data\LevelSummary::usualPhrase($spot->levelRelativeToTypical)) }}</span>
                 @if ($rangePosition !== null)
                     <div class="relative order-last h-2 basis-full rounded-full bg-line-2 sm:order-none sm:flex-1 sm:basis-auto" aria-hidden="true">
-                        <div class="absolute inset-y-0 rounded-full" style="left:22%;right:30%;background:var(--color-line)"></div>
+                        <div class="absolute inset-y-0 rounded-full" style="left:{{ $bandLeft }}%;right:{{ 100 - $bandRight }}%;background:var(--color-line)"></div>
+                        @if ($recordOnBar)
+                            <span class="absolute -top-1 h-4 w-0.5 -translate-x-1/2 bg-ink-2" style="left:92%" data-record-tick></span>
+                        @endif
                         <span class="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-surface bg-accent" style="left:{{ $rangePosition }}%"></span>
                     </div>
                 @endif
                 @if ($hasRange)
-                    <span class="shrink-0 font-mono text-xs text-muted">usually {{ number_format($station->typical_range_low, 2) }} to {{ number_format($station->typical_range_high, 2) }} {{ $unit }}</span>
+                    <span class="shrink-0 font-mono text-xs text-muted">usually {{ number_format($station->typical_range_low, 2) }} to {{ number_format($station->typical_range_high, 2) }} {{ $unit }}@if ($recordOnBar), record {{ number_format($station->record_level, 2) }} {{ $unit }}@endif</span>
                 @endif
             </div>
         @endif

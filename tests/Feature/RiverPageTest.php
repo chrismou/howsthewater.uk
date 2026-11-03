@@ -63,7 +63,7 @@ it('leads a river page with its flood state and levels, and lists each gauge wit
         ->assertSee('1 swimming spot, 1 level gauge and 0 storm overflow monitors on the Wharfe and its tributaries')
         ->assertSeeInOrder(['No flood alerts or warnings in force', 'for the Wharfe.', 'The water level at Ilkley is', 'higher than usual', 'and', 'rising', '(up 0.40 m in 3 hours).'])
         ->assertSee('Level from the Ilkley gauge at')
-        ->assertSeeInOrder(['Wharfe river levels', 'Ilkley gauge', '1.40 m', 'Rising, +0.40 m in 3 hours', 'Higher than usual', 'usually 0.20 to 1.00 m', 'Highest on record', '4.21 m on 26 December 2015', '(records from 1974)'])
+        ->assertSeeInOrder(['Wharfe river levels', 'Ilkley gauge', '1.40 m', 'Rising, +0.40 m in 3 hours', 'Higher than usual', 'usually 0.20 to 1.00 m, record 4.21 m', 'Highest on record', '4.21 m on 26 December 2015', '(records from 1974)'])
         ->assertSee('data-sparkline-label="Ilkley gauge level over the last', false)
         ->assertSee('&quot;kind&quot;:&quot;level&quot;,&quot;state&quot;:&quot;higher&quot;', false)
         ->assertSee('Along the Wharfe, source to mouth')
@@ -226,4 +226,32 @@ it('says when no gauge is linked to a river yet, rather than showing an empty le
         ->assertSee("No level gauge is linked to the Nidd's swimming spots yet.", false)
         ->assertSee("<title>River Nidd levels and spills - How's the Water?</title>", false)
         ->assertDontSee('Highest on record');
+});
+
+it('colours a reading above its usual range blue and marks the record on the range bar', function () {
+    [$region, $river] = gaugedRiver(1.0, 1.4);
+    app(RefreshRegions::class)->handle([$region->id]);
+
+    // The band runs from the range low at 10% to the range high, 0.8 m of the 4.01 m up to the record at 92%.
+    $this->get(route('rivers.show', [$region, $river]))
+        ->assertOk()
+        ->assertSee('class="font-mono text-3xl font-semibold tabular-nums text-accent">1.40 m', false)
+        ->assertSee('class="shrink-0 font-medium text-accent">Higher than usual', false)
+        ->assertSee('style="left:10%;right:74%;', false)
+        ->assertSee('style="left:92%" data-record-tick', false)
+        ->assertSee('style="left:35%"', false);
+});
+
+it('leaves a reading inside its usual range uncoloured and keeps the plain bar without a record', function () {
+    [$region, $river, , $station] = gaugedRiver(0.5, 0.6);
+    $station->update(['record_level' => null, 'record_level_at' => null]);
+    app(RefreshRegions::class)->handle([$region->id]);
+
+    $this->get(route('rivers.show', [$region, $river]))
+        ->assertOk()
+        ->assertSee('class="font-mono text-3xl font-semibold tabular-nums">0.60 m', false)
+        ->assertSee('class="shrink-0 font-medium text-ink">At its usual level', false)
+        ->assertSee('style="left:22%;right:30%;', false)
+        ->assertDontSee('data-record-tick', false)
+        ->assertSee('usually 0.20 to 1.00 m</span>', false);
 });
