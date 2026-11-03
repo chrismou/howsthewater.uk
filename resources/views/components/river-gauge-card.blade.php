@@ -1,9 +1,10 @@
 {{--
     One of a river's level gauges on its river page: the latest reading, its trend, where it sits in its usual range,
     the highest level on record and a week of readings. spot: the SpotSummary the gauge is linked to; station: the
-    GaugeStation itself (its range, record and agency page); points: hourly [timestamp, value] pairs for the chart.
+    GaugeStation itself (its range, record and agency page); points: hourly [timestamp, value] pairs for the chart;
+    water: the river as named in the sentence giving the gauge's usual range ("the Teith"), which search engines quote.
 --}}
-@props(['spot', 'station', 'points' => []])
+@props(['spot', 'station', 'points' => [], 'water' => null])
 
 @php
     $timezone = config('app.display_timezone', 'Europe/London');
@@ -27,7 +28,24 @@
     $recordPhrase = $station->recordLevelPhrase();
     $recordsFrom = $station->records_from === null ? '' : ' (records from '.$station->records_from->year.')';
     $readLine = 'Read '.$spot->levelAt?->diffForHumans().($readAt === null ? '' : ', '.$readAt->format($readAt->isSameDay(now($timezone)) ? 'H:i T' : 'H:i T, j M')).'.';
-    $daysOfPoints = count($points) > 1 ? max(1, (int) round(($points[array_key_last($points)][0] - $points[0][0]) / 86400)) : 0;
+    // How long the chart covers, in days once it spans two, else in hours, so a new gauge never says "1 days".
+    $spanHours = count($points) > 1 ? ($points[array_key_last($points)][0] - $points[0][0]) / 3600 : 0;
+    $spanLabel = $spanHours >= 48 ? round($spanHours / 24).' days' : max(1, (int) round($spanHours)).' '.\Illuminate\Support\Str::plural('hour', max(1, (int) round($spanHours)));
+
+    // The usual range in words, saying what each agency's range means, as components/level-card does.
+    $usualRange = null;
+
+    if ($hasRange) {
+        $usualRange = collect([
+            ($water !== null ? ucfirst($water).' at the ' : 'The ').$station->label.' gauge is usually between '
+                .number_format($station->typical_range_low, 2).' '.$unit.' and '.number_format($station->typical_range_high, 2).' '.$unit.'.',
+            match ($station->network) {
+                \App\Enums\Agency::EnvironmentAgency => 'Nine in ten of the Environment Agency\'s readings there fall inside that band.',
+                \App\Enums\Agency::NaturalResourcesWales => 'Nine in ten of its readings over the past year fall inside that band.',
+                \App\Enums\Agency::Sepa => 'That is SEPA\'s normal range, from the low of a typical year to its high.',
+            },
+        ])->join(' ');
+    }
 @endphp
 
 <article class="rounded-lg border border-line bg-surface p-5">
@@ -59,18 +77,22 @@
             </div>
         @endif
 
+        @if ($usualRange !== null)
+            <p class="mt-3 text-sm text-ink-2">{{ $usualRange }}</p>
+        @endif
+
         @if ($station->isAboveOrdnanceDatum())
             <p class="mt-2 text-xs text-muted">This gauge reports height above sea level, not depth above the river bed. <x-help term="maod" /></p>
         @endif
 
         @if (count($points) > 1)
-            <div class="mt-4 h-20 text-accent" data-sparkline="{{ json_encode($points) }}" data-sparkline-label="{{ $station->label }} gauge level over the last {{ $daysOfPoints }} days"></div>
+            <div class="mt-4 h-20 text-accent" data-sparkline="{{ json_encode($points) }}" data-sparkline-label="{{ $station->label }} gauge level over the last {{ $spanLabel }}"></div>
         @endif
 
         <p class="mt-2 text-xs text-muted">
             {{ $readLine }}
             @if (count($points) > 1)
-                {{ $daysOfPoints }} day trend.
+                Trend over the last {{ $spanLabel }}.
             @endif
             @if ($station->agencyPageUrl() !== null)
                 <a href="{{ $station->agencyPageUrl() }}" rel="noopener" class="text-accent hover:underline">Longer history on {{ $station->agencyPageName() }}</a>.

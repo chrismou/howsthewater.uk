@@ -777,7 +777,7 @@ replacing the local database with a copy of live rather than backfilling.
   then notes only when a threshold is crossed (10 mm of rain in the last 24 hours; heavy rain, thunder or, on beaches
   and lakes, gusts of 35 mph forecast in the next 12 hours; wind never on rivers, as it does not speed them up); then
   a small source line with the monitors, company and time, which keeps the page's dated, attributed statement. River
-  pages keep one dated sentence (`components/dated-summary`) with counts for the river and its tributaries. Places
+  pages open with the same kind of headline (`PlaceHeadline::forRiver()`), led by flooding. Places
   with a designated bathing water (beaches, spots with a river site, lakes) lead with its classification; a lake with
   several sites counts them by classification. With half or more monitors offline, a quiet headline leads with how
   few are reporting, never with "No spills reported". A forecast note adds "Forecast from Open-Meteo, read ..." to the

@@ -152,7 +152,7 @@ class SyncGaugeStations
      * A failure here only costs the typical range and record, so the gauges are still stored.
      *
      * @param  Collection<int, GaugeStationData>  $stations
-     * @return array<string, array{low: float, high: float, record: float|null, recordAt: Carbon|null, recordsFrom: Carbon|null}>
+     * @return array<string, array{low: float|null, high: float|null, record: float|null, recordAt: Carbon|null, recordsFrom: Carbon|null}>
      */
     private function sepaLevelStatistics(Collection $stations): array
     {
@@ -170,7 +170,7 @@ class SyncGaugeStations
     }
 
     /**
-     * @param  array{low: float, high: float, record: float|null, recordAt: Carbon|null, recordsFrom: Carbon|null}|null  $sepaStatistics  SEPA's normal range and record, which its station list does not carry
+     * @param  array{low: float|null, high: float|null, record: float|null, recordAt: Carbon|null, recordsFrom: Carbon|null}|null  $sepaStatistics  SEPA's normal range and record, which its station list does not carry
      */
     private function store(River $river, GaugeStationData $data, ?array $sepaStatistics = null): void
     {

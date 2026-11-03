@@ -3,6 +3,7 @@
 use App\Actions\Ingest\RecordFloodWarningHistory;
 use App\Actions\Ingest\SyncFloodAreas;
 use App\Actions\Ingest\SyncFloodWarnings;
+use App\Enums\Agency;
 use App\Data\FloodWarningData;
 use App\Enums\FloodSeverity;
 use App\Models\FloodArea;
@@ -134,6 +135,21 @@ it('links new spots and syncs warnings from the scheduled command', function () 
         ->assertSuccessful();
 
     expect($spot->floodAreas()->sole()->warning->severity_level)->toBe(FloodSeverity::FloodAlert);
+});
+
+it('records when each feed was last read, and forgets SEPA\'s while its flag is off', function () {
+    Http::fake(['environment.data.gov.uk/*' => Http::response(['items' => []])]);
+    FloodArea::factory()->create(['agency' => Agency::Sepa]);
+    config(['services.sepa.flood_warnings.enabled' => false]);
+    app(SyncFloodWarnings::class)->handle(collect(), Agency::Sepa);
+
+    expect(SyncFloodWarnings::lastCheckedAt(Agency::Sepa))->not->toBeNull();
+
+    $this->artisan('ingest:floods --quick')->assertSuccessful();
+
+    expect(SyncFloodWarnings::lastCheckedAt(Agency::EnvironmentAgency)?->isAfter(now()->subMinute()))->toBeTrue()
+        ->and(SyncFloodWarnings::lastCheckedAt(Agency::Sepa))->toBeNull()
+        ->and(SyncFloodWarnings::lastCheckedAt(Agency::NaturalResourcesWales))->toBeNull();
 });
 
 it('skips the flood area search with --quick but still syncs warnings', function () {

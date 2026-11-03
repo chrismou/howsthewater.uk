@@ -40,6 +40,15 @@ class SyncFloodWarnings
     }
 
     /**
+     * Forgets when an agency's feed was last read, for when it stops being read (SEPA's flag switched off), so no
+     * page says "no warnings in force" on the strength of a feed nobody is reading.
+     */
+    public static function forgetCheck(Agency $agency): void
+    {
+        Cache::forget(self::CHECKED_AT_KEY.':'.$agency->value);
+    }
+
+    /**
      * @param  Collection<int, FloodWarningData>|null  $feed  The agency's national feed, if already fetched (the EA's is fetched otherwise)
      * @return array{warnings: int}
      */

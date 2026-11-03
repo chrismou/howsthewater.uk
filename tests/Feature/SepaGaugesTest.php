@@ -79,6 +79,35 @@ it('discovers SEPA level gauges on a river by its SEPA name, with SEPA normal ra
         ->and(GaugeStation::query()->whereIn('external_id', ['SEPA300', 'SEPA400'])->exists())->toBeFalse();
 });
 
+it('keeps a SEPA gauge\'s record where it has monthly maxima but too little history for a normal range', function () {
+    $river = River::factory()->create(['name' => 'River Tweed', 'aliases' => ['River Tweed']]);
+    $recent = now()->subHour()->toIso8601String();
+
+    fakeSepa([
+        'getStationList' => [['station_no', 'river_name'], ['100', 'Tweed']],
+        'getTimeseriesList:S' => function (Request $request) use ($recent) {
+            if ($request['ts_name'] === 'HydrologicalYear.Min,HydrologicalYear.Max,Month.Max') {
+                return [['station_no', 'ts_id', 'ts_name'], ['100', '904', 'Month.Max']];
+            }
+
+            return [
+                ['station_name', 'station_no', 'station_latitude', 'station_longitude', 'ts_id', 'ts_unitsymbol', 'from', 'to'],
+                ['Peebles', '100', '53.90', '-1.80', '55822010', 'm', '2025-08-09T22:45:00.000Z', $recent],
+            ];
+        },
+        'getTimeseriesValues' => [['ts_id' => '904', 'data' => [['2025-09-01T09:00:00.000Z', 1.8], ['2025-10-01T09:00:00.000Z', 2.9]]]],
+    ]);
+
+    app(SyncGaugeStations::class)->handle($river);
+
+    $peebles = GaugeStation::query()->where('external_id', 'SEPA100')->firstOrFail();
+
+    expect($peebles->typical_range_low)->toBeNull()
+        ->and($peebles->record_level)->toBe(2.9)
+        ->and($peebles->recordLevelPhrase())->toBe('2.90 m in October 2025')
+        ->and($peebles->records_from->toDateString())->toBe('2025-09-01');
+});
+
 it('still discovers Environment Agency gauges when SEPA fails, and logs the failure once', function () {
     Sleep::fake();
     Log::spy();

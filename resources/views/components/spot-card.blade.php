@@ -7,7 +7,12 @@
 @php
     $covered = $spot->spillRecency !== \App\Enums\SpillRecency::NotCovered;
     $warning = $spot->floodWarnings->first();
-    $kind = ($spot->isBathingWater ? 'Designated bathing water' : 'Swimming spot').($spot->riverMetres !== null ? ', '.number_format($spot->riverMetres / 1000).' km from the source' : '');
+    $fromSource = match (true) {
+        $spot->riverMetres === null => '',
+        $spot->riverMetres < 1000 => ', under 1 km from the source',
+        default => ', '.number_format($spot->riverMetres / 1000).' km from the source',
+    };
+    $kind = ($spot->isBathingWater ? 'Designated bathing water' : 'Swimming spot').$fromSource;
     $facts = array_values(array_filter([
         ! $covered ? null : ($spot->monitorCount > 0
             ? $spot->monitorCount.' storm '.\Illuminate\Support\Str::plural('overflow', $spot->monitorCount).' upstream, '.$spot->spillsLast30DaysCount.' '.\Illuminate\Support\Str::plural('spill', $spot->spillsLast30DaysCount).' in 30 days'
