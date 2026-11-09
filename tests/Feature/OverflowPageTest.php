@@ -52,7 +52,7 @@ it('pages the spill log, keeping later pages out of search results', function ()
     $this->get(route('overflows.show', $monitor).'?page=3')->assertNotFound();
 });
 
-it('has pages only for overflows some region shows, and keeps those without a spill in the last year or two returns out of search', function () {
+it('has pages only for overflows some region shows, and keeps those without a spill in the last year or a count in the two latest returns out of search', function () {
     $wales = Region::factory()->create(['slug' => 'wales', 'overflow_feeds' => []]);
     $welshRiver = River::factory()->create(['region_id' => $wales->id]);
     $welsh = OverflowMonitor::factory()->create(['external_id' => 'DCWW710', 'river_id' => $welshRiver->id]);
@@ -66,7 +66,11 @@ it('has pages only for overflows some region shows, and keeps those without a sp
     OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $named->id, 'year' => 2023, 'counted_spills' => 12]);
     $returned = OverflowMonitor::factory()->create(['river_id' => $river->id, ...$longAgo]);
     OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $returned->id, 'year' => 2024, 'counted_spills' => 3]);
-    OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $quiet->id, 'year' => 2025, 'counted_spills' => 0]);
+    // A return with no count (the monitor was not working) says nothing either.
+    OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $quiet->id, 'year' => 2025, 'counted_spills' => null]);
+    // The company's own count of no spills is worth finding.
+    $clean = OverflowMonitor::factory()->create(['river_id' => $river->id, ...$longAgo]);
+    OverflowAnnualReturn::factory()->create(['overflow_monitor_id' => $clean->id, 'year' => 2025, 'counted_spills' => 0]);
     $recent = OverflowMonitor::factory()->create(['river_id' => $river->id]);
     $discharging = OverflowMonitor::factory()->discharging()->create(['river_id' => $river->id, 'latest_event_started_at' => null]);
 
@@ -78,7 +82,7 @@ it('has pages only for overflows some region shows, and keeps those without a sp
         ->assertSee('<meta name="robots" content="noindex">', false);
     $this->get(route('overflows.show', $named))->assertOk()->assertSee('<meta name="robots" content="noindex">', false);
 
-    foreach ([$returned, $recent, $discharging] as $indexed) {
+    foreach ([$returned, $clean, $recent, $discharging] as $indexed) {
         $this->get(route('overflows.show', $indexed))->assertOk()->assertDontSee('<meta name="robots" content="noindex">', false);
     }
 
@@ -86,6 +90,7 @@ it('has pages only for overflows some region shows, and keeps those without a sp
         ->assertDontSee(route('overflows.show', $quiet))
         ->assertDontSee(route('overflows.show', $named))
         ->assertSee(route('overflows.show', $returned))
+        ->assertSee(route('overflows.show', $clean))
         ->assertSee(route('overflows.show', $recent))
         ->assertSee(route('overflows.show', $discharging));
 });

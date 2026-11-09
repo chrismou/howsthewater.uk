@@ -491,7 +491,7 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   (the company's published log, then the live feed from when we first saw the overflow), or are still running when
   that record starts (`SpillCoverage::counts()`); an earlier spill (the feed's latest then, where no log covers it)
   stays in the log but out of the figures. An overflow page is indexed and in the sitemap only while it is
-  discharging, has spilled in the last 12 months or counted spills in either of the two latest returns
+  discharging, has spilled in the last 12 months or has a count (zero included) in either of the two latest returns
   (`OverflowMonitor::isWorthIndexing()`, `scopeWorthIndexing()` for the sitemap); the rest are noindexed. The sitemap
   and the page's `dateModified` both date it by its latest spill. Name an overflow with `components/overflow-link`; link a place with
   `OverflowMonitorPlace::placeUrl()`. Overflow pages also chart the last 12 UK months (`components/spill-rain-months`)

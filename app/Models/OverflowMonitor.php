@@ -158,8 +158,9 @@ class OverflowMonitor extends Model
 
     /**
      * Whether the overflow's page has enough of its own for search results: it is discharging, has spilled in the
-     * last INDEXED_SPILL_MONTHS months, or counted spills in one of the two latest years' annual returns. Other
-     * pages are noindexed and left out of the sitemap, which uses the same rule (scopeWorthIndexing()).
+     * last INDEXED_SPILL_MONTHS months, or has a count in one of the two latest years' annual returns, zero included,
+     * since the company's own "no spills" is a fact worth finding. Pages with neither (an id and dashes) are noindexed
+     * and left out of the sitemap, which uses the same rule (scopeWorthIndexing()).
      */
     public function isWorthIndexing(): bool
     {
@@ -169,7 +170,7 @@ class OverflowMonitor extends Model
         return $this->status === OverflowStatus::Discharging
             || $this->latest_event_started_at?->greaterThanOrEqualTo($since) === true
             || $this->latest_event_ended_at?->greaterThanOrEqualTo($since) === true
-            || ($latestYear !== null && $this->annualReturns->contains(fn (OverflowAnnualReturn $return) => $return->year >= $latestYear - 1 && $return->counted_spills > 0));
+            || ($latestYear !== null && $this->annualReturns->contains(fn (OverflowAnnualReturn $return) => $return->year >= $latestYear - 1 && $return->counted_spills !== null));
     }
 
     /**
@@ -187,7 +188,7 @@ class OverflowMonitor extends Model
             ->where('status', OverflowStatus::Discharging)
             ->orWhere('latest_event_started_at', '>=', $since)
             ->orWhere('latest_event_ended_at', '>=', $since)
-            ->when($latestYear !== null, fn (Builder $query) => $query->orWhereHas('annualReturns', fn (Builder $returns) => $returns->where('year', '>=', $latestYear - 1)->where('counted_spills', '>', 0))));
+            ->when($latestYear !== null, fn (Builder $query) => $query->orWhereHas('annualReturns', fn (Builder $returns) => $returns->where('year', '>=', $latestYear - 1)->whereNotNull('counted_spills'))));
     }
 
     /**

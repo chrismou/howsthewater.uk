@@ -116,6 +116,21 @@ it('links each page to its feed for readers to discover', function () {
         ->assertSee('Follow the Wharfe by RSS');
 });
 
+it('keeps every feed out of search results', function () {
+    [$region, $river, $spot] = feedSpot();
+    $beach = BathingWater::factory()->create(['region_id' => $region->id, 'slug' => 'beach']);
+    $lake = Lake::factory()->create(['region_id' => $region->id, 'slug' => 'lake']);
+    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 47600]);
+
+    collect([
+        route('spots.feed', [$region, $river, $spot]),
+        route('rivers.feed', [$region, $river]),
+        route('beaches.feed', [$region, $beach]),
+        route('lakes.feed', [$region, $lake]),
+        route('overflows.feed', $monitor),
+    ])->each(fn (string $url) => $this->get($url)->assertOk()->assertHeader('X-Robots-Tag', 'noindex'));
+});
+
 it('has no feeds for unpublished spots or tributaries', function () {
     [$region, $river] = feedSpot();
     $hidden = Spot::factory()->unpublished()->create(['river_id' => $river->id, 'slug' => 'hidden']);

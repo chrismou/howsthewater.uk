@@ -89,6 +89,9 @@ class FeedController extends Controller
     }
 
     /**
+     * The feed as RSS, kept out of search results (each repeats its page, which search engines then report as a
+     * duplicate) while readers and crawlers can still fetch it.
+     *
      * @param  Collection<int, FeedItem>  $items
      */
     private function rss(string $title, string $description, string $link, Collection $items): Response
@@ -99,6 +102,6 @@ class FeedController extends Controller
             'description' => ConditionsFeed::xmlText($description),
             'link' => $link,
             'items' => $items,
-        ], 200, ['Content-Type' => 'application/rss+xml; charset=UTF-8']);
+        ], 200, ['Content-Type' => 'application/rss+xml; charset=UTF-8', 'X-Robots-Tag' => 'noindex']);
     }
 }
