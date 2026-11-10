@@ -73,6 +73,16 @@ it('treats #N/A watercourse names as unknown', function () {
     expect(OverflowMonitor::query()->firstOrFail()->receiving_watercourse)->toBeNull();
 });
 
+it('reads a placeholder time from the feed as unknown rather than storing it', function () {
+    // Yorkshire Water sends 1899-12-31, the spreadsheet zero date, which MySQL rejects
+    fakeStreamFeed([arcGisFeature(['StatusStart' => -2209161600000])]);
+
+    $result = app(SyncOverflowMonitors::class)->handle();
+
+    expect($result['failed'])->toBe([])
+        ->and(OverflowMonitor::query()->sole()->status_started_at)->toBeNull();
+});
+
 it('opens an event while discharging and closes it once the feed reports an end', function () {
     Http::fake([
         'services-eu1.arcgis.com/*' => Http::sequence()

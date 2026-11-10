@@ -8,6 +8,12 @@ use Illuminate\Support\Carbon;
 
 final readonly class OverflowMonitorData
 {
+    /**
+     * Feeds fill unknown times with placeholders (Yorkshire Water's 1899-12-31, the spreadsheet zero date), which MySQL
+     * timestamps reject. No overflow was monitored before this, so anything earlier is read as unknown.
+     */
+    public const EARLIEST_PLAUSIBLE_TIME = '2000-01-01';
+
     public function __construct(
         public string $externalId,
         public string $company,
@@ -154,7 +160,7 @@ final readonly class OverflowMonitorData
             return null;
         }
 
-        return Carbon::parse($value)->utc();
+        return self::unlessPlaceholder(Carbon::parse($value)->utc());
     }
 
     private static function fromLocalTime(mixed $value): ?Carbon
@@ -163,7 +169,7 @@ final readonly class OverflowMonitorData
             return null;
         }
 
-        return Carbon::parse($value, 'Europe/London')->utc();
+        return self::unlessPlaceholder(Carbon::parse($value, 'Europe/London')->utc());
     }
 
     private static function fromEpochMillis(mixed $value): ?Carbon
@@ -172,7 +178,12 @@ final readonly class OverflowMonitorData
             return null;
         }
 
-        return Carbon::createFromTimestampMs((int) $value, 'UTC');
+        return self::unlessPlaceholder(Carbon::createFromTimestampMs((int) $value, 'UTC'));
+    }
+
+    private static function unlessPlaceholder(Carbon $time): ?Carbon
+    {
+        return $time->lessThan(self::EARLIEST_PLAUSIBLE_TIME) ? null : $time;
     }
 
     private static function cleanWatercourse(mixed $value): ?string
