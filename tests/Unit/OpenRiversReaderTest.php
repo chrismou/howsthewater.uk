@@ -175,3 +175,32 @@ it('follows the river through a braid with a link drawn against the flow', funct
     expect($centreline[0])->toEqual(BritishNationalGrid::toLatLng(397000, 450000))
         ->and(end($centreline))->toEqual(BritishNationalGrid::toLatLng(403000, 450000));
 });
+
+it('carries a river on along the watercourse that takes its water to the river it flows into, by the shortest way', function () {
+    $path = openRiversFixture([
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [405000, 450000]]],
+        // The canal it becomes, with a dead-end arm and a stretch running on past the river it reaches.
+        ['name' => 'Test Canal', 'start' => 'b', 'end' => 'c', 'points' => [[405000, 450000], [408000, 450000]]],
+        ['name' => 'Test Canal', 'start' => 'c', 'end' => 'x', 'points' => [[408000, 450000], [408000, 453000]]],
+        ['name' => 'Test Canal', 'start' => 'c', 'end' => 'd', 'points' => [[408000, 450000], [410000, 450000]]],
+        ['name' => 'Test Canal', 'start' => 'd', 'end' => 'e', 'points' => [[410000, 450000], [412000, 450000]]],
+    ]);
+    $reader = new OpenRiversReader($path);
+    $flowsInto = [BritishNationalGrid::toLatLng(410000, 455000), BritishNationalGrid::toLatLng(410000, 445000)];
+
+    $centreline = $reader->continueAlong($reader->riverCentreline('River Test'), 'Test Canal', $flowsInto);
+
+    expect($centreline)->toHaveCount(4)
+        ->and($centreline[0])->toEqualWithDelta(BritishNationalGrid::toLatLng(400000, 450000), 0.0001)
+        ->and(end($centreline))->toEqualWithDelta(BritishNationalGrid::toLatLng(410000, 450000), 0.0001);
+});
+
+it('refuses to carry a river on along a watercourse that does not start where it ends', function () {
+    $path = openRiversFixture([
+        ['name' => 'River Test', 'start' => 'a', 'end' => 'b', 'points' => [[400000, 450000], [405000, 450000]]],
+        ['name' => 'Test Canal', 'start' => 'c', 'end' => 'd', 'points' => [[406000, 450000], [410000, 450000]]],
+    ]);
+    $reader = new OpenRiversReader($path);
+
+    $reader->continueAlong($reader->riverCentreline('River Test'), 'Test Canal', [BritishNationalGrid::toLatLng(410000, 455000), BritishNationalGrid::toLatLng(410000, 445000)]);
+})->throws(RuntimeException::class, 'No Test Canal link starts within 100 m');

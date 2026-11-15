@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $flows_into_river_id
  * @property string $name
  * @property string|null $os_name
+ * @property string|null $continues_along
  * @property string $slug
  * @property string|null $catchment
  * @property array<int, string>|null $aliases
@@ -49,6 +50,7 @@ class River extends Model
         'flows_into_river_id',
         'name',
         'os_name',
+        'continues_along',
         'slug',
         'catchment',
         'aliases',

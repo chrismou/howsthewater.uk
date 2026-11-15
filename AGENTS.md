@@ -169,7 +169,9 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   Esk, Hull) and the Thames (source to London Bridge, with tidal spots below Teddington from Richmond to Putney, mouth
   hint in central London because the tidal Thames is split into pieces too far apart to join; today's reader would
   build it backwards from Erith, so its stored line must never be cleared), the North West's Ribble, Lune, Kent, Eden and Cumbrian Derwent (United
-  Utilities, mouths at the head of each estuary), and the North East's Tyne (with the North and South Tyne flowing
+  Utilities, mouths at the head of each estuary) and the Mersey, from Stockport, where the Tame and Goyt meet, through
+  its estuary to New Brighton, with the Irwell (Bury, Salford) and the Weaver (Nantwich, Northwich) flowing into it,
+  and the North East's Tyne (with the North and South Tyne flowing
   into it), Wear, Tees, Coquet, Aln, Wansbeck, Blyth and Tweed, with the Till flowing into the Tweed (Northumbrian
   Water, plus Scottish Water for the Tweed, which runs mostly through Scotland; its Scottish stretch has overflows and
   SEPA levels, rainfall and flood warnings). The Midlands has Severn
@@ -284,7 +286,12 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   (recent spills first, via `SpotConditions::upstreamMonitorsByActivity()`) and load the rest from `spots.monitors`,
   since spots low on a big system (Goole) have hundreds upstream. Distances follow the water.
   Positions come from projecting lat/lng onto the river centreline (`rivers:centrelines` then `rivers:positions`,
-  which also sets each tributary's and inflowing main river's `joins_at_metres`).
+  which also sets each tributary's and inflowing main river's `joins_at_metres` from the end of its line). Where OS
+  ends a river short of the one it flows into (the Irwell becomes the Manchester Ship Canal at Pomona and reaches the
+  Mersey at Irlam, 12.9 km further on), `continuesAlong:` in `RiverSeeder` (`rivers.continues_along`) names the
+  watercourse that carries it there, and `OpenRiversReader::continueAlong()` follows that watercourse's links, by the
+  shortest way, to the first node on the other river's line, so joins, distances and the overflows on that stretch
+  (matched by the watercourse's name as an alias) all follow the water. The river it flows into must be seeded first.
 - Beaches and lakes come from the EA designated bathing water register (Wales's register sits on the same platform
   under `/wales/bathing-waters`, read by `BathingWaterClient::wales()` for NRW sites, which name sites by `label`),
   and in Scotland from SEPA's open map service

@@ -51,6 +51,21 @@ it('seeds every parent before its tributaries and every river a main river flows
     }
 });
 
+it('seeds the river a continued river flows into before it, as its line is carried on to that river\'s', function () {
+    foreach (RiverSeeder::rivers() as $region => $rivers) {
+        $seen = [];
+
+        foreach ($rivers as $river) {
+            if (($river['continues_along'] ?? null) !== null) {
+                expect($river['flows_into'] ?? null)->not->toBeNull("{$region}/{$river['slug']} continues along {$river['continues_along']} but flows into nothing")
+                    ->and($seen)->toHaveKey((string) ($river['flows_into'] ?? ''), "{$region}/{$river['slug']} continues on to a river seeded after it");
+            }
+
+            $seen[$river['slug']] = true;
+        }
+    }
+});
+
 it('lists a river in other regions only where those regions are seeded, with its own spots there', function () {
     $regions = array_keys(RiverSeeder::rivers());
 

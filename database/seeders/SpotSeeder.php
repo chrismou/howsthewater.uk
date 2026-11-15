@@ -916,6 +916,25 @@ class SpotSeeder extends Seeder
                 ['name' => 'Cockermouth', 'latitude' => 54.6651, 'longitude' => -3.3650, 'description' => 'Where the Cocker joins, below the castle.'],
                 ['name' => 'Workington Bridge', 'latitude' => 54.6490, 'longitude' => -3.5327, 'description' => 'The last reach above the harbour.'],
             ],
+            'mersey' => [
+                ['name' => 'Stockport', 'latitude' => 53.4126, 'longitude' => -2.1581, 'description' => 'Where the Tame and Goyt meet to form the Mersey.'],
+                ['name' => 'Didsbury', 'latitude' => 53.4111, 'longitude' => -2.2391, 'description' => 'Riverside meadows below Fletcher Moss and Stenner Woods.'],
+                ['name' => 'Jackson\'s Boat, Chorlton', 'latitude' => 53.4338, 'longitude' => -2.3001, 'description' => 'The old footbridge between Chorlton Ees and Sale Water Park.'],
+                ['name' => 'Warrington', 'latitude' => 53.3879, 'longitude' => -2.5709, 'description' => 'Victoria Park, near Howley weir and the tidal limit.'],
+            ],
+            'irwell' => [
+                ['name' => 'Ramsbottom', 'latitude' => 53.6480, 'longitude' => -2.3137, 'description' => 'Riverside below the town, beside the East Lancashire Railway.'],
+                ['name' => 'Summerseat', 'latitude' => 53.6321, 'longitude' => -2.3071, 'description' => 'Wooded valley by the old mill village.'],
+                ['name' => 'Burrs Country Park, Bury', 'latitude' => 53.6093, 'longitude' => -2.3085, 'description' => 'Country park on the site of the old Burrs mill.'],
+                ['name' => 'Clifton Country Park', 'latitude' => 53.5314, 'longitude' => -2.3354, 'description' => 'Riverside path between Bolton and Salford.'],
+                ['name' => 'Peel Park, Salford', 'latitude' => 53.4873, 'longitude' => -2.2689, 'description' => 'Park in a loop of the river below the university.'],
+            ],
+            'weaver' => [
+                ['name' => 'Nantwich', 'latitude' => 53.0663, 'longitude' => -2.5241, 'description' => 'Riverside park below the town bridge.'],
+                ['name' => 'Winsford', 'latitude' => 53.1931, 'longitude' => -2.5172, 'description' => 'Below the town bridge, near the Winsford Flashes.'],
+                ['name' => 'Northwich', 'latitude' => 53.2625, 'longitude' => -2.5157, 'description' => 'The town riverside, where the Dane joins.'],
+                ['name' => 'Frodsham', 'latitude' => 53.3017, 'longitude' => -2.7082, 'description' => 'By Frodsham Bridge, near where the Weaver reaches the Mersey estuary.'],
+            ],
         ];
     }
 
