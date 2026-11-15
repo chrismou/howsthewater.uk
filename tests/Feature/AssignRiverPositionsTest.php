@@ -102,23 +102,6 @@ it('records where a main river joins the river it flows into', function () {
     expect($ure->fresh()->joins_at_metres)->toBeBetween(15000, 19000);
 });
 
-it('records a main river as joining where its seeded join point says, where its line stops short', function () {
-    $mersey = River::factory()->withCentreline()->create();
-    // Its line ends beside the parent's midpoint, but its water reaches the parent near the end (the Irwell, by the Ship Canal).
-    $irwell = River::factory()->create([
-        'flows_into_river_id' => $mersey->id,
-        'centreline' => [[53.950, -1.750], [53.900, -1.750], [53.851, -1.701]],
-        'length_metres' => 9000,
-        'joins_latitude' => 53.810,
-        'joins_longitude' => -1.620,
-    ]);
-
-    app(AssignRiverPositions::class)->handle($irwell);
-
-    // Its line's end would put it at about 17 km.
-    expect($irwell->fresh()->joins_at_metres)->toBeGreaterThan(22000);
-});
-
 it('positions monitors on unnamed tributaries of the river with extra slack', function () {
     $river = River::factory()->withCentreline()->create(['name' => 'River Test', 'aliases' => ['River Test']]);
 

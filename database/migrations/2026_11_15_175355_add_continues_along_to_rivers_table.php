@@ -11,9 +11,9 @@ return new class () extends Migration {
     public function up(): void
     {
         Schema::table('rivers', function (Blueprint $table) {
-            $table->decimal('joins_latitude', 9, 6)->nullable()->after('mouth_longitude')
-                ->comment('Where the river really joins its parent, for a line that stops short (the Irwell at the Ship Canal)');
-            $table->decimal('joins_longitude', 9, 6)->nullable()->after('joins_latitude');
+            // The OS watercourse that carries the river's water on to the river it flows into, where OS ends the river
+            // short of it (the Irwell, which becomes the Manchester Ship Canal at Pomona).
+            $table->string('continues_along')->nullable()->after('os_name');
         });
     }
 
@@ -23,7 +23,7 @@ return new class () extends Migration {
     public function down(): void
     {
         Schema::table('rivers', function (Blueprint $table) {
-            $table->dropColumn(['joins_latitude', 'joins_longitude']);
+            $table->dropColumn('continues_along');
         });
     }
 };

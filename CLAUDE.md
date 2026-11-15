@@ -286,10 +286,12 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   (recent spills first, via `SpotConditions::upstreamMonitorsByActivity()`) and load the rest from `spots.monitors`,
   since spots low on a big system (Goole) have hundreds upstream. Distances follow the water.
   Positions come from projecting lat/lng onto the river centreline (`rivers:centrelines` then `rivers:positions`,
-  which also sets each tributary's and inflowing main river's `joins_at_metres` from the end of its line). Where a
-  line stops short of where the water joins (OS ends the Irwell at Pomona, where the Manchester Ship Canal carries it
-  on to the Mersey at Irlam, 13 km further down), `joinsAt:` in `RiverSeeder` (`rivers.joins_latitude` and
-  `joins_longitude`, `River::joinPoint()`) gives the junction, OS's node where the canal meets the Mersey's line.
+  which also sets each tributary's and inflowing main river's `joins_at_metres` from the end of its line). Where OS
+  ends a river short of the one it flows into (the Irwell becomes the Manchester Ship Canal at Pomona and reaches the
+  Mersey at Irlam, 12.9 km further on), `continuesAlong:` in `RiverSeeder` (`rivers.continues_along`) names the
+  watercourse that carries it there, and `OpenRiversReader::continueAlong()` follows that watercourse's links, by the
+  shortest way, to the first node on the other river's line, so joins, distances and the overflows on that stretch
+  (matched by the watercourse's name as an alias) all follow the water. The river it flows into must be seeded first.
 - Beaches and lakes come from the EA designated bathing water register (Wales's register sits on the same platform
   under `/wales/bathing-waters`, read by `BathingWaterClient::wales()` for NRW sites, which name sites by `label`),
   and in Scotland from SEPA's open map service

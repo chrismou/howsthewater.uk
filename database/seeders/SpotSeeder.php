@@ -932,7 +932,7 @@ class SpotSeeder extends Seeder
             'weaver' => [
                 ['name' => 'Nantwich', 'latitude' => 53.0663, 'longitude' => -2.5241, 'description' => 'Riverside park below the town bridge.'],
                 ['name' => 'Winsford', 'latitude' => 53.1931, 'longitude' => -2.5172, 'description' => 'Below the town bridge, near the Winsford Flashes.'],
-                ['name' => 'Northwich', 'latitude' => 53.2597, 'longitude' => -2.5159, 'description' => 'The town riverside, where the Dane joins.'],
+                ['name' => 'Northwich', 'latitude' => 53.2625, 'longitude' => -2.5157, 'description' => 'The town riverside, where the Dane joins.'],
                 ['name' => 'Frodsham', 'latitude' => 53.3017, 'longitude' => -2.7082, 'description' => 'By Frodsham Bridge, near where the Weaver reaches the Mersey estuary.'],
             ],
         ];

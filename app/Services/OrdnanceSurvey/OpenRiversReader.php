@@ -28,6 +28,16 @@ class OpenRiversReader
      */
     private const PARALLEL_METRES = 300;
 
+    /**
+     * How close the watercourse a river continues along must start to the river's own end.
+     */
+    private const CONTINUATION_START_METRES = 100;
+
+    /**
+     * How close a node must be to the line of the river flowed into to count as reaching it.
+     */
+    private const CONTINUATION_JOIN_METRES = 50;
+
     public function __construct(private string $geoPackagePath)
     {
         if (! is_file($geoPackagePath)) {
@@ -90,6 +100,83 @@ class OpenRiversReader
         $chains = array_map(fn (array $component) => $this->mainStem($component, $distanceToMouth), $this->connectedComponents($links));
 
         return $this->joinAcrossGaps($chains, $this->nearestMouth($chains, $distanceToMouth));
+    }
+
+    /**
+     * Carries a river's line on along another watercourse that takes its water to the river it flows into, where OS
+     * ends the river short of it (the Irwell becomes the Manchester Ship Canal at Pomona and reaches the Mersey at
+     * Irlam): the shortest way along that watercourse's links from the line's end to the first node on the other
+     * river's line.
+     *
+     * @param  array<int, array{0: float, 1: float}>  $centreline  The river's own line, source to mouth
+     * @param  array<int, array{0: float, 1: float}>  $flowsInto  The line of the river its water reaches
+     * @return array<int, array{0: float, 1: float}>
+     */
+    public function continueAlong(array $centreline, string $watercourseName, array $flowsInto): array
+    {
+        $pdo = new PDO('sqlite:'.$this->geoPackagePath, options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $statement = $pdo->prepare('SELECT geometry, start_node, end_node FROM watercourse_link WHERE watercourse_name = :name OR watercourse_name_alternative = :alternative');
+        $statement->execute(['name' => $watercourseName, 'alternative' => $watercourseName]);
+
+        /** @var array<string, array{0: float, 1: float}> $nodes */
+        $nodes = [];
+        /** @var array<string, array<int, array{node: string, points: array<int, array{0: float, 1: float}>, length: float}>> $edges */
+        $edges = [];
+
+        while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+            $points = $this->decodeLineString($row['geometry']);
+            $length = $this->linkLength($points);
+            $nodes[$row['start_node']] = $points[0];
+            $nodes[$row['end_node']] = $points[array_key_last($points)];
+            $edges[$row['start_node']][] = ['node' => $row['end_node'], 'points' => $points, 'length' => $length];
+            $edges[$row['end_node']][] = ['node' => $row['start_node'], 'points' => array_reverse($points), 'length' => $length];
+        }
+
+        $end = $centreline[array_key_last($centreline)];
+        $start = null;
+
+        foreach ($nodes as $id => $point) {
+            if ($this->distance($point, $end) <= self::CONTINUATION_START_METRES && ($start === null || $this->distance($point, $end) < $this->distance($nodes[$start], $end))) {
+                $start = $id;
+            }
+        }
+
+        if ($start === null) {
+            throw new RuntimeException("No {$watercourseName} link starts within ".self::CONTINUATION_START_METRES.' m of where the river ends.');
+        }
+
+        $target = new PolylineProjector($flowsInto);
+        $distances = [$start => 0.0];
+        /** @var array<string, array{from: string, points: array<int, array{0: float, 1: float}>}> $cameFrom */
+        $cameFrom = [];
+        $queue = new SplPriorityQueue();
+        $queue->insert($start, 0);
+
+        while (! $queue->isEmpty()) {
+            $node = $queue->extract();
+
+            if ($node !== $start && $target->project($nodes[$node][0], $nodes[$node][1])->offsetMetres <= self::CONTINUATION_JOIN_METRES) {
+                $path = [];
+
+                for ($step = $node; $step !== $start; $step = $cameFrom[$step]['from']) {
+                    array_unshift($path, ...array_slice($cameFrom[$step]['points'], 1));
+                }
+
+                return [...$centreline, ...$path];
+            }
+
+            foreach ($edges[$node] ?? [] as $edge) {
+                $distance = $distances[$node] + $edge['length'];
+
+                if ($distance < ($distances[$edge['node']] ?? INF)) {
+                    $distances[$edge['node']] = $distance;
+                    $cameFrom[$edge['node']] = ['from' => $node, 'points' => $edge['points']];
+                    $queue->insert($edge['node'], -$distance);
+                }
+            }
+        }
+
+        throw new RuntimeException("{$watercourseName} never reaches the line of the river it flows into.");
     }
 
     /**

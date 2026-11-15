@@ -116,13 +116,13 @@ class AssignRiverPositions
     private function assignJoinPoint(River $river): void
     {
         $parent = $river->parent ?? $river->flowsInto;
-        $joinPoint = $river->joinPoint();
+        $mouth = $river->mouth();
 
-        if ($parent === null || $joinPoint === null || ! $parent->hasCentreline()) {
+        if ($parent === null || $mouth === null || ! $parent->hasCentreline()) {
             return;
         }
 
-        $projection = (new PolylineProjector($parent->centreline))->project($joinPoint[0], $joinPoint[1]);
+        $projection = (new PolylineProjector($parent->centreline))->project($mouth[0], $mouth[1]);
 
         $river->update(['joins_at_metres' => $projection->distanceAlongMetres]);
     }

@@ -6,6 +6,7 @@ use App\Models\River;
 use App\Services\Geo\PolylineProjector;
 use App\Services\OrdnanceSurvey\OpenRiversReader;
 use App\Services\Osm\OverpassClient;
+use RuntimeException;
 
 /**
  * Stores a river's centreline so points can be positioned along it. OS Open
@@ -21,8 +22,19 @@ class FetchRiverCentreline
     public function fromOpenRivers(River $river, string $geoPackagePath): River
     {
         $parentCentreline = $river->parent?->hasCentreline() === true ? $river->parent->centreline : null;
+        $reader = new OpenRiversReader($geoPackagePath);
+        $centreline = $reader->riverCentreline($river->os_name ?? $river->name, $parentCentreline, $river->mouthHint());
 
-        return $this->store($river, (new OpenRiversReader($geoPackagePath))->riverCentreline($river->os_name ?? $river->name, $parentCentreline, $river->mouthHint()));
+        if ($river->continues_along !== null) {
+            // Rivers are fetched in seeding order, so the river it flows into is seeded first and already has its line.
+            if ($river->flowsInto?->hasCentreline() !== true) {
+                throw new RuntimeException("{$river->name} continues along {$river->continues_along}, but the river it flows into has no centreline yet.");
+            }
+
+            $centreline = $reader->continueAlong($centreline, $river->continues_along, $river->flowsInto->centreline);
+        }
+
+        return $this->store($river, $centreline);
     }
 
     public function fromOpenStreetMap(River $river): River
