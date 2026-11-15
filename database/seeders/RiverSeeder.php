@@ -19,7 +19,7 @@ class RiverSeeder extends Seeder
      * approximate mouth so same-named rivers elsewhere in Britain are ignored.
      * Keyed by region slug; slugs only need to be unique within a region.
      *
-     * @return array<string, array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>>
+     * @return array<string, array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>>
      */
     public static function rivers(): array
     {
@@ -40,7 +40,7 @@ class RiverSeeder extends Seeder
     }
 
     /**
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function yorkshire(): array
     {
@@ -155,7 +155,7 @@ class RiverSeeder extends Seeder
      * that join above Teddington. Rivers joining below it (the Lea, Brent,
      * Wandle, Roding) are London's, in london(), which also lists the Thames.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function thamesValley(): array
     {
@@ -197,7 +197,7 @@ class RiverSeeder extends Seeder
      * monitors, each with its tributaries. Mouths are at the head of each
      * estuary, as the tidal reaches are not walkable river.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function northWest(): array
     {
@@ -236,6 +236,27 @@ class RiverSeeder extends Seeder
             // Derwent: a second River Greta, which joins at Keswick, so it needs its own slug.
             self::main('River Derwent', 'Derwent', [54.6460, -3.5500]),
             self::tributary('River Greta', 'derwent', slug: 'greta-keswick'),
+
+            // Mersey, from Stockport, where the Tame and Goyt meet, to its estuary
+            self::main('River Mersey', 'Mersey', [53.3500, -2.7200], ['Mersey Estuary', 'River Mersey Estuary']),
+            self::tributary('River Tame', 'mersey'),
+            self::tributary('River Goyt', 'mersey'),
+            self::tributary('River Etherow', 'goyt'),
+            self::tributary('Glossop Brook', 'etherow'),
+            self::tributary('River Bollin', 'mersey'),
+            self::tributary('River Dean', 'bollin'),
+            self::tributary('Sankey Brook', 'mersey'),
+            // OS ends the Irwell at Pomona, where the Manchester Ship Canal takes its water on to the Mersey at Irlam.
+            self::main('River Irwell', 'Mersey', [53.4700, -2.2800], flowsInto: 'mersey', joinsAt: [53.4374, -2.4135]),
+            self::tributary('River Irk', 'irwell'),
+            self::tributary('River Medlock', 'irwell'),
+            self::tributary('River Roch', 'irwell'),
+            self::tributary('River Croal', 'irwell'),
+            self::tributary('River Tonge', 'croal'),
+            self::tributary('Eagley Brook', 'tonge'),
+            self::main('River Weaver', 'Mersey', [53.3260, -2.7550], flowsInto: 'mersey'),
+            self::tributary('River Dane', 'weaver'),
+            self::tributary('River Wheelock', 'dane'),
         ];
     }
 
@@ -248,7 +269,7 @@ class RiverSeeder extends Seeder
      * tidal limit (the Derwent, Team, Ouse Burn and Don on the Tyne) still
      * count on the river page.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function northEast(): array
     {
@@ -322,7 +343,7 @@ class RiverSeeder extends Seeder
      * Lymington River, and the Isle of Wight's Medina and Eastern Yar.
      * Southern Water often writes a river bare ("MEDWAY", "ROTHER E").
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function southEast(): array
     {
@@ -387,7 +408,7 @@ class RiverSeeder extends Seeder
      * Bristol Avon) and keeps OS's as osName; Bristol's Frome, a tributary
      * joining the same Avon as Somerset's, takes a mouth hint.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function wessex(): array
     {
@@ -464,7 +485,7 @@ class RiverSeeder extends Seeder
      * Roding from Essex, the Brent and Crane in the west, the Wandle, Beverley
      * Brook and Ravensbourne in the south, and Kent's Darent with the Cray.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function london(): array
     {
@@ -520,7 +541,7 @@ class RiverSeeder extends Seeder
      * keeps its own pages and flows into it. The Avon shares its name with
      * rivers across England, so its mouth hint matters.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function southWest(): array
     {
@@ -616,7 +637,7 @@ class RiverSeeder extends Seeder
      * Several share names with rivers elsewhere (Stour, Colne, Blackwater,
      * Glen), so each main river's mouth hint matters.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function eastOfEngland(): array
     {
@@ -702,7 +723,7 @@ class RiverSeeder extends Seeder
      * belong to Hafren Dyfrdwy, which is not on Stream, so they do not
      * count yet.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function midlands(): array
     {
@@ -777,7 +798,7 @@ class RiverSeeder extends Seeder
      * a river within reach of its centreline. Rivers with spots are main
      * rivers flowing into the river they join, so they keep their own pages.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function scotland(): array
     {
@@ -880,7 +901,7 @@ class RiverSeeder extends Seeder
      * the North East. The Cardiff Taff and the Carmarthenshire Taf share the
      * Welsh name Afon Taf, so the mouths matter.
      *
-     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>
+     * @return array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>
      */
     private static function wales(): array
     {
@@ -946,11 +967,12 @@ class RiverSeeder extends Seeder
      * @param  string|null  $slug  For a river whose name another in the region already uses (the Galloway Dee)
      * @param  array<string, array<int, string>>  $alsoRunsThrough  Other regions it runs through, whose listings link to it, by slug, each with the slugs of its spots there (the Thames's in London)
      * @param  string|null  $osName  OS Open Rivers' name, where the site's says which of two same-named rivers it is (the Bristol Avon is OS's River Avon); also an alias
-     * @return array{name: string, os_name: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth: array{0: float, 1: float}, flows_into: string|null, also_runs_through: array<string, array<int, string>>|null}
+     * @param  array{0: float, 1: float}|null  $joinsAt  Where its water reaches the river it flows into, where its line stops short of that (the Irwell, which OS ends where the Manchester Ship Canal takes it on to the Mersey)
+     * @return array{name: string, os_name: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth: array{0: float, 1: float}, flows_into: string|null, also_runs_through: array<string, array<int, string>>|null, joins: array{0: float, 1: float}|null}
      */
-    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = [], ?string $flowsInto = null, ?string $slug = null, array $alsoRunsThrough = [], ?string $osName = null): array
+    private static function main(string $name, string $catchment, array $mouth, array $extraAliases = [], ?string $flowsInto = null, ?string $slug = null, array $alsoRunsThrough = [], ?string $osName = null, ?array $joinsAt = null): array
     {
-        return ['name' => $name, 'os_name' => $osName, 'slug' => $slug ?? self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...($osName === null ? [] : [$osName]), ...$extraAliases], 'mouth' => $mouth, 'flows_into' => $flowsInto, 'also_runs_through' => $alsoRunsThrough ?: null];
+        return ['name' => $name, 'os_name' => $osName, 'slug' => $slug ?? self::slug($name), 'catchment' => $catchment, 'aliases' => [$name, ...($osName === null ? [] : [$osName]), ...$extraAliases], 'mouth' => $mouth, 'flows_into' => $flowsInto, 'also_runs_through' => $alsoRunsThrough ?: null, 'joins' => $joinsAt];
     }
 
     /**
@@ -980,14 +1002,15 @@ class RiverSeeder extends Seeder
     }
 
     /**
-     * @param  array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null}>  $rivers
+     * @param  array<int, array{name: string, os_name?: string|null, slug: string, catchment: string, aliases: array<int, string>, mouth?: array{0: float, 1: float}, parent?: string, flows_into?: string|null, also_runs_through?: array<string, array<int, string>>|null, joins?: array{0: float, 1: float}|null}>  $rivers
      */
     private function seedRegion(Region $region, array $rivers): void
     {
         foreach ($rivers as $river) {
             $parentSlug = $river['parent'] ?? null;
             $mouth = $river['mouth'] ?? [null, null];
-            unset($river['parent'], $river['mouth'], $river['flows_into']);
+            $joins = $river['joins'] ?? [null, null];
+            unset($river['parent'], $river['mouth'], $river['flows_into'], $river['joins']);
 
             $parent = $parentSlug === null ? null : $region->rivers()->where('slug', $parentSlug)->firstOrFail();
 
@@ -1004,6 +1027,8 @@ class RiverSeeder extends Seeder
                 'parent_river_id' => $parent?->id,
                 'mouth_latitude' => $mouth[0],
                 'mouth_longitude' => $mouth[1],
+                'joins_latitude' => $joins[0],
+                'joins_longitude' => $joins[1],
             ])->save();
         }
 

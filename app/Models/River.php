@@ -26,6 +26,8 @@ use Illuminate\Support\Carbon;
  * @property array<string, array<int, string>>|null $also_runs_through
  * @property float|null $mouth_latitude
  * @property float|null $mouth_longitude
+ * @property float|null $joins_latitude
+ * @property float|null $joins_longitude
  * @property array<int, array{0: float, 1: float}>|null $centreline
  * @property int|null $length_metres
  * @property int|null $joins_at_metres
@@ -55,6 +57,8 @@ class River extends Model
         'also_runs_through',
         'mouth_latitude',
         'mouth_longitude',
+        'joins_latitude',
+        'joins_longitude',
         'centreline',
         'length_metres',
         'joins_at_metres',
@@ -68,6 +72,8 @@ class River extends Model
             'also_runs_through' => 'array',
             'mouth_latitude' => 'float',
             'mouth_longitude' => 'float',
+            'joins_latitude' => 'float',
+            'joins_longitude' => 'float',
             'centreline' => 'array',
             'gauges_discovered_at' => 'datetime',
         ];
@@ -254,6 +260,21 @@ class River extends Model
         $centreline = $this->centreline;
 
         return end($centreline);
+    }
+
+    /**
+     * Where the river's water reaches its parent or the river it flows into: the seeded join point where its line
+     * stops short (OS ends the Irwell where the Manchester Ship Canal takes it on to the Mersey at Irlam), else its mouth.
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    public function joinPoint(): ?array
+    {
+        if ($this->joins_latitude !== null && $this->joins_longitude !== null) {
+            return [$this->joins_latitude, $this->joins_longitude];
+        }
+
+        return $this->mouth();
     }
 
     /**
