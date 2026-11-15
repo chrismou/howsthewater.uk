@@ -175,7 +175,10 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   SEPA levels, rainfall and flood warnings). The Midlands has Severn
   Trent's rivers: the Trent, with the Soar and the Peak District's Derwent, Wye, Dove and Manifold flowing into it, and
   the Severn, with the Teme and Warwickshire Avon. Overflows on the Welsh upper Severn and the Vyrnwy, and around
-  Knighton on the Teme (Hafren Dyfrdwy), are not on Stream, so they do not count yet. The East of England has Anglian Water's rivers, Lincolnshire to Essex: the Great
+  Knighton on the Teme (Hafren Dyfrdwy), are not on Stream, so they do not count yet. Severn Trent writes the Eye
+  (OS's name for the Wreake above Melton) as the Wreake, so the Eye carries the Wreake's names and takes the overflows
+  nearer its line. OS maps only Birmingham's Hockley Brook's last 2 km to the Tame, so the overflows on its culverted
+  stretch through Hockley and Winson Green are too far to place. The East of England has Anglian Water's rivers, Lincolnshire to Essex: the Great
   Ouse (with the Cam, Lark and Little Ouse flowing into it, and the Wissey and Nar as tributaries, since OS splits the
   lower Wissey where it crosses the Cut-off Channel), the Nene, Welland and Witham into the Wash, the Broads (the
   Wensum, Bure and Waveney flowing into the Yare), Suffolk's Stour, Gipping, Deben and Alde, and Essex's Colne,

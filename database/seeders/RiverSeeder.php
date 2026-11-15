@@ -713,6 +713,7 @@ class RiverSeeder extends Seeder
             self::tributary('River Rea', 'tame'),
             self::tributary('River Cole', 'tame'),
             self::tributary('Ford Brook', 'tame'),
+            self::tributary('Hockley Brook', 'tame'),
             self::tributary('River Anker', 'tame'),
             self::tributary('River Blythe', 'tame'),
             self::tributary('River Sow', 'trent'),
@@ -727,6 +728,8 @@ class RiverSeeder extends Seeder
             self::tributary('River Ryton', 'idle'),
             self::main('River Soar', 'Trent', [52.8640, -1.2620], ['River Soar Or Tribs', 'Various Sites River Soar'], flowsInto: 'trent'),
             self::tributary('River Wreake', 'soar', ['River Wreake Trib']),
+            // The Wreake above Melton, which Severn Trent writes as the Wreake ("RIVER WREAKE (EYE) TRIB")
+            self::tributary('River Eye', 'wreake', ['River Wreake', 'River Wreake Trib', 'River Eye + Various Brooks']),
             self::tributary('River Sence', 'soar'),
 
             // Peak District rivers, all flowing into the Trent
@@ -932,6 +935,7 @@ class RiverSeeder extends Seeder
             self::tributary('River Ceiriog', 'dee', ['Afon Ceiriog']),
             self::tributary('Afon Eitha', 'dee', ['River Eitha'], slug: 'eitha'),
             self::tributary('Pulford Brook', 'dee'),
+            self::tributary('River Alyn', 'dee', ['Afon Alun', 'Afon Alyn']),
         ];
     }
 
