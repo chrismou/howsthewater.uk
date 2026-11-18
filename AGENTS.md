@@ -843,7 +843,10 @@ replacing the local database with a copy of live rather than backfilling.
 
 - `.github/workflows/tests.yml` runs `composer ci:check` (pint, phpstan, tests) on every push and PR, and the tests again
   on MySQL 8.4 (the `mysql` job), since SQLite accepts SQL that MySQL rejects. Query log assertions must match either
-  quoting (SQLite's double quotes, MySQL's backticks). A push to `main` that passes both then runs `dep deploy` from CI via `deployphp/action`, using the GitHub `production` environment
+  quoting (SQLite's double quotes, MySQL's backticks). MySQL sessions are pinned to UTC (`timezone` in
+  `config/database.php`), as times are written in UTC and MySQL converts TIMESTAMP columns through the session's zone:
+  on a server left on Europe/London, summer times read an hour out and the hour the clocks go forward is refused
+  (`DatabaseTimezoneTest`, which only runs on MySQL). A push to `main` that passes both then runs `dep deploy` from CI via `deployphp/action`, using the GitHub `production` environment
   (secrets `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; variables `DEPLOY_IP`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`).
 - Pages are the same for every visitor (no cookies, sessions or accounts), so page routes send
   `cache.headers:public;max_age=60;s_maxage=300;stale_while_revalidate=300` (`$pageCaching` in `routes/web.php`) and a

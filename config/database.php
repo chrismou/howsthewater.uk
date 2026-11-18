@@ -59,6 +59,10 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Laravel writes and reads times in UTC, and MySQL converts TIMESTAMP columns through the session's time
+            // zone. Pinned so a server on Europe/London never shifts summer times by an hour or refuses the hour the
+            // clocks go forward.
+            'timezone' => '+00:00',
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
@@ -79,6 +83,10 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Laravel writes and reads times in UTC, and MySQL converts TIMESTAMP columns through the session's time
+            // zone. Pinned so a server on Europe/London never shifts summer times by an hour or refuses the hour the
+            // clocks go forward.
+            'timezone' => '+00:00',
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
