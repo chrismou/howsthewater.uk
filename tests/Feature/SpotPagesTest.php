@@ -575,3 +575,13 @@ it('describes the level in everyday words and links each agency\'s own page for 
         ->and(GaugeStation::factory()->sepa()->make(['external_id' => 'SEPA14973'])->agencyPageUrl())->toBe('https://waterlevels.sepa.org.uk/Station/14973')
         ->and(GaugeStation::factory()->make(['external_id' => 'NRW4061', 'network' => \App\Enums\Agency::NaturalResourcesWales])->agencyPageUrl())->toBe('https://rivers-and-seas.naturalresources.wales/Station/4061');
 });
+
+it('says how many spills upstream the latest listed are out of, beyond those cached', function () {
+    [$region, $river, $spot] = spotWithUrl(['river_metres' => 50000]);
+    $monitor = OverflowMonitor::factory()->create(['river_id' => $river->id, 'river_metres' => 40000]);
+    collect(range(1, 60))->each(fn (int $hours) => SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours($hours), 'ended_at' => now()->subHours($hours)->addMinutes(30)]));
+
+    $this->get(route('spots.show', [$region, $river, $spot]))
+        ->assertOk()
+        ->assertSee('The latest 10 of 60 in the last 30 days.');
+});

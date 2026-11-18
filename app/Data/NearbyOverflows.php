@@ -14,7 +14,7 @@ final readonly class NearbyOverflows
 {
     /**
      * @param  Collection<int, NearbyMonitorSummary>  $monitors  Nearest first
-     * @param  Collection<int, SpillEvent>  $recentSpillEvents  Most recent first, including the feed's latest when we first saw an overflow
+     * @param  Collection<int, SpillEvent>  $recentSpillEvents  Most recent first, including the feed's latest when we first saw an overflow, only those SpillHistoryService::kept()
      * @param  Collection<int, int>  $countedSpillsByMonitor  Counted spills in the last 30 days, by monitor id
      * @param  int  $daysWithSpillsLast30  UK days in the last 30 with a counted spill running
      */

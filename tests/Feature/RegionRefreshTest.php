@@ -16,6 +16,7 @@ use App\Services\Conditions\SpotConditionsService;
 use App\Services\Conditions\WaterBodyConditionsService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
 
 it('tracks the regions marked changed until a refresh takes them', function () {
@@ -140,4 +141,20 @@ it('makes the river and region comparisons work out again when the overflows a r
     // Nothing linked or unlinked: the cached comparisons stand.
     app(RefreshRegions::class)->handle([$region->id]);
     expect($generation())->toBe($before + 1);
+});
+
+it('reports a place that fails to refresh and refreshes the rest, retrying its region next run', function () {
+    Exceptions::fake();
+    $failing = Region::factory()->create();
+    Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $failing->id])->id]);
+    $working = Region::factory()->create();
+    BathingWater::factory()->create(['region_id' => $working->id]);
+    $this->partialMock(SpotConditionsService::class)->shouldReceive('refresh')->andThrow(new RuntimeException('Data too long'));
+
+    $this->artisan('regions:refresh --all')
+        ->expectsOutputToContain('Refreshed 2 regions: 0 spots, 1 beaches and 0 lakes.')
+        ->assertFailed();
+
+    Exceptions::assertReported(fn (RuntimeException $exception) => $exception->getMessage() === 'Data too long');
+    expect(app(ChangedRegions::class)->take())->toBe([$failing->id]);
 });

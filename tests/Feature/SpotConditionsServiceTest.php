@@ -12,8 +12,10 @@ use App\Models\SpillEvent;
 use App\Models\Spot;
 use App\Services\Conditions\ConditionsCache;
 use App\Services\Conditions\SpotConditionsService;
+use Illuminate\Cache\ArrayStore;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 function spotWithUpstream(): array
 {
@@ -291,4 +293,29 @@ it('leaves spills from before an overflow\'s record out of the counts, and marks
         ->and($conditions->dailyHistory->first(fn ($day) => $day->recorded)->date->toDateString())->toBe('2026-10-17');
 
     $this->get(route('spots.show', [$river->region, $river, $spot]))->assertOk()->assertSee('We hold no spills before 17 Oct.');
+});
+
+it('still serves conditions when the cache refuses to store them, logging why without the entry', function () {
+    [$spot] = spotWithUpstream();
+    // A store that refuses every write, as MySQL refused Goole's conditions once they outgrew the value column.
+    Cache::extend('refusing', fn () => Cache::repository(new class () extends ArrayStore {
+        public function put($key, $value, $seconds): bool
+        {
+            throw new RuntimeException('SQLSTATE[22001]: Data too long for column \'value\'');
+        }
+    }));
+    config(['cache.stores.refusing' => ['driver' => 'refusing'], 'cache.default' => 'refusing']);
+    Log::shouldReceive('error')->once()->withArgs(fn (string $message) => str_starts_with($message, 'Could not cache conditions') && str_contains($message, 'Data too long'));
+
+    $conditions = app(SpotConditionsService::class)->for($spot);
+
+    expect($conditions->upstreamMonitors)->toHaveCount(1);
+});
+
+it('logs a cached entry large enough to put the memory of pages reading it at risk', function () {
+    Log::shouldReceive('error')->once()->withArgs(fn (string $message) => str_contains($message, 'large enough to risk the memory limit'));
+
+    app(ConditionsCache::class)->put('large', str_repeat('x', ConditionsCache::LARGE_ENTRY_BYTES + 1));
+
+    expect(app(ConditionsCache::class)->remember('large', fn () => null))->toHaveLength(ConditionsCache::LARGE_ENTRY_BYTES + 1);
 });

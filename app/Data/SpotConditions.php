@@ -20,7 +20,8 @@ final readonly class SpotConditions
 
     /**
      * @param  Collection<int, UpstreamMonitorSummary>  $upstreamMonitors  Nearest upstream first
-     * @param  Collection<int, SpillEvent>  $recentSpillEvents  Most recent first, within the history window
+     * @param  Collection<int, SpillEvent>  $recentSpillEvents  Most recent first, within the history window, only those SpillHistoryService::kept()
+     * @param  int  $recentSpillCount  Every spill in the history window, including those not kept
      * @param  Collection<int, int>  $countedSpillsByMonitor  Counted spills in the history window, by monitor id
      * @param  Collection<int, SpillHistoryDay>  $dailyHistory  Oldest day first
      * @param  Collection<int, FloodWarningSummary>  $floodWarnings  Most severe first
@@ -34,6 +35,7 @@ final readonly class SpotConditions
         public int $spillsLast48HoursCount,
         public int $spillsLast30DaysCount,
         public Collection $recentSpillEvents,
+        public int $recentSpillCount,
         public Collection $countedSpillsByMonitor,
         public Collection $dailyHistory,
         public ?LevelSummary $level,

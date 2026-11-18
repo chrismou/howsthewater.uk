@@ -17,6 +17,11 @@ class SpillHistoryService
 {
     public const HISTORY_DAYS = 30;
 
+    /**
+     * How many of the latest spills cached conditions keep of each kind (kept()), as many as a feed lists.
+     */
+    public const KEPT_EVENTS = ConditionsFeed::MAX_ITEMS;
+
     public function __construct(private SpillCoverage $coverage)
     {
     }
@@ -39,6 +44,35 @@ class SpillHistoryService
             $event->started_at->getTimestamp(),
             SpillIntervals::endOf($event, $now)->getTimestamp(),
         ))->values();
+    }
+
+    /**
+     * The events worth keeping in cached conditions, most recent first: the
+     * latest to start (the page lists 10 and the headline reads the last to
+     * end) and the live feed's latest to start or stop (the RSS feed takes its
+     * newest items from those). Spots low on big systems hold thousands of
+     * spills a month, which made their cached conditions too big to store.
+     *
+     * @param  Collection<int, SpillEvent>  $events  Most recent first
+     * @return Collection<int, SpillEvent>
+     */
+    public function kept(Collection $events): Collection
+    {
+        if ($events->count() <= self::KEPT_EVENTS) {
+            return $events;
+        }
+
+        $latestToStart = $events->take(self::KEPT_EVENTS);
+        $latestFeedActivity = $events
+            ->reject(fn (SpillEvent $event) => $event->isFromPublishedLog())
+            ->sortByDesc(fn (SpillEvent $event) => ($event->ended_at ?? $event->started_at)->getTimestamp())
+            ->take(self::KEPT_EVENTS);
+        $lastToEnd = $events->filter(fn (SpillEvent $event) => $event->ended_at !== null)->sortByDesc(fn (SpillEvent $event) => $event->ended_at->getTimestamp())->take(1);
+
+        return $latestToStart->concat($latestFeedActivity)->concat($lastToEnd)
+            ->unique(fn (SpillEvent $event) => $event->id)
+            ->sortByDesc(fn (SpillEvent $event) => $event->started_at->getTimestamp())
+            ->values();
     }
 
     /**

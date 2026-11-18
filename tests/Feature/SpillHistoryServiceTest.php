@@ -3,6 +3,7 @@
 use App\Data\UpstreamMonitorSummary;
 use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
+use App\Models\OverflowSpillLog;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Services\Conditions\SpillHistoryService;
@@ -105,4 +106,29 @@ it('counts a spill still open on a monitor that has stopped reporting only up to
         ->and($days['2026-10-13']->spillCount)->toBe(0);
 
     Carbon::setTestNow();
+});
+
+it('keeps the latest spills to start, and a long spill the feed has just seen stop', function () {
+    $this->freezeTime();
+    $monitor = OverflowMonitor::factory()->create();
+    $short = collect(range(1, 60))->map(fn (int $hours) => SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours($hours), 'ended_at' => now()->subHours($hours)->addMinutes(30)]));
+    $long = SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subDays(20), 'ended_at' => now()->subMinutes(10)]);
+    $service = app(SpillHistoryService::class);
+
+    $kept = $service->kept($service->recentEvents(collect([summaryFor($monitor)])));
+
+    expect($kept->pluck('id')->all())->toBe([...$short->take(50)->pluck('id')->all(), $long->id]);
+});
+
+it('keeps the last spill to end even when it comes from a published log', function () {
+    $this->freezeTime();
+    $monitor = OverflowMonitor::factory()->create();
+    collect(range(1, 60))->each(fn (int $hours) => SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours($hours), 'ended_at' => now()->subHours($hours)->addMinutes(30)]));
+    $logged = SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'overflow_spill_log_id' => OverflowSpillLog::factory()->create()->id, 'started_at' => now()->subDays(25), 'ended_at' => now()->subMinutes(5)]);
+    $service = app(SpillHistoryService::class);
+
+    $kept = $service->kept($service->recentEvents(collect([summaryFor($monitor)])));
+
+    expect($kept)->toHaveCount(51)
+        ->and($kept->last()->id)->toBe($logged->id);
 });

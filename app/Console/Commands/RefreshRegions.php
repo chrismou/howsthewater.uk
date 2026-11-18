@@ -37,6 +37,14 @@ class RefreshRegions extends Command
 
         $this->info(sprintf('Refreshed %d %s: %d spots, %d beaches and %d lakes.', $result['regions'], Str::plural('region', $result['regions']), $result['spots'], $result['beaches'], $result['lakes']));
 
+        if ($result['failedRegionIds'] !== []) {
+            // Each failure was reported as it happened; mark those regions again so the next run retries them.
+            $changed->mark($result['failedRegionIds']);
+            $this->error(sprintf('Some places failed to refresh in %d %s; they will be retried.', count($result['failedRegionIds']), Str::plural('region', count($result['failedRegionIds']))));
+
+            return self::FAILURE;
+        }
+
         return self::SUCCESS;
     }
 }
