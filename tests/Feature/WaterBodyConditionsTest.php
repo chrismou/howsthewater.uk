@@ -83,3 +83,14 @@ it('starts and ends the bathing season on UK dates, not UTC', function () {
         // 00:30 BST on 1 October is still 30 September in UTC.
         ->and($site->isInSeason(\Illuminate\Support\Carbon::parse('2026-09-30 23:30', 'UTC')))->toBeFalse();
 });
+
+it('keeps only the latest spills near a beach, counting every one', function () {
+    $beach = BathingWater::factory()->create(['latitude' => 54.28, 'longitude' => -0.40]);
+    $monitor = OverflowMonitor::factory()->create(['latitude' => 54.281, 'longitude' => -0.40]);
+    collect(range(1, 60))->each(fn (int $hours) => SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours($hours), 'ended_at' => now()->subHours($hours)->addMinutes(30)]));
+
+    $overflows = app(WaterBodyConditionsService::class)->buildBeach($beach)->overflows;
+
+    expect($overflows->recentSpillEvents)->toHaveCount(50)
+        ->and($overflows->spillsLast30DaysCount)->toBe(60);
+});

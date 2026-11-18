@@ -62,6 +62,9 @@ class SpotConditionsResource extends JsonResource
                     'spills' => $day->spillCount,
                     'minutes' => $day->spillMinutes,
                 ]),
+                // Only the latest spills to start or stop are kept (SpillHistoryService::kept()); the count covers every
+                // one in the window.
+                'event_count' => $this->recentSpillCount,
                 'events' => $this->recentSpillEvents->map(fn ($event) => [
                     'monitor' => $event->overflowMonitor->external_id,
                     'river' => $event->overflowMonitor->river?->name,

@@ -16,6 +16,7 @@ use App\Services\Conditions\SpotConditionsService;
 use App\Services\Conditions\WaterBodyConditionsService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
 
 it('tracks the regions marked changed until a refresh takes them', function () {
@@ -140,4 +141,49 @@ it('makes the river and region comparisons work out again when the overflows a r
     // Nothing linked or unlinked: the cached comparisons stand.
     app(RefreshRegions::class)->handle([$region->id]);
     expect($generation())->toBe($before + 1);
+});
+
+it('reports a place that fails to refresh and refreshes the rest, retrying its region next run', function () {
+    Exceptions::fake();
+    $failing = Region::factory()->create();
+    Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $failing->id])->id]);
+    $working = Region::factory()->create();
+    BathingWater::factory()->create(['region_id' => $working->id]);
+    $spots = Mockery::mock(app(SpotConditionsService::class))->makePartial();
+    $spots->shouldReceive('refresh')->andThrow(new RuntimeException('Spot could not be built'));
+    $this->instance(SpotConditionsService::class, $spots);
+
+    $this->artisan('regions:refresh --all')
+        ->expectsOutputToContain('Refreshed 2 regions: 0 spots, 1 beaches and 0 lakes.')
+        ->expectsOutputToContain('Some places failed to refresh in 1 region; they will be retried.')
+        ->assertSuccessful();
+
+    Exceptions::assertReported(fn (RuntimeException $exception) => $exception->getMessage() === 'Spot could not be built');
+    expect(app(ChangedRegions::class)->take())->toBe([$failing->id]);
+});
+
+it('reports a region whose summary fails and still refreshes the other regions\' summaries', function () {
+    Exceptions::fake();
+    $failing = Region::factory()->create();
+    $working = Region::factory()->create();
+    $summaries = Mockery::mock(app(RegionSummaries::class))->makePartial();
+    $summaries->shouldReceive('refresh')->with(Mockery::on(fn (Region $region) => $region->is($failing)))->andThrow(new RuntimeException('Summary could not be built'));
+    $summaries->shouldReceive('refresh')->with(Mockery::on(fn (Region $region) => $region->is($working)))->passthru();
+    $this->instance(RegionSummaries::class, $summaries);
+
+    $this->artisan('regions:refresh --all')->assertSuccessful();
+
+    Exceptions::assertReported(fn (RuntimeException $exception) => $exception->getMessage() === 'Summary could not be built');
+    expect(app(ChangedRegions::class)->take())->toBe([$failing->id]);
+});
+
+it('finishes a refresh when the cache refuses an entry', function () {
+    $region = Region::factory()->create();
+    Spot::factory()->create(['river_id' => River::factory()->create(['region_id' => $region->id])->id, 'river_metres' => 50000]);
+    refuseCacheWrites('SQLSTATE[22001]: Data too long for column \'value\'');
+
+    $this->artisan('regions:refresh --all')
+        ->expectsOutputToContain('Refreshed 1 region: 1 spots, 0 beaches and 0 lakes.')
+        ->doesntExpectOutputToContain('failed to refresh')
+        ->assertSuccessful();
 });

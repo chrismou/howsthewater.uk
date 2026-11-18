@@ -7,7 +7,11 @@ use App\Models\Spot;
 use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use ReflectionClass;
+use RuntimeException;
+use Throwable;
 
 /**
  * Caches computed spot, beach and lake conditions between ingest runs. The
@@ -21,12 +25,22 @@ use ReflectionClass;
  *
  * Registered as a singleton, so the version is read once per request
  * rather than once per spot.
+ *
+ * A write that fails is logged and skipped rather than thrown, so one entry
+ * the store refuses (Goole's outgrew its column) costs that page a rebuild
+ * per visit, not the page itself or every region's refresh.
  */
 class ConditionsCache
 {
     private const TTL_MINUTES = 30;
 
     private const VERSION_KEY = 'conditions:version';
+
+    /**
+     * Entries past this size are logged as errors: a page takes about ten times an entry's size in memory to read
+     * it, so one this big is a long way towards the request's memory limit.
+     */
+    public const LARGE_ENTRY_BYTES = 8 * 1024 * 1024;
 
     private static ?string $codeVersion = null;
 
@@ -37,7 +51,7 @@ class ConditionsCache
      */
     public function rememberSpot(Spot $spot, Closure $build): SpotConditions
     {
-        return Cache::remember($this->keyFor($spot), now()->addMinutes(self::TTL_MINUTES), $build);
+        return $this->rememberKey($this->keyFor($spot), $build);
     }
 
     /**
@@ -63,7 +77,7 @@ class ConditionsCache
                 return $conditions;
             }
 
-            return tap($build($spot), fn (SpotConditions $built) => Cache::put($this->keyFor($spot), $built, now()->addMinutes(self::TTL_MINUTES)));
+            return tap($build($spot), fn (SpotConditions $built) => $this->store($this->keyFor($spot), $built));
         })->values();
     }
 
@@ -78,7 +92,7 @@ class ConditionsCache
      */
     public function remember(string $name, Closure $build): mixed
     {
-        return Cache::remember($this->keyForName($name), now()->addMinutes(self::TTL_MINUTES), $build);
+        return $this->rememberKey($this->keyForName($name), $build);
     }
 
     /**
@@ -87,7 +101,7 @@ class ConditionsCache
      */
     public function putSpot(Spot $spot, SpotConditions $conditions): void
     {
-        Cache::put($this->keyFor($spot), $conditions, now()->addMinutes(self::TTL_MINUTES));
+        $this->store($this->keyFor($spot), $conditions);
     }
 
     /**
@@ -95,7 +109,7 @@ class ConditionsCache
      */
     public function put(string $name, mixed $value): void
     {
-        Cache::put($this->keyForName($name), $value, now()->addMinutes(self::TTL_MINUTES));
+        $this->store($this->keyForName($name), $value);
     }
 
     /**
@@ -122,7 +136,7 @@ class ConditionsCache
 
             if ($results[$name] === null) {
                 $results[$name] = $build();
-                Cache::put($keys[$name], $results[$name], now()->addMinutes(self::TTL_MINUTES));
+                $this->store($keys[$name], $results[$name]);
             }
         }
 
@@ -155,6 +169,51 @@ class ConditionsCache
         );
 
         return self::$codeVersion = substr(md5(implode('', $sources)), 0, 8);
+    }
+
+    /**
+     * @template TValue
+     *
+     * @param  Closure(): TValue  $build
+     * @return TValue
+     */
+    private function rememberKey(string $key, Closure $build): mixed
+    {
+        $cached = Cache::get($key);
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        return tap($build(), fn (mixed $value) => $this->store($key, $value));
+    }
+
+    /**
+     * Writes an entry, logging (never throwing) when the store refuses it, and
+     * flagging one large enough to put the pages that read it at risk. A
+     * refused entry is forgotten, so readers rebuild rather than read the old
+     * one. Only the start of the exception's message is logged, as its SQL
+     * carries the whole entry.
+     */
+    private function store(string $key, mixed $value): void
+    {
+        $megabytes = null;
+
+        try {
+            $bytes = strlen(serialize($value));
+            $megabytes = round($bytes / 1048576, 1);
+
+            if ($bytes > self::LARGE_ENTRY_BYTES) {
+                Log::error('Cached conditions are large enough to risk the memory limit of pages that read them', ['key' => $key, 'megabytes' => $megabytes]);
+            }
+
+            if (! Cache::put($key, $value, now()->addMinutes(self::TTL_MINUTES))) {
+                throw new RuntimeException('The cache store did not write the entry.');
+            }
+        } catch (Throwable $exception) {
+            Log::error('Could not cache conditions', ['key' => $key, 'megabytes' => $megabytes, 'error' => Str::limit($exception->getMessage(), 300)]);
+            rescue(fn () => Cache::forget($key), report: false);
+        }
     }
 
     private function keyForName(string $name): string

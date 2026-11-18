@@ -95,3 +95,27 @@ function openRiversFixture(array $links): string
 
     return $path;
 }
+
+/**
+ * Makes the default cache store refuse every conditions entry (ConditionsCache), as MySQL refused Goole's once
+ * they outgrew the cache table's value column. Other entries (region marks, summaries) are stored as usual.
+ */
+function refuseCacheWrites(string $message): void
+{
+    Illuminate\Support\Facades\Cache::extend('refusing', fn () => Illuminate\Support\Facades\Cache::repository(new class ($message) extends Illuminate\Cache\ArrayStore {
+        public function __construct(private string $message)
+        {
+            parent::__construct();
+        }
+
+        public function put($key, $value, $seconds): bool
+        {
+            if (str_starts_with($key, 'conditions:v')) {
+                throw new RuntimeException($this->message);
+            }
+
+            return parent::put($key, $value, $seconds);
+        }
+    }));
+    config(['cache.stores.refusing' => ['driver' => 'refusing'], 'cache.default' => 'refusing']);
+}

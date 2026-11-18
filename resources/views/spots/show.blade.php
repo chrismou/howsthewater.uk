@@ -173,7 +173,7 @@
                 <x-help term="history" />
             </div>
             @if ($hasMonitors)
-                <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" :recency="$conditions->spillRecency"
+                <x-spill-history :days="$conditions->dailyHistory" :events="$conditions->recentSpillEvents" :total="$conditions->recentSpillCount" :recency="$conditions->spillRecency"
                                  :all-url="$conditions->upstreamMonitors->isNotEmpty() ? route('spots.spills', [$spot->river->region, $spot->river, $spot]) : null" />
             @elseif ($covered)
                 <p class="rounded-lg border border-line bg-surface p-5 text-sm text-ink-2">No spill history, as no storm overflow monitor is matched upstream of this spot.</p>

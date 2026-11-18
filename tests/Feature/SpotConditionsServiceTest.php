@@ -14,6 +14,7 @@ use App\Services\Conditions\ConditionsCache;
 use App\Services\Conditions\SpotConditionsService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 function spotWithUpstream(): array
 {
@@ -291,4 +292,44 @@ it('leaves spills from before an overflow\'s record out of the counts, and marks
         ->and($conditions->dailyHistory->first(fn ($day) => $day->recorded)->date->toDateString())->toBe('2026-10-17');
 
     $this->get(route('spots.show', [$river->region, $river, $spot]))->assertOk()->assertSee('We hold no spills before 17 Oct.');
+});
+
+it('keeps only the latest spills, with every figure counted from all of them', function () {
+    [$spot, $upstream] = spotWithUpstream();
+    collect(range(1, 60))->each(fn (int $hours) => SpillEvent::factory()->create(['overflow_monitor_id' => $upstream->id, 'started_at' => now()->subHours($hours), 'ended_at' => now()->subHours($hours)->addMinutes(30)]));
+
+    $conditions = app(SpotConditionsService::class)->build($spot);
+
+    expect($conditions->recentSpillEvents)->toHaveCount(50)
+        ->and($conditions->recentSpillCount)->toBe(60)
+        ->and($conditions->spillsLast30DaysCount)->toBe(60)
+        ->and($conditions->spillCountsByMonitor()->get($upstream->id))->toBe(60);
+});
+
+it('still serves conditions when the cache refuses to store them, logging why', function () {
+    [$spot] = spotWithUpstream();
+    refuseCacheWrites('SQLSTATE[22001]: Data too long for column \'value\'');
+    Log::shouldReceive('error')->once()->withArgs(fn (string $message, array $context) => $message === 'Could not cache conditions' && str_contains($context['error'], 'Data too long'));
+
+    $conditions = app(SpotConditionsService::class)->for($spot);
+
+    expect($conditions->upstreamMonitors)->toHaveCount(1);
+});
+
+it('still refreshes conditions the cache refuses, logging only the start of an error that carries the entry', function () {
+    [$spot] = spotWithUpstream();
+    refuseCacheWrites('SQLSTATE[22001]: Data too long, SQL: insert into cache values ('.str_repeat('x', 1024 * 1024).')');
+    Log::shouldReceive('error')->once()->withArgs(fn (string $message, array $context) => $message === 'Could not cache conditions' && strlen($context['error']) <= 303);
+
+    $conditions = app(SpotConditionsService::class)->refresh($spot);
+
+    expect($conditions->upstreamMonitors)->toHaveCount(1);
+});
+
+it('logs a cached entry large enough to put the memory of pages reading it at risk', function () {
+    Log::shouldReceive('error')->once()->withArgs(fn (string $message, array $context) => str_contains($message, 'large enough to risk the memory limit') && $context['key'] !== '');
+
+    app(ConditionsCache::class)->put('large', str_repeat('x', ConditionsCache::LARGE_ENTRY_BYTES + 1));
+
+    expect(app(ConditionsCache::class)->remember('large', fn () => null))->toHaveLength(ConditionsCache::LARGE_ENTRY_BYTES + 1);
 });

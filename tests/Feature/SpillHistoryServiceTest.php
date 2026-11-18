@@ -3,6 +3,7 @@
 use App\Data\UpstreamMonitorSummary;
 use App\Enums\OverflowStatus;
 use App\Models\OverflowMonitor;
+use App\Models\OverflowSpillLog;
 use App\Models\River;
 use App\Models\SpillEvent;
 use App\Services\Conditions\SpillHistoryService;
@@ -105,4 +106,53 @@ it('counts a spill still open on a monitor that has stopped reporting only up to
         ->and($days['2026-10-13']->spillCount)->toBe(0);
 
     Carbon::setTestNow();
+});
+
+/**
+ * Short spills started 1 to $count hours ago, newest first, each lasting half an hour.
+ *
+ * @return Illuminate\Support\Collection<int, SpillEvent>
+ */
+function hourlySpills(OverflowMonitor $monitor, int $count): Illuminate\Support\Collection
+{
+    return collect(range(1, $count))->map(fn (int $hours) => SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subHours($hours), 'ended_at' => now()->subHours($hours)->addMinutes(30)]));
+}
+
+it('keeps every spill while there are no more than a feed lists', function () {
+    $this->freezeTime();
+    $monitor = OverflowMonitor::factory()->create();
+    $spills = hourlySpills($monitor, 50);
+    $service = app(SpillHistoryService::class);
+
+    $kept = $service->kept($service->recentEvents(collect([summaryFor($monitor)])));
+
+    expect($kept->pluck('id')->all())->toBe($spills->pluck('id')->all());
+});
+
+it('keeps the latest spills to start, and long spills the feed has just seen stop', function () {
+    $this->freezeTime();
+    $monitor = OverflowMonitor::factory()->create();
+    $short = hourlySpills($monitor, 60);
+    $long = SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subDays(20), 'ended_at' => now()->subMinutes(10)]);
+    $longer = SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subDays(21), 'ended_at' => now()->subMinutes(20)]);
+    $service = app(SpillHistoryService::class);
+
+    $kept = $service->kept($service->recentEvents(collect([summaryFor($monitor)])));
+
+    expect($kept->pluck('id')->all())->toBe([...$short->take(50)->pluck('id')->all(), $long->id, $longer->id]);
+});
+
+it('keeps the last spill to end from a published log without letting logged spills crowd out the feed\'s', function () {
+    $this->freezeTime();
+    $monitor = OverflowMonitor::factory()->create();
+    hourlySpills($monitor, 60);
+    $log = OverflowSpillLog::factory()->create();
+    $logged = collect(range(1, 50))->map(fn (int $minutes) => SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'overflow_spill_log_id' => $log->id, 'started_at' => now()->subDays(25)->subMinutes($minutes), 'ended_at' => now()->subMinutes($minutes)]));
+    $long = SpillEvent::factory()->create(['overflow_monitor_id' => $monitor->id, 'started_at' => now()->subDays(20), 'ended_at' => now()->subHours(2)]);
+    $service = app(SpillHistoryService::class);
+
+    $kept = $service->kept($service->recentEvents(collect([summaryFor($monitor)])));
+
+    expect($kept->pluck('id'))->toContain($long->id, $logged->first()->id)
+        ->not->toContain($logged->get(1)->id);
 });

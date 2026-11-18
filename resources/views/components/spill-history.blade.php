@@ -1,4 +1,4 @@
-@props(['days', 'events', 'allUrl' => null, 'recency' => null])
+@props(['days', 'events', 'total', 'allUrl' => null, 'recency' => null])
 
 @php
     $maxMinutes = max(1, $days->max(fn ($day) => $day->spillMinutes));
@@ -75,8 +75,8 @@
                 </tbody>
             </table>
         </div>
-        @if ($events->count() > $listedEvents->count())
-            <p class="mt-2 text-xs text-muted">The latest {{ $listedEvents->count() }} of {{ $events->count() }} in the last {{ $days->count() }} days.@if ($allUrl) <a href="{{ $allUrl }}" class="font-medium text-accent hover:underline">See them all</a>.@endif</p>
+        @if ($total > $listedEvents->count())
+            <p class="mt-2 text-xs text-muted">The latest {{ $listedEvents->count() }} of {{ number_format($total) }} in the last {{ $days->count() }} days.@if ($allUrl) <a href="{{ $allUrl }}" class="font-medium text-accent hover:underline">See them all</a>.@endif</p>
         @endif
     @endif
 </div>
