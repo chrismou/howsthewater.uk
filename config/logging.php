@@ -91,6 +91,9 @@ return [
             'environment' => env('ROLLBAR_ENVIRONMENT', env('APP_ENV')),
             // Only real problems go to Rollbar; debug and info lines stay in the local log.
             'level' => env('ROLLBAR_LEVEL', 'error'),
+            // Rollbar otherwise re-enables exception arguments and sends every frame's, which on long rivers (Goole)
+            // hold conditions running to megabytes, so encoding the report can exhaust memory before anything is sent.
+            'local_vars_dump' => false,
         ],
 
         'slack' => [
