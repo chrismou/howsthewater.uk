@@ -364,7 +364,8 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   `regions:refresh` (scheduled last, every 15 minutes, `--all` on deploy, which never runs `cache:clear`) rewrites those regions' spot, beach and lake
   conditions, summaries and the menus in place, so visitors never hit a cold cache. The region page, live bar and API region endpoint never
   unserialise full conditions. Add listing facts to `SpotSummary::fromConditions()`. A place or region that fails
-  is reported and skipped, and its region marked again, so one bad entry never leaves every region stale.
+  is reported and skipped and its region marked again, while the run still succeeds (so one place never aborts a
+  deploy): a place that cannot be built leaves its own region's summary stale, never every region's.
 - `SpotConditionsService::for()` is cached per spot by `ConditionsCache` (versioned keys, 30 minute TTL), warmed by
   `regions:refresh`; `flush()` remains for clearing everything. The cache stores objects, so any new class reachable from `SpotConditions`
   must be added to `serializable_classes` in `config/cache.php` or reads fail with an incomplete class. Keys also
@@ -374,8 +375,8 @@ The site reports what monitors say; it never claims water is safe or clean. Keep
   route-bound river, never from `$conditions->spot->river`. Conditions keep only the latest spills
   (`SpillHistoryService::kept()`: the latest 50 to start, the live feed's latest 50 to start or stop and the last to
   end), with the total in `recentSpillCount`, as Goole holds thousands a month; work out any figure from every spill
-  in `build()`, never from the kept list. A write the store refuses is logged and skipped (the page rebuilds), and an
-  entry over `ConditionsCache::LARGE_ENTRY_BYTES` (8 MB) is logged at error, as reading one takes about ten times its
+  in `build()`, never from the kept list. A write the store refuses is logged and the entry forgotten (the page rebuilds), and an
+  entry over `ConditionsCache::LARGE_ENTRY_BYTES` (8 MB) is logged at error, as reading one takes roughly ten times its
   size in memory.
 - River pages (`rivers/show`, `RiverController::show()`) are written for people who search a river's levels when they
   fear a flood, so they lead with flooding: a headline (`PlaceHeadline::forRiver()`, from the cached `RiverSummary`)

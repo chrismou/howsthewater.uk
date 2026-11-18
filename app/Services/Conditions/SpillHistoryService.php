@@ -18,7 +18,8 @@ class SpillHistoryService
     public const HISTORY_DAYS = 30;
 
     /**
-     * How many of the latest spills cached conditions keep of each kind (kept()), as many as a feed lists.
+     * How many of the latest spills cached conditions keep of each kind (kept()). It follows the feed's length, so
+     * a longer feed keeps more (and changes the cached objects' size).
      */
     public const KEPT_EVENTS = ConditionsFeed::MAX_ITEMS;
 
@@ -67,7 +68,10 @@ class SpillHistoryService
             ->reject(fn (SpillEvent $event) => $event->isFromPublishedLog())
             ->sortByDesc(fn (SpillEvent $event) => ($event->ended_at ?? $event->started_at)->getTimestamp())
             ->take(self::KEPT_EVENTS);
-        $lastToEnd = $events->filter(fn (SpillEvent $event) => $event->ended_at !== null)->sortByDesc(fn (SpillEvent $event) => $event->ended_at->getTimestamp())->take(1);
+        $lastToEnd = $events
+            ->filter(fn (SpillEvent $event) => $event->ended_at !== null)
+            ->sortByDesc(fn (SpillEvent $event) => $event->ended_at->getTimestamp())
+            ->take(1);
 
         return $latestToStart->concat($latestFeedActivity)->concat($lastToEnd)
             ->unique(fn (SpillEvent $event) => $event->id)

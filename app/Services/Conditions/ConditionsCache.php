@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use ReflectionClass;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -189,21 +190,29 @@ class ConditionsCache
 
     /**
      * Writes an entry, logging (never throwing) when the store refuses it, and
-     * flagging one large enough to put the pages that read it at risk. Logged
-     * without the exception, whose SQL carries the whole entry.
+     * flagging one large enough to put the pages that read it at risk. A
+     * refused entry is forgotten, so readers rebuild rather than read the old
+     * one. Only the start of the exception's message is logged, as its SQL
+     * carries the whole entry.
      */
     private function store(string $key, mixed $value): void
     {
-        $bytes = strlen(serialize($value));
-
-        if ($bytes > self::LARGE_ENTRY_BYTES) {
-            Log::error(sprintf('Cached conditions %s are %s MB, large enough to risk the memory limit of pages that read them.', $key, number_format($bytes / 1048576, 1)));
-        }
+        $megabytes = null;
 
         try {
-            Cache::put($key, $value, now()->addMinutes(self::TTL_MINUTES));
+            $bytes = strlen(serialize($value));
+            $megabytes = round($bytes / 1048576, 1);
+
+            if ($bytes > self::LARGE_ENTRY_BYTES) {
+                Log::error('Cached conditions are large enough to risk the memory limit of pages that read them', ['key' => $key, 'megabytes' => $megabytes]);
+            }
+
+            if (! Cache::put($key, $value, now()->addMinutes(self::TTL_MINUTES))) {
+                throw new RuntimeException('The cache store did not write the entry.');
+            }
         } catch (Throwable $exception) {
-            Log::error(sprintf('Could not cache conditions %s (%s MB): %s', $key, number_format($bytes / 1048576, 1), Str::limit($exception->getMessage(), 300)));
+            Log::error('Could not cache conditions', ['key' => $key, 'megabytes' => $megabytes, 'error' => Str::limit($exception->getMessage(), 300)]);
+            rescue(fn () => Cache::forget($key), report: false);
         }
     }
 

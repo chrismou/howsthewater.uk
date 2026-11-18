@@ -21,8 +21,9 @@ use Throwable;
  * cold) and the overflows each one links to, then each region's summary,
  * then the menus. Run once after the ingests rather than by each of them.
  *
- * A place or region that fails is reported and skipped, so one bad entry
- * leaves one stale page rather than every region stale until it is fixed.
+ * A place or region that fails is reported and skipped, so a place that
+ * cannot be built leaves its own region stale (its summary rebuilds it)
+ * rather than every region, until it is fixed.
  */
 class RefreshRegions
 {
